@@ -859,11 +859,12 @@ public class ChronicleOverviewScreen extends Screen
             QuestNode n = QuestTreeRegistry.getQuest(e.getKey());
             if (n == null) continue;
             NodeHitbox btn = e.getValue();
+
             int cx = n.getCustomX();
             int cy = n.getCustomY();
             int sz = scaledNodeSize(n);
-            int sx = (int) (cx * posZoom()) + viewOffX + cl;
-            int sy = (int) (cy * posZoom()) + viewOffY + HEADER_H;
+            int sx = (int) (cx * posZoom()) + viewOffX + cl - sz / 2;
+            int sy = (int) (cy * posZoom()) + viewOffY + HEADER_H - sz / 2;
             btn.x = sx;
             btn.y = sy;
             btn.w = sz;
@@ -3490,12 +3491,13 @@ public class ChronicleOverviewScreen extends Screen
         int maxX = Integer.MIN_VALUE, maxY = Integer.MIN_VALUE;
         for (QuestNode n : QuestTreeRegistry.getAllQuests().values()) {
             if (!catMatches(n)) continue;
+
             int nx = n.getCustomX();
             int ny = n.getCustomY();
-            minX = Math.min(minX, nx);
-            minY = Math.min(minY, ny);
-            maxX = Math.max(maxX, nx + NODE_SIZE);
-            maxY = Math.max(maxY, ny + NODE_SIZE);
+            minX = Math.min(minX, nx - NODE_SIZE / 2);
+            minY = Math.min(minY, ny - NODE_SIZE / 2);
+            maxX = Math.max(maxX, nx + NODE_SIZE / 2);
+            maxY = Math.max(maxY, ny + NODE_SIZE / 2);
         }
         if (minX == Integer.MAX_VALUE) return false;
         int canvasW = cr - cl - 20, canvasH = height - HEADER_H - 20;

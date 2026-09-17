@@ -45,4 +45,9 @@ public class ChroniclesEmiPlugin implements EmiPlugin {
             }
         }
     }
+
+    public static void refreshQuestRecipes() {
+        if (currentRegistry == null) return;
+        dev.emi.emi.runtime.EmiReloadManager.reloadRecipes();
+    }
 }

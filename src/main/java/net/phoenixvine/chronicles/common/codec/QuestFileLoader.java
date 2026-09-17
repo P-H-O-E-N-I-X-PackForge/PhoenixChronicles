@@ -32,9 +32,11 @@ public class QuestFileLoader {
                                String subtitle,
                                String chapter,
                                String shape,
+                               String labelPosition,
                                String iconItemId,
                                int posX,
                                int posY,
+                               boolean positionIsCenter,
                                QuestNode.Visibility visibility,
                                int taskMinCount,
                                ResourceLocation parentId,
@@ -179,6 +181,7 @@ public class QuestFileLoader {
                     Component.literal(rec.title()), Component.literal(rec.description()));
             node.setChapter(rec.chapter());
             node.setShapeType(rec.shape());
+            node.setLabelPosition(rec.labelPosition());
             node.setCustomX(rec.posX());
             node.setCustomY(rec.posY());
             node.setSubtitle(rec.subtitle());
@@ -198,6 +201,11 @@ public class QuestFileLoader {
             node.setPreviewMachineId(rec.previewMachineId());
             node.setNodeSize(rec.nodeSize());
             if (rec.sizeOverridePx() > 0) node.setSizeOverridePx(rec.sizeOverridePx());
+
+            if (!rec.positionIsCenter()) {
+                int half = node.getNodePixelSize() / 2;
+                node.setCustomPosition(node.getCustomX() + half, node.getCustomY() + half);
+            }
             node.setLinkTarget(rec.linkTarget());
             node.setIconTexture(rec.iconTexture());
             node.setIconFluid(rec.iconFluid());
@@ -331,6 +339,7 @@ public class QuestFileLoader {
             String chapter = tag.contains("chapter") ? tag.getString("chapter") :
                     tag.contains("category") ? tag.getString("category") : "MAIN";
             String shape = tag.contains("shape") ? tag.getString("shape") : "SQUARE";
+            String labelPosition = tag.contains("label_position") ? tag.getString("label_position") : "BOTTOM";
             String iconItem = tag.contains("icon_item") ? tag.getString("icon_item") : "";
             String iconTexture = tag.contains("icon_texture") ? tag.getString("icon_texture") : "";
             String iconFluid = tag.contains("icon_fluid") ? tag.getString("icon_fluid") : "";
@@ -339,6 +348,8 @@ public class QuestFileLoader {
             String externalScreenId = tag.contains("external_screen") ? tag.getString("external_screen") : "";
             int posX = tag.contains("positionX") ? tag.getInt("positionX") : 40;
             int posY = tag.contains("positionY") ? tag.getInt("positionY") : 70;
+
+            boolean positionIsCenter = !tag.contains("positionX") || tag.getBoolean("position_is_center");
 
             String parentStr = tag.contains("parent") ? tag.getString("parent") : "none";
             ResourceLocation parentId = (!parentStr.isEmpty() && !parentStr.equals("none")) ?
@@ -471,7 +482,8 @@ public class QuestFileLoader {
             }
 
             return new QuestRecord(id, title, desc, subtitle, chapter.toUpperCase(), shape.toUpperCase(),
-                    iconItem, posX, posY, visibility, taskMinCount, parentId,
+                    labelPosition.toUpperCase(),
+                    iconItem, posX, posY, positionIsCenter, visibility, taskMinCount, parentId,
                     repeatMode, repeatCooldownHours, requireAllPrereqs, rewards, tasks, emergencyTag,
                     prereqRequired, optionalPrereqMinCount, enableIf, prereqForbidden, prereqLink, prereqCosmetic,
                     prereqLineShape, prereqLineVisual, prereqLineSpeed, prereqLineArrow, prereqLineStyleId,

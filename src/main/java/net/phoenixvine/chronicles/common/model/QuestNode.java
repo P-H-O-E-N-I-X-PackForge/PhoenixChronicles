@@ -52,6 +52,16 @@ public class QuestNode {
     private int customX = 0;
     private int customY = 0;
 
+    private String labelPosition = "BOTTOM";
+
+    public String getLabelPosition() {
+        return labelPosition;
+    }
+
+    public void setLabelPosition(String position) {
+        this.labelPosition = position == null || position.isBlank() ? "BOTTOM" : position.toUpperCase();
+    }
+
     public String getIconTexture() {
         return iconTexture;
     }

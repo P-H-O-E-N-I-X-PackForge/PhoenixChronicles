@@ -46,8 +46,15 @@ public class QuestFileSaver {
                 }
             }
             saveNode(base, node, parentId);
+            refreshEmiIfPresent();
         } catch (IOException e) {
             System.err.println("[Phoenix Chronicles] Failed to save quest '" + node.getId() + "': " + e.getMessage());
+        }
+    }
+
+    private static void refreshEmiIfPresent() {
+        if (net.minecraftforge.fml.ModList.get().isLoaded("emi")) {
+            net.phoenixvine.chronicles.integration.emi.ChroniclesEmiPlugin.refreshQuestRecipes();
         }
     }
 
@@ -90,6 +97,7 @@ public class QuestFileSaver {
         saveStubChapters(base);
 
         QuestFileWatcher.suppressNextReload();
+        refreshEmiIfPresent();
 
         System.out.println("[Phoenix Chronicles] Saved " + saved + " quest(s) to disk.");
     }
@@ -130,11 +138,13 @@ public class QuestFileSaver {
         tag.putString("description", desc);
         tag.putString("chapter", chapter);
         tag.putString("shape", shape);
+        if (!"BOTTOM".equals(node.getLabelPosition())) tag.putString("label_position", node.getLabelPosition());
         if (node.getNodeSize() != QuestNode.NodeSize.NORMAL) tag.putString("node_size", node.getNodeSize().name());
         if (node.getSizeOverridePx() > 0) tag.putInt("node_size_px", node.getSizeOverridePx());
         tag.putString("parent", parent);
         tag.putInt("positionX", node.getCustomX());
         tag.putInt("positionY", node.getCustomY());
+        tag.putBoolean("position_is_center", true);
         if (!iconItem.isEmpty()) tag.putString("icon_item", iconItem);
         if (!node.getIconTexture().isEmpty()) tag.putString("icon_texture", node.getIconTexture());
         if (!node.getIconFluid().isEmpty()) tag.putString("icon_fluid", node.getIconFluid());
@@ -423,11 +433,19 @@ public class QuestFileSaver {
         patchNodeTag(node, tag -> {
             tag.putInt("positionX", node.getCustomX());
             tag.putInt("positionY", node.getCustomY());
+            tag.putBoolean("position_is_center", true);
         });
     }
 
     public static void updateNodeShape(QuestNode node, String shape) {
         patchNodeTag(node, tag -> tag.putString("shape", shape));
+    }
+
+    public static void updateNodeLabelPosition(QuestNode node, String labelPosition) {
+        patchNodeTag(node, tag -> {
+            if ("BOTTOM".equals(labelPosition)) tag.remove("label_position");
+            else tag.putString("label_position", labelPosition);
+        });
     }
 
     public static void updateNodeShapeTexture(QuestNode node) {
@@ -633,6 +651,7 @@ public class QuestFileSaver {
         patchNodeTag(node, tag -> {
             tag.putInt("positionX", node.getCustomX());
             tag.putInt("positionY", node.getCustomY());
+            tag.putBoolean("position_is_center", true);
         });
     }
 

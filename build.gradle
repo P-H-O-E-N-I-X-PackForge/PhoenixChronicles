@@ -178,7 +178,7 @@ dependencies {
     modCompileOnly('curse.maven:phoenix-guilds-1612085:8743646')
     modRuntimeOnly("curse.maven:phoenix-guilds-1612085:8743646")
 
-    jarJar(modImplementation("net.phoenixvine.wiki:phoenix_wiki:0.2.3"))
+    jarJar(modImplementation("net.phoenixvine.wiki:phoenix_wiki:0.2.5"))
 
     modCompileOnly("net.phoenix.phoenix_archive:phoenix_archive:${phoenix_archive_version}")
     modRuntimeOnly("net.phoenix.phoenix_archive:phoenix_archive:${phoenix_archive_version}")

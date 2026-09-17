@@ -1,6 +1,5 @@
 package net.phoenixvine.chronicles;
 
-import com.gregtechceu.gtceu.api.data.tag.TagPrefix;
 import com.gregtechceu.gtceu.api.registry.registrate.GTRegistrate;
 
 import net.minecraft.resources.ResourceLocation;

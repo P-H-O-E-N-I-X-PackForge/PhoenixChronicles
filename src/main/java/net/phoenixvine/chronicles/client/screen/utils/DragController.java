@@ -67,13 +67,16 @@ public class DragController {
         }
 
         ctx.nodeScreenPos().put(editorState.draggedNode.getId(), new int[] { nx, ny });
-        editorState.draggedNode.setCustomPosition(logX, logY);
+
+        int half = editorState.draggedNode.getNodePixelSize() / 2;
+        int centerX = logX + half, centerY = logY + half;
+        editorState.draggedNode.setCustomPosition(centerX, centerY);
 
         if (editorState.bulkDragOrigPositions != null) {
             int[] grabbedOrig = editorState.bulkDragOrigPositions.get(editorState.draggedNode.getId());
             if (grabbedOrig != null) {
-                int deltaX = logX - grabbedOrig[0];
-                int deltaY = logY - grabbedOrig[1];
+                int deltaX = centerX - grabbedOrig[0];
+                int deltaY = centerY - grabbedOrig[1];
                 for (Map.Entry<ResourceLocation, int[]> e : editorState.bulkDragOrigPositions.entrySet()) {
                     if (e.getKey().equals(editorState.draggedNode.getId())) continue;
                     QuestNode other = QuestTreeRegistry.getQuest(e.getKey());
@@ -181,12 +184,14 @@ public class DragController {
 
     public void refreshNodeScreenPos(@NotNull QuestNode node) {
         int cl = ctx.sidebarW();
-        int sx = (int) (node.getCustomX() * ctx.posZoom()) + state.viewOffX() + cl;
-        int sy = (int) (node.getCustomY() * ctx.posZoom()) + state.viewOffY() + ChronicleOverviewScreen.HEADER_H;
+        int sz = ctx.scaledNodeSize(node);
+
+        int sx = (int) (node.getCustomX() * ctx.posZoom()) + state.viewOffX() + cl - sz / 2;
+        int sy = (int) (node.getCustomY() * ctx.posZoom()) + state.viewOffY() + ChronicleOverviewScreen.HEADER_H -
+                sz / 2;
         ctx.nodeScreenPos().put(node.getId(), new int[] { sx, sy });
         ChronicleOverviewScreen.NodeHitbox b = state.nodeButtons().get(node.getId());
         if (b != null) {
-            int sz = ctx.scaledNodeSize(node);
             b.setX(sx);
             b.setY(sy);
             b.w = sz;

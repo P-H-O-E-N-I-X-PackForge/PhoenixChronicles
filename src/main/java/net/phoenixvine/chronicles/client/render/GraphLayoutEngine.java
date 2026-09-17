@@ -38,8 +38,8 @@ public class GraphLayoutEngine {
         int cy = node.getCustomY();
 
         int sz = scaledNodeSize(node);
-        int sx = (int) (cx * ctx.posZoom()) + dragState.viewOffX() + cl;
-        int sy = (int) (cy * ctx.posZoom()) + dragState.viewOffY() + ChronicleOverviewScreen.HEADER_H;
+        int sx = (int) (cx * ctx.posZoom()) + dragState.viewOffX() + cl - sz / 2;
+        int sy = (int) (cy * ctx.posZoom()) + dragState.viewOffY() + ChronicleOverviewScreen.HEADER_H - sz / 2;
 
         boolean offCanvas = sx < cl - sz - 2 || sx > cr + 2 || sy < ChronicleOverviewScreen.HEADER_H - sz - 2 ||
                 sy > ctx.height() + 2;

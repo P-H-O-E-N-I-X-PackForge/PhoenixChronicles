@@ -103,7 +103,7 @@ public class QuestTasksScreen extends Screen {
     }
 
     private final QuestNode node;
-    
+
     private FullQuestData content;
     private final PlayerQuestData playerData;
     private final Player player;
@@ -117,7 +117,7 @@ public class QuestTasksScreen extends Screen {
             .compile("(?m)^[ \\t]*-{3,}[ \\t]*$");
     private int descPage = 0;
     private int richSpansPage = -1;
-    
+
     private String descBlocksSourceText = null;
     private int descPagerX, descPagerY, descPagerW, descPagerH, descPagerPageCount;
 
@@ -1970,8 +1970,8 @@ public class QuestTasksScreen extends Screen {
             richSpansPage = descPage;
             descBlocksSourceText = descText;
         }
-        java.util.List<net.phoenixvine.chronicles.client.rich.RichBlock> resolvedDescBlocks =
-                resolveConditionals(descBlocks);
+        java.util.List<net.phoenixvine.chronicles.client.rich.RichBlock> resolvedDescBlocks = resolveConditionals(
+                descBlocks);
 
         float compactTextScale = QuestChroniclesSettings.get().getTextScaleMultiplier();
         int compactLineH = Math.max(1, Math.round(10 * compactTextScale));

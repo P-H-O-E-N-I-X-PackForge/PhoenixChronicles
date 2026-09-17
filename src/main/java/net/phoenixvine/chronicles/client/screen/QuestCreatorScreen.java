@@ -120,6 +120,8 @@ public class QuestCreatorScreen extends Screen {
     private String cachedChapter = "MAIN";
     private String cachedIconItemId = "";
     private String cachedShape = "SQUARE";
+    private String cachedLabelPosition = "BOTTOM";
+    private static final String[] LABEL_POSITIONS = { "BOTTOM", "TOP", "LEFT", "RIGHT" };
 
     private String cachedShapeTexture = "";
     private String cachedBackgroundType = "";
@@ -210,6 +212,7 @@ public class QuestCreatorScreen extends Screen {
         cachedChapter = editingNode.getChapter();
         cachedIconItemId = editingNode.getIconItemId();
         cachedShape = editingNode.getShapeType() != null ? editingNode.getShapeType() : "SQUARE";
+        cachedLabelPosition = editingNode.getLabelPosition() != null ? editingNode.getLabelPosition() : "BOTTOM";
         cachedShapeTexture = editingNode.getShapeTexture() != null ? editingNode.getShapeTexture() : "";
         cachedBackgroundType = editingNode.getBackgroundType() != null ? editingNode.getBackgroundType() : "";
         cachedVisibility = editingNode.getVisibility() != null ? editingNode.getVisibility() :
@@ -229,10 +232,9 @@ public class QuestCreatorScreen extends Screen {
         cachedSizeOverridePx = editingNode.getSizeOverridePx();
         cachedDevNotes = editingNode.getDevNotes();
         cachedPreviewMachineId = editingNode.getPreviewMachineId();
-        
-        int loadHalf = editingNode.getNodePixelSize() / 2;
-        cachedPosX = editingNode.getCustomX() + loadHalf;
-        cachedPosY = editingNode.getCustomY() + loadHalf;
+
+        cachedPosX = editingNode.getCustomX();
+        cachedPosY = editingNode.getCustomY();
         cachedPrerequisites.addAll(editingNode.getPrerequisites());
         idManuallySet = true;
         initialized = true;
@@ -246,6 +248,7 @@ public class QuestCreatorScreen extends Screen {
                 .collect(java.util.stream.Collectors.joining(","));
         return String.join("",
                 cachedId, cachedTitle, cachedDesc, cachedSubtitle, cachedChapter, cachedIconItemId, cachedShape,
+                cachedLabelPosition,
                 cachedShapeTexture, String.valueOf(cachedVisibility), cachedEnableIf,
                 String.valueOf(cachedRequireAll), String.valueOf(cachedDisabledBlocksChildren),
                 String.valueOf(cachedTaskMinCount), String.valueOf(cachedRepeatMode),
@@ -364,7 +367,7 @@ public class QuestCreatorScreen extends Screen {
         int rowY = y + LABEL_H + LABEL_GAP;
         labels.add(new LabelEntry(cx, y, "§fTitle", C_TEXT_FAINT));
         titleBox = new EditBox(font, cx, rowY, cw - EDIT_W - 2, FIELD_H, Component.empty());
-        titleBox.setMaxLength(64);
+        titleBox.setMaxLength(160);
         titleBox.setHint(Component.literal("§fQuest title shown to players"));
         titleBox.setValue(cachedTitle);
         titleBox.setResponder(v -> {
@@ -438,7 +441,7 @@ public class QuestCreatorScreen extends Screen {
             }
         }).bounds(cx + catBoxW + 2 + catPickW + 2, rowY, newCatW, FIELD_H).build());
         subtitleBox = new EditBox(font, subX, rowY, subW - EDIT_W - 2, FIELD_H, Component.empty());
-        subtitleBox.setMaxLength(128);
+        subtitleBox.setMaxLength(256);
         subtitleBox.setHint(Component.literal("§fSubtitle…"));
         subtitleBox.setValue(cachedSubtitle);
         subtitleBox.setResponder(v -> cachedSubtitle = v);
@@ -591,23 +594,31 @@ public class QuestCreatorScreen extends Screen {
                                     "\"Resize (scroll + drag)…\" instead.")))
                     .build());
         }
+        y = rowY + FIELD_H + ROW_GAP;
+
+        rowY = y + LABEL_H + LABEL_GAP;
+        labels.add(new LabelEntry(cx, y, "§fTitle label position", C_TEXT_FAINT));
+        int lblBtnW = cw / LABEL_POSITIONS.length;
+        for (int i = 0; i < LABEL_POSITIONS.length; i++) {
+            String posOpt = LABEL_POSITIONS[i];
+            boolean sel = posOpt.equals(cachedLabelPosition);
+            String lbl = (sel ? "§d" : "§f") + posOpt.charAt(0) + posOpt.substring(1).toLowerCase();
+            int bx = cx + i * lblBtnW;
+            int bw = (i == LABEL_POSITIONS.length - 1) ? (cw - i * lblBtnW) : lblBtnW - 1;
+            addRenderableWidget(Button.builder(Component.literal(lbl), b -> {
+                cachedLabelPosition = posOpt;
+                rebuildWidgets();
+            }).bounds(bx, rowY, bw, FIELD_H)
+                    .tooltip(Tooltip.create(Component.literal(
+                            "Where this quest's title text draws relative to its icon on the map.")))
+                    .build());
+        }
         y = rowY + FIELD_H;
         return y;
     }
 
     private String positionSizeSummary() {
         return "§f(" + cachedPosX + ", " + cachedPosY + ")";
-    }
-
-    private int currentPixelSize() {
-        if (cachedSizeOverridePx > 0) return cachedSizeOverridePx;
-        return switch (cachedNodeSize) {
-            case TINY -> 14;
-            case SMALL -> 18;
-            case LARGE -> 48;
-            case HUGE -> 64;
-            default -> 32;
-        };
     }
 
     private int buildTasksRewards(int y) {
@@ -1322,9 +1333,9 @@ public class QuestCreatorScreen extends Screen {
                     .getPath());
             if (cachedRequireAll != null) tag.putBoolean("require_all_prereqs", cachedRequireAll);
             if (cachedTaskMinCount > 0) tag.putInt("task_min_count", cachedTaskMinCount);
-            int previewHalf = currentPixelSize() / 2;
-            tag.putInt("positionX", cachedPosX - previewHalf);
-            tag.putInt("positionY", cachedPosY - previewHalf);
+            tag.putInt("positionX", cachedPosX);
+            tag.putInt("positionY", cachedPosY);
+            tag.putBoolean("position_is_center", true);
             if (cachedRepeatMode != QuestNode.RepeatMode.NONE) {
                 tag.putString("repeat_mode", cachedRepeatMode.name());
                 if (cachedRepeatMode == QuestNode.RepeatMode.COOLDOWN)
@@ -1385,6 +1396,7 @@ public class QuestCreatorScreen extends Screen {
                 persistLangOverride(questId, "subtitle", cachedSubtitle.trim());
                 editingNode.setChapter(chapter);
                 editingNode.setShapeType(cachedShape);
+                editingNode.setLabelPosition(cachedLabelPosition);
                 editingNode.setShapeTexture(cachedShapeTexture);
                 editingNode.setBackgroundType(cachedBackgroundType);
                 editingNode.setSubtitle(cachedSubtitle.trim());
@@ -1404,8 +1416,7 @@ public class QuestCreatorScreen extends Screen {
                 if (cachedSizeOverridePx > 0) editingNode.setSizeOverridePx(cachedSizeOverridePx);
                 editingNode.setDevNotes(cachedDevNotes.trim());
                 editingNode.setPreviewMachineId(cachedPreviewMachineId.trim());
-                int saveHalf = editingNode.getNodePixelSize() / 2;
-                editingNode.setCustomPosition(cachedPosX - saveHalf, cachedPosY - saveHalf);
+                editingNode.setCustomPosition(cachedPosX, cachedPosY);
                 if (!cachedIconItemId.isBlank()) editingNode.setIconItemById(cachedIconItemId.trim());
 
                 for (QuestNode existingPrereq : new ArrayList<>(editingNode.getPrerequisites())) {
@@ -1426,6 +1437,7 @@ public class QuestCreatorScreen extends Screen {
                 QuestNode node = new QuestNode(questId, Component.literal(title), Component.literal(desc));
                 node.setChapter(chapter);
                 node.setShapeType(cachedShape);
+                node.setLabelPosition(cachedLabelPosition);
                 node.setShapeTexture(cachedShapeTexture);
                 node.setBackgroundType(cachedBackgroundType);
                 node.setSubtitle(cachedSubtitle.trim());
@@ -1445,8 +1457,7 @@ public class QuestCreatorScreen extends Screen {
                 if (cachedSizeOverridePx > 0) node.setSizeOverridePx(cachedSizeOverridePx);
                 node.setDevNotes(cachedDevNotes.trim());
                 node.setPreviewMachineId(cachedPreviewMachineId.trim());
-                int newHalf = node.getNodePixelSize() / 2;
-                node.setCustomPosition(cachedPosX - newHalf, cachedPosY - newHalf);
+                node.setCustomPosition(cachedPosX, cachedPosY);
                 if (!cachedIconItemId.isBlank()) node.setIconItemById(cachedIconItemId.trim());
 
                 if (editingNode != null) {

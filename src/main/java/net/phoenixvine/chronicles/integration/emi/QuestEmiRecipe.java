@@ -132,13 +132,22 @@ public class QuestEmiRecipe implements EmiRecipe {
     public void addWidgets(@NotNull WidgetHolder widgets) {
         Font font = Minecraft.getInstance().font;
 
-        widgets.add(new JumpToQuestWidget(node.getTitle().getVisualOrderText(), 4, 4, this::jumpToQuest));
+        List<FormattedCharSequence> titleLines = font.split(node.getTitle(), 152);
+        int maxTitleLines = 2;
+        int shownTitleLines = Math.min(titleLines.size(), maxTitleLines);
+        int y = 4;
+        for (int i = 0; i < shownTitleLines; i++) {
+            widgets.add(new JumpToQuestWidget(titleLines.get(i), 4, y, this::jumpToQuest));
+            y += 10;
+        }
 
         Component descComp = node.getDescription();
         if (descComp != null) {
             List<FormattedCharSequence> lines = font.split(descComp, 152);
-            int maxVisibleLines = 4;
-            int textY = 16;
+
+            int descAreaBottom = 81;
+            int maxVisibleLines = Math.max(1, (descAreaBottom - y) / 10 - 1);
+            int textY = y + 2;
 
             for (int i = 0; i < Math.min(lines.size(), maxVisibleLines); i++) {
                 widgets.addText(lines.get(i), 4, textY, 0x555555, false);
@@ -146,8 +155,10 @@ public class QuestEmiRecipe implements EmiRecipe {
             }
 
             if (lines.size() > maxVisibleLines) {
-                widgets.addText(Component.literal("§7... (View full log in Quest Book)").getVisualOrderText(), 4, textY,
-                        0x888888, false);
+
+                widgets.add(new JumpToQuestWidget(
+                        Component.literal("§7... (View full log in Quest Book)").getVisualOrderText(),
+                        4, textY, 0x888888, this::jumpToQuest));
             }
         }
 
@@ -193,7 +204,11 @@ public class QuestEmiRecipe implements EmiRecipe {
         private final Runnable onClick;
 
         JumpToQuestWidget(FormattedCharSequence text, int x, int y, Runnable onClick) {
-            super(text, x, y, 0x1A56C4, false);
+            this(text, x, y, 0x1A56C4, onClick);
+        }
+
+        JumpToQuestWidget(FormattedCharSequence text, int x, int y, int color, Runnable onClick) {
+            super(text, x, y, color, false);
             this.onClick = onClick;
         }
 

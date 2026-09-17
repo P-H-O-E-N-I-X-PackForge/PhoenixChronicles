@@ -31,7 +31,7 @@ public final class ChronicleMarkdownParser {
     private static final Pattern COLLAPSE_MARKER = Pattern.compile("(?i)\\s*\\{collapse}\\s*$");
     private static final Pattern TABLE_ROW = Pattern.compile("^\\|?.*\\|.*\\|?$");
     private static final Pattern TABLE_SEP = Pattern.compile("^\\|?[\\s:-]*-[\\s:-]*\\|[\\s:|-]*$");
-    
+
     private static final Pattern FOOTNOTE_DEF = Pattern.compile("^\\[\\^([^\\]?]+)(?:\\?([^\\]]+))?]:\\s*(.*)$");
     private static final Pattern SCALE_DIRECTIVE = Pattern.compile("^\\{scale:(\\d+(?:\\.\\d+)?)}$");
 

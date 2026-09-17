@@ -124,7 +124,7 @@ public class VariantEditorScreen extends Screen {
         fy += FIELD_H + FIELD_GAP;
 
         titleBox = new EditBox(font, fx, fy, fw, FIELD_H, Component.empty());
-        titleBox.setMaxLength(128);
+        titleBox.setMaxLength(160);
         titleBox.setHint(Component.literal("§8title override: blank = inherit base title"));
         titleBox.setValue(v.title != null ? v.title : "");
         titleBox.setResponder(s -> v.title = s.isBlank() ? null : s);
@@ -132,7 +132,7 @@ public class VariantEditorScreen extends Screen {
         fy += FIELD_H + FIELD_GAP;
 
         subtitleBox = new EditBox(font, fx, fy, fw, FIELD_H, Component.empty());
-        subtitleBox.setMaxLength(128);
+        subtitleBox.setMaxLength(256);
         subtitleBox.setHint(Component.literal("§8subtitle override: blank = inherit base subtitle"));
         subtitleBox.setValue(v.subtitle != null ? v.subtitle : "");
         subtitleBox.setResponder(s -> v.subtitle = s.isBlank() ? null : s);

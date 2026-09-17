@@ -28,7 +28,7 @@ public final class ThresholdCondition {
             case "!=" -> value != threshold;
             case ">" -> value > threshold;
             case "<" -> value < threshold;
-            default -> value >= threshold; 
+            default -> value >= threshold;
         };
     }
 }

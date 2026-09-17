@@ -217,7 +217,6 @@ class ChronicleMarkdownParserTest {
 
     @Test
     void singleUnconditionedFootnoteVariantStaysAPlainTip() {
-
         List<RichBlock> blocks = ChronicleMarkdownParser.parse("See note[^1].\n\n[^1]: Just the detail.");
         RichBlock.Paragraph p = assertInstanceOf(RichBlock.Paragraph.class, blocks.get(0));
         assertInstanceOf(RichSpan.Tip.class, p.spans().get(1));

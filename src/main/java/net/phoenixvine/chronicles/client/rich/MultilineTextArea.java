@@ -57,6 +57,9 @@ public class MultilineTextArea extends AbstractWidget {
 
     public void seekToStart() {
         textField.seekCursor(Whence.ABSOLUTE, 0);
+
+        scrollLines = 0;
+        lastCursorForScroll = textField.cursor();
     }
 
     public String getValue() {

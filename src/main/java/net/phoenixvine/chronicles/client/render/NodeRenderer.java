@@ -226,13 +226,33 @@ public class NodeRenderer {
                         st == QuestState.ACTIVE ? state.colorTextActive() :
                                 st == QuestState.LOCKED ? ctx.colorTextFaint() : ctx.colorTextDim();
                 if (baseAlpha < 0xFF) lc = (lc & 0x00FFFFFF) | (baseAlpha << 24);
-                ChroniclesUIKit.drawScaledCenteredString(g, ctx.font(), state.shortLabel(node), pos[0] + nodeSz / 2f,
-                        labelY, lc, QuestChroniclesSettings.get().getTextScaleMultiplier());
+                drawNodeLabel(g, node, state.shortLabel(node), pos[0], pos[1], nodeSz, lc,
+                        QuestChroniclesSettings.get().getTextScaleMultiplier());
             }
         }
         FrameProfiler.end("badges/labels");
 
         g.disableScissor();
+    }
+
+    private void drawNodeLabel(GuiGraphics g, QuestNode node, String label, int x, int y, int nodeSz, int color,
+                               float scale) {
+        int gap = 4;
+        int lineH = Math.round(ctx.font().lineHeight * scale);
+        String pos = node.getLabelPosition();
+        switch (pos) {
+            case "TOP" -> ChroniclesUIKit.drawScaledCenteredString(g, ctx.font(), label, x + nodeSz / 2f,
+                    y - gap - lineH, color, scale);
+            case "LEFT" -> {
+                float w = ctx.font().width(label) * scale;
+                ChroniclesUIKit.drawScaledString(g, ctx.font(), label, x - gap - w,
+                        y + nodeSz / 2f - lineH / 2f, color, scale);
+            }
+            case "RIGHT" -> ChroniclesUIKit.drawScaledString(g, ctx.font(), label, x + nodeSz + gap,
+                    y + nodeSz / 2f - lineH / 2f, color, scale);
+            default -> ChroniclesUIKit.drawScaledCenteredString(g, ctx.font(), label, x + nodeSz / 2f,
+                    y + nodeSz + gap, color, scale);
+        }
     }
 
     @Nullable

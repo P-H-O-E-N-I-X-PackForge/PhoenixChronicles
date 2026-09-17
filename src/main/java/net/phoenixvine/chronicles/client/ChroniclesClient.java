@@ -34,6 +34,8 @@ public class ChroniclesClient {
         DependencyLineStyleRegistry.registerBuiltins();
         QuestBackgroundRegistry.registerBuiltins();
 
+        PhoenixTheme.registerMod("net.phoenixvine.chronicles", MOD_ID);
+
         ChroniclesThemePalette.refresh(PhoenixTheme.current());
         ChronicleRichTextRenderer.imageResolver = CustomTextureCache::resolve;
 
