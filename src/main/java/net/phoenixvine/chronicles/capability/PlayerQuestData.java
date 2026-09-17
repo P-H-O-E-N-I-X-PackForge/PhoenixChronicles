@@ -39,7 +39,15 @@ public class PlayerQuestData {
     }
 
     public void recordCompletion(ResourceLocation questId) {
-        lastCompleted.put(questId, System.currentTimeMillis());
+        recordCompletion(questId, System.currentTimeMillis());
+    }
+
+    /**
+     * Same as {@link #recordCompletion(ResourceLocation)} but with an explicit timestamp, for
+     * importers that need to preserve a completion time from another source instead of "now".
+     */
+    public void recordCompletion(ResourceLocation questId, long timestamp) {
+        lastCompleted.put(questId, timestamp);
     }
 
     public boolean hasClaimedRewards(ResourceLocation questId) {

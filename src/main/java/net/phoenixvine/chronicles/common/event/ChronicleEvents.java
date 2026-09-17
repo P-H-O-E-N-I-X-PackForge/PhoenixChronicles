@@ -574,6 +574,14 @@ public class ChronicleEvents {
                                         com.mojang.brigadier.arguments.StringArgumentType.getString(ctx,
                                                 "subfolder")))))
 
+                .then(Commands.literal("import-ftb-progress")
+                        .requires(src -> src.hasPermission(2))
+                        .executes(ctx -> doImportFtbProgress(ctx, null))
+                        .then(Commands
+                                .argument("player", net.minecraft.commands.arguments.EntityArgument.player())
+                                .executes(ctx -> doImportFtbProgress(ctx,
+                                        net.minecraft.commands.arguments.EntityArgument.getPlayer(ctx, "player")))))
+
                 .then(Commands.literal("validate")
                         .requires(src -> src.hasPermission(2))
                         .executes(ctx -> {
@@ -792,6 +800,79 @@ public class ChronicleEvents {
         ctx.getSource().sendSuccess(
                 () -> Component.literal("Quest §7progress reset§r for " + name + ": " + questArg), true);
         return 1;
+    }
+
+    private static int doImportFtbProgress(
+                                           com.mojang.brigadier.context.CommandContext<net.minecraft.commands.CommandSourceStack> ctx,
+                                           @Nullable net.minecraft.server.level.ServerPlayer explicitPlayer) {
+        net.minecraft.server.level.ServerPlayer sp = explicitPlayer;
+        if (sp == null) {
+            if (!(ctx.getSource().getEntity() instanceof net.minecraft.server.level.ServerPlayer self)) {
+                ctx.getSource().sendFailure(Component.literal("Must specify a player when running from console."));
+                return 0;
+            }
+            sp = self;
+        }
+
+        MinecraftServer server = getCachedServer();
+        if (server == null) {
+            ctx.getSource().sendFailure(Component.literal("Server not available."));
+            return 0;
+        }
+
+        java.nio.file.Path configDir = resolveConfigDir(server);
+        java.nio.file.Path ftbChaptersDir = configDir.getParent().resolve("ftbquests").resolve("quests")
+                .resolve("chapters");
+        java.nio.file.Path ftbPlayerSaveFile = server
+                .getWorldPath(net.minecraft.world.level.storage.LevelResource.ROOT)
+                .resolve("ftbquests").resolve(sp.getStringUUID() + ".snbt");
+
+        if (!java.nio.file.Files.exists(ftbPlayerSaveFile)) {
+            ctx.getSource().sendFailure(Component.literal(
+                    "No FTB Quests save found for " + sp.getName().getString() + " at §7" + ftbPlayerSaveFile));
+            return 0;
+        }
+
+        String playerUuidHex = sp.getUUID().toString().replace("-", "");
+        final net.minecraft.server.level.ServerPlayer fsp = sp;
+
+        var resultHolder = new Object() {
+
+            net.phoenixvine.chronicles.capability.importer.FtbProgressImporter.ImportResult result;
+        };
+        fsp.getCapability(QuestCapabilityProvider.PLAYER_QUESTS).ifPresent(data -> {
+            resultHolder.result = net.phoenixvine.chronicles.capability.importer.FtbProgressImporter
+                    .importProgress(ftbChaptersDir, ftbPlayerSaveFile, playerUuidHex, data);
+
+            QuestProgressTracker.autoUnlockSatisfiedQuests(fsp);
+
+            // A bulk import can flip hundreds of quests at once - route this through the same
+            // silent full-resync path used for respawn/dimension-change (initialSync=true) instead
+            // of QuestProgressTracker.sendProgressSync's per-quest diff, which would otherwise queue
+            // a completion toast + sound for every single ported quest all at once.
+            ChronicleNetwork.CHANNEL.send(PacketDistributor.PLAYER.with(() -> fsp),
+                    new S2CSyncPlayerProgressPacket(data, true));
+        });
+
+        var result = resultHolder.result;
+        if (result == null) {
+            ctx.getSource().sendFailure(Component.literal("No quest capability available for that player."));
+            return 0;
+        }
+
+        String name = fsp.getName().getString();
+        ctx.getSource().sendSuccess(() -> Component.literal(
+                "§a✔ FTB progress import for " + name + ": §f" + result.ported() + " §aquest(s) newly completed, §7" +
+                        result.alreadyComplete() + " §aalready complete, §f" + result.claimedRewards() +
+                        " §areward(s) marked claimed" +
+                        (result.notPortable() > 0 ? " §e(" + result.notPortable() +
+                                " completed FTB quest(s) had no Chronicles " + "counterpart and couldn't be ported)" :
+                                "")),
+                true);
+        for (String w : result.warnings()) {
+            ctx.getSource().sendSuccess(() -> Component.literal("§e⚠ " + w), false);
+        }
+        return result.ported();
     }
 
     private static int doImport(com.mojang.brigadier.context.CommandContext<net.minecraft.commands.CommandSourceStack> ctx,
