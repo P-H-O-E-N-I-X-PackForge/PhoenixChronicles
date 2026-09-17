@@ -1241,7 +1241,8 @@ public class ChronicleOverviewScreen extends Screen
 
         if (oldPosZoom != newPosZoom) {
             int canvasW = cr - cl, canvasH = height - HEADER_H;
-            boolean cursorAnchored = ChronicleKeyBindings.CURSOR_ZOOM.isDown();
+            // Zoom-to-cursor is the default; holding CURSOR_ZOOM inverts to the old zoom-to-center.
+            boolean cursorAnchored = !ChronicleKeyBindings.CURSOR_ZOOM.isDown();
             float anchorX = cursorAnchored ? (float) mx - cl : canvasW / 2f;
             float anchorY = cursorAnchored ? (float) my - HEADER_H : canvasH / 2f;
             float worldCx = (anchorX - viewOffX) / oldPosZoom;

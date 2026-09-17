@@ -48,9 +48,14 @@ public class ChronicleKeyBindings {
             GLFW.GLFW_KEY_M,
             "key.categories.phoenix_chronicles");
 
+    // Zoom-to-cursor is the default behavior (see ChronicleOverviewScreen#handleCanvasZoomScroll);
+    // holding this key inverts to the old zoom-to-center behavior instead. Left Alt rather than a
+    // Shift variant -- Shift already means "finer step" for node-resize scrolling elsewhere in that
+    // same screen, and a held-modifier KeyMapping only tracks the exact physical key it's bound to
+    // (its own Left/Right variant), so reusing Shift here risked the two meanings colliding.
     public static final KeyMapping CURSOR_ZOOM = new KeyMapping(
             "key.phoenix_chronicles.cursor_zoom",
-            GLFW.GLFW_KEY_LEFT_SHIFT,
+            GLFW.GLFW_KEY_LEFT_ALT,
             "key.categories.phoenix_chronicles");
 
     public static final KeyMapping TOGGLE_VALIDATION = new KeyMapping(

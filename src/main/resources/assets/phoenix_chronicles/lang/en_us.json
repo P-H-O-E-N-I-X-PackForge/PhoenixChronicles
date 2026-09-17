@@ -10,7 +10,7 @@
   "key.phoenix_chronicles.fit_to_canvas": "Fit Canvas to View",
   "key.phoenix_chronicles.toggle_line_style": "Toggle Dependency Line Style",
   "key.phoenix_chronicles.toggle_minimap": "Toggle Minimap",
-  "key.phoenix_chronicles.cursor_zoom": "Hold: Zoom Toward Cursor",
+  "key.phoenix_chronicles.cursor_zoom": "Hold: Zoom Toward Center",
   "key.phoenix_chronicles.toggle_validation": "Toggle Validation Panel (Dev)",
   "key.phoenix_chronicles.toggle_stats": "Toggle Quest Stats Panel (Dev)",
   "key.phoenix_chronicles.toggle_subgraph": "Toggle Subgraph Mode (Dev)",
