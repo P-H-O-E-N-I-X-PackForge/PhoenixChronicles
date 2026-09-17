@@ -1,29 +1,37 @@
 <h1 align="center">
-  <img src="https://raw.githubusercontent.com/BgameXL/LanPlus/main/common/src/main/resources/assets/lanplus/textures/lan_logo.png" alt="LAN+" width="280">
+  <img src="https://raw.githubusercontent.com/Omicron-Industries/PhoenixChronicles/main/chronicle.png" alt="Phoenix Chronicles" width="280">
 </h1>
 
 <p align="center">
-  Play Minecraft with friends without the usual hassle. Add friends, invite them into your world, and let them join over the internet with no port forwarding.
+  <strong>Create your favorite documentation; thinly disguised as a mod or an interconnected story. 
+    It's your choice (or not).</strong>
 </p>
 
-<p align="left">
-  <a href="https://www.curseforge.com/minecraft/mc-mods/lan">
+<p align="center">
+  <a href="https://www.curseforge.com/minecraft/mc-mods/phoenixchronicles">
     <img alt="CurseForge" height="50" src="https://raw.githubusercontent.com/intergrav/devins-badges/v3/assets/cozy/available/curseforge_vector.svg"></a>
-  <a href="https://github.com/BgameXL/LanPlus">
-    <img alt="GitHub" height="50" src="https://raw.githubusercontent.com/intergrav/devins-badges/v3/assets/cozy/available/github_vector.svg"></a>
-  <a href="https://discord.gg/kAKk3wRAVh">
+  <a href="https://github.com/Omicron-Industries/PhoenixChronicles">
+<a href="https://discord.gg/YOUR_DISCORD_INVITE">
     <img alt="Discord" height="50" src="https://raw.githubusercontent.com/intergrav/devins-badges/v3/assets/cozy/social/discord-singular_vector.svg"></a>
-  <a href="https://ko-fi.com/bgame">
     <img alt="Ko-fi" height="50" src="https://raw.githubusercontent.com/intergrav/devins-badges/v3/assets/cozy/donate/kofi-singular_vector.svg"></a>
 </p>
 
-
 # Phoenix Chronicles
-A simple 
+Chronicles is a simple 1.20.1 questbook mod made to solve the niche and vast issues when making a questbook for your modpack.
 
-# Logo 
+It is focused on trying to integrate with the community, provide everything a questbook mod would need, and throw some more into the mix.
+Of course, there is also plenty of phoenix passion in **Chronicles** as well.
+
+Made to be an alternative to **FTBQuests** (or ftbq) but still have its own unique feel and cadence. 
+There is a built in **FTBQuests** importer that can handle importing 
+*quests, player progress, chapters, categories, rewards, and tasks*.
+Though `filter tasks` will have to be remade since those use a seperate mod in **FTBQuests**.
 
 ## Wiki link
+We have a small in progress wiki for all PhoenixSuite mods, if it is missing any important info or you would like to help,
+feel free to ping me on discord by the username of Phoenixvine.
+
+[Wiki](https://omicron-industries.github.io/PhoenixSuite/wiki/) 
 
 # Small except explaining what chronicles is.
 
