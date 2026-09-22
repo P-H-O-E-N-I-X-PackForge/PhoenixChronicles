@@ -1,5 +1,5 @@
 <h1 align="center">
-  <img src="https://raw.githubusercontent.com/Omicron-Industries/PhoenixChronicles/main/chronicle.png" alt="Phoenix Chronicles" width="280">
+  <img src="https://raw.githubusercontent.com/P-H-O-E-N-I-X-PackForge/PhoenixChronicles/main/src/main/resources/assets/phoenix_chronicles/images/chronicle.png" alt="Phoenix Chronicles" width="280">
 </h1>
 
 <p align="center">
@@ -65,8 +65,7 @@ Legend: PR = At Parity, AA = Advantage, PA = Partial.
 
 # Roadmap
 Below is a loose roadmap of what we plan to do in the future.
-
-![Roadmap Diagram](./src/main/resources/assets/phoenix_chronicles/images/mermaid-diagram-2026-09-22T21-48-50.png)
+![Roadmap Chart](https://raw.githubusercontent.com/P-H-O-E-N-I-X-PackForge/PhoenixChronicles/main/src/main/resources/assets/phoenix_chronicles/images/roadmap_chart.png)
 
 # Small snippt of the markdown of quests.
 
