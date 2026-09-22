@@ -52,12 +52,13 @@ Below is a chart of the major features and how they compare to other mods in Chr
 There is also a chart of what we do better or at parity to what others do.
 For more information on any of the features, check the wiki (or if that doesn't exist) ping Phoenixvine on discord.
 
+Legend: PR = At Parity, AA = Advantage, PA = Partial.
 
 | Feature                           | Chronicles                                     | FTB Quests                         | Parity / Advantage                     |
 |:----------------------------------|:-----------------------------------------------|:-----------------------------------|:---------------------------------------|
 | **GregTech Integration**          | Built-in native support for GT recipes & tiers | Requires third-party addon scripts | **Advantage** (Out-of-the-box support) |
-| **Custom Quest GUI**              | Lightweight, custom layout rendering           | Heavy, highly configurable GUI     | **Parity** (Different style focus)     |
-| **Capability System**             | Custom player capability tracking              | Custom data attachments            | **Parity**                             |
+| **Quest Editor Gui**              | Lightweight, custom layout rendering           | Heavy, highly configurable GUI     | **Parity** (Different style focus)     |
+| **Custom External tasks**         | Custom player capability tracking              | Custom data attachments            | **AA**                                 |
 | **Packet Syncing**                | Optimized light payload network packets        | Standard networking pipeline       | **Advantage** (Lower bandwidth)        |
 | **Third-Party Mod Compatibility** | Direct Mixin & API bridges                     | Extensive integrations             | **In Progress**                        |
 
@@ -66,29 +67,100 @@ For more information on any of the features, check the wiki (or if that doesn't 
 Below is a loose roadmap of what we plan to do in the future.
 
 ```mermaid
-graph LR
-    %% Class Definitions for Status Styling
-    classDef done fill:#2e7d32,stroke:#1b5e20,color:#ffffff;
-    classDef active fill:#f57f17,stroke:#e65100,color:#ffffff;
-    classDef locked fill:#37474f,stroke:#212121,color:#b0bec5;
+flowchart LR
+%% Style Classes
+classDef done fill:#2e7d32,stroke:#1b5e20,color:#ffffff
+classDef active fill:#f57f17,stroke:#e65100,color:#ffffff
+classDef planned fill:#1565c0,stroke:#0d47a1,color:#ffffff
 
-    %% Goals & Dependencies
-    G1["Core Quest Engine"]:::done --> G2["Basic GUI Overhaul"]:::done
-    G2 --> G3["GregTech Integration"]:::active
-    G2 --> G4["Custom Capability API"]:::active
+    subgraph PackDev ["Packdev Documentation"]
+        direction TB
+        P1["Quest Creation & Groups - Quests, Chapters, Categories"]
+        P2["Quest Layout & Positioning - Resizing, Moving, Auto Arrange"]
+        P3["Prerequisites & Dependencies - Gating & Line Styles"]
+        P4["Variants & Flags System"]
+        P5["Quest Markdown Support"]
+        P6["Visual Styling - Node Shapes & Icons"]
+        P7["Quest State Logic - Locked / Available / Hidden / Complete"]
+        P8["Advanced Quest Mechanics - Linked Quests & Dev Notes"]
+        P9["Rewards & Tasks - Types, Choiced & Lootbox"]
+        P10["Filter System"]
+        P11["Import Tooling - FTBQuests Importer"]
+        P12["Automated Localization - Auto Lang & Lang Editor"]
+    end
 
-    %% Gated Goals
-    G3 --> G5["GT Tiered Reward System"]:::locked
-    G4 --> G5
-    G5 --> G6["Public Developer API Release"]:::locked
+    subgraph Dev ["Developer Documentation"]
+        direction TB
+        D1["Java API Specifications"]
+        D2["KubeJS Integration Plugin"]
+        D3["Quest Engine Profiler"]
+        D4["Dev Utilities & Tooling - Reset, Delete, Force-Complete"]
+        D5["Inventory & Performance Engine - Fingerprint Hash & AE2 Handling"]
+    end
+
+    subgraph PackDev_Dev ["Packdev & Dev Documentation"]
+        direction TB
+        PD1["Theming Systems - Theme Editor, Shaders, Backgrounds"]
+        PD2["Dynamic Theming - Conditional Sidebar & Category Themes"]
+        PD3["Optional Mod Compatibility - Phantasia, PhoenixCore, Phoenix Domains"]
+    end
+
+    subgraph PackDev_Player ["Packdev & Player Documentation"]
+        direction TB
+        PP1["In-Game Quest Editor"]
+        PP2["Popup Editor Window"]
+        PP3["Search System"]
+        PP4["Settings Page Overview"]
+    end
+
+    subgraph Player ["Player-Facing Documentation"]
+        direction TB
+        PL1["Quest Viewers - Fullscreen vs. Compact View"]
+        PL2["UI Panels - Minimap, Stats, & Subgraph"]
+    end
+
+    subgraph Future ["Engine & Porting Milestones"]
+        direction TB
+        M1["In-Game Wiki Engine - Bundled In-Game Docs"]
+        M2["Port to Minecraft 1.21.1"]
+        M3["Port to GregTech Modern 8.0"]
+    end
+
+%% Dependency & Progression Flow
+P1 --> P2 --> P3
+P1 --> P8
+P4 --> P5
+P6 --> P7
+P9 --> P10
+P12 --> M1
+
+    D1 --> D2
+    D3 --> D5
+
+    PD1 --> PD2
+
+    PP1 --> PP2
+
+%% Target Milestones Unlocks
+P12 --> M1
+D5 --> M2
+PD3 --> M3
+
+%% Apply Classes
+class P1,P2,P3,P4,P5,P6,P7,P8,P9,P10,P11,P12 planned
+class D1,D2,D3,D4,D5 planned
+class PD1,PD2,PD3 planned
+class PP1,PP2,PP3,PP4 planned
+class PL1,PL2 planned
+class M1,M2,M3 planned
 ```
 
 # Small snippt of the markdown of quests.
 
 # Credits
 - Thanks to FTBQuests for some feature ideas and things to do a bit better.
-- Thanks to Omnicron Industries (especially PlasmaticVoid) for their help in refining the project.
-- Thanks to [Jambon](https://github.com/Jambon123), FyreDragon, and KaiTheExaminer
+- Thanks to Omicron Industries (especially PlasmaticVoid) for their help in refining the project.
+- Thanks to [Jambon](https://github.com/Jambon123), FyreDrakon, and KaiTheExaminer
 for helping test out the mod and giving some suggestions.
 - Thanks to [Rose](https://github.com/Lilac-Rose) for adding porting over ftb quest player data. 
 "slanderous of ftbquestsl; stupid fucking formatting" Lilac Aria Rose; 2026

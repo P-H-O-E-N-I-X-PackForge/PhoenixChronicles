@@ -211,6 +211,13 @@ public class ParentSelectorScreen extends Screen {
         rebuildResultButtons();
     }
 
+    private int visibleDropRows() {
+        int dropY = chapterBtnY + CHAPTER_BTN_H;
+        int panelBottom = this.height - 10;
+        int maxRowsFit = Math.max(1, (panelBottom - dropY) / CHAPTER_ROW_H);
+        return Math.min(Math.min(this.availableChapters.size(), 8), maxRowsFit);
+    }
+
     private void setChapterFilter(String chapter) {
         this.chapterFilter = chapter;
         this.chapterDropdownOpen = false;
@@ -222,7 +229,7 @@ public class ParentSelectorScreen extends Screen {
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
         if (this.chapterDropdownOpen) {
-            int visibleDropRows = Math.min(this.availableChapters.size(), 8);
+            int visibleDropRows = visibleDropRows();
             int maxDropScroll = Math.max(0, this.availableChapters.size() - visibleDropRows);
             chapterDropScroll = Math.max(0, Math.min(maxDropScroll, chapterDropScroll - (int) Math.signum(delta)));
             return true;
@@ -241,7 +248,7 @@ public class ParentSelectorScreen extends Screen {
     public boolean mouseClicked(double mx, double my, int btn) {
         if (this.chapterDropdownOpen) {
             if (btn == 0) {
-                int visibleDropRows = Math.min(this.availableChapters.size(), 8);
+                int visibleDropRows = visibleDropRows();
                 int dropY = chapterBtnY + CHAPTER_BTN_H;
                 int maxDropScroll = Math.max(0, this.availableChapters.size() - visibleDropRows);
                 chapterDropScroll = Math.max(0, Math.min(maxDropScroll, chapterDropScroll));
@@ -371,7 +378,7 @@ public class ParentSelectorScreen extends Screen {
     }
 
     private void renderChapterDropdown(GuiGraphics graphics, int mouseX, int mouseY) {
-        int visibleDropRows = Math.min(this.availableChapters.size(), 8);
+        int visibleDropRows = visibleDropRows();
         int maxDropScroll = Math.max(0, this.availableChapters.size() - visibleDropRows);
         chapterDropScroll = Math.max(0, Math.min(maxDropScroll, chapterDropScroll));
 

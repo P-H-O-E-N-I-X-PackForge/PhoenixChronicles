@@ -109,8 +109,8 @@ public class QuestTasksScreen extends Screen {
     private final Player player;
 
     private int descScrollY = 0;
-    private java.util.List<net.phoenixvine.chronicles.client.rich.RichSpan.Region> richRegions = java.util.List.of();
-    private java.util.List<net.phoenixvine.chronicles.client.rich.RichBlock> descBlocks = java.util.List.of();
+    private java.util.List<net.phoenixvine.wiki.client.rich.RichSpan.Region> richRegions = java.util.List.of();
+    private java.util.List<net.phoenixvine.wiki.client.rich.RichBlock> descBlocks = java.util.List.of();
     private final java.util.Set<String> descExpandedKeys = new java.util.HashSet<>();
 
     private static final java.util.regex.Pattern DESC_PAGE_BREAK = java.util.regex.Pattern
@@ -209,9 +209,9 @@ public class QuestTasksScreen extends Screen {
             }
         }
 
-        for (net.phoenixvine.chronicles.client.rich.RichSpan.Region r : richRegions) {
+        for (net.phoenixvine.wiki.client.rich.RichSpan.Region r : richRegions) {
             if (!r.contains(mx, my)) continue;
-            if (r.span() instanceof net.phoenixvine.chronicles.client.rich.RichSpan.Tip t) {
+            if (r.span() instanceof net.phoenixvine.wiki.client.rich.RichSpan.Tip t) {
                 g.pose().pushPose();
                 g.pose().translate(0f, 0f, 500f);
                 g.flush();
@@ -221,7 +221,7 @@ public class QuestTasksScreen extends Screen {
                 g.pose().popPose();
                 break;
             }
-            if (r.span() instanceof net.phoenixvine.chronicles.client.rich.RichSpan.ItemIcon icon) {
+            if (r.span() instanceof net.phoenixvine.wiki.client.rich.RichSpan.ItemIcon icon) {
                 net.minecraft.world.item.Item item = net.minecraftforge.registries.ForgeRegistries.ITEMS
                         .getValue(icon.itemId());
                 if (item != null) {
@@ -367,11 +367,11 @@ public class QuestTasksScreen extends Screen {
 
         if (richSpansPage != descPage || !descText.equals(descBlocksSourceText)) {
             descBlocks = descText.isEmpty() ? java.util.List.of() :
-                    net.phoenixvine.chronicles.client.rich.ChronicleMarkdownParser.parse(descText);
+                    net.phoenixvine.chronicles.client.rich.ChroniclesMarkdown.parse(descText);
             richSpansPage = descPage;
             descBlocksSourceText = descText;
         }
-        java.util.List<net.phoenixvine.chronicles.client.rich.RichBlock> resolvedDescBlocks = resolveConditionals(
+        java.util.List<net.phoenixvine.wiki.client.rich.RichBlock> resolvedDescBlocks = resolveConditionals(
                 descBlocks);
 
         float compactTextScale = QuestChroniclesSettings.get()
@@ -379,7 +379,7 @@ public class QuestTasksScreen extends Screen {
         int compactLineH = Math.max(1, Math.round(10 * compactTextScale));
 
         int questDescLineCount = resolvedDescBlocks.isEmpty() ? 0 :
-                (net.phoenixvine.chronicles.client.rich.ChronicleRichTextRenderer.measureBlocksHeight(
+                (net.phoenixvine.wiki.client.rich.WikiRichTextRenderer.measureBlocksHeight(
                         font, resolvedDescBlocks, cardW() - CARD_PAD * 2, compactTextScale, descExpandedKeys) +
                         compactLineH - 1) / compactLineH;
 
@@ -499,7 +499,7 @@ public class QuestTasksScreen extends Screen {
 
             g.enableScissor(cardX, cy + 1, cardX + cardW(), cy + descH - 1);
 
-            richRegions = net.phoenixvine.chronicles.client.rich.ChronicleRichTextRenderer.renderBlocks(
+            richRegions = net.phoenixvine.wiki.client.rich.WikiRichTextRenderer.renderBlocks(
                     g, font, resolvedDescBlocks,
                     cardX + CARD_PAD, cy + 4, cardW() - CARD_PAD * 2,
 
@@ -1059,12 +1059,12 @@ public class QuestTasksScreen extends Screen {
 
         if (richSpansPage != descPage || !descRaw.equals(descBlocksSourceText)) {
             descBlocks = descRaw.isEmpty() ? java.util.List.of() :
-                    net.phoenixvine.chronicles.client.rich.ChronicleMarkdownParser.parse(descRaw);
+                    net.phoenixvine.chronicles.client.rich.ChroniclesMarkdown.parse(descRaw);
             richSpansPage = descPage;
             descBlocksSourceText = descRaw;
         }
 
-        java.util.List<net.phoenixvine.chronicles.client.rich.RichBlock> resolvedDescBlocks = resolveConditionals(
+        java.util.List<net.phoenixvine.wiki.client.rich.RichBlock> resolvedDescBlocks = resolveConditionals(
                 descBlocks);
         if (isEditMode && descRaw.isEmpty() && descBlocks.isEmpty()) {
             g.drawString(font, "§8Click to add a description", x, y, C_TEXT_FAINT, false);
@@ -1072,12 +1072,12 @@ public class QuestTasksScreen extends Screen {
 
         float textScale = QuestChroniclesSettings.get().getTextScaleMultiplier();
 
-        int descContentH = net.phoenixvine.chronicles.client.rich.ChronicleRichTextRenderer.measureBlocksHeight(font,
+        int descContentH = net.phoenixvine.wiki.client.rich.WikiRichTextRenderer.measureBlocksHeight(font,
                 resolvedDescBlocks, w, textScale, descExpandedKeys);
         fsDescMaxScrollY = Math.max(0, descContentH - (textBottom - y));
         if (descScrollY > fsDescMaxScrollY) descScrollY = fsDescMaxScrollY;
 
-        richRegions = net.phoenixvine.chronicles.client.rich.ChronicleRichTextRenderer.renderBlocks(
+        richRegions = net.phoenixvine.wiki.client.rich.WikiRichTextRenderer.renderBlocks(
                 g, font, resolvedDescBlocks, x, y, w, descScrollY, y, textBottom, textScale, C_ACTIVE,
                 descExpandedKeys);
 
@@ -1105,46 +1105,46 @@ public class QuestTasksScreen extends Screen {
         if (pagerH > 0) renderDescPager(g, x, textBottom, w, pagerH, mx, my, descPages.size());
     }
 
-    private java.util.List<net.phoenixvine.chronicles.client.rich.RichBlock> resolveConditionals(
-                                                                                                 java.util.List<net.phoenixvine.chronicles.client.rich.RichBlock> blocks) {
-        java.util.List<net.phoenixvine.chronicles.client.rich.RichBlock> out = new java.util.ArrayList<>(blocks.size());
-        for (net.phoenixvine.chronicles.client.rich.RichBlock b : blocks) {
-            if (b instanceof net.phoenixvine.chronicles.client.rich.RichBlock.ConditionalSection cs) {
+    private java.util.List<net.phoenixvine.wiki.client.rich.RichBlock> resolveConditionals(
+                                                                                                 java.util.List<net.phoenixvine.wiki.client.rich.RichBlock> blocks) {
+        java.util.List<net.phoenixvine.wiki.client.rich.RichBlock> out = new java.util.ArrayList<>(blocks.size());
+        for (net.phoenixvine.wiki.client.rich.RichBlock b : blocks) {
+            if (b instanceof net.phoenixvine.chronicles.client.rich.ChroniclesConditionalSection cs) {
                 boolean met = ConditionEvaluator.evaluate(cs.condition(),
                         this::isConditionMet);
                 out.addAll(resolveConditionals(met ? cs.thenChildren() : cs.elseChildren()));
-            } else if (b instanceof net.phoenixvine.chronicles.client.rich.RichBlock.Callout c) {
-                out.add(new net.phoenixvine.chronicles.client.rich.RichBlock.Callout(c.type(), c.title(),
+            } else if (b instanceof net.phoenixvine.wiki.client.rich.RichBlock.Callout c) {
+                out.add(new net.phoenixvine.wiki.client.rich.RichBlock.Callout(c.type(), c.title(),
                         resolveConditionals(c.children())));
-            } else if (b instanceof net.phoenixvine.chronicles.client.rich.RichBlock.Details d) {
-                out.add(new net.phoenixvine.chronicles.client.rich.RichBlock.Details(d.expandKey(), d.title(),
+            } else if (b instanceof net.phoenixvine.wiki.client.rich.RichBlock.Details d) {
+                out.add(new net.phoenixvine.wiki.client.rich.RichBlock.Details(d.expandKey(), d.title(),
                         resolveConditionals(d.children())));
-            } else if (b instanceof net.phoenixvine.chronicles.client.rich.RichBlock.CollapsibleSection s) {
-                out.add(new net.phoenixvine.chronicles.client.rich.RichBlock.CollapsibleSection(s.level(),
+            } else if (b instanceof net.phoenixvine.wiki.client.rich.RichBlock.CollapsibleSection s) {
+                out.add(new net.phoenixvine.wiki.client.rich.RichBlock.CollapsibleSection(s.level(),
                         resolveSpans(s.headingSpans()), s.collapseKey(), resolveConditionals(s.children())));
-            } else if (b instanceof net.phoenixvine.chronicles.client.rich.RichBlock.Heading h) {
-                out.add(new net.phoenixvine.chronicles.client.rich.RichBlock.Heading(h.level(),
+            } else if (b instanceof net.phoenixvine.wiki.client.rich.RichBlock.Heading h) {
+                out.add(new net.phoenixvine.wiki.client.rich.RichBlock.Heading(h.level(),
                         resolveSpans(h.spans()), h.collapsible()));
-            } else if (b instanceof net.phoenixvine.chronicles.client.rich.RichBlock.Paragraph p) {
-                out.add(new net.phoenixvine.chronicles.client.rich.RichBlock.Paragraph(resolveSpans(p.spans())));
-            } else if (b instanceof net.phoenixvine.chronicles.client.rich.RichBlock.ListItem li) {
-                out.add(new net.phoenixvine.chronicles.client.rich.RichBlock.ListItem(li.marker(), li.indent(),
+            } else if (b instanceof net.phoenixvine.wiki.client.rich.RichBlock.Paragraph p) {
+                out.add(new net.phoenixvine.wiki.client.rich.RichBlock.Paragraph(resolveSpans(p.spans())));
+            } else if (b instanceof net.phoenixvine.wiki.client.rich.RichBlock.ListItem li) {
+                out.add(new net.phoenixvine.wiki.client.rich.RichBlock.ListItem(li.marker(), li.indent(),
                         resolveSpans(li.spans())));
-            } else if (b instanceof net.phoenixvine.chronicles.client.rich.RichBlock.Checklist cl) {
-                out.add(new net.phoenixvine.chronicles.client.rich.RichBlock.Checklist(cl.checkKey(),
+            } else if (b instanceof net.phoenixvine.wiki.client.rich.RichBlock.Checklist cl) {
+                out.add(new net.phoenixvine.wiki.client.rich.RichBlock.Checklist(cl.checkKey(),
                         cl.checkedDefault(), cl.indent(), resolveSpans(cl.spans())));
-            } else if (b instanceof net.phoenixvine.chronicles.client.rich.RichBlock.Quote q) {
-                out.add(new net.phoenixvine.chronicles.client.rich.RichBlock.Quote(resolveSpans(q.spans())));
-            } else if (b instanceof net.phoenixvine.chronicles.client.rich.RichBlock.Table t) {
-                java.util.List<java.util.List<net.phoenixvine.chronicles.client.rich.RichSpan>> header = new java.util.ArrayList<>();
+            } else if (b instanceof net.phoenixvine.wiki.client.rich.RichBlock.Quote q) {
+                out.add(new net.phoenixvine.wiki.client.rich.RichBlock.Quote(resolveSpans(q.spans())));
+            } else if (b instanceof net.phoenixvine.wiki.client.rich.RichBlock.Table t) {
+                java.util.List<java.util.List<net.phoenixvine.wiki.client.rich.RichSpan>> header = new java.util.ArrayList<>();
                 for (var cell : t.header()) header.add(resolveSpans(cell));
-                java.util.List<java.util.List<java.util.List<net.phoenixvine.chronicles.client.rich.RichSpan>>> rows = new java.util.ArrayList<>();
+                java.util.List<java.util.List<java.util.List<net.phoenixvine.wiki.client.rich.RichSpan>>> rows = new java.util.ArrayList<>();
                 for (var row : t.rows()) {
-                    java.util.List<java.util.List<net.phoenixvine.chronicles.client.rich.RichSpan>> newRow = new java.util.ArrayList<>();
+                    java.util.List<java.util.List<net.phoenixvine.wiki.client.rich.RichSpan>> newRow = new java.util.ArrayList<>();
                     for (var cell : row) newRow.add(resolveSpans(cell));
                     rows.add(newRow);
                 }
-                out.add(new net.phoenixvine.chronicles.client.rich.RichBlock.Table(header, rows));
+                out.add(new net.phoenixvine.wiki.client.rich.RichBlock.Table(header, rows));
             } else {
                 out.add(b);
             }
@@ -1152,36 +1152,44 @@ public class QuestTasksScreen extends Screen {
         return out;
     }
 
-    private java.util.List<net.phoenixvine.chronicles.client.rich.RichSpan> resolveSpans(
-                                                                                         java.util.List<net.phoenixvine.chronicles.client.rich.RichSpan> spans) {
+    private java.util.List<net.phoenixvine.wiki.client.rich.RichSpan> resolveSpans(
+                                                                                         java.util.List<net.phoenixvine.wiki.client.rich.RichSpan> spans) {
         boolean anyConditional = false;
-        for (net.phoenixvine.chronicles.client.rich.RichSpan s : spans) {
-            if (s instanceof net.phoenixvine.chronicles.client.rich.RichSpan.ConditionalTip) {
+        for (net.phoenixvine.wiki.client.rich.RichSpan s : spans) {
+            if (s instanceof net.phoenixvine.wiki.client.rich.RichSpan.ConditionalTip) {
                 anyConditional = true;
                 break;
             }
         }
         if (!anyConditional) return spans;
 
-        java.util.List<net.phoenixvine.chronicles.client.rich.RichSpan> out = new java.util.ArrayList<>(spans.size());
-        for (net.phoenixvine.chronicles.client.rich.RichSpan s : spans) {
-            out.add(s instanceof net.phoenixvine.chronicles.client.rich.RichSpan.ConditionalTip ct ?
+        java.util.List<net.phoenixvine.wiki.client.rich.RichSpan> out = new java.util.ArrayList<>(spans.size());
+        for (net.phoenixvine.wiki.client.rich.RichSpan s : spans) {
+            out.add(s instanceof net.phoenixvine.wiki.client.rich.RichSpan.ConditionalTip ct ?
                     resolveConditionalTip(ct) : s);
         }
         return out;
     }
 
-    private net.phoenixvine.chronicles.client.rich.RichSpan resolveConditionalTip(
-                                                                                  net.phoenixvine.chronicles.client.rich.RichSpan.ConditionalTip ct) {
-        for (net.phoenixvine.chronicles.client.rich.RichSpan.TipCandidate candidate : ct.candidates()) {
-            if (candidate.condition() == null || ConditionEvaluator
-                    .evaluate(candidate.condition(), this::isConditionMet)) {
-                return new net.phoenixvine.chronicles.client.rich.RichSpan.Tip(ct.label(), ct.style(),
+    private net.phoenixvine.wiki.client.rich.RichSpan resolveConditionalTip(
+                                                                                  net.phoenixvine.wiki.client.rich.RichSpan.ConditionalTip ct) {
+        for (net.phoenixvine.wiki.client.rich.RichSpan.TipCandidate candidate : ct.candidates()) {
+            String expr = candidate.conditionExpr();
+            if (expr == null || expr.isBlank()) {
+                return new net.phoenixvine.wiki.client.rich.RichSpan.Tip(ct.label(), ct.style(),
                         candidate.tooltip());
             }
+            try {
+                if (ConditionEvaluator.evaluate(
+                        net.phoenixvine.chronicles.common.condition.ConditionExprParser.parse(expr),
+                        this::isConditionMet)) {
+                    return new net.phoenixvine.wiki.client.rich.RichSpan.Tip(ct.label(), ct.style(),
+                            candidate.tooltip());
+                }
+            } catch (net.phoenixvine.chronicles.common.condition.ConditionSyntaxException ignored) {}
         }
 
-        return new net.phoenixvine.chronicles.client.rich.RichSpan.Text(ct.label(), ct.style());
+        return new net.phoenixvine.wiki.client.rich.RichSpan.Text(ct.label(), ct.style());
     }
 
     private boolean isConditionMet(String type, String value) {
@@ -1966,18 +1974,18 @@ public class QuestTasksScreen extends Screen {
 
         if (richSpansPage != descPage || !descText.equals(descBlocksSourceText)) {
             descBlocks = descText.isEmpty() ? java.util.List.of() :
-                    net.phoenixvine.chronicles.client.rich.ChronicleMarkdownParser.parse(descText);
+                    net.phoenixvine.chronicles.client.rich.ChroniclesMarkdown.parse(descText);
             richSpansPage = descPage;
             descBlocksSourceText = descText;
         }
-        java.util.List<net.phoenixvine.chronicles.client.rich.RichBlock> resolvedDescBlocks = resolveConditionals(
+        java.util.List<net.phoenixvine.wiki.client.rich.RichBlock> resolvedDescBlocks = resolveConditionals(
                 descBlocks);
 
         float compactTextScale = QuestChroniclesSettings.get().getTextScaleMultiplier();
         int compactLineH = Math.max(1, Math.round(10 * compactTextScale));
 
         int questDescLineCount = resolvedDescBlocks.isEmpty() ? 0 :
-                (net.phoenixvine.chronicles.client.rich.ChronicleRichTextRenderer.measureBlocksHeight(
+                (net.phoenixvine.wiki.client.rich.WikiRichTextRenderer.measureBlocksHeight(
                         font, resolvedDescBlocks, cardW() - CARD_PAD * 2, compactTextScale, descExpandedKeys) +
                         compactLineH - 1) / compactLineH;
 
@@ -2012,9 +2020,9 @@ public class QuestTasksScreen extends Screen {
             return true;
         }
 
-        for (net.phoenixvine.chronicles.client.rich.RichSpan.Region r : richRegions) {
+        for (net.phoenixvine.wiki.client.rich.RichSpan.Region r : richRegions) {
             if (r.contains(mx, my)) {
-                if (r.span() instanceof net.phoenixvine.chronicles.client.rich.RichSpan.Link l) {
+                if (r.span() instanceof net.phoenixvine.wiki.client.rich.RichSpan.Link l) {
                     if (!l.url().startsWith("wiki:")) {
                         try {
                             net.minecraft.Util.getPlatform().openUri(java.net.URI.create(l.url()));
@@ -2025,15 +2033,15 @@ public class QuestTasksScreen extends Screen {
                     }
                     return true;
                 }
-                if (r.span() instanceof net.phoenixvine.chronicles.client.rich.RichSpan.CodeCopy cc) {
+                if (r.span() instanceof net.phoenixvine.wiki.client.rich.RichSpan.CodeCopy cc) {
                     if (minecraft != null) minecraft.keyboardHandler.setClipboard(cc.code());
                     return true;
                 }
-                if (r.span() instanceof net.phoenixvine.chronicles.client.rich.RichSpan.DetailsToggle dt) {
+                if (r.span() instanceof net.phoenixvine.wiki.client.rich.RichSpan.DetailsToggle dt) {
                     if (!descExpandedKeys.remove(dt.key())) descExpandedKeys.add(dt.key());
                     return true;
                 }
-                if (r.span() instanceof net.phoenixvine.chronicles.client.rich.RichSpan.ChecklistToggle ct) {
+                if (r.span() instanceof net.phoenixvine.wiki.client.rich.RichSpan.ChecklistToggle ct) {
                     boolean current = descExpandedKeys.contains("CL1:" + ct.key()) ||
                             !descExpandedKeys.contains("CL0:" + ct.key()) && ct.checkedDefault();
                     boolean next = !current;
@@ -2247,9 +2255,9 @@ public class QuestTasksScreen extends Screen {
             }
         }
 
-        for (net.phoenixvine.chronicles.client.rich.RichSpan.Region r : richRegions) {
+        for (net.phoenixvine.wiki.client.rich.RichSpan.Region r : richRegions) {
             if (r.contains(mx, my)) {
-                if (r.span() instanceof net.phoenixvine.chronicles.client.rich.RichSpan.Link l) {
+                if (r.span() instanceof net.phoenixvine.wiki.client.rich.RichSpan.Link l) {
                     if (!l.url().startsWith("wiki:")) {
                         try {
                             net.minecraft.Util.getPlatform().openUri(java.net.URI.create(l.url()));
@@ -2260,15 +2268,15 @@ public class QuestTasksScreen extends Screen {
                     }
                     return true;
                 }
-                if (r.span() instanceof net.phoenixvine.chronicles.client.rich.RichSpan.CodeCopy cc) {
+                if (r.span() instanceof net.phoenixvine.wiki.client.rich.RichSpan.CodeCopy cc) {
                     if (minecraft != null) minecraft.keyboardHandler.setClipboard(cc.code());
                     return true;
                 }
-                if (r.span() instanceof net.phoenixvine.chronicles.client.rich.RichSpan.DetailsToggle dt) {
+                if (r.span() instanceof net.phoenixvine.wiki.client.rich.RichSpan.DetailsToggle dt) {
                     if (!descExpandedKeys.remove(dt.key())) descExpandedKeys.add(dt.key());
                     return true;
                 }
-                if (r.span() instanceof net.phoenixvine.chronicles.client.rich.RichSpan.ChecklistToggle ct) {
+                if (r.span() instanceof net.phoenixvine.wiki.client.rich.RichSpan.ChecklistToggle ct) {
                     boolean current = descExpandedKeys.contains("CL1:" + ct.key()) ||
                             !descExpandedKeys.contains("CL0:" + ct.key()) && ct.checkedDefault();
                     boolean next = !current;
