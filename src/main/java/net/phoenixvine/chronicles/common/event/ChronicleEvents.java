@@ -846,10 +846,6 @@ public class ChronicleEvents {
 
             QuestProgressTracker.autoUnlockSatisfiedQuests(fsp);
 
-            // A bulk import can flip hundreds of quests at once - route this through the same
-            // silent full-resync path used for respawn/dimension-change (initialSync=true) instead
-            // of QuestProgressTracker.sendProgressSync's per-quest diff, which would otherwise queue
-            // a completion toast + sound for every single ported quest all at once.
             ChronicleNetwork.CHANNEL.send(PacketDistributor.PLAYER.with(() -> fsp),
                     new S2CSyncPlayerProgressPacket(data, true));
         });

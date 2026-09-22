@@ -16,28 +16,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 
-/**
- * Ports a player's completed-quest progress from an FTB Quests save into Phoenix Chronicles,
- * for a world where the quest tree itself was already brought over via {@link FtbQuestsImporter}.
- *
- * <p>
- * Scope is deliberately conservative: only fully <b>completed</b> FTB quests are ported (state
- * -&gt; COMPLETED, with the original completion timestamp preserved, and rewards marked claimed if
- * they were claimed in FTB). In-progress ("started" but not completed) FTB quests are left alone -
- * many Chronicles task types re-derive completion live from inventory/world state rather than
- * storing a counter, so faking partial progress risks an inconsistent state. Chronicles' own
- * prerequisite-unlock sweep naturally opens those back up once their prerequisites are satisfied by
- * the completions this importer does port.
- *
- * <p>
- * Matching FTB's random hex quest IDs to Chronicles' own generated IDs doesn't rely on
- * re-deriving {@link FtbQuestsImporter}'s title-slugging (fragile - depends on lang-key resolution
- * and collision order that isn't reproducible after the fact). Instead this recomputes the same
- * deterministic position transform {@code FtbQuestsImporter} used when placing each quest
- * (positionX/Y = round((raw_x - chapterMinX + 2) * 80), chapterMinX/Y being the minimum x/y across
- * that chapter's quests AND quest_links) and matches live {@link QuestNode}s by
- * (chapter, positionX, positionY), which is exact.
- */
 public final class FtbProgressImporter {
 
     private static final float COORD_SCALE = 80f;
@@ -66,7 +44,7 @@ public final class FtbProgressImporter {
         }
 
         List<OrigQuest> origQuests = new ArrayList<>();
-        Map<String, double[]> chapterBounds = new HashMap<>(); // chapter -> [minX, minY]
+        Map<String, double[]> chapterBounds = new HashMap<>(); 
 
         List<Path> chapterFiles;
         try (var stream = Files.list(ftbChaptersDir)) {
@@ -125,8 +103,6 @@ public final class FtbProgressImporter {
             }
         }
 
-        // Live quest tree, indexed by (chapter, positionX, positionY). Link stubs are skipped -
-        // they mirror their target's state and have no independent completion of their own.
         Map<PosKey, QuestNode> liveByPos = new HashMap<>();
         for (QuestNode node : QuestTreeRegistry.getAllQuests().values()) {
             if (node.isLinkStub()) continue;

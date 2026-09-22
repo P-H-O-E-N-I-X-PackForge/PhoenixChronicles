@@ -106,9 +106,7 @@ public class CanvasViewport {
 
         int canvasW = cr - cl;
         int canvasH = height - headerH;
-        // Zoom-to-cursor is the default; holding CURSOR_ZOOM inverts to zoom-to-center. Kept in sync
-        // with ChronicleOverviewScreen#handleCanvasZoomScroll, the actual live implementation -- this
-        // class isn't currently instantiated anywhere, but shouldn't disagree if it ever is.
+
         boolean cursorAnchored = !ChronicleKeyBindings.CURSOR_ZOOM.isDown();
         float anchorX = cursorAnchored ? (float) mx - cl : canvasW / 2f;
         float anchorY = cursorAnchored ? (float) my - headerH : canvasH / 2f;
