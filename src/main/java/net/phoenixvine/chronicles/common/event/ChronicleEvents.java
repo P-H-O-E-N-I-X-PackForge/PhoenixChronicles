@@ -902,6 +902,40 @@ public class ChronicleEvents {
         return added;
     }
 
+    /**
+     * True if {@code dir} directly contains at least one {@code .snbt} file - mirrors the scan
+     * {@link net.phoenixvine.chronicles.capability.importer.FtbQuestsImporter#importDirectory}
+     * itself performs, so this can be used to decide whether a manually-curated staging folder
+     * actually has anything in it.
+     */
+    private static boolean hasSnbtFiles(java.nio.file.Path dir) {
+        if (!java.nio.file.Files.isDirectory(dir)) return false;
+        try (var stream = java.nio.file.Files.list(dir)) {
+            return stream.anyMatch(p -> !java.nio.file.Files.isDirectory(p) &&
+                    p.getFileName().toString().toLowerCase(java.util.Locale.ROOT).endsWith(".snbt"));
+        } catch (java.io.IOException e) {
+            return false;
+        }
+    }
+
+    /**
+     * Locates FTB Quests' own {@code quests/chapters} folder directly, the same way
+     * {@link #resolveConfigDir} locates Chronicles' own data: prefer a world-specific copy if
+     * present, otherwise fall back to the instance-wide config folder. Letting the importer read
+     * straight from here means players don't have to manually copy chapter files into
+     * {@code ftb_import} before running the command.
+     */
+    private static java.nio.file.Path resolveFtbQuestsChaptersDir(MinecraftServer server) {
+        try {
+            java.nio.file.Path worldSpecific = server
+                    .getWorldPath(net.minecraft.world.level.storage.LevelResource.ROOT)
+                    .resolve("ftbquests").resolve("quests").resolve("chapters");
+            if (java.nio.file.Files.isDirectory(worldSpecific)) return worldSpecific;
+        } catch (Exception ignored) {}
+        return server.getServerDirectory().toPath().resolve("config").resolve("ftbquests").resolve("quests")
+                .resolve("chapters");
+    }
+
     private static int doImportFtb(com.mojang.brigadier.context.CommandContext<net.minecraft.commands.CommandSourceStack> ctx,
                                    String subfolder) {
         MinecraftServer server = getCachedServer();
@@ -910,7 +944,18 @@ public class ChronicleEvents {
             return 0;
         }
         java.nio.file.Path configDir = resolveConfigDir(server);
-        java.nio.file.Path importDir = configDir.resolve(subfolder);
+        java.nio.file.Path resolvedImportDir = configDir.resolve(subfolder);
+
+        // Default invocation with nothing manually staged: read straight from FTB Quests' own
+        // folder instead of making the player copy files into ftb_import first. An explicit
+        // subfolder argument, or a non-empty ftb_import, is always honored as-is so curated
+        // subsets still work.
+        if ("ftb_import".equals(subfolder) && !hasSnbtFiles(resolvedImportDir)) {
+            java.nio.file.Path autoDetected = resolveFtbQuestsChaptersDir(server);
+            if (hasSnbtFiles(autoDetected)) resolvedImportDir = autoDetected;
+        }
+        final java.nio.file.Path importDir = resolvedImportDir;
+
         if (!java.nio.file.Files.exists(importDir)) {
             ctx.getSource().sendFailure(Component.literal(
                     "FTB import folder not found: §7" + importDir +
