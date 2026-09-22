@@ -173,12 +173,12 @@ dependencies {
     modRuntimeOnly("top.theillusivec4.curios:curios-forge:${curios_version}")
 
     modRuntimeOnly("dev.ftb.mods:ftb-library-forge:${ftblibrary_version}")
-    modRuntimeOnly("dev.ftb.mods:ftb-teams-forge:${ftbteams_version}")
+  //  modRuntimeOnly("dev.ftb.mods:ftb-teams-forge:${ftbteams_version}")
 
-    modCompileOnly('curse.maven:phoenix-guilds-1612085:8743646')
-    modRuntimeOnly("curse.maven:phoenix-guilds-1612085:8743646")
+    modCompileOnly('net.phoenixvine.guilds:phoenix_guilds:1.6.1')
+    modRuntimeOnly('net.phoenixvine.guilds:phoenix_guilds:1.6.1')
 
-    jarJar(modImplementation("net.phoenixvine.wiki:phoenix_wiki:0.2.8"))
+    jarJar(modImplementation("net.phoenixvine.wiki:phoenix_wiki:0.3.3"))
 
     modCompileOnly("net.phoenix.phoenix_archive:phoenix_archive:${phoenix_archive_version}")
     modRuntimeOnly("net.phoenix.phoenix_archive:phoenix_archive:${phoenix_archive_version}")

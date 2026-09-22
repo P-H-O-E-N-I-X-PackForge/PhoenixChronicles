@@ -1921,12 +1921,16 @@ public class TaskRewardEditorScreen extends Screen {
 
         int ry = boxOptionsListY;
         int end = Math.min(boxOptions.size(), boxOptionsScroll + visibleRows);
+        int hoveredRowY = -1;
         for (int i = boxOptionsScroll; i < end; i++) {
             QuestReward opt = boxOptions.get(i);
             boolean hov = mx >= boxOptionsListX && mx < boxOptionsListX + boxOptionsListW &&
                     my >= ry && my < ry + BOX_OPTION_ROW_H;
-            if (hov) g.fill(boxOptionsListX, ry, boxOptionsListX + boxOptionsListW, ry + BOX_OPTION_ROW_H,
-                    C_ROW_HOVER);
+            if (hov) {
+                g.fill(boxOptionsListX, ry, boxOptionsListX + boxOptionsListW, ry + BOX_OPTION_ROW_H,
+                        C_ROW_HOVER);
+                hoveredRowY = ry;
+            }
 
             String label = opt.getSummary().getString();
             int maxW = boxOptionsListW - 12;
@@ -1946,6 +1950,18 @@ public class TaskRewardEditorScreen extends Screen {
             if (boxOptionsScroll < maxScroll)
                 g.drawString(font, "§8▼", boxOptionsListX + boxOptionsListW - 9, boxOptionsListBottom + 1,
                         C_TEXT_FAINT, false);
+        }
+
+        if (hoveredRowY >= 0) {
+            String tip = "Right-click to edit";
+            int tipW = font.width(tip) + 8;
+            int tipH = 14;
+            int tipX = Math.min(mx + 10, boxOptionsListX + boxOptionsListW - tipW);
+            tipX = Math.max(tipX, 0);
+            int tipY = my + 12;
+            g.fill(tipX, tipY, tipX + tipW, tipY + tipH, C_TOOLTIP_BG);
+            drawBorder(g, tipX, tipY, tipW, tipH, C_ACCENT);
+            g.drawString(font, "§f" + tip, tipX + 4, tipY + 3, 0xFFFFFFFF, false);
         }
     }
 }

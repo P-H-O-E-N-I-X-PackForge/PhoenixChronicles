@@ -180,8 +180,6 @@ public class SettingsScreen extends Screen {
             case GENERAL -> {
                 rows.add(Row.cycle("§fText Scale", TextScale.class, settings::getTextScale, settings::setTextScale)
                         .tip("Scales all quest text and UI labels up or down."));
-                rows.add(Row.cycle("§fTheme", Theme.class, settings::getTheme, settings::setTheme)
-                        .tip("Switches the built-in color theme. Use the Theme Editor below to\ncreate or tweak your own."));
                 rows.add(Row.cycle("§fLayout Density", Density.class, settings::getDensity, settings::setDensity)
                         .tip("Controls spacing between quest nodes and UI rows -\ntighter for more on screen, looser for readability."));
                 rows.add(Row.toggle("§fReduce Motion", settings::isReduceMotion, settings::setReduceMotion)

@@ -1241,7 +1241,7 @@ public class ChronicleOverviewScreen extends Screen
 
         if (oldPosZoom != newPosZoom) {
             int canvasW = cr - cl, canvasH = height - HEADER_H;
-            // Zoom-to-cursor is the default; holding CURSOR_ZOOM inverts to the old zoom-to-center.
+            
             boolean cursorAnchored = !ChronicleKeyBindings.CURSOR_ZOOM.isDown();
             float anchorX = cursorAnchored ? (float) mx - cl : canvasW / 2f;
             float anchorY = cursorAnchored ? (float) my - HEADER_H : canvasH / 2f;
@@ -1768,8 +1768,9 @@ public class ChronicleOverviewScreen extends Screen
                 }
             }
 
-            if (hit == null && hitGrp == null) {
-                depLineRenderer.tryOpenContextMenuAt((int) mx, (int) my, 6);
+            if (hit == null && hitGrp == null && depLineRenderer.tryOpenContextMenuAt((int) mx, (int) my, 6)) {
+
+                return true;
             }
             openCtx((int) mx, (int) my, hit, hitGrp);
             return true;

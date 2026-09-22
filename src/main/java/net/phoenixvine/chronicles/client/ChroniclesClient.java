@@ -43,9 +43,10 @@ public class ChroniclesClient {
     }
 
     private static void registerHudBar(Minecraft mc) {
+
         ResourceLocation iconPath = ResourceLocation.fromNamespaceAndPath(
                 MOD_ID,
-                "textures/item/chronicles_quest_book.png");
+                "textures/gui/chronicles_quest_book_icon.png");
 
         SuiteHudBar.register(
                 MOD_ID,
@@ -55,7 +56,7 @@ public class ChroniclesClient {
                 () -> 1,
                 () -> mc.setScreen(new ChronicleOverviewScreen(mc.screen)),
                 16,
-                128,
+                16,
                 false);
     }
 }

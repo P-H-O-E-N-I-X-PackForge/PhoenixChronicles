@@ -17,8 +17,6 @@ import net.phoenixvine.chronicles.common.model.QuestNode;
 import net.phoenixvine.chronicles.common.model.QuestState;
 import net.phoenixvine.chronicles.common.registry.QuestTreeRegistry;
 import net.phoenixvine.chronicles.common.tracker.QuestProgressTracker;
-import net.phoenixvine.guilds.data.Guild;
-import net.phoenixvine.guilds.data.GuildManager;
 
 import com.mojang.authlib.GameProfile;
 import org.jetbrains.annotations.NotNull;
@@ -58,8 +56,7 @@ public class QuestProgressGameTests {
             helper.assertTrue(QuestProgressTracker.getQuestState(player, gate) == QuestState.COMPLETED,
                     "gate should be COMPLETED after changeQuestState");
             helper.assertTrue(QuestProgressTracker.getQuestState(player, dependent) == QuestState.UNLOCKED,
-                    "completing the prerequisite should cascade-unlock the dependent quest " +
-                            "(processChildCascades)");
+                    "completing the prerequisite should cascade-unlock the dependent quest");
 
             helper.succeed();
         } finally {
@@ -98,15 +95,13 @@ public class QuestProgressGameTests {
         String flagName = "gametest_has_nether_star";
 
         try {
-
             PhoenixQuestFlags.setFlag(flagName, false);
             PhoenixQuestFlags.setFlagForPlayer(alice, flagName, true);
 
             helper.assertTrue(PhoenixQuestFlags.evaluate("flag:" + flagName, null, alice),
                     "the player the flag was set for should see it as true");
             helper.assertTrue(!PhoenixQuestFlags.evaluate("flag:" + flagName, null, bob),
-                    "a different, unrelated player must NOT see a flag scoped to someone else's " +
-                            "team/player key -- this is the exact leak the team-scoped flag storage exists to prevent");
+                    "a different, unrelated player must NOT see a flag scoped to someone else's team/player key");
 
             helper.succeed();
         } finally {
@@ -118,40 +113,43 @@ public class QuestProgressGameTests {
     @GameTest(template = "gametest_empty", timeoutTicks = 200)
     public static void guildMembersShareAScopedFlagButOutsidersDont(@NotNull GameTestHelper helper) {
         if (!ModList.get().isLoaded("phoenix_guilds")) {
-            helper.succeed();
+            helper.succeed(); 
             return;
         }
 
-        ServerLevel overworld = helper.getLevel().getServer().overworld();
-        GuildManager guilds = GuildManager.get(overworld);
-        String flagName = "gametest_guild_researched_reactor";
+        GuildTestCompat.runGuildFlagTest(helper);
+    }
 
-        ServerPlayer alice = FakePlayerFactory.get(overworld, new GameProfile(UUID.randomUUID(), "gametest-alice"));
-        ServerPlayer bob = FakePlayerFactory.get(overworld, new GameProfile(UUID.randomUUID(), "gametest-bob"));
-        ServerPlayer outsider = FakePlayerFactory.get(overworld, new GameProfile(UUID.randomUUID(),
-                "gametest-outsider"));
+    private static class GuildTestCompat {
+        static void runGuildFlagTest(@NotNull GameTestHelper helper) {
+            ServerLevel overworld = helper.getLevel().getServer().overworld();
+            net.phoenixvine.guilds.data.GuildManager guilds = net.phoenixvine.guilds.data.GuildManager.get(overworld);
+            String flagName = "gametest_guild_researched_reactor";
 
-        Guild guild = guilds.createGuild("GameTestGuild-" + UUID.randomUUID(), alice.getUUID());
-        guilds.addMember(guild.getId(), bob.getUUID());
+            ServerPlayer alice = FakePlayerFactory.get(overworld, new GameProfile(UUID.randomUUID(), "gametest-alice"));
+            ServerPlayer bob = FakePlayerFactory.get(overworld, new GameProfile(UUID.randomUUID(), "gametest-bob"));
+            ServerPlayer outsider = FakePlayerFactory.get(overworld, new GameProfile(UUID.randomUUID(), "gametest-outsider"));
 
-        try {
-            PhoenixQuestFlags.setFlag(flagName, false);
-            PhoenixQuestFlags.setFlagForPlayer(alice, flagName, true);
+            net.phoenixvine.guilds.data.Guild guild = guilds.createGuild("GameTestGuild-" + UUID.randomUUID(), alice.getUUID());
+            guilds.addMember(guild.getId(), bob.getUUID());
 
-            helper.assertTrue(PhoenixQuestFlags.evaluate("flag:" + flagName, null, alice),
-                    "the player who set the flag should see it as true");
-            helper.assertTrue(PhoenixQuestFlags.evaluate("flag:" + flagName, null, bob),
-                    "a fellow guild member must see the SAME flag as true -- this is the actual " +
-                            "guild-sharing behavior (e.g. one member's research unlocking a quest for the whole guild)");
-            helper.assertTrue(!PhoenixQuestFlags.evaluate("flag:" + flagName, null, outsider),
-                    "a player in no guild (or a different one) must NOT see a flag scoped to someone " +
-                            "else's guild");
+            try {
+                PhoenixQuestFlags.setFlag(flagName, false);
+                PhoenixQuestFlags.setFlagForPlayer(alice, flagName, true);
 
-            helper.succeed();
-        } finally {
-            PhoenixQuestFlags.clearFlagForPlayer(alice, flagName);
-            PhoenixQuestFlags.clearFlag(flagName);
-            guilds.disbandGuild(guild.getId());
+                helper.assertTrue(PhoenixQuestFlags.evaluate("flag:" + flagName, null, alice),
+                        "the player who set the flag should see it as true");
+                helper.assertTrue(PhoenixQuestFlags.evaluate("flag:" + flagName, null, bob),
+                        "a fellow guild member must see the SAME flag as true");
+                helper.assertTrue(!PhoenixQuestFlags.evaluate("flag:" + flagName, null, outsider),
+                        "a player in no guild (or a different one) must NOT see a flag scoped to someone else's guild");
+
+                helper.succeed();
+            } finally {
+                PhoenixQuestFlags.clearFlagForPlayer(alice, flagName);
+                PhoenixQuestFlags.clearFlag(flagName);
+                guilds.disbandGuild(guild.getId());
+            }
         }
     }
 }

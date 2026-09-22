@@ -7,6 +7,7 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.phoenixvine.chronicles.client.render.ChroniclesThemePalette;
 import net.phoenixvine.chronicles.client.render.ChroniclesUIKit;
+import net.phoenixvine.chronicles.client.util.ChapterConfig;
 import net.phoenixvine.chronicles.common.model.CategoryDefinition;
 import net.phoenixvine.chronicles.common.model.QuestNode;
 import net.phoenixvine.chronicles.common.registry.CategoryRegistry;
@@ -16,6 +17,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.TreeSet;
 import java.util.function.Consumer;
 
 public class ParentSelectorScreen extends Screen {
@@ -33,7 +35,16 @@ public class ParentSelectorScreen extends Screen {
     private final List<Button> resultButtons = new ArrayList<>();
     private int scrollOffset = 0;
 
-    private static final int LIST_TOP = 72;
+    private String chapterFilter = "";
+    private boolean chapterDropdownOpen = false;
+    private final List<String> availableChapters = new ArrayList<>();
+    private int chapterBtnX, chapterBtnY, chapterBtnW;
+    private static final int CHAPTER_BTN_H = 16;
+    private static final int CHAPTER_ROW_H = 16;
+    private int chapterDropScroll = 0;
+
+    private static final int CHAPTER_ROW_Y = 68;
+    private static final int LIST_TOP = 92;
     private static final int ROW_STRIDE = 22;
 
     private int arrowUpX, arrowUpY, arrowUpW, arrowDownX, arrowDownY, arrowDownW, arrowH;
@@ -71,7 +82,47 @@ public class ParentSelectorScreen extends Screen {
                 this.allAvailableNodes.add(node);
             }
         }
-        this.filteredNodes.addAll(this.allAvailableNodes);
+
+        TreeSet<String> chapterSet = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+        for (QuestNode node : this.allAvailableNodes) {
+            if (node.getChapter() != null && !node.getChapter().isEmpty()) chapterSet.add(node.getChapter());
+        }
+        this.availableChapters.add("");
+        this.availableChapters.addAll(chapterSet);
+
+        if (this.editingNode != null && this.editingNode.getChapter() != null &&
+                chapterSet.contains(this.editingNode.getChapter())) {
+            this.chapterFilter = this.editingNode.getChapter();
+        }
+
+        recomputeFilteredNodes();
+    }
+
+    private String friendlyChapter(String chapter) {
+        if (chapter == null || chapter.isEmpty()) return "All Chapters";
+        String resolved = ChapterConfig.getResolvedDisplayName(chapter);
+        if (resolved != null) return resolved;
+        StringBuilder sb = new StringBuilder();
+        for (String w : chapter.toLowerCase().replace("_", " ").split(" "))
+            if (!w.isEmpty()) sb.append(Character.toUpperCase(w.charAt(0))).append(w.substring(1)).append(' ');
+        return sb.toString().trim();
+    }
+
+    private void recomputeFilteredNodes() {
+        String cleanQuery = this.pendingQuery.toLowerCase().trim();
+        this.filteredNodes.clear();
+
+        for (QuestNode node : this.allAvailableNodes) {
+            if (!this.chapterFilter.isEmpty() && !this.chapterFilter.equalsIgnoreCase(node.getChapter())) continue;
+
+            boolean matchesPath = node.getId().getPath().toLowerCase().contains(cleanQuery);
+            boolean matchesTitle = node.getTitle().getString().toLowerCase().contains(cleanQuery);
+
+            if (cleanQuery.isEmpty() || matchesPath || matchesTitle) {
+                this.filteredNodes.add(node);
+            }
+        }
+
         sortSelectedFirst();
     }
 
@@ -155,25 +206,27 @@ public class ParentSelectorScreen extends Screen {
 
     private void updateSearchFilter(String query) {
         this.pendingQuery = query;
-        String cleanQuery = query.toLowerCase().trim();
-        this.filteredNodes.clear();
+        recomputeFilteredNodes();
+        this.scrollOffset = 0;
+        rebuildResultButtons();
+    }
 
-        for (QuestNode node : this.allAvailableNodes) {
-            boolean matchesPath = node.getId().getPath().toLowerCase().contains(cleanQuery);
-            boolean matchesTitle = node.getTitle().getString().toLowerCase().contains(cleanQuery);
-
-            if (cleanQuery.isEmpty() || matchesPath || matchesTitle) {
-                this.filteredNodes.add(node);
-            }
-        }
-
-        sortSelectedFirst();
+    private void setChapterFilter(String chapter) {
+        this.chapterFilter = chapter;
+        this.chapterDropdownOpen = false;
+        recomputeFilteredNodes();
         this.scrollOffset = 0;
         rebuildResultButtons();
     }
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+        if (this.chapterDropdownOpen) {
+            int visibleDropRows = Math.min(this.availableChapters.size(), 8);
+            int maxDropScroll = Math.max(0, this.availableChapters.size() - visibleDropRows);
+            chapterDropScroll = Math.max(0, Math.min(maxDropScroll, chapterDropScroll - (int) Math.signum(delta)));
+            return true;
+        }
         int visibleRows = visibleRows();
         if (this.filteredNodes.size() > visibleRows) {
             int maxScroll = Math.max(0, this.filteredNodes.size() - visibleRows);
@@ -186,6 +239,32 @@ public class ParentSelectorScreen extends Screen {
 
     @Override
     public boolean mouseClicked(double mx, double my, int btn) {
+        if (this.chapterDropdownOpen) {
+            if (btn == 0) {
+                int visibleDropRows = Math.min(this.availableChapters.size(), 8);
+                int dropY = chapterBtnY + CHAPTER_BTN_H;
+                int maxDropScroll = Math.max(0, this.availableChapters.size() - visibleDropRows);
+                chapterDropScroll = Math.max(0, Math.min(maxDropScroll, chapterDropScroll));
+                for (int i = 0; i < visibleDropRows; i++) {
+                    int rowIdx = chapterDropScroll + i;
+                    if (rowIdx >= this.availableChapters.size()) break;
+                    int ry = dropY + i * CHAPTER_ROW_H;
+                    if (mx >= chapterBtnX && mx < chapterBtnX + chapterBtnW && my >= ry && my < ry + CHAPTER_ROW_H) {
+                        setChapterFilter(this.availableChapters.get(rowIdx));
+                        return true;
+                    }
+                }
+            }
+
+            this.chapterDropdownOpen = false;
+            return true;
+        }
+        if (btn == 0 && mx >= chapterBtnX && mx < chapterBtnX + chapterBtnW &&
+                my >= chapterBtnY && my < chapterBtnY + CHAPTER_BTN_H) {
+            this.chapterDropdownOpen = true;
+            this.chapterDropScroll = 0;
+            return true;
+        }
         if (btn == 0 && this.filteredNodes.size() > visibleRows()) {
             int maxScroll = Math.max(0, this.filteredNodes.size() - visibleRows());
             if (mx >= arrowUpX && mx < arrowUpX + arrowUpW && my >= arrowUpY && my < arrowUpY + arrowH &&
@@ -228,9 +307,23 @@ public class ParentSelectorScreen extends Screen {
                         "§7Click any number of rows to toggle them - §a[x]§7 = selected",
                 midX, 30, ChroniclesThemePalette.TEXT_FAINT);
 
+        chapterBtnX = midX - 140;
+        chapterBtnY = CHAPTER_ROW_Y;
+        chapterBtnW = 280;
+        boolean chapterHov = mouseX >= chapterBtnX && mouseX < chapterBtnX + chapterBtnW &&
+                mouseY >= chapterBtnY && mouseY < chapterBtnY + CHAPTER_BTN_H;
+        graphics.fill(chapterBtnX, chapterBtnY, chapterBtnX + chapterBtnW, chapterBtnY + CHAPTER_BTN_H,
+                chapterHov || chapterDropdownOpen ? ChroniclesThemePalette.SEL_TAB : ChroniclesThemePalette.PANEL);
+        ChroniclesUIKit.drawBorder(graphics, chapterBtnX, chapterBtnY, chapterBtnW, CHAPTER_BTN_H,
+                chapterDropdownOpen ? ChroniclesThemePalette.BORDER_LIT : ChroniclesThemePalette.BORDER);
+        graphics.drawString(this.font, "§7Chapter:  §f" + friendlyChapter(chapterFilter),
+                chapterBtnX + 5, chapterBtnY + 4, ChroniclesThemePalette.TEXT, false);
+        graphics.drawString(this.font, chapterDropdownOpen ? "§f▲" : "§f▼",
+                chapterBtnX + chapterBtnW - 12, chapterBtnY + 4, ChroniclesThemePalette.TEXT, false);
+
         int visibleRows = visibleRows();
         if (this.filteredNodes.isEmpty()) {
-            graphics.drawCenteredString(this.font, "§8No matching nodes located.", midX, 90,
+            graphics.drawCenteredString(this.font, "§8No matching nodes located.", midX, LIST_TOP + 4,
                     ChroniclesThemePalette.TEXT_FAINT);
         } else if (this.filteredNodes.size() > visibleRows) {
             int shownEnd = Math.min(this.filteredNodes.size(), this.scrollOffset + visibleRows);
@@ -269,7 +362,49 @@ public class ParentSelectorScreen extends Screen {
 
         super.render(graphics, mouseX, mouseY, partialTicks);
 
+        if (chapterDropdownOpen) {
+            renderChapterDropdown(graphics, mouseX, mouseY);
+        }
+
         graphics.flush();
         graphics.pose().popPose();
+    }
+
+    private void renderChapterDropdown(GuiGraphics graphics, int mouseX, int mouseY) {
+        int visibleDropRows = Math.min(this.availableChapters.size(), 8);
+        int maxDropScroll = Math.max(0, this.availableChapters.size() - visibleDropRows);
+        chapterDropScroll = Math.max(0, Math.min(maxDropScroll, chapterDropScroll));
+
+        int dropY = chapterBtnY + CHAPTER_BTN_H;
+        int dropH = visibleDropRows * CHAPTER_ROW_H;
+
+        graphics.fill(chapterBtnX, dropY, chapterBtnX + chapterBtnW, dropY + dropH, ChroniclesThemePalette.PANEL_DARK);
+        ChroniclesUIKit.drawBorder(graphics, chapterBtnX, dropY, chapterBtnW, dropH, ChroniclesThemePalette.BORDER_LIT);
+
+        for (int i = 0; i < visibleDropRows; i++) {
+            int rowIdx = chapterDropScroll + i;
+            if (rowIdx >= this.availableChapters.size()) break;
+            String chapter = this.availableChapters.get(rowIdx);
+            int ry = dropY + i * CHAPTER_ROW_H;
+
+            boolean hov = mouseX >= chapterBtnX && mouseX < chapterBtnX + chapterBtnW &&
+                    mouseY >= ry && mouseY < ry + CHAPTER_ROW_H;
+            boolean isCurrent = chapter.equalsIgnoreCase(this.chapterFilter);
+            if (hov) graphics.fill(chapterBtnX, ry, chapterBtnX + chapterBtnW, ry + CHAPTER_ROW_H,
+                    ChroniclesThemePalette.SEL_TAB);
+
+            String prefix = isCurrent ? "§d● " : "§7";
+            graphics.drawString(this.font, prefix + "§f" + friendlyChapter(chapter), chapterBtnX + 5, ry + 4,
+                    ChroniclesThemePalette.TEXT, false);
+        }
+
+        if (maxDropScroll > 0) {
+            if (chapterDropScroll > 0)
+                graphics.drawString(this.font, "§8▲", chapterBtnX + chapterBtnW - 9, dropY - 9,
+                        ChroniclesThemePalette.TEXT_FAINT, false);
+            if (chapterDropScroll < maxDropScroll)
+                graphics.drawString(this.font, "§8▼", chapterBtnX + chapterBtnW - 9, dropY + dropH + 1,
+                        ChroniclesThemePalette.TEXT_FAINT, false);
+        }
     }
 }
