@@ -36,8 +36,8 @@ public final class ScreenClickSmokeTest {
         probeHeaderBar(screen, results);
         probeSidebar(screen, results, origChapter);
         probeMinimap(screen, results);
-        List<Map.Entry<ResourceLocation, ChronicleOverviewScreen.NodeHitbox>> visibleNodes =
-                probeCanvasNodes(screen, results);
+        List<Map.Entry<ResourceLocation, ChronicleOverviewScreen.NodeHitbox>> visibleNodes = probeCanvasNodes(screen,
+                results);
         probeCanvasEmptyArea(screen, results);
         probeBulkOps(screen, results, visibleNodes);
         probeChapterLayoutTools(screen, results);
@@ -242,7 +242,8 @@ public final class ScreenClickSmokeTest {
     }
 
     private static List<Map.Entry<ResourceLocation, ChronicleOverviewScreen.NodeHitbox>> probeCanvasNodes(
-            @NotNull ChronicleOverviewScreen screen, @NotNull List<Result> results) {
+                                                                                                          @NotNull ChronicleOverviewScreen screen,
+                                                                                                          @NotNull List<Result> results) {
         List<Map.Entry<ResourceLocation, ChronicleOverviewScreen.NodeHitbox>> visible = new ArrayList<>();
         for (Map.Entry<ResourceLocation, ChronicleOverviewScreen.NodeHitbox> e : screen.nodeButtons().entrySet()) {
             if (e.getValue().visible) {
@@ -382,9 +383,10 @@ public final class ScreenClickSmokeTest {
     }
 
     private static void probeRewardTableSimulator(@NotNull ChronicleOverviewScreen screen,
-                                                   @NotNull List<Result> results) {
+                                                  @NotNull List<Result> results) {
         probe(results, "reward table simulator screen (open + back)", () -> {
-            Minecraft.getInstance().setScreen(new RewardTableSimulatorScreen(screen, "phoenix_smoketest_no_such_table"));
+            Minecraft.getInstance()
+                    .setScreen(new RewardTableSimulatorScreen(screen, "phoenix_smoketest_no_such_table"));
             returnToScreen(screen);
         });
     }

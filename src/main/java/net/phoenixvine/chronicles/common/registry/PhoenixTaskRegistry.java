@@ -23,17 +23,17 @@ import java.util.function.Function;
  * surface. Three ways to hook in, roughly in order of how much code they need:
  *
  * <ol>
- *   <li><b>No registration at all.</b> Reuse the built-in {@code external_trigger} task type and
- *       call {@link net.phoenixvine.chronicles.QuestAPI#fireExternalEvent} from anywhere (a
- *       block entity tick, an event handler, a script) with a trigger id matching what the pack
- *       author put in the quest. Good for "something happened" completion with no custom UI.</li>
- *   <li>{@link #registerScripted(String)} -- for a task whose completion/consume/progress logic
- *       is supplied as callbacks (what KubeJS's task-type support is built on) rather than a real
- *       Java class. See {@link ScriptTaskHandler} and the {@code Builder#onCompleted}/
- *       {@code onConsume}/{@code progressString} methods.</li>
- *   <li>{@link #register(String, Function)} -- for a real {@link QuestTask} subclass with its
- *       own NBT (de)serialization and completion logic; see any entry in
- *       {@link #registerBuiltins()} for the shape a deserializer function takes.</li>
+ * <li><b>No registration at all.</b> Reuse the built-in {@code external_trigger} task type and
+ * call {@link net.phoenixvine.chronicles.QuestAPI#fireExternalEvent} from anywhere (a
+ * block entity tick, an event handler, a script) with a trigger id matching what the pack
+ * author put in the quest. Good for "something happened" completion with no custom UI.</li>
+ * <li>{@link #registerScripted(String)} -- for a task whose completion/consume/progress logic
+ * is supplied as callbacks (what KubeJS's task-type support is built on) rather than a real
+ * Java class. See {@link ScriptTaskHandler} and the {@code Builder#onCompleted}/
+ * {@code onConsume}/{@code progressString} methods.</li>
+ * <li>{@link #register(String, Function)} -- for a real {@link QuestTask} subclass with its
+ * own NBT (de)serialization and completion logic; see any entry in
+ * {@link #registerBuiltins()} for the shape a deserializer function takes.</li>
  * </ol>
  *
  * Either way, call {@code register(...)}/{@code registerScripted(...)}.{@code register()} during

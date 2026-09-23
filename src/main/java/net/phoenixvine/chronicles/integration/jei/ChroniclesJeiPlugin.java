@@ -1,15 +1,15 @@
 package net.phoenixvine.chronicles.integration.jei;
 
+import net.minecraft.resources.ResourceLocation;
+import net.phoenixvine.chronicles.common.model.QuestNode;
+import net.phoenixvine.chronicles.common.registry.QuestTreeRegistry;
+
 import mezz.jei.api.IModPlugin;
 import mezz.jei.api.JeiPlugin;
 import mezz.jei.api.recipe.IRecipeManager;
 import mezz.jei.api.registration.IRecipeCategoryRegistration;
 import mezz.jei.api.registration.IRecipeRegistration;
 import mezz.jei.api.runtime.IJeiRuntime;
-
-import net.minecraft.resources.ResourceLocation;
-import net.phoenixvine.chronicles.common.model.QuestNode;
-import net.phoenixvine.chronicles.common.registry.QuestTreeRegistry;
 
 import java.util.List;
 

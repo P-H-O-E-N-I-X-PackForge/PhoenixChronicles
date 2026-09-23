@@ -1,15 +1,5 @@
 package net.phoenixvine.chronicles.integration.jei;
 
-import com.mojang.blaze3d.platform.InputConstants;
-import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;
-import mezz.jei.api.gui.drawable.IDrawable;
-import mezz.jei.api.gui.ingredient.IRecipeSlotsView;
-import mezz.jei.api.helpers.IGuiHelper;
-import mezz.jei.api.recipe.IFocusGroup;
-import mezz.jei.api.recipe.RecipeIngredientRole;
-import mezz.jei.api.recipe.RecipeType;
-import mezz.jei.api.recipe.category.IRecipeCategory;
-
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
@@ -30,6 +20,16 @@ import net.phoenixvine.chronicles.common.tasks.CraftItemTask;
 import net.phoenixvine.chronicles.common.tasks.FluidRequirementTask;
 import net.phoenixvine.chronicles.common.tasks.ItemRequirementTask;
 
+import com.mojang.blaze3d.platform.InputConstants;
+import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;
+import mezz.jei.api.gui.drawable.IDrawable;
+import mezz.jei.api.gui.ingredient.IRecipeSlotsView;
+import mezz.jei.api.helpers.IGuiHelper;
+import mezz.jei.api.recipe.IFocusGroup;
+import mezz.jei.api.recipe.RecipeIngredientRole;
+import mezz.jei.api.recipe.RecipeType;
+import mezz.jei.api.recipe.category.IRecipeCategory;
+
 import java.util.List;
 
 /**
@@ -47,8 +47,7 @@ import java.util.List;
 public class QuestJeiCategory implements IRecipeCategory<QuestNode> {
 
     public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath("phoenix_chronicles", "quests");
-    public static final RecipeType<QuestNode> TYPE =
-            RecipeType.create("phoenix_chronicles", "quests", QuestNode.class);
+    public static final RecipeType<QuestNode> TYPE = RecipeType.create("phoenix_chronicles", "quests", QuestNode.class);
 
     private static final int WIDTH = 160, HEIGHT = 125;
     private static final int TITLE_X = 4, TITLE_Y = 2, TITLE_H = 20;
@@ -111,7 +110,8 @@ public class QuestJeiCategory implements IRecipeCategory<QuestNode> {
                     Item item = ForgeRegistries.ITEMS.getValue(craftTask.getItemId());
                     if (item != null && item != Items.AIR) {
                         builder.addSlot(RecipeIngredientRole.INPUT, taskX + i * 18, slotY)
-                                .setStandardSlotBackground().addItemStack(new ItemStack(item, craftTask.getRequiredCount()));
+                                .setStandardSlotBackground()
+                                .addItemStack(new ItemStack(item, craftTask.getRequiredCount()));
                         i++;
                     }
                 } else if (task instanceof FluidRequirementTask fluidTask) {
@@ -189,7 +189,7 @@ public class QuestJeiCategory implements IRecipeCategory<QuestNode> {
 
     @Override
     public List<Component> getTooltipStrings(QuestNode recipe, IRecipeSlotsView recipeSlotsView,
-                                              double mouseX, double mouseY) {
+                                             double mouseX, double mouseY) {
         return isOverTitle(mouseX, mouseY) ? List.of(Component.literal("§7Click to open in Quest Book")) : List.of();
     }
 
