@@ -1106,7 +1106,7 @@ public class QuestTasksScreen extends Screen {
     }
 
     private java.util.List<net.phoenixvine.wiki.client.rich.RichBlock> resolveConditionals(
-                                                                                                 java.util.List<net.phoenixvine.wiki.client.rich.RichBlock> blocks) {
+                                                                                           java.util.List<net.phoenixvine.wiki.client.rich.RichBlock> blocks) {
         java.util.List<net.phoenixvine.wiki.client.rich.RichBlock> out = new java.util.ArrayList<>(blocks.size());
         for (net.phoenixvine.wiki.client.rich.RichBlock b : blocks) {
             if (b instanceof net.phoenixvine.chronicles.client.rich.ChroniclesConditionalSection cs) {
@@ -1153,7 +1153,7 @@ public class QuestTasksScreen extends Screen {
     }
 
     private java.util.List<net.phoenixvine.wiki.client.rich.RichSpan> resolveSpans(
-                                                                                         java.util.List<net.phoenixvine.wiki.client.rich.RichSpan> spans) {
+                                                                                   java.util.List<net.phoenixvine.wiki.client.rich.RichSpan> spans) {
         boolean anyConditional = false;
         for (net.phoenixvine.wiki.client.rich.RichSpan s : spans) {
             if (s instanceof net.phoenixvine.wiki.client.rich.RichSpan.ConditionalTip) {
@@ -1172,7 +1172,7 @@ public class QuestTasksScreen extends Screen {
     }
 
     private net.phoenixvine.wiki.client.rich.RichSpan resolveConditionalTip(
-                                                                                  net.phoenixvine.wiki.client.rich.RichSpan.ConditionalTip ct) {
+                                                                            net.phoenixvine.wiki.client.rich.RichSpan.ConditionalTip ct) {
         for (net.phoenixvine.wiki.client.rich.RichSpan.TipCandidate candidate : ct.candidates()) {
             String expr = candidate.conditionExpr();
             if (expr == null || expr.isBlank()) {
@@ -1190,6 +1190,32 @@ public class QuestTasksScreen extends Screen {
         }
 
         return new net.phoenixvine.wiki.client.rich.RichSpan.Text(ct.label(), ct.style());
+    }
+
+    private void openLink(String url) {
+        if (url == null || url.isEmpty()) return;
+        if (url.startsWith("wiki:")) {
+            String spec = url.substring(5);
+            String pageId = null;
+            int hash = spec.indexOf('#');
+            if (hash >= 0) {
+                pageId = spec.substring(hash + 1);
+                spec = spec.substring(0, hash);
+            }
+            int slash = spec.indexOf('/');
+            String namespace = slash >= 0 ? spec.substring(0, slash) : spec;
+            String basePath = slash >= 0 ? spec.substring(slash + 1) : "";
+            if (this.minecraft != null) {
+                this.minecraft.setScreen(new net.phoenixvine.wiki.client.screen.WikiScreen(this, namespace,
+                        basePath, pageId));
+            }
+            return;
+        }
+        try {
+            net.minecraft.Util.getPlatform().openUri(java.net.URI.create(url));
+        } catch (Exception e) {
+            net.phoenixvine.chronicles.PhoenixChronicles.LOGGER.warn("Chronicles: failed to open link '{}'", url, e);
+        }
     }
 
     private boolean isConditionMet(String type, String value) {
@@ -2023,14 +2049,7 @@ public class QuestTasksScreen extends Screen {
         for (net.phoenixvine.wiki.client.rich.RichSpan.Region r : richRegions) {
             if (r.contains(mx, my)) {
                 if (r.span() instanceof net.phoenixvine.wiki.client.rich.RichSpan.Link l) {
-                    if (!l.url().startsWith("wiki:")) {
-                        try {
-                            net.minecraft.Util.getPlatform().openUri(java.net.URI.create(l.url()));
-                        } catch (Exception e) {
-                            net.phoenixvine.chronicles.PhoenixChronicles.LOGGER.warn(
-                                    "Chronicles: failed to open link '{}'", l.url(), e);
-                        }
-                    }
+                    openLink(l.url());
                     return true;
                 }
                 if (r.span() instanceof net.phoenixvine.wiki.client.rich.RichSpan.CodeCopy cc) {
@@ -2258,14 +2277,7 @@ public class QuestTasksScreen extends Screen {
         for (net.phoenixvine.wiki.client.rich.RichSpan.Region r : richRegions) {
             if (r.contains(mx, my)) {
                 if (r.span() instanceof net.phoenixvine.wiki.client.rich.RichSpan.Link l) {
-                    if (!l.url().startsWith("wiki:")) {
-                        try {
-                            net.minecraft.Util.getPlatform().openUri(java.net.URI.create(l.url()));
-                        } catch (Exception e) {
-                            net.phoenixvine.chronicles.PhoenixChronicles.LOGGER.warn(
-                                    "Chronicles: failed to open link '{}'", l.url(), e);
-                        }
-                    }
+                    openLink(l.url());
                     return true;
                 }
                 if (r.span() instanceof net.phoenixvine.wiki.client.rich.RichSpan.CodeCopy cc) {

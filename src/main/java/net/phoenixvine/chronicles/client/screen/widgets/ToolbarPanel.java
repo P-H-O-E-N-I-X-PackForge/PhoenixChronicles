@@ -3,6 +3,7 @@ package net.phoenixvine.chronicles.client.screen.widgets;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
+import net.phoenixvine.chronicles.client.screen.utils.GraphEditorState.EditorTool;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -30,7 +31,7 @@ public class ToolbarPanel {
     public void render(@NotNull GuiGraphics g, @NotNull Font font, int mx, int my, int width, int cl, int cr,
                        int toolbarY, int toolbarH,
                        @NotNull Colors colors, @NotNull String stateFilter, boolean hideCompleted, boolean minimapOpen,
-                       boolean devMode,
+                       boolean devMode, @NotNull EditorTool activeTool,
                        @NotNull Consumer<Runnable> deferDraw) {
         int ty = toolbarY;
         g.fill(0, ty, width, ty + toolbarH, colors.panelDark());
@@ -43,6 +44,21 @@ public class ToolbarPanel {
         rx = drawBtnR(g, font, mx, my, rx, ty, toolbarH, colors, "⊞ Fit", "fit", "Fit all quests to view",
                 deferDraw);
         rx -= 2;
+        if (devMode) {
+            rx = drawBtnR(g, font, mx, my, rx, ty, toolbarH, colors,
+                    activeTool == EditorTool.CONNECT ? "§a🔗 Connect" : "§8🔗 Connect", "toolConnect",
+                    "Connect mode -- drag between two quests to link them, no Alt needed", deferDraw);
+            rx -= 2;
+            rx = drawBtnR(g, font, mx, my, rx, ty, toolbarH, colors,
+                    activeTool == EditorTool.PLACE ? "§a✛ Place" : "§8✛ Place", "toolPlace",
+                    "Place mode -- click empty canvas to drop a bare quest, stays active for more",
+                    deferDraw);
+            rx -= 2;
+            rx = drawBtnR(g, font, mx, my, rx, ty, toolbarH, colors,
+                    activeTool == EditorTool.SELECT ? "§a⬚ Select" : "§8⬚ Select", "toolSelect",
+                    "Select mode -- the normal click/drag/multi-select behavior", deferDraw);
+            rx -= 2;
+        }
         rx = drawBtnR(g, font, mx, my, rx, ty, toolbarH, colors, "⚙", "settings", "Settings", deferDraw);
         if (devMode) {
             rx -= 2;
@@ -71,6 +87,11 @@ public class ToolbarPanel {
     private int rightClusterWidth(@NotNull Font font, boolean devMode) {
         int w = 4;
         w += font.width("⊞ Fit") + 10 + 2;
+        if (devMode) {
+            w += font.width("🔗 Connect") + 10 + 2;
+            w += font.width("✛ Place") + 10 + 2;
+            w += font.width("⬚ Select") + 10 + 2;
+        }
         w += font.width("⚙") + 10 + 2;
         if (devMode) w += font.width("?") + 10 + 2;
         w += font.width("✔ Hide done") + 10 + 2;

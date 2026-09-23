@@ -12,6 +12,7 @@ import net.phoenixvine.chronicles.common.model.CategoryDefinition;
 import net.phoenixvine.chronicles.common.model.QuestNode;
 import net.phoenixvine.chronicles.common.registry.CategoryRegistry;
 import net.phoenixvine.chronicles.common.registry.QuestTreeRegistry;
+import net.phoenixvine.wiki.client.suite.SuiteHudBar;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -20,7 +21,7 @@ import java.util.List;
 import java.util.TreeSet;
 import java.util.function.Consumer;
 
-public class ParentSelectorScreen extends Screen {
+public class ParentSelectorScreen extends Screen implements SuiteHudBar.Aware {
 
     private final Screen parentScreen;
     private final QuestNode editingNode;
@@ -367,9 +368,13 @@ public class ParentSelectorScreen extends Screen {
             graphics.drawCenteredString(this.font, "▼", arrowDownX + arrowDownW / 2, indicatorY, downColor);
         }
 
-        super.render(graphics, mouseX, mouseY, partialTicks);
-
         if (chapterDropdownOpen) {
+            for (Button b : resultButtons) b.visible = false;
+        }
+        super.render(graphics, mouseX, mouseY, partialTicks);
+        if (chapterDropdownOpen) {
+            for (Button b : resultButtons) b.visible = true;
+            graphics.flush();
             renderChapterDropdown(graphics, mouseX, mouseY);
         }
 

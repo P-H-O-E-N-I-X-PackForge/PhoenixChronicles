@@ -33,6 +33,10 @@ import java.util.stream.Stream;
 public class QuestFileSaver {
 
     public static void saveOneQuestToDisk(QuestNode node) {
+        saveOneQuestToDisk(node, true);
+    }
+
+    public static void saveOneQuestToDisk(QuestNode node, boolean refreshEmi) {
         QuestFileWatcher.suppressNextReload();
         Path base = Minecraft.getInstance().gameDirectory.toPath()
                 .resolve("config").resolve("phoenix_chronicles");
@@ -46,7 +50,7 @@ public class QuestFileSaver {
                 }
             }
             saveNode(base, node, parentId);
-            refreshEmiIfPresent();
+            if (refreshEmi) refreshEmiIfPresent();
         } catch (IOException e) {
             System.err.println("[Phoenix Chronicles] Failed to save quest '" + node.getId() + "': " + e.getMessage());
         }

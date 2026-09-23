@@ -42,12 +42,14 @@ public final class TeamKeyResolver {
     }
 
     private static class PhoenixGuildsCompat {
+
         static Optional<String> getGuildIdentifier(ServerPlayer player) {
             return net.phoenixvine.guilds.GuildAPI.getGuildIdentifierString(player);
         }
     }
 
     private static class FTBTeamsCompat {
+
         static Optional<String> getTeamIdentifier(ServerPlayer player) {
             if (dev.ftb.mods.ftbteams.api.FTBTeamsAPI.api().isManagerLoaded()) {
                 var opt = dev.ftb.mods.ftbteams.api.FTBTeamsAPI.api().getManager().getTeamForPlayerID(player.getUUID());

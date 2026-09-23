@@ -113,7 +113,7 @@ public class QuestProgressGameTests {
     @GameTest(template = "gametest_empty", timeoutTicks = 200)
     public static void guildMembersShareAScopedFlagButOutsidersDont(@NotNull GameTestHelper helper) {
         if (!ModList.get().isLoaded("phoenix_guilds")) {
-            helper.succeed(); 
+            helper.succeed();
             return;
         }
 
@@ -121,6 +121,7 @@ public class QuestProgressGameTests {
     }
 
     private static class GuildTestCompat {
+
         static void runGuildFlagTest(@NotNull GameTestHelper helper) {
             ServerLevel overworld = helper.getLevel().getServer().overworld();
             net.phoenixvine.guilds.data.GuildManager guilds = net.phoenixvine.guilds.data.GuildManager.get(overworld);
@@ -128,9 +129,11 @@ public class QuestProgressGameTests {
 
             ServerPlayer alice = FakePlayerFactory.get(overworld, new GameProfile(UUID.randomUUID(), "gametest-alice"));
             ServerPlayer bob = FakePlayerFactory.get(overworld, new GameProfile(UUID.randomUUID(), "gametest-bob"));
-            ServerPlayer outsider = FakePlayerFactory.get(overworld, new GameProfile(UUID.randomUUID(), "gametest-outsider"));
+            ServerPlayer outsider = FakePlayerFactory.get(overworld,
+                    new GameProfile(UUID.randomUUID(), "gametest-outsider"));
 
-            net.phoenixvine.guilds.data.Guild guild = guilds.createGuild("GameTestGuild-" + UUID.randomUUID(), alice.getUUID());
+            net.phoenixvine.guilds.data.Guild guild = guilds.createGuild("GameTestGuild-" + UUID.randomUUID(),
+                    alice.getUUID());
             guilds.addMember(guild.getId(), bob.getUUID());
 
             try {

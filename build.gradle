@@ -178,7 +178,7 @@ dependencies {
     modCompileOnly('net.phoenixvine.guilds:phoenix_guilds:1.6.1')
     modRuntimeOnly('net.phoenixvine.guilds:phoenix_guilds:1.6.1')
 
-    jarJar(modImplementation("net.phoenixvine.wiki:phoenix_wiki:0.4.1"))
+    jarJar(modImplementation("net.phoenixvine.wiki:phoenix_wiki:0.4.7"))
 
     modCompileOnly("net.phoenix.phoenix_archive:phoenix_archive:${phoenix_archive_version}")
     modRuntimeOnly("net.phoenix.phoenix_archive:phoenix_archive:${phoenix_archive_version}")

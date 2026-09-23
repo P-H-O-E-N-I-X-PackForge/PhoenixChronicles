@@ -33,4 +33,12 @@ public class GraphEditorState {
     public String questClipboard = null;
 
     public boolean subgraphMode = false;
+
+    public enum EditorTool {
+        SELECT,
+        PLACE,
+        CONNECT
+    }
+
+    public EditorTool activeTool = EditorTool.SELECT;
 }

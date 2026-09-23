@@ -44,7 +44,7 @@ public final class FtbProgressImporter {
         }
 
         List<OrigQuest> origQuests = new ArrayList<>();
-        Map<String, double[]> chapterBounds = new HashMap<>(); 
+        Map<String, double[]> chapterBounds = new HashMap<>();
 
         List<Path> chapterFiles;
         try (var stream = Files.list(ftbChaptersDir)) {

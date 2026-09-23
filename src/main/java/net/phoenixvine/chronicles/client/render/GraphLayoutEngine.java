@@ -141,7 +141,7 @@ public class GraphLayoutEngine {
             }
         }
 
-        QuestFileSaver.saveAllQuestsToDisk();
+        for (QuestNode n : nodes) QuestFileSaver.saveOneQuestToDisk(n, false);
         layoutState.resetViewOffset();
         dragState.rebuild();
         ctx.setFeedback("Auto-arranged %d quest(s)", nodes.size());
@@ -153,12 +153,50 @@ public class GraphLayoutEngine {
                 () -> applyPositions(nodes, newPositions));
     }
 
+    public void rotateChapter90() {
+        String selectedChapter = ctx.selectedChapter();
+        List<QuestNode> nodes = QuestTreeRegistry.getAllQuests().values().stream()
+                .filter(n -> selectedChapter.equalsIgnoreCase(n.getChapter()))
+                .toList();
+        if (nodes.isEmpty()) return;
+
+        Map<ResourceLocation, int[]> oldPositions = new HashMap<>();
+        for (QuestNode n : nodes) oldPositions.put(n.getId(), new int[] { n.getCustomX(), n.getCustomY() });
+
+        int minX = Integer.MAX_VALUE, maxX = Integer.MIN_VALUE, minY = Integer.MAX_VALUE, maxY = Integer.MIN_VALUE;
+        for (QuestNode n : nodes) {
+            minX = Math.min(minX, n.getCustomX());
+            maxX = Math.max(maxX, n.getCustomX());
+            minY = Math.min(minY, n.getCustomY());
+            maxY = Math.max(maxY, n.getCustomY());
+        }
+        int cx = (minX + maxX) / 2;
+        int cy = (minY + maxY) / 2;
+
+        Map<ResourceLocation, int[]> newPositions = new HashMap<>();
+        for (QuestNode n : nodes) {
+            int x = n.getCustomX(), y = n.getCustomY();
+            int newX = cx - (y - cy);
+            int newY = cy + (x - cx);
+            newPositions.put(n.getId(), new int[] { newX, newY });
+        }
+
+        applyPositions(nodes, newPositions);
+        ctx.setFeedback("Rotated %d quest(s) in chapter", nodes.size());
+
+        ctx.undoRedo().push(
+                () -> applyPositions(nodes, oldPositions),
+                () -> applyPositions(nodes, newPositions));
+    }
+
     private void applyPositions(List<QuestNode> nodes, Map<ResourceLocation, int[]> positions) {
         for (QuestNode n : nodes) {
             int[] pos = positions.get(n.getId());
-            if (pos != null) n.setCustomPosition(pos[0], pos[1]);
+            if (pos != null) {
+                n.setCustomPosition(pos[0], pos[1]);
+                QuestFileSaver.saveOneQuestToDisk(n, false);
+            }
         }
-        QuestFileSaver.saveAllQuestsToDisk();
         dragState.rebuild();
     }
 }

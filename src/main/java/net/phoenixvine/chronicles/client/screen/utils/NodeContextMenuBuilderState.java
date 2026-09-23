@@ -72,6 +72,8 @@ public interface NodeContextMenuBuilderState {
 
     void autoArrangeChapter();
 
+    void rotateChapter90();
+
     void questPaste();
 
     void chainMultiSelection();

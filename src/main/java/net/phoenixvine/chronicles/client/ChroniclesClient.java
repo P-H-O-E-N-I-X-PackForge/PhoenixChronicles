@@ -47,7 +47,6 @@ public class ChroniclesClient {
     }
 
     private static void registerHudBar(Minecraft mc) {
-
         ResourceLocation iconPath = ResourceLocation.fromNamespaceAndPath(
                 MOD_ID,
                 "textures/gui/chronicles_quest_book_icon.png");

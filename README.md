@@ -28,6 +28,7 @@ It has compat for
 - Phantasia
 - PhoenixCore
 - FTBTeams
+
 It also depends on PhoenixWiki for the shared theming with the rest of the PhoenixSuite 
 
 Made to be an alternative to **FTBQuests** (or ftbq) but still have its own unique feel and cadence. 
@@ -52,15 +53,20 @@ Below is a chart of the major features and how they compare to other mods in Chr
 There is also a chart of what we do better or at parity to what others do.
 For more information on any of the features, check the wiki (or if that doesn't exist) ping Phoenixvine on discord.
 
-Legend: PR = At Parity, AA = Advantage, PA = Partial.
+> NOTE. All comparisons are against **base FTB Quests on 1.20.1**. These comparisons do not cover FTBQ addons or the 1.21.1 version of FTB Quests.
 
-| Feature                           | Chronicles                                     | FTB Quests                         | Parity / Advantage                     |
-|:----------------------------------|:-----------------------------------------------|:-----------------------------------|:---------------------------------------|
-| **GregTech Integration**          | Built-in native support for GT recipes & tiers | Requires third-party addon scripts | **Advantage** (Out-of-the-box support) |
-| **Quest Editor Gui**              | Lightweight, custom layout rendering           | Heavy, highly configurable GUI     | **Parity** (Different style focus)     |
-| **Custom External tasks**         | Custom player capability tracking              | Custom data attachments            | **AA**                                 |
-| **Packet Syncing**                | Optimized light payload network packets        | Standard networking pipeline       | **Advantage** (Lower bandwidth)        |
-| **Third-Party Mod Compatibility** | Direct Mixin & API bridges                     | Extensive integrations             | **In Progress**                        |
+### Legend: PR = At Parity, AA = Advantage, PA = Partial, N/A = Not freely applicable but still important.
+
+
+| Feature                           | Chronicles | FTB Quests | Parity / Advantage |
+|:----------------------------------|:-----------|:-----------|:-------------------|
+| **GregTech Integration**          | B          | B          | **N/A**            |
+| **Quest Editor Gui**              | L          | L          | **PA**             |
+| **Custom External tasks**         | C          | C          | **AA**             |
+| **Filtering**                     | O          | O          | **AA**             |
+| **Third-Party Mod Compatibility** | D          | D          | **PA**             |
+
+
 
 
 ## Roadmap
@@ -103,17 +109,19 @@ Fixed in the 0-loss cable rework: multi-amp-source and multi-face-input bugs no 
 // Code block (which are click to copy), hover tooltip, and item rendering examples.
 Need the item? `minecraft:redstone` -- click to copy the id, or hover this: [item:minecraft:redstone|Used for basic circuits]
 
-// Opening a PhoenixWiki page from either chronicles or another mod using it, or opening an online link.
-See also [the wiki page](wiki:power/eu_basics) or the [Archive entry](https://www.youtube.com/watch?v=b5l5UodFzMo) for lore.
+// Opening a PhoenixWiki page from either chronicles or another mod using it, or opening an online link. 
+See also [Rich text guide](wiki:phoenix_chronicles/wiki#rich_text) or the [Archive entry](https://www.youtube.com/watch?v=b5l5UodFzMo) for lore.
 
-// Conditonal statements, works with choronicle flags, checking if a mod is loaded, and more uhhh ask what else.
+// Conditonal statements, works with choronicle flags, checking if a mod is loaded, and many more. Check the wiki for more examples (currently WIP).
 :::if flag:mod:gtceu
 GregTech is loaded, so cable coverings are available too.
 :::
 
+// Renders the text below it larger (or smaller) depending on the given scale.
 {scale:2.0}
 This whole block renders 20% larger.
 
+// The below two are an example of a footnote (defined at bottom, can be rendered anywhere.)
 Footnote example[^amps].
 
 [^amps]: Amps determine how much current a cable can carry before burning out.",

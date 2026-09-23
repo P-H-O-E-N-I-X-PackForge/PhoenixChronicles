@@ -775,6 +775,11 @@ public class ChronicleOverviewScreen extends Screen
         layoutEngine.autoArrangeChapter();
     }
 
+    @Override
+    public void rotateChapter90() {
+        layoutEngine.rotateChapter90();
+    }
+
     private void propagateTestUnlocks() {
         for (QuestNode n : QuestTreeRegistry.getAllQuests().values()) {
             if (testModeData.getQuestState(n.getId(), QuestState.LOCKED) != QuestState.COMPLETED)
@@ -1057,6 +1062,11 @@ public class ChronicleOverviewScreen extends Screen
             softRebuild();
             return true;
         }
+        if (editorState.activeTool != GraphEditorState.EditorTool.SELECT) {
+            editorState.activeTool = GraphEditorState.EditorTool.SELECT;
+            setFeedback("Select mode");
+            return true;
+        }
         return false;
     }
 
@@ -1241,7 +1251,7 @@ public class ChronicleOverviewScreen extends Screen
 
         if (oldPosZoom != newPosZoom) {
             int canvasW = cr - cl, canvasH = height - HEADER_H;
-            
+
             boolean cursorAnchored = !ChronicleKeyBindings.CURSOR_ZOOM.isDown();
             float anchorX = cursorAnchored ? (float) mx - cl : canvasW / 2f;
             float anchorY = cursorAnchored ? (float) my - HEADER_H : canvasH / 2f;
@@ -1435,6 +1445,20 @@ public class ChronicleOverviewScreen extends Screen
         if (my >= TOOLBAR_Y && my < HEADER_H) {
             if (hitsToolbarBtn("fit", mx, my)) {
                 fitToCanvas();
+                return true;
+            }
+            if (isDevMode && hitsToolbarBtn("toolSelect", mx, my)) {
+                editorState.activeTool = GraphEditorState.EditorTool.SELECT;
+                return true;
+            }
+            if (isDevMode && hitsToolbarBtn("toolPlace", mx, my)) {
+                editorState.activeTool = editorState.activeTool == GraphEditorState.EditorTool.PLACE ?
+                        GraphEditorState.EditorTool.SELECT : GraphEditorState.EditorTool.PLACE;
+                return true;
+            }
+            if (isDevMode && hitsToolbarBtn("toolConnect", mx, my)) {
+                editorState.activeTool = editorState.activeTool == GraphEditorState.EditorTool.CONNECT ?
+                        GraphEditorState.EditorTool.SELECT : GraphEditorState.EditorTool.CONNECT;
                 return true;
             }
             if (hitsToolbarBtn("settings", mx, my) && minecraft != null) {
@@ -1637,7 +1661,8 @@ public class ChronicleOverviewScreen extends Screen
     }
 
     private boolean tryHandleQuickDepDragStart(double mx, double my, int btn) {
-        if (btn == 0 && isDevMode && (quickDepKeyDown || (hasAltDown() && !hasShiftDown()))) {
+        if (btn == 0 && isDevMode && (quickDepKeyDown || (hasAltDown() && !hasShiftDown()) ||
+                editorState.activeTool == GraphEditorState.EditorTool.CONNECT)) {
             for (Map.Entry<ResourceLocation, NodeHitbox> e : nodeButtons.entrySet()) {
                 if (e.getValue().visible && e.getValue().isMouseOver(mx, my)) {
                     linkDragSource = QuestTreeRegistry.getQuest(e.getKey());
@@ -1878,6 +1903,12 @@ public class ChronicleOverviewScreen extends Screen
                 }
             }
             if (!handled) {
+                if (isDevMode && editorState.activeTool == GraphEditorState.EditorTool.PLACE) {
+                    int canvasX = (int) ((mx - cl - viewOffX) / posZoom());
+                    int canvasY = (int) ((my - HEADER_H - viewOffY) / posZoom());
+                    placeQuickQuest(canvasX, canvasY);
+                    return true;
+                }
                 if (isDevMode && minecraft != null) {
                     long now = System.currentTimeMillis();
                     int imx = (int) mx, imy = (int) my;
@@ -1899,6 +1930,36 @@ public class ChronicleOverviewScreen extends Screen
             return true;
         }
         return false;
+    }
+
+    private void placeQuickQuest(int canvasX, int canvasY) {
+        String idBase = "new_quest_";
+        int n = 1;
+        ResourceLocation questId;
+        do {
+            questId = ResourceLocation.fromNamespaceAndPath("phoenix_chronicles", idBase + n);
+            n++;
+        } while (QuestTreeRegistry.getAllQuests().containsKey(questId));
+
+        QuestNode node = new QuestNode(questId, Component.literal("New Quest"), Component.literal(""));
+        node.setChapter(selectedChapter);
+        node.setCustomPosition(canvasX, canvasY);
+
+        QuestTreeRegistry.injectDynamicQuestNode(node, null);
+        QuestFileSaver.saveOneQuestToDisk(node, false);
+        rebuild();
+        setFeedback("Placed quest -- click again to place more");
+
+        ResourceLocation placedId = questId;
+        pushUndo("Undo: quest placed", () -> {
+            QuestTreeRegistry.removeQuest(placedId);
+            QuestFileSaver.deleteQuestFiles(node);
+            rebuild();
+        }, () -> {
+            QuestTreeRegistry.injectDynamicQuestNode(node, null);
+            QuestFileSaver.saveOneQuestToDisk(node, false);
+            rebuild();
+        });
     }
 
     private boolean handleCtxClick(int mx, int my) {
@@ -2724,7 +2785,7 @@ public class ChronicleOverviewScreen extends Screen
 
     private void renderToolbar(GuiGraphics g, int mx, int my, int cl, int cr) {
         toolbarPanel.render(g, font, mx, my, width, cl, cr, TOOLBAR_Y, TOOLBAR_H, toolbarColors(), stateFilter,
-                hideCompleted, minimapOpen, isDevMode, pendingDeferredDraws::add);
+                hideCompleted, minimapOpen, isDevMode, editorState.activeTool, pendingDeferredDraws::add);
     }
 
     private boolean hitsToolbarBtn(String key, double mx, double my) {

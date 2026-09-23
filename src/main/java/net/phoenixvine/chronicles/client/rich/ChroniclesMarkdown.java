@@ -12,7 +12,7 @@ public final class ChroniclesMarkdown {
     private ChroniclesMarkdown() {}
 
     public static List<RichBlock> parse(String input) {
-        return fixupConditionals(WikiMarkdownParser.parse(input));
+        return fixupConditionals(WikiMarkdownParser.parse(input, false, true));
     }
 
     private static List<RichBlock> fixupConditionals(List<RichBlock> blocks) {

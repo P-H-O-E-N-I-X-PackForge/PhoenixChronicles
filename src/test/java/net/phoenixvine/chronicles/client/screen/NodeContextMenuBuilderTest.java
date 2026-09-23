@@ -245,6 +245,9 @@ class NodeContextMenuBuilderTest {
         public void autoArrangeChapter() {}
 
         @Override
+        public void rotateChapter90() {}
+
+        @Override
         public void questPaste() {}
 
         @Override

@@ -1,5 +1,8 @@
 package net.phoenixvine.chronicles.client.rich;
 
+import net.phoenixvine.wiki.client.rich.RichBlock;
+import net.phoenixvine.wiki.client.rich.RichSpan;
+
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
@@ -25,27 +28,33 @@ class ChronicleMarkdownParserTest {
 
     @Test
     void nullOrBlankInputProducesNoBlocks() {
-        assertTrue(ChronicleMarkdownParser.parse(null).isEmpty());
-        assertTrue(ChronicleMarkdownParser.parse("   \n  \n").isEmpty());
+        assertTrue(ChroniclesMarkdown.parse(null).isEmpty());
+        assertTrue(ChroniclesMarkdown.parse("   \n  \n").isEmpty());
     }
 
     @Test
-    void headingLevelsMatchHashCount() {
-        List<RichBlock> blocks = ChronicleMarkdownParser.parse("# One\n## Two\n### Three");
+    void headingLevelsMatchHashCountAndNestBySectionLevel() {
+        List<RichBlock> blocks = ChroniclesMarkdown.parse("# One\n## Two\n### Three");
 
-        assertEquals(3, blocks.size());
-        RichBlock.Heading h1 = assertInstanceOf(RichBlock.Heading.class, blocks.get(0));
-        RichBlock.Heading h2 = assertInstanceOf(RichBlock.Heading.class, blocks.get(1));
-        RichBlock.Heading h3 = assertInstanceOf(RichBlock.Heading.class, blocks.get(2));
-        assertEquals(1, h1.level());
-        assertEquals(2, h2.level());
-        assertEquals(3, h3.level());
-        assertEquals("One", plain(h1.spans()));
+        assertEquals(1, blocks.size());
+        RichBlock.CollapsibleSection s1 = assertInstanceOf(RichBlock.CollapsibleSection.class, blocks.get(0));
+        assertEquals(1, s1.level());
+        assertEquals("One", plain(s1.headingSpans()));
+
+        assertEquals(1, s1.children().size());
+        RichBlock.CollapsibleSection s2 = assertInstanceOf(RichBlock.CollapsibleSection.class, s1.children().get(0));
+        assertEquals(2, s2.level());
+        assertEquals("Two", plain(s2.headingSpans()));
+
+        assertEquals(1, s2.children().size());
+        RichBlock.CollapsibleSection s3 = assertInstanceOf(RichBlock.CollapsibleSection.class, s2.children().get(0));
+        assertEquals(3, s3.level());
+        assertEquals("Three", plain(s3.headingSpans()));
     }
 
     @Test
     void plainParagraphBecomesOneParagraphBlock() {
-        List<RichBlock> blocks = ChronicleMarkdownParser.parse("Just a sentence.");
+        List<RichBlock> blocks = ChroniclesMarkdown.parse("Just a sentence.");
 
         assertEquals(1, blocks.size());
         RichBlock.Paragraph p = assertInstanceOf(RichBlock.Paragraph.class, blocks.get(0));
@@ -53,17 +62,17 @@ class ChronicleMarkdownParserTest {
     }
 
     @Test
-    void consecutiveNonBlankLinesJoinIntoOneParagraph() {
-        List<RichBlock> blocks = ChronicleMarkdownParser.parse("Line one\nLine two");
+    void consecutiveNonBlankLinesJoinIntoOneParagraphWithAHardLineBreak() {
+        List<RichBlock> blocks = ChroniclesMarkdown.parse("Line one\nLine two");
 
         assertEquals(1, blocks.size());
         RichBlock.Paragraph p = assertInstanceOf(RichBlock.Paragraph.class, blocks.get(0));
-        assertEquals("Line one Line two", plain(p.spans()));
+        assertEquals("Line one\nLine two", plain(p.spans()));
     }
 
     @Test
     void multipleBlankLinesCollapseToOneBlankBlockAndLeadingBlanksAreDropped() {
-        List<RichBlock> blocks = ChronicleMarkdownParser.parse("\n\nFirst\n\n\nSecond");
+        List<RichBlock> blocks = ChroniclesMarkdown.parse("\n\nFirst\n\n\nSecond");
 
         assertEquals(3, blocks.size());
         assertInstanceOf(RichBlock.Paragraph.class, blocks.get(0));
@@ -73,7 +82,7 @@ class ChronicleMarkdownParserTest {
 
     @Test
     void unorderedListItemGetsBulletMarkerAndNestIndent() {
-        List<RichBlock> blocks = ChronicleMarkdownParser.parse("- top\n  - nested");
+        List<RichBlock> blocks = ChroniclesMarkdown.parse("- top\n  - nested");
 
         RichBlock.ListItem top = assertInstanceOf(RichBlock.ListItem.class, blocks.get(0));
         RichBlock.ListItem nested = assertInstanceOf(RichBlock.ListItem.class, blocks.get(1));
@@ -84,7 +93,7 @@ class ChronicleMarkdownParserTest {
 
     @Test
     void checkboxSyntaxProducesChecklistBlockWithCorrectCheckedState() {
-        List<RichBlock> blocks = ChronicleMarkdownParser.parse("- [ ] todo\n- [x] done\n- [X] alsoDone");
+        List<RichBlock> blocks = ChroniclesMarkdown.parse("- [ ] todo\n- [x] done\n- [X] alsoDone");
 
         RichBlock.Checklist unchecked = assertInstanceOf(RichBlock.Checklist.class, blocks.get(0));
         RichBlock.Checklist checked = assertInstanceOf(RichBlock.Checklist.class, blocks.get(1));
@@ -96,7 +105,7 @@ class ChronicleMarkdownParserTest {
 
     @Test
     void orderedListPreservesNumberAsMarker() {
-        List<RichBlock> blocks = ChronicleMarkdownParser.parse("1. first\n2. second");
+        List<RichBlock> blocks = ChroniclesMarkdown.parse("1. first\n2. second");
 
         RichBlock.ListItem first = assertInstanceOf(RichBlock.ListItem.class, blocks.get(0));
         RichBlock.ListItem second = assertInstanceOf(RichBlock.ListItem.class, blocks.get(1));
@@ -106,13 +115,13 @@ class ChronicleMarkdownParserTest {
 
     @Test
     void ruleLineBecomesRuleBlock() {
-        List<RichBlock> blocks = ChronicleMarkdownParser.parse("---");
+        List<RichBlock> blocks = ChroniclesMarkdown.parse("---");
         assertInstanceOf(RichBlock.Rule.class, blocks.get(0));
     }
 
     @Test
     void fencedCodeBlockCapturesLanguageAndVerbatimBody() {
-        List<RichBlock> blocks = ChronicleMarkdownParser.parse("```java\nint x = 1;\nint y = 2;\n```");
+        List<RichBlock> blocks = ChroniclesMarkdown.parse("```java\nint x = 1;\nint y = 2;\n```");
 
         RichBlock.CodeBlock cb = assertInstanceOf(RichBlock.CodeBlock.class, blocks.get(0));
         assertEquals("java", cb.lang());
@@ -122,21 +131,21 @@ class ChronicleMarkdownParserTest {
 
     @Test
     void unterminatedFenceStillCapturesToEndOfInput() {
-        List<RichBlock> blocks = ChronicleMarkdownParser.parse("```\nfoo");
+        List<RichBlock> blocks = ChroniclesMarkdown.parse("```\nfoo");
         RichBlock.CodeBlock cb = assertInstanceOf(RichBlock.CodeBlock.class, blocks.get(0));
         assertEquals("foo", cb.code());
     }
 
     @Test
     void blockquoteJoinsConsecutiveQuoteLinesWithASpace() {
-        List<RichBlock> blocks = ChronicleMarkdownParser.parse("> line one\n> line two");
+        List<RichBlock> blocks = ChroniclesMarkdown.parse("> line one\n> line two");
         RichBlock.Quote q = assertInstanceOf(RichBlock.Quote.class, blocks.get(0));
         assertEquals("line one line two", plain(q.spans()));
     }
 
     @Test
     void pipeTableParsesHeaderAndRows() {
-        List<RichBlock> blocks = ChronicleMarkdownParser.parse("""
+        List<RichBlock> blocks = ChroniclesMarkdown.parse("""
                 | A | B |
                 | - | - |
                 | 1 | 2 |
@@ -154,7 +163,7 @@ class ChronicleMarkdownParserTest {
 
     @Test
     void calloutContainerCapturesTypeTitleAndNestedBlocks() {
-        List<RichBlock> blocks = ChronicleMarkdownParser.parse(":::warning Careful\nInner text\n:::");
+        List<RichBlock> blocks = ChroniclesMarkdown.parse(":::warning Careful\nInner text\n:::");
 
         RichBlock.Callout c = assertInstanceOf(RichBlock.Callout.class, blocks.get(0));
         assertEquals("warning", c.type());
@@ -166,14 +175,14 @@ class ChronicleMarkdownParserTest {
 
     @Test
     void spoilerContainerBecomesDetailsBlockWithFallbackTitle() {
-        List<RichBlock> blocks = ChronicleMarkdownParser.parse(":::spoiler\nhidden\n:::");
+        List<RichBlock> blocks = ChroniclesMarkdown.parse(":::spoiler\nhidden\n:::");
         RichBlock.Details d = assertInstanceOf(RichBlock.Details.class, blocks.get(0));
         assertEquals("Details", d.title());
     }
 
     @Test
     void nestedContainersOfSameSyntaxBalanceCorrectly() {
-        List<RichBlock> blocks = ChronicleMarkdownParser.parse(":::note Outer\n:::tip Inner\nnested\n:::\n:::");
+        List<RichBlock> blocks = ChroniclesMarkdown.parse(":::note Outer\n:::tip Inner\nnested\n:::\n:::");
 
         RichBlock.Callout outer = assertInstanceOf(RichBlock.Callout.class, blocks.get(0));
         assertEquals("note", outer.type());
@@ -184,7 +193,7 @@ class ChronicleMarkdownParserTest {
 
     @Test
     void footnoteDefinitionIsStrippedFromBodyAndResolvedAtReference() {
-        List<RichBlock> blocks = ChronicleMarkdownParser.parse("See note[^1].\n\n[^1]: The detail.");
+        List<RichBlock> blocks = ChroniclesMarkdown.parse("See note[^1].\n\n[^1]: The detail.");
 
         assertEquals(2, blocks.size());
         RichBlock.Paragraph p = assertInstanceOf(RichBlock.Paragraph.class, blocks.get(0));
@@ -195,14 +204,14 @@ class ChronicleMarkdownParserTest {
 
     @Test
     void unresolvedFootnoteReferenceFallsBackToLiteralText() {
-        List<RichBlock> blocks = ChronicleMarkdownParser.parse("Dangling[^missing].");
+        List<RichBlock> blocks = ChroniclesMarkdown.parse("Dangling[^missing].");
         RichBlock.Paragraph p = assertInstanceOf(RichBlock.Paragraph.class, blocks.get(0));
         assertEquals("Dangling[^missing].", plain(p.spans()));
     }
 
     @Test
     void guardedFootnoteVariantProducesConditionalTipWithBothCandidates() {
-        List<RichBlock> blocks = ChronicleMarkdownParser.parse(
+        List<RichBlock> blocks = ChroniclesMarkdown.parse(
                 "See note[^1].\n\n[^1?flag:qa_mode]: QA-only detail.\n[^1]: Public detail.");
 
         RichBlock.Paragraph p = assertInstanceOf(RichBlock.Paragraph.class, blocks.get(0));
@@ -210,21 +219,22 @@ class ChronicleMarkdownParserTest {
         assertEquals("[1]", tip.label());
         assertEquals(2, tip.candidates().size());
         assertEquals("QA-only detail.", tip.candidates().get(0).tooltip());
-        assertNotNull(tip.candidates().get(0).condition(), "first candidate should carry the flag:qa_mode condition");
+        assertNotNull(tip.candidates().get(0).conditionExpr(),
+                "first candidate should carry the flag:qa_mode condition");
         assertEquals("Public detail.", tip.candidates().get(1).tooltip());
-        assertNull(tip.candidates().get(1).condition(), "second, unguarded candidate should have no condition");
+        assertNull(tip.candidates().get(1).conditionExpr(), "second, unguarded candidate should have no condition");
     }
 
     @Test
     void singleUnconditionedFootnoteVariantStaysAPlainTip() {
-        List<RichBlock> blocks = ChronicleMarkdownParser.parse("See note[^1].\n\n[^1]: Just the detail.");
+        List<RichBlock> blocks = ChroniclesMarkdown.parse("See note[^1].\n\n[^1]: Just the detail.");
         RichBlock.Paragraph p = assertInstanceOf(RichBlock.Paragraph.class, blocks.get(0));
         assertInstanceOf(RichSpan.Tip.class, p.spans().get(1));
     }
 
     @Test
     void boldToggleWrapsOnlyTheMarkedRun() {
-        List<RichBlock> blocks = ChronicleMarkdownParser.parse("plain **bold** plain");
+        List<RichBlock> blocks = ChroniclesMarkdown.parse("plain **bold** plain");
         RichBlock.Paragraph p = assertInstanceOf(RichBlock.Paragraph.class, blocks.get(0));
 
         assertEquals(3, p.spans().size());
@@ -239,7 +249,7 @@ class ChronicleMarkdownParserTest {
 
     @Test
     void italicToggleWrapsOnlyTheMarkedRun() {
-        List<RichBlock> blocks = ChronicleMarkdownParser.parse("*italic*");
+        List<RichBlock> blocks = ChroniclesMarkdown.parse("*italic*");
         RichBlock.Paragraph p = assertInstanceOf(RichBlock.Paragraph.class, blocks.get(0));
         RichSpan.Text t = assertInstanceOf(RichSpan.Text.class, p.spans().get(0));
         assertTrue(t.style().isItalic());
@@ -247,7 +257,7 @@ class ChronicleMarkdownParserTest {
 
     @Test
     void strikethroughTildeTogglePersistsAcrossFlushes() {
-        List<RichBlock> blocks = ChronicleMarkdownParser.parse("~~gone~~ still");
+        List<RichBlock> blocks = ChroniclesMarkdown.parse("~~gone~~ still");
         RichBlock.Paragraph p = assertInstanceOf(RichBlock.Paragraph.class, blocks.get(0));
         RichSpan.Text struck = assertInstanceOf(RichSpan.Text.class, p.spans().get(0));
         RichSpan.Text rest = assertInstanceOf(RichSpan.Text.class, p.spans().get(1));
@@ -257,7 +267,7 @@ class ChronicleMarkdownParserTest {
 
     @Test
     void highlightTokenSetsNonZeroBackgroundOnlyInsideTheRun() {
-        List<RichBlock> blocks = ChronicleMarkdownParser.parse("==marked== plain");
+        List<RichBlock> blocks = ChroniclesMarkdown.parse("==marked== plain");
         RichBlock.Paragraph p = assertInstanceOf(RichBlock.Paragraph.class, blocks.get(0));
         RichSpan.Text marked = assertInstanceOf(RichSpan.Text.class, p.spans().get(0));
         RichSpan.Text rest = assertInstanceOf(RichSpan.Text.class, p.spans().get(1));
@@ -267,7 +277,7 @@ class ChronicleMarkdownParserTest {
 
     @Test
     void hexColorTokenAppliesUntilReset() {
-        List<RichBlock> blocks = ChronicleMarkdownParser.parse("{#FF0000}red{reset}normal");
+        List<RichBlock> blocks = ChroniclesMarkdown.parse("{#FF0000}red{reset}normal");
         RichBlock.Paragraph p = assertInstanceOf(RichBlock.Paragraph.class, blocks.get(0));
         RichSpan.Text red = assertInstanceOf(RichSpan.Text.class, p.spans().get(0));
         RichSpan.Text normal = assertInstanceOf(RichSpan.Text.class, p.spans().get(1));
@@ -277,14 +287,14 @@ class ChronicleMarkdownParserTest {
 
     @Test
     void malformedColorTokenIsTreatedAsLiteralText() {
-        List<RichBlock> blocks = ChronicleMarkdownParser.parse("{#NOTHEX}text");
+        List<RichBlock> blocks = ChroniclesMarkdown.parse("{#NOTHEX}text");
         RichBlock.Paragraph p = assertInstanceOf(RichBlock.Paragraph.class, blocks.get(0));
         assertEquals("{#NOTHEX}text", plain(p.spans()));
     }
 
     @Test
     void inlineCodeSpanCarriesCopyText() {
-        List<RichBlock> blocks = ChronicleMarkdownParser.parse("run `code here` now");
+        List<RichBlock> blocks = ChroniclesMarkdown.parse("run `code here` now");
         RichBlock.Paragraph p = assertInstanceOf(RichBlock.Paragraph.class, blocks.get(0));
         RichSpan.Text code = assertInstanceOf(RichSpan.Text.class, p.spans().get(1));
         assertEquals("code here", code.text());
@@ -293,7 +303,7 @@ class ChronicleMarkdownParserTest {
 
     @Test
     void kbdTagWrapsLabelWithPaddingSpaces() {
-        List<RichBlock> blocks = ChronicleMarkdownParser.parse("<kbd>Ctrl</kbd>");
+        List<RichBlock> blocks = ChroniclesMarkdown.parse("<kbd>Ctrl</kbd>");
         RichBlock.Paragraph p = assertInstanceOf(RichBlock.Paragraph.class, blocks.get(0));
         RichSpan.Text kbd = assertInstanceOf(RichSpan.Text.class, p.spans().get(0));
         assertEquals(" Ctrl ", kbd.text());
@@ -302,7 +312,7 @@ class ChronicleMarkdownParserTest {
 
     @Test
     void httpAndWikiTargetsBecomeLinksTipTargetsBecomeTips() {
-        List<RichBlock> blocks = ChronicleMarkdownParser
+        List<RichBlock> blocks = ChroniclesMarkdown
                 .parse("[Ext](https://example.com) [Page](wiki:home) [Note](tip:hover text)");
         RichBlock.Paragraph p = assertInstanceOf(RichBlock.Paragraph.class, blocks.get(0));
 
@@ -320,7 +330,7 @@ class ChronicleMarkdownParserTest {
 
     @Test
     void inlineImageTokenParsesResourceLocationAndDimensions() {
-        List<RichBlock> blocks = ChronicleMarkdownParser.parse("[img:minecraft:textures/item/diamond.png,32,16]");
+        List<RichBlock> blocks = ChroniclesMarkdown.parse("[img:minecraft:textures/item/diamond.png,32,16]");
         RichBlock.Paragraph p = assertInstanceOf(RichBlock.Paragraph.class, blocks.get(0));
         RichSpan.Image img = assertInstanceOf(RichSpan.Image.class, p.spans().get(0));
         assertEquals("minecraft:textures/item/diamond.png", img.texture().toString());
@@ -330,7 +340,7 @@ class ChronicleMarkdownParserTest {
 
     @Test
     void inlineImageWithoutDimensionsDefaultsTo48() {
-        List<RichBlock> blocks = ChronicleMarkdownParser.parse("[img:minecraft:textures/item/diamond.png]");
+        List<RichBlock> blocks = ChroniclesMarkdown.parse("[img:minecraft:textures/item/diamond.png]");
         RichBlock.Paragraph p = assertInstanceOf(RichBlock.Paragraph.class, blocks.get(0));
         RichSpan.Image img = assertInstanceOf(RichSpan.Image.class, p.spans().get(0));
         assertEquals(48, img.w());
@@ -339,7 +349,7 @@ class ChronicleMarkdownParserTest {
 
     @Test
     void itemIconTokenParsesResourceLocation() {
-        List<RichBlock> blocks = ChronicleMarkdownParser.parse("[item:minecraft:diamond]");
+        List<RichBlock> blocks = ChroniclesMarkdown.parse("[item:minecraft:diamond]");
         RichBlock.Paragraph p = assertInstanceOf(RichBlock.Paragraph.class, blocks.get(0));
         RichSpan.ItemIcon icon = assertInstanceOf(RichSpan.ItemIcon.class, p.spans().get(0));
         assertEquals("minecraft:diamond", icon.itemId().toString());
@@ -347,14 +357,14 @@ class ChronicleMarkdownParserTest {
 
     @Test
     void invalidItemIconIdIsSwallowedRatherThanThrowing() {
-        List<RichBlock> blocks = ChronicleMarkdownParser.parse("[item:NOT A VALID ID!!]");
+        List<RichBlock> blocks = ChroniclesMarkdown.parse("[item:NOT A VALID ID!!]");
         RichBlock.Paragraph p = assertInstanceOf(RichBlock.Paragraph.class, blocks.get(0));
         assertTrue(p.spans().isEmpty());
     }
 
     @Test
     void smartQuotesAlternateOpenAndCloseButNotInsideCodeSpans() {
-        List<RichBlock> blocks = ChronicleMarkdownParser.parse("say \"hi\" and `\"raw\"`");
+        List<RichBlock> blocks = ChroniclesMarkdown.parse("say \"hi\" and `\"raw\"`");
         RichBlock.Paragraph p = assertInstanceOf(RichBlock.Paragraph.class, blocks.get(0));
         String rendered = plain(p.spans());
         assertTrue(rendered.contains("“hi”"));

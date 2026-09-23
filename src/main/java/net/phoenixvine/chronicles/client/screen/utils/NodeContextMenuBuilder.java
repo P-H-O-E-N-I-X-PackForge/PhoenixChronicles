@@ -203,6 +203,11 @@ public class NodeContextMenuBuilder {
                         state.setCtxOpen(false);
                         state.autoArrangeChapter();
                     }));
+            items.add(new ChronicleOverviewScreen.CtxItem("↻ Rotate chapter 90°", "§e", false, false,
+                    () -> {
+                        state.setCtxOpen(false);
+                        state.rotateChapter90();
+                    }));
         }
 
         if (hasGroup && canEdit) {

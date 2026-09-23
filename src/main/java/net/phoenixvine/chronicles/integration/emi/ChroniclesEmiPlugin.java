@@ -28,7 +28,9 @@ public class ChroniclesEmiPlugin implements EmiPlugin {
 
         registry.addGenericExclusionArea((screen, consumer) -> {
             if (SuiteHudBar.screenWantsBar(screen)) {
-                consumer.accept(new Bounds(0, 0, SuiteHudBar.barWidth(), SuiteHudBar.barHeight()));
+
+                int x = SuiteHudBar.barX();
+                consumer.accept(new Bounds(x, 0, SuiteHudBar.barWidth() - x, SuiteHudBar.barHeight()));
             }
         });
     }
