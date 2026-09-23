@@ -42,8 +42,7 @@ public final class TaskProgressAccess {
 
     public static CompoundTag getOrEmpty(Player player, ResourceLocation taskId) {
         QuestNode owner = QuestTreeRegistry.getTaskOwner(taskId);
-        assert owner != null;
-        CompoundTag tag = resolve(player, taskId, owner, owner.isPooledProgress());
+        CompoundTag tag = resolve(player, taskId, owner, owner != null && owner.isPooledProgress());
         return tag != null ? tag : new CompoundTag();
     }
 

@@ -147,6 +147,10 @@ public class ChronicleOverviewScreen extends Screen
         return toolbarPanel;
     }
 
+    public BulkOpsPanel bulkOpsPanelInstance() {
+        return bulkOpsPanel;
+    }
+
     private final PaletteState palette = new PaletteState();
     String selectedChapter = "";
     private String viewChapterTracker = null;

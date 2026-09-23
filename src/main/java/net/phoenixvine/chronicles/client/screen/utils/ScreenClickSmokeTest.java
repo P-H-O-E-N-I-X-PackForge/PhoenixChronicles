@@ -5,6 +5,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.phoenixvine.chronicles.PhoenixChronicles;
 import net.phoenixvine.chronicles.client.event.ChronicleKeyBindings;
 import net.phoenixvine.chronicles.client.screen.ChronicleOverviewScreen;
+import net.phoenixvine.chronicles.client.screen.RewardTableSimulatorScreen;
 import net.phoenixvine.chronicles.client.screen.widgets.SidebarPanel;
 import net.phoenixvine.chronicles.client.screen.widgets.ToolbarPanel;
 
@@ -12,6 +13,7 @@ import org.jetbrains.annotations.NotNull;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -29,12 +31,17 @@ public final class ScreenClickSmokeTest {
         String origStateFilter = screen.stateFilter;
 
         probeToolbarButtons(screen, results);
+        probeToolModes(screen, results);
         probeFilterPills(screen, results, origStateFilter);
         probeHeaderBar(screen, results);
         probeSidebar(screen, results, origChapter);
         probeMinimap(screen, results);
-        probeCanvasNodes(screen, results);
+        List<Map.Entry<ResourceLocation, ChronicleOverviewScreen.NodeHitbox>> visibleNodes =
+                probeCanvasNodes(screen, results);
         probeCanvasEmptyArea(screen, results);
+        probeBulkOps(screen, results, visibleNodes);
+        probeChapterLayoutTools(screen, results);
+        probeRewardTableSimulator(screen, results);
         probeKeyBattery(screen, results);
 
         try {
@@ -72,6 +79,33 @@ public final class ScreenClickSmokeTest {
                 returnToScreen(screen);
             });
         }
+    }
+
+    private static void probeToolModes(@NotNull ChronicleOverviewScreen screen, @NotNull List<Result> results) {
+        if (!screen.isDevMode()) return;
+
+        probe(results, "toolbar: tool mode cycle (Place/Connect/Select, restores)", () -> {
+            GraphEditorState es = screen.editorStateInstance();
+            GraphEditorState.EditorTool origTool = es.activeTool;
+            Set<ResourceLocation> origSelection = new LinkedHashSet<>(es.multiSelection);
+
+            clickToolbarButton(screen, "toolPlace");
+            if (es.activeTool != GraphEditorState.EditorTool.PLACE) {
+                throw new IllegalStateException("toolPlace click didn't enter PLACE mode");
+            }
+            clickToolbarButton(screen, "toolConnect");
+            if (es.activeTool != GraphEditorState.EditorTool.CONNECT) {
+                throw new IllegalStateException("toolConnect click didn't enter CONNECT mode");
+            }
+            clickToolbarButton(screen, "toolSelect");
+            if (es.activeTool != GraphEditorState.EditorTool.SELECT) {
+                throw new IllegalStateException("toolSelect click didn't return to SELECT mode");
+            }
+
+            es.activeTool = origTool;
+            es.multiSelection.clear();
+            es.multiSelection.addAll(origSelection);
+        });
     }
 
     private static void clickToolbarButton(@NotNull ChronicleOverviewScreen screen, String key) {
@@ -134,6 +168,15 @@ public final class ScreenClickSmokeTest {
 
                 int[] subgraphBtn2 = screen.computeHeaderBarLayout(screen.width())[2];
                 clickRectCenter(screen, subgraphBtn2);
+            });
+
+            probe(results, "header: chapter map (open + back)", () -> {
+                int[] chapterMapBtn = screen.computeHeaderBarLayout(screen.width())[3];
+                if (chapterMapBtn == null) {
+                    throw new IllegalStateException("Chapter map header button unexpectedly absent in dev mode");
+                }
+                clickRectCenter(screen, chapterMapBtn);
+                returnToScreen(screen);
             });
         }
 
@@ -198,7 +241,8 @@ public final class ScreenClickSmokeTest {
         });
     }
 
-    private static void probeCanvasNodes(@NotNull ChronicleOverviewScreen screen, @NotNull List<Result> results) {
+    private static List<Map.Entry<ResourceLocation, ChronicleOverviewScreen.NodeHitbox>> probeCanvasNodes(
+            @NotNull ChronicleOverviewScreen screen, @NotNull List<Result> results) {
         List<Map.Entry<ResourceLocation, ChronicleOverviewScreen.NodeHitbox>> visible = new ArrayList<>();
         for (Map.Entry<ResourceLocation, ChronicleOverviewScreen.NodeHitbox> e : screen.nodeButtons().entrySet()) {
             if (e.getValue().visible) {
@@ -240,6 +284,7 @@ public final class ScreenClickSmokeTest {
                         }
                     });
         }
+        return visible;
     }
 
     private static void toggleMultiSelect(@NotNull Set<ResourceLocation> multiSelection, ResourceLocation id) {
@@ -291,6 +336,57 @@ public final class ScreenClickSmokeTest {
             if (hb.visible && hb.x <= x && x < hb.x + hb.w && hb.y <= y && y < hb.y + hb.h) return true;
         }
         return false;
+    }
+
+    private static void probeBulkOps(@NotNull ChronicleOverviewScreen screen, @NotNull List<Result> results,
+                                     @NotNull List<Map.Entry<ResourceLocation, ChronicleOverviewScreen.NodeHitbox>> visibleNodes) {
+        if (!screen.isDevMode() || visibleNodes.size() < 2) {
+            results.add(new Result("bulk ops: batch shape change (skipped, need 2+ visible nodes)", true, null));
+            return;
+        }
+
+        probe(results, "bulk ops: batch shape change via panel (then undo)", () -> {
+            Set<ResourceLocation> multiSel = screen.editorStateInstance().multiSelection;
+            Set<ResourceLocation> origSelection = new LinkedHashSet<>(multiSel);
+
+            multiSel.clear();
+            multiSel.add(visibleNodes.get(0).getKey());
+            multiSel.add(visibleNodes.get(1).getKey());
+
+            screen.bulkOpsPanelInstance().testClickFirstShapeSlot(screen.sidebarW());
+            screen.undoRedo().undo();
+
+            multiSel.clear();
+            multiSel.addAll(origSelection);
+        });
+    }
+
+    private static void probeChapterLayoutTools(@NotNull ChronicleOverviewScreen screen,
+                                                @NotNull List<Result> results) {
+        if (!screen.isDevMode()) return;
+
+        if (screen.chapterQuestCount(screen.selectedChapter()) == 0) {
+            results.add(new Result("canvas: auto-arrange/rotate chapter (skipped, chapter empty)", true, null));
+            return;
+        }
+
+        probe(results, "canvas: auto-arrange chapter (then undo)", () -> {
+            screen.autoArrangeChapter();
+            screen.undoRedo().undo();
+        });
+
+        probe(results, "canvas: rotate chapter 90° (then undo)", () -> {
+            screen.rotateChapter90();
+            screen.undoRedo().undo();
+        });
+    }
+
+    private static void probeRewardTableSimulator(@NotNull ChronicleOverviewScreen screen,
+                                                   @NotNull List<Result> results) {
+        probe(results, "reward table simulator screen (open + back)", () -> {
+            Minecraft.getInstance().setScreen(new RewardTableSimulatorScreen(screen, "phoenix_smoketest_no_such_table"));
+            returnToScreen(screen);
+        });
     }
 
     private static void probeKeyBattery(@NotNull ChronicleOverviewScreen screen, @NotNull List<Result> results) {
