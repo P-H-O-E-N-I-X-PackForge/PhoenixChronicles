@@ -580,11 +580,17 @@ public class TaskRewardEditorScreen extends Screen {
                     .stream().reduce("", (a, b) -> a.isEmpty() ? b : a + ", " + b);
             String hint = knownTables.isEmpty() ? "§8Table ID  (no tables loaded yet)" :
                     "§8Table ID: known: " + knownTables;
-            rewardCommandBox = new EditBox(font, rx, rfy, colW, FIELD_H, Component.empty());
+            rewardCommandBox = new EditBox(font, rx, rfy, colW - 20, FIELD_H, Component.empty());
             rewardCommandBox.setHint(Component.literal(hint));
             rewardCommandBox.setMaxLength(128);
             rewardCommandBox.setValue(rCommandVal);
             addRenderableWidget(rewardCommandBox);
+            addRenderableWidget(Button.builder(Component.literal("🎲"), b -> {
+                String tid = rewardCommandBox.getValue().trim();
+                if (minecraft != null && !tid.isEmpty()) minecraft.setScreen(new RewardTableSimulatorScreen(this, tid));
+            }).bounds(rx + colW - 18, rfy, 18, FIELD_H)
+                    .tooltip(Tooltip.create(Component.literal("Simulate 1000 rolls against this table")))
+                    .build());
         } else if (rewardType.equals("choice_box") && editingBoxOptionIndex >= 0) {
             String itemLabel = boxOptionPickedItem != null ?
                     "§f" + boxOptionPickedItem.getHoverName().getString() : "§8Pick Item";

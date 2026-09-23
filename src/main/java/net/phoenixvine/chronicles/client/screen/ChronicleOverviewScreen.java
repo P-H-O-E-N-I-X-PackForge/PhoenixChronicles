@@ -1379,7 +1379,7 @@ public class ChronicleOverviewScreen extends Screen
         if (my < 0 || my >= TOOLBAR_Y) return false;
 
         int[][] layout = computeHeaderBarLayout(cr);
-        int[] claimBtn = layout[0], gridBtn = layout[1], subgraphBtn = layout[2];
+        int[] claimBtn = layout[0], gridBtn = layout[1], subgraphBtn = layout[2], chapterMapBtn = layout[3];
 
         if (claimBtn != null && hitsRect(claimBtn, mx, my)) {
             if (minecraft != null) minecraft.setScreen(new ClaimRewardsScreen(this));
@@ -1399,6 +1399,11 @@ public class ChronicleOverviewScreen extends Screen
         if (subgraphBtn != null && hitsRect(subgraphBtn, mx, my)) {
             editorState.subgraphMode = !editorState.subgraphMode;
             if (editorState.subgraphMode) rebuildSubgraph();
+            return true;
+        }
+
+        if (chapterMapBtn != null && hitsRect(chapterMapBtn, mx, my) && minecraft != null) {
+            minecraft.setScreen(new ChapterMapScreen(this));
             return true;
         }
 
@@ -1431,14 +1436,20 @@ public class ChronicleOverviewScreen extends Screen
         int[] gridBtn = { gpx2 - 3, 3, gpx2 + gw2 + 5, 16 };
 
         int[] subgraphBtn = null;
+        int[] chapterMapBtn = null;
         if (isDevMode) {
             String sgLabel2 = editorState.subgraphMode ? "Subgraph: " + subgraphNodes.size() : "Subgraph";
             int sgw2 = font.width(sgLabel2);
             int sgx2 = gpx2 - sgw2 - 18;
             subgraphBtn = new int[] { sgx2 - 3, 3, sgx2 + sgw2 + 5, 16 };
+
+            String cmLabel2 = "🗺 Chapters";
+            int cmw2 = font.width(cmLabel2);
+            int cmx2 = sgx2 - cmw2 - 18;
+            chapterMapBtn = new int[] { cmx2 - 3, 3, cmx2 + cmw2 + 5, 16 };
         }
 
-        return new int[][] { claimBtn, gridBtn, subgraphBtn };
+        return new int[][] { claimBtn, gridBtn, subgraphBtn, chapterMapBtn };
     }
 
     private boolean tryHandleToolbarButtonClick(double mx, double my) {
@@ -1452,8 +1463,13 @@ public class ChronicleOverviewScreen extends Screen
                 return true;
             }
             if (isDevMode && hitsToolbarBtn("toolPlace", mx, my)) {
-                editorState.activeTool = editorState.activeTool == GraphEditorState.EditorTool.PLACE ?
-                        GraphEditorState.EditorTool.SELECT : GraphEditorState.EditorTool.PLACE;
+                boolean enteringPlace = editorState.activeTool != GraphEditorState.EditorTool.PLACE;
+                editorState.activeTool = enteringPlace ?
+                        GraphEditorState.EditorTool.PLACE : GraphEditorState.EditorTool.SELECT;
+                // Fresh placement streak starts with a clean selection, so every node dropped
+                // this streak accumulates into one multi-selection ready for BulkOpsPanel --
+                // see placeQuickQuest.
+                if (enteringPlace) editorState.multiSelection.clear();
                 return true;
             }
             if (isDevMode && hitsToolbarBtn("toolConnect", mx, my)) {
@@ -1951,13 +1967,19 @@ public class ChronicleOverviewScreen extends Screen
         setFeedback("Placed quest -- click again to place more");
 
         ResourceLocation placedId = questId;
+        // Accumulates across a placement streak (cleared when Place mode is entered -- see
+        // tryHandleToolbarButtonClick) so BulkOpsPanel shows up ready to batch-set chapter/
+        // shape/size for the whole freshly-placed group without any extra Ctrl+click-ing.
+        editorState.multiSelection.add(placedId);
         pushUndo("Undo: quest placed", () -> {
             QuestTreeRegistry.removeQuest(placedId);
             QuestFileSaver.deleteQuestFiles(node);
+            editorState.multiSelection.remove(placedId);
             rebuild();
         }, () -> {
             QuestTreeRegistry.injectDynamicQuestNode(node, null);
             QuestFileSaver.saveOneQuestToDisk(node, false);
+            editorState.multiSelection.add(placedId);
             rebuild();
         });
     }
@@ -2505,6 +2527,17 @@ public class ChronicleOverviewScreen extends Screen
                         Component.literal("§7isolating just its dependency chain."),
                         Component.literal("§8Click a quest to select it, then click this"),
                         Component.literal("§8pill (or press G) to toggle it on/off.")), mx, my));
+            }
+
+            String cmLabel = "§8🗺 Chapters";
+            int cmw = font.width(StringUtil.stripColor(cmLabel));
+            int cmx = sgx - cmw - 18, cmy = 3;
+            boolean cmHov = mx >= cmx - 3 && mx < cmx + cmw + 5 && my >= cmy && my < cmy + 13;
+            g.fill(cmx - 3, cmy, cmx + cmw + 5, cmy + 13, cmHov ? 0x44FFFFFF : 0x22FFFFFF);
+            g.drawString(font, cmLabel, cmx, cmy + 3, palette.textDim, false);
+            if (cmHov) {
+                pendingDeferredDraws.add(() -> g.renderTooltip(font,
+                        Component.literal("§7See how chapters gate each other"), mx, my));
             }
         }
 

@@ -133,7 +133,6 @@ Footnote example[^amps].
 - Thanks to [Jambon](https://github.com/Jambon123), FyreDrakon, and KaiTheExaminer
 for helping test out the mod and giving some suggestions.
 - Thanks to [Rose](https://github.com/Lilac-Rose) for adding porting over ftb quest player data. 
-"slanderous of ftbquestsl; stupid fucking formatting" Lilac Aria Rose; 2026
 
 ## Ai disclosure.
 A sizeable portion of the code has been written by ai. Refactoring is currently ongoing.

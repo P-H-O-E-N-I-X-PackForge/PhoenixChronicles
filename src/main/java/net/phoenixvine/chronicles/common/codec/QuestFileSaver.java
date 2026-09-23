@@ -36,7 +36,14 @@ public class QuestFileSaver {
         saveOneQuestToDisk(node, true);
     }
 
-    public static void saveOneQuestToDisk(QuestNode node, boolean refreshEmi) {
+    /**
+     * @param refreshRecipeViewers whether to tell EMI/JEI about the change. Callers doing
+     *                             rapid-fire saves (e.g. Place mode dropping a batch of bare
+     *                             nodes, or a bulk layout operation) should pass false and rely
+     *                             on the next "real" save (from the quest config dialog) to
+     *                             refresh recipe viewers instead.
+     */
+    public static void saveOneQuestToDisk(QuestNode node, boolean refreshRecipeViewers) {
         QuestFileWatcher.suppressNextReload();
         Path base = Minecraft.getInstance().gameDirectory.toPath()
                 .resolve("config").resolve("phoenix_chronicles");
@@ -50,15 +57,18 @@ public class QuestFileSaver {
                 }
             }
             saveNode(base, node, parentId);
-            if (refreshEmi) refreshEmiIfPresent();
+            if (refreshRecipeViewers) refreshRecipeViewers();
         } catch (IOException e) {
             System.err.println("[Phoenix Chronicles] Failed to save quest '" + node.getId() + "': " + e.getMessage());
         }
     }
 
-    private static void refreshEmiIfPresent() {
+    private static void refreshRecipeViewers() {
         if (net.minecraftforge.fml.ModList.get().isLoaded("emi")) {
             net.phoenixvine.chronicles.integration.emi.ChroniclesEmiPlugin.refreshQuestRecipes();
+        }
+        if (net.minecraftforge.fml.ModList.get().isLoaded("jei")) {
+            net.phoenixvine.chronicles.integration.jei.ChroniclesJeiPlugin.refreshQuestRecipes();
         }
     }
 
@@ -101,7 +111,7 @@ public class QuestFileSaver {
         saveStubChapters(base);
 
         QuestFileWatcher.suppressNextReload();
-        refreshEmiIfPresent();
+        refreshRecipeViewers();
 
         System.out.println("[Phoenix Chronicles] Saved " + saved + " quest(s) to disk.");
     }

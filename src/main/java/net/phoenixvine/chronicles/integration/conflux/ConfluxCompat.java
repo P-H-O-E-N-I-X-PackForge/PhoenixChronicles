@@ -4,10 +4,9 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.fml.ModList;
-
-
 import net.phoenix.core.integration.conflux.research.ResearchTeamHelper;
 import net.phoenix.core.integration.conflux.research.WorldResearchData;
+
 import org.jetbrains.annotations.NotNull;
 
 public final class ConfluxCompat {
