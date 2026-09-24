@@ -29,7 +29,7 @@ public final class ChroniclesMarkdown {
         } else if (b instanceof RichBlock.Callout c) {
             return new RichBlock.Callout(c.type(), c.title(), fixupConditionals(c.children()));
         } else if (b instanceof RichBlock.Details d) {
-            return new RichBlock.Details(d.expandKey(), d.title(), fixupConditionals(d.children()));
+            return new RichBlock.Details(d.expandKey(), d.title(), fixupConditionals(d.children()), d.fakeLoading());
         } else if (b instanceof RichBlock.CollapsibleSection s) {
             return new RichBlock.CollapsibleSection(s.level(), s.headingSpans(), s.collapseKey(),
                     fixupConditionals(s.children()));

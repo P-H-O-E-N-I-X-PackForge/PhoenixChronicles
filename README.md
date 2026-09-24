@@ -74,7 +74,7 @@ Below is a loose roadmap of what we plan to do in the future.
 ![Roadmap Chart](https://raw.githubusercontent.com/P-H-O-E-N-I-X-PackForge/PhoenixChronicles/main/src/main/resources/assets/phoenix_chronicles/images/roadmap_chart.png)
 
 ## Small snippt of the markdown of quests.
-![Roadmap Chart](https://raw.githubusercontent.com/P-H-O-E-N-I-X-PackForge/PhoenixChronicles/main/src/main/resources/assets/phoenix_chronicles/images/markdown.webp)
+![Markdown Example](https://raw.githubusercontent.com/P-H-O-E-N-I-X-PackForge/PhoenixChronicles/main/src/main/resources/assets/phoenix_chronicles/images/markdown.webp)
 
 ```
 // Heading. Levels 1-6(# -> ######) ({flat} if you don't want any level of header to collapse).
