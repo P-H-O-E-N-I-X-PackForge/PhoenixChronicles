@@ -1,15 +1,8 @@
-buildscript {
-    repositories {
-        maven { url = 'https://repo.spongepowered.org/repository/maven-public/' }
-        mavenCentral()
-    }
-}
-
 plugins {
     id "idea"
     id "eclipse"
     id "maven-publish"
-    id 'net.neoforged.moddev.legacyforge' version '2.0.91'
+    id 'net.neoforged.moddev' version '2.0.5-beta'
     id 'com.diffplug.spotless' version '7.0.2'
 }
 
@@ -84,6 +77,13 @@ repositories {
     maven {
         url = "https://thedarkcolour.github.io/KotlinForForge/"
     }
+    maven {
+        name = 'Repsy Toma Maven'
+        url = 'https://repo.repsy.io/mvn/toma/public/'
+        content {
+            includeGroup 'dev.toma.configuration'
+        }
+    }
     flatDir {
         dir 'libs'
     }
@@ -92,10 +92,12 @@ repositories {
 version = mod_version
 group = maven_group
 base { archivesName = archives_base_name }
-java { sourceCompatibility = targetCompatibility = JavaVersion.VERSION_17 }
 
-legacyForge {
-    version = project.minecraft_version + '-' + project.forge_version
+// Minecraft 1.21.1 requires Java 21
+java { sourceCompatibility = targetCompatibility = JavaVersion.VERSION_21 }
+
+neoForge {
+    version = project.neoforge_version
 
     parchment {
         mappingsVersion = project.mapping_version
@@ -111,12 +113,12 @@ legacyForge {
             client()
             sourceSet = sourceSets.main
             programArguments.addAll('--refresh-dependencies')
-            systemProperty('forge.enabledGameTestNamespaces', project.mod_id)
+            systemProperty('neoforge.enabledGameTestNamespaces', project.mod_id)
         }
         server {
             server()
             sourceSet = sourceSets.main
-            systemProperty('forge.enabledGameTestNamespaces', project.mod_id)
+            systemProperty('neoforge.enabledGameTestNamespaces', project.mod_id)
             programArguments.addAll('--nogui', '--world', 'world-extra')
         }
         data {
@@ -128,7 +130,7 @@ legacyForge {
         gameTestServer {
             type = 'gameTestServer'
             sourceSet = sourceSets.main
-            systemProperty('forge.enabledGameTestNamespaces', project.mod_id)
+            systemProperty('neoforge.enabledGameTestNamespaces', project.mod_id)
         }
     }
 
@@ -146,53 +148,57 @@ dependencies {
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
 
     // JEI, EMI, Jade
-    modCompileOnly("mezz.jei:jei-${minecraft_version}-forge-api:${jei_version}")
-    modCompileOnly("mezz.jei:jei-${minecraft_version}-common-api:${jei_version}")
-    modRuntimeOnly("mezz.jei:jei-${minecraft_version}-forge:${jei_version}")
-    modRuntimeOnly("dev.emi:emi-forge:${emi_version}+${minecraft_version}")
-    modRuntimeOnly("curse.maven:jade-324717:5390389")
-    modCompileOnly("dev.emi:emi-forge:${emi_version}+${minecraft_version}")
+    compileOnly("mezz.jei:jei-${minecraft_version}-neoforge-api:${jei_version}")
+    compileOnly("mezz.jei:jei-${minecraft_version}-common-api:${jei_version}")
+    runtimeOnly("mezz.jei:jei-${minecraft_version}-neoforge:${jei_version}")
+    runtimeOnly("dev.emi:emi-neoforge:${emi_version}+${minecraft_version}")
+    runtimeOnly("curse.maven:jade-324717:8591319")
+    compileOnly("dev.emi:emi-neoforge:${emi_version}+${minecraft_version}")
 
-    modCompileOnly("net.phoenix.core:Phantasia:${phantasia_version}")
-    modRuntimeOnly("net.phoenix.core:Phantasia:${phantasia_version}")
+    // TODO: Phantasia has no 1.21.1/NeoForge build yet -- re-enable once it's ported.
+    // compileOnly("net.phoenix.core:Phantasia:${phantasia_version}")
+    // runtimeOnly("net.phoenix.core:Phantasia:${phantasia_version}")
 
-    modRuntimeOnly("dev.architectury:architectury-forge:${architectury_version}")
-    modCompileOnly("dev.ftb.mods:ftb-library-forge:${ftblibrary_version}")
-    modCompileOnly("dev.ftb.mods:ftb-teams-forge:${ftbteams_version}")
+    runtimeOnly("dev.architectury:architectury-neoforge:${architectury_version}")
+    compileOnly("dev.ftb.mods:ftb-library-neoforge:${ftblibrary_version}")
+    compileOnly("dev.ftb.mods:ftb-teams-neoforge:${ftbteams_version}")
 
-    modCompileOnly("dev.latvian.mods:kubejs-forge:${kubejs_version}")
-    modRuntimeOnly("dev.latvian.mods:kubejs-forge:${kubejs_version}")
+    compileOnly("dev.latvian.mods:kubejs-neoforge:${kubejs_version}")
+    runtimeOnly("dev.latvian.mods:kubejs-neoforge:${kubejs_version}")
 
-    modCompileOnly("dev.latvian.mods:rhino-forge:${rhino_version}")
-    modRuntimeOnly("dev.latvian.mods:rhino-forge:${rhino_version}")
+    compileOnly("dev.latvian.mods:rhino:${rhino_version}")
+    runtimeOnly("dev.latvian.mods:rhino:${rhino_version}")
 
-    modCompileOnly("appeng:appliedenergistics2-forge:${appeng_version}")
-    modRuntimeOnly("appeng:appliedenergistics2-forge:${appeng_version}")
+    compileOnly("org.appliedenergistics:appliedenergistics2:${appeng_version}")
+    runtimeOnly("org.appliedenergistics:appliedenergistics2:${appeng_version}")
 
-    modCompileOnly("top.theillusivec4.curios:curios-forge:${curios_version}")
-    modRuntimeOnly("top.theillusivec4.curios:curios-forge:${curios_version}")
+    compileOnly("top.theillusivec4.curios:curios-neoforge:${curios_version}")
+    runtimeOnly("top.theillusivec4.curios:curios-neoforge:${curios_version}")
 
-    modRuntimeOnly("dev.ftb.mods:ftb-library-forge:${ftblibrary_version}")
-  //  modRuntimeOnly("dev.ftb.mods:ftb-teams-forge:${ftbteams_version}")
+    runtimeOnly("dev.ftb.mods:ftb-library-neoforge:${ftblibrary_version}")
+  //  runtimeOnly("dev.ftb.mods:ftb-teams-neoforge:${ftbteams_version}")
 
-    modCompileOnly('net.phoenixvine.guilds:phoenix_guilds:1.6.3')
-    modRuntimeOnly('net.phoenixvine.guilds:phoenix_guilds:1.6.3')
+    // NOTE: interaction with phoenix_guilds is being ported separately -- dependency kept so the
+    // classpath resolves, but the Java side using it is not expected to compile yet.
+    compileOnly('net.phoenixvine.guilds:phoenix_guilds-neoforge:1.6.3')
+    runtimeOnly('net.phoenixvine.guilds:phoenix_guilds-neoforge:1.6.3')
 
-    jarJar(modImplementation("net.phoenixvine.wiki:phoenix_wiki:0.4.8"))
+    jarJar(implementation("net.phoenixvine.wiki:phoenix_wiki-neoforge:0.3.0"))
 
-    modCompileOnly("net.phoenix.phoenix_archive:phoenix_archive:${phoenix_archive_version}")
-    modRuntimeOnly("net.phoenix.phoenix_archive:phoenix_archive:${phoenix_archive_version}")
+    // TODO: Phoenix-Archive and PhoenixCore have no 1.21.1/NeoForge build yet -- re-enable once
+    // those repos are ported too.
+    // compileOnly("net.phoenix.phoenix_archive:phoenix_archive:${phoenix_archive_version}")
+    // runtimeOnly("net.phoenix.phoenix_archive:phoenix_archive:${phoenix_archive_version}")
+    // compileOnly("net.phoenix.core:PhoenixCore:${phoenixcore_version}:slim") { transitive = false }
 
-    modCompileOnly("net.phoenix.core:PhoenixCore:${phoenixcore_version}:slim") { transitive = false }
-
-    modCompileOnly("com.gregtechceu.gtceu:gtceu-${minecraft_version}:${gtceu_version}:slim") { transitive = false }
-    modCompileOnly("com.lowdragmc.ldlib:ldlib-forge-${minecraft_version}:${ldlib_version}") { transitive = false }
-    modCompileOnly("com.tterrag.registrate:Registrate:${registrate_version}")
-    modCompileOnly("dev.toma.configuration:configuration-forge-${minecraft_version}:${configuration_version}")
-    modRuntimeOnly("com.gregtechceu.gtceu:gtceu-${minecraft_version}:${gtceu_version}:slim") { transitive = false }
-    modRuntimeOnly("com.lowdragmc.ldlib:ldlib-forge-${minecraft_version}:${ldlib_version}") { transitive = false }
-    modRuntimeOnly("com.tterrag.registrate:Registrate:${registrate_version}")
-    modRuntimeOnly("dev.toma.configuration:configuration-forge-${minecraft_version}:${configuration_version}")
+    compileOnly("com.gregtechceu.gtceu:gtceu-${minecraft_version}:${gtceu_version}") { transitive = false }
+    compileOnly("com.lowdragmc.ldlib:ldlib-neoforge-${minecraft_version}:${ldlib_version}") { transitive = false }
+    compileOnly("com.tterrag.registrate:Registrate:${registrate_version}")
+    compileOnly("dev.toma.configuration:configuration-${minecraft_version}:${configuration_version}")
+    runtimeOnly("com.gregtechceu.gtceu:gtceu-${minecraft_version}:${gtceu_version}") { transitive = false }
+    runtimeOnly("com.lowdragmc.ldlib:ldlib-neoforge-${minecraft_version}:${ldlib_version}") { transitive = false }
+    runtimeOnly("com.tterrag.registrate:Registrate:${registrate_version}")
+    runtimeOnly("dev.toma.configuration:configuration-${minecraft_version}:${configuration_version}")
 
     compileOnly 'org.projectlombok:lombok:1.18.24'
     annotationProcessor 'org.projectlombok:lombok:1.18.24'
@@ -220,28 +226,26 @@ tasks.named('processResources', ProcessResources).configure {
             "mod_name": mod_name,
             "mod_url": mod_url,
             "mod_author": mod_author,
-            "forge_version": forge_version.split("\\.")[0],
+            "neoforge_version": neoforge_version,
             "minecraft_version": minecraft_version,
             "gtceu_version": gtceu_version,
     ]
     inputs.properties(properties)
 
-    filesMatching("META-INF/mods.toml") {
+    filesMatching("META-INF/neoforge.mods.toml") {
         expand properties + [project: project]
     }
 }
 
-tasks.named('jar', Jar).configure { finalizedBy 'reobfJar' }
 tasks.withType(JavaCompile).configureEach {
     options.encoding = "UTF-8"
-    options.release.set(17)
+    options.release.set(21)
     options.compilerArgs << "-Aquiet=true"
 }
 
 tasks.register('publishToDomains', Copy) {
     group = 'phoenix'
     description = 'Builds this mod and copies the jar into ../Phoenix-Domains/libs, so Domains picks up local changes.'
-    dependsOn 'reobfJar'
     from(layout.buildDirectory.dir('libs')) {
         include '*.jar'
         exclude '*-sources.jar'

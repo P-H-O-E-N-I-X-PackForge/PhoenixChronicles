@@ -1,5 +1,5 @@
 modLoader = "javafml"
-loaderVersion = "[47,)"
+loaderVersion = "[1,)"
 license = "${mod_license}"
 
 # This is a URL to e.g. your GitHub or CurseForge issues page.
@@ -24,9 +24,9 @@ Welcome to Phoenix's Chronicles, the next gen quest mod! Meant to be better than
 '''
 
     [[dependencies.${mod_id}]]
-        modId = "forge"
+        modId = "neoforge"
         mandatory = true
-        versionRange = "[${forge_version},)"
+        versionRange = "[${neoforge_version},)"
         ordering = "NONE"
         side = "BOTH"
     [[dependencies.${mod_id}]]
@@ -50,12 +50,14 @@ Welcome to Phoenix's Chronicles, the next gen quest mod! Meant to be better than
     [[dependencies.${mod_id}]]
         modId="phoenix_wiki"
         mandatory=true
-        versionRange="[0.4.7,)"
+        versionRange="[0.3.0,)"
         ordering="NONE"
         side="BOTH"
-    [[dependencies.${mod_id}]]
-        modId = "phoenix_archive"
-        mandatory = false
-        versionRange = "[0,)"
-        ordering = "NONE"
-        side = "BOTH"
+    # TODO: Phoenix-Archive has no 1.21.1/NeoForge build yet -- its dependency entry (and the
+    # matching build.gradle dependency) is commented out until that repo is ported too.
+    #[[dependencies.${mod_id}]]
+    #    modId = "phoenix_archive"
+    #    mandatory = false
+    #    versionRange = "[0,)"
+    #    ordering = "NONE"
+    #    side = "BOTH"
