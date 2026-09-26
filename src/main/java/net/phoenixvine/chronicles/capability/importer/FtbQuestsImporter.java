@@ -504,9 +504,10 @@ public class FtbQuestsImporter {
         Path categoryFolder = questsBaseDir.resolve(idx.categorySlug().toLowerCase(Locale.ROOT));
         Files.createDirectories(categoryFolder);
 
-        writeMasterCategoryJson(categoryFolder, idx.categorySlug(), idx.displayTitle(),
-                extractItemId(chapter.get("icon")),
+        String chapterIcon = extractItemId(chapter.get("icon"));
+        writeMasterCategoryJson(categoryFolder, idx.categorySlug(), idx.displayTitle(), chapterIcon,
                 chapter.contains("order_index") ? chapter.getInt("order_index") : 0);
+        registerChapterIcon(outputDir, idx.categorySlug(), chapterIcon);
 
         int imported = 0, skipped = 0;
         for (int i = 0; i < quests.size(); i++) {
@@ -545,7 +546,66 @@ public class FtbQuestsImporter {
             }
         }
 
+        // Chapters are normally discovered by scanning quests for their `chapter` field, so a
+        // chapter imported with zero quests would otherwise never appear in the chapter list --
+        // register it in the same categories.txt the "+ New Chapter" UI writes to.
+        if (imported == 0) registerEmptyChapter(outputDir, idx.categorySlug());
+
         return new ImportResult(imported, skipped, idx.categorySlug(), warnings);
+    }
+
+    private static void registerEmptyChapter(Path outputDir, String categorySlug) {
+        String id = categorySlug.trim().toUpperCase(Locale.ROOT);
+        if (id.isEmpty()) return;
+        Path f = outputDir.resolve("categories.txt");
+        try {
+            List<String> existing = new ArrayList<>();
+            if (Files.exists(f)) {
+                for (String line : Files.readAllLines(f, StandardCharsets.UTF_8)) {
+                    String cat = line.trim().toUpperCase(Locale.ROOT);
+                    if (!cat.isEmpty()) existing.add(cat);
+                }
+            }
+            if (!existing.contains(id)) {
+                existing.add(id);
+                Files.createDirectories(f.getParent());
+                Files.writeString(f, String.join("\n", existing), StandardCharsets.UTF_8);
+            }
+        } catch (IOException ignored) {}
+    }
+
+    /**
+     * The sidebar reads a chapter's icon from ChapterConfig (config/phoenix_chronicles/chapters.json),
+     * not from the per-chapter category.json this importer also writes (that file is only ever
+     * consulted for a display-name fallback). Mirror ChapterConfig's JSON shape here directly rather
+     * than calling into it -- it's a client-only class, and this importer also runs from a server
+     * command handler.
+     */
+    private static void registerChapterIcon(Path outputDir, String categorySlug, String iconItem) {
+        if (iconItem == null || iconItem.isEmpty() || iconItem.equals("minecraft:air")) return;
+        String id = categorySlug.trim().toUpperCase(Locale.ROOT);
+        if (id.isEmpty()) return;
+
+        Path f = outputDir.resolve("chapters.json");
+        try {
+            JsonObject root;
+            if (Files.exists(f)) {
+                JsonElement parsed = JsonParser.parseString(Files.readString(f, StandardCharsets.UTF_8));
+                root = parsed.isJsonObject() ? parsed.getAsJsonObject() : new JsonObject();
+            } else {
+                root = new JsonObject();
+            }
+
+            JsonObject entry = root.has(id) && root.get(id).isJsonObject() ? root.getAsJsonObject(id) :
+                    new JsonObject();
+            if (entry.has("icon") && !entry.get("icon").getAsString().isEmpty()) return;
+
+            entry.addProperty("icon", iconItem);
+            root.add(id, entry);
+
+            Files.createDirectories(f.getParent());
+            Files.writeString(f, root.toString(), StandardCharsets.UTF_8);
+        } catch (Exception ignored) {}
     }
 
     private static String convertLinkStub(LinkStub link, ChapterIndex idx, QuestLoc target,

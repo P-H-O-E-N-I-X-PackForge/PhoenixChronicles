@@ -72,7 +72,7 @@ public class QuestTasksScreen extends Screen {
 
     private java.util.List<net.minecraft.util.FormattedCharSequence> wrapSubtitle(String subtitle, int maxW) {
         if (subtitle == null || subtitle.isBlank()) return java.util.List.of();
-        java.util.List<net.minecraft.util.FormattedCharSequence> lines = font.split(Component.literal(subtitle),
+        java.util.List<net.minecraft.util.FormattedCharSequence> lines = font.split(ChroniclesUIKit.lit(subtitle),
                 Math.max(20, maxW));
         return lines.size() > SUBTITLE_MAX_LINES ? lines.subList(0, SUBTITLE_MAX_LINES) : lines;
     }
@@ -145,7 +145,7 @@ public class QuestTasksScreen extends Screen {
 
     public QuestTasksScreen(Screen parent, QuestNode node, FullQuestData content, PlayerQuestData playerData,
                             boolean startFullscreen) {
-        super(Component.literal("Quest Details"));
+        super(ChroniclesUIKit.lit("Quest Details"));
         this.parent = parent;
         this.node = node;
         this.content = content;
@@ -159,7 +159,8 @@ public class QuestTasksScreen extends Screen {
         super.init();
         openTimeMs = System.currentTimeMillis();
 
-        isEditMode = player != null && player.hasPermissions(2);
+        isEditMode = player != null && player.hasPermissions(2) &&
+                parent instanceof ChronicleOverviewScreen overview && overview.isDevMode();
         phantasiaPreview = net.phoenixvine.chronicles.integration.phantasia.PhantasiaCompat.createPreviewForNode(node);
 
         boolean hasInfoTasks = content.effectiveTasks().stream().anyMatch(t2 -> t2 instanceof InfoTask);
@@ -215,7 +216,8 @@ public class QuestTasksScreen extends Screen {
                 g.pose().pushPose();
                 g.pose().translate(0f, 0f, 500f);
                 g.flush();
-                List<net.minecraft.util.FormattedCharSequence> lines = font.split(Component.literal(t.tooltip()), 240);
+                List<net.minecraft.util.FormattedCharSequence> lines = font.split(ChroniclesUIKit.lit(t.tooltip()),
+                        240);
                 g.renderTooltip(font, lines, mx, my);
                 g.flush();
                 g.pose().popPose();
@@ -240,7 +242,7 @@ public class QuestTasksScreen extends Screen {
             g.pose().pushPose();
             g.pose().translate(0f, 0f, 500f);
             g.flush();
-            g.renderTooltip(font, Component.literal(hoveredHeaderTooltip), mx, my);
+            g.renderTooltip(font, ChroniclesUIKit.lit(hoveredHeaderTooltip), mx, my);
             g.flush();
             g.pose().popPose();
         }
@@ -288,7 +290,7 @@ public class QuestTasksScreen extends Screen {
             if (line.isEmpty()) {
                 out.add(net.minecraft.util.FormattedCharSequence.EMPTY);
             } else {
-                out.addAll(font.split(Component.literal(line), maxW));
+                out.addAll(font.split(ChroniclesUIKit.lit(line), maxW));
             }
         }
         return out;
@@ -416,10 +418,11 @@ public class QuestTasksScreen extends Screen {
         String title = (node.isOptional() ? "§d[Optional] §f" : "") + content.title().getString();
         if (font.width(title.replaceAll("§.", "")) > cardW() - 50)
             title = font.plainSubstrByWidth(title, cardW() - 50 - font.width("…")) + "…";
-        g.drawString(font, "§f" + title, cardX + CARD_PAD, cy + 6, C_TEXT, false);
+        ChroniclesUIKit.drawString(g, font, "§f" + title, cardX + CARD_PAD, cy + 6, C_TEXT, false);
 
         for (int i = 0; i < compactSubtitleLines.size(); i++) {
-            g.drawString(font, compactSubtitleLines.get(i), cardX + CARD_PAD, cy + 18 + i * SUBTITLE_LINE_H,
+            ChroniclesUIKit.drawString(g, font, compactSubtitleLines.get(i), cardX + CARD_PAD,
+                    cy + 18 + i * SUBTITLE_LINE_H,
                     C_TEXT_DIM, false);
         }
 
@@ -428,7 +431,7 @@ public class QuestTasksScreen extends Screen {
             g.fill(cardX + cardW() - 18, cy + 3, cardX + cardW() - 4, cy + 17, 0x33FFFFFF);
             hoveredHeaderTooltip = "Expand to fullscreen";
         }
-        g.drawCenteredString(font, fsHov ? "§b[+]" : "§8[+]", cardX + cardW() - 11, cy + 6,
+        ChroniclesUIKit.drawCenteredString(g, font, fsHov ? "§b[+]" : "§8[+]", cardX + cardW() - 11, cy + 6,
                 fsHov ? C_ACTIVE : C_TEXT_FAINT);
 
         boolean closeHov = mx >= cardX + cardW() - 34 && mx < cardX + cardW() - 20 && my >= cy + 3 && my < cy + 17;
@@ -436,8 +439,18 @@ public class QuestTasksScreen extends Screen {
             g.fill(cardX + cardW() - 34, cy + 3, cardX + cardW() - 20, cy + 17, 0x33FFFFFF);
             hoveredHeaderTooltip = "Close";
         }
-        g.drawCenteredString(font, closeHov ? "§c✕" : "§8✕", cardX + cardW() - 27, cy + 6,
+        ChroniclesUIKit.drawCenteredString(g, font, closeHov ? "§c✕" : "§8✕", cardX + cardW() - 27, cy + 6,
                 closeHov ? 0xFFFF6666 : C_TEXT_FAINT);
+
+        boolean compactPinned = playerData != null && playerData.isPinned(node.getId());
+        boolean pinHovCompact = mx >= cardX + cardW() - 50 && mx < cardX + cardW() - 36 && my >= cy + 3 &&
+                my < cy + 17;
+        if (pinHovCompact) {
+            g.fill(cardX + cardW() - 50, cy + 3, cardX + cardW() - 36, cy + 17, 0x33FFFFFF);
+            hoveredHeaderTooltip = compactPinned ? "Unpin quest" : "Pin quest";
+        }
+        ChroniclesUIKit.drawCenteredString(g, font, compactPinned ? "§d📌" : "§8📌", cardX + cardW() - 43, cy + 6,
+                compactPinned ? 0xFFAA44FF : C_TEXT_FAINT);
 
         cy += compactHeaderH;
         g.fill(cardX, cy, cardX + cardW(), cy + 1, C_BORDER);
@@ -494,7 +507,8 @@ public class QuestTasksScreen extends Screen {
 
             int dy = cy + 4;
             if (fittedDesc == 0 && isEditMode) {
-                g.drawString(font, "§8Click to add a description", cardX + CARD_PAD, dy, C_TEXT_FAINT, false);
+                ChroniclesUIKit.drawString(g, font, "§8Click to add a description", cardX + CARD_PAD, dy, C_TEXT_FAINT,
+                        false);
             }
 
             g.enableScissor(cardX, cy + 1, cardX + cardW(), cy + descH - 1);
@@ -512,7 +526,8 @@ public class QuestTasksScreen extends Screen {
                 for (int i = questDescLines.size(); i < descLines.size(); i++) {
                     int renderY = cy + 4 + (i * 10) - (compactDescScrollLine * 10);
                     if (renderY >= cy + 4 && renderY + 10 <= cy + descH - 4) {
-                        g.drawString(font, descLines.get(i), cardX + CARD_PAD, renderY, C_TEXT_DIM, false);
+                        ChroniclesUIKit.drawString(g, font, descLines.get(i), cardX + CARD_PAD, renderY, C_TEXT_DIM,
+                                false);
                     }
                 }
             }
@@ -521,11 +536,13 @@ public class QuestTasksScreen extends Screen {
 
             if (maxScrollLine > 0) {
                 String hint = compactDescScrollLine < maxScrollLine ? "§7▼ scroll for more" : "§7▲ scroll up";
-                g.drawString(font, hint, cardX + cardW() - font.width(hint) - CARD_PAD - 2, cy + descH - 11,
+                ChroniclesUIKit.drawString(g, font, hint, cardX + cardW() - font.width(hint) - CARD_PAD - 2,
+                        cy + descH - 11,
                         C_TEXT_FAINT, false);
             } else if (isEditMode) {
                 String hint = "§7✎ edit";
-                g.drawString(font, hint, cardX + cardW() - font.width(hint) - CARD_PAD - 2, cy + descH - 11,
+                ChroniclesUIKit.drawString(g, font, hint, cardX + cardW() - font.width(hint) - CARD_PAD - 2,
+                        cy + descH - 11,
                         hoveredDescBox ? C_ACTIVE : C_TEXT_FAINT, false);
             }
             cy += descH;
@@ -581,11 +598,12 @@ public class QuestTasksScreen extends Screen {
                 g.renderItemDecorations(font, icon, ix + off, iy + off);
                 if (done) g.fill(ix, iy, ix + sz, iy + sz, 0x5500CC55);
             } else {
-                g.drawCenteredString(font, done ? "§a✔" : "§c✗", ix + sz / 2, iy + sz / 2 - 4, 0xFFFFFFFF);
+                ChroniclesUIKit.drawCenteredString(g, font, done ? "§a✔" : "§c✗", ix + sz / 2, iy + sz / 2 - 4,
+                        0xFFFFFFFF);
             }
             if (done) {
                 g.fill(ix + sz - 7, iy + sz - 8, ix + sz, iy + sz, 0xFF0A2210);
-                g.drawString(font, "§a✔", ix + sz - 7, iy + sz - 8, 0xFFFFFFFF, false);
+                ChroniclesUIKit.drawString(g, font, "§a✔", ix + sz - 7, iy + sz - 8, 0xFFFFFFFF, false);
             }
             ix += sz + gap;
         }
@@ -612,12 +630,13 @@ public class QuestTasksScreen extends Screen {
                 g.renderItem(new ItemStack(ir.getItem(), ir.getCount()), rix + off, iy + off);
                 if (picked) g.fill(rix, iy, rix + sz, iy + sz, 0x55CC8800);
             } else {
-                g.drawCenteredString(font, "§7" + rewardGlyph(display), rix + sz / 2, iy + sz / 2 - 4, C_TEXT_DIM);
+                ChroniclesUIKit.drawCenteredString(g, font, "§7" + rewardGlyph(display), rix + sz / 2, iy + sz / 2 - 4,
+                        C_TEXT_DIM);
                 if (picked) g.fill(rix, iy, rix + sz, iy + sz, 0x55CC8800);
             }
             if (picked) {
                 g.fill(rix + sz - 7, iy + sz - 8, rix + sz, iy + sz, 0xFF1A1000);
-                g.drawString(font, "§6✔", rix + sz - 7, iy + sz - 8, 0xFFFFFFFF, false);
+                ChroniclesUIKit.drawString(g, font, "§6✔", rix + sz - 7, iy + sz - 8, 0xFFFFFFFF, false);
             }
             rix -= sz + gap;
         }
@@ -639,7 +658,7 @@ public class QuestTasksScreen extends Screen {
         g.fill(x, y + 1, x + 2, y + TASK_LIST_ROW_H - 7, accent);
 
         String mark = done ? "§a✔" : (task.isOptional() ? "§8○" : "§c✗");
-        g.drawString(font, mark, x + 4, y + 3, 0xFFFFFFFF, false);
+        ChroniclesUIKit.drawString(g, font, mark, x + 4, y + 3, 0xFFFFFFFF, false);
 
         int textX = x + 16;
         ItemStack icon = getTaskIcon(task);
@@ -648,7 +667,7 @@ public class QuestTasksScreen extends Screen {
             g.renderItemDecorations(font, icon, textX, y);
             textX += 18;
         } else {
-            g.drawString(font, getTaskGlyph(task), textX, y + 3, 0xFFFFFFFF, false);
+            ChroniclesUIKit.drawString(g, font, getTaskGlyph(task), textX, y + 3, 0xFFFFFFFF, false);
             textX += 10;
         }
 
@@ -691,11 +710,13 @@ public class QuestTasksScreen extends Screen {
             boolean hov = mx >= btnX && mx < btnX + btnW && my >= btnY && my < btnY + h - 2;
             g.fill(btnX, btnY, btnX + btnW, btnY + h - 2, hov ? 0xFF2A4A2A : 0xFF1A2A1A);
             g.fill(btnX, btnY, btnX + btnW, btnY + 1, hov ? C_DONE : 0xFF333333);
-            g.drawCenteredString(font, "§a✓ Claim Rewards", btnX + btnW / 2, btnY + 4, hov ? C_DONE : C_TEXT);
+            ChroniclesUIKit.drawCenteredString(g, font, "§a✓ Claim Rewards", btnX + btnW / 2, btnY + 4,
+                    hov ? C_DONE : C_TEXT);
         } else if (rewardsClaimed()) {
-            g.drawCenteredString(font, "§8Rewards Claimed", cardX + cardW / 2, cy + 5, C_TEXT_FAINT);
+            ChroniclesUIKit.drawCenteredString(g, font, "§8Rewards Claimed", cardX + cardW / 2, cy + 5, C_TEXT_FAINT);
         } else {
-            g.drawCenteredString(font, "§8Complete Tasks to Claim", cardX + cardW / 2, cy + 5, C_TEXT_FAINT);
+            ChroniclesUIKit.drawCenteredString(g, font, "§8Complete Tasks to Claim", cardX + cardW / 2, cy + 5,
+                    C_TEXT_FAINT);
         }
     }
 
@@ -753,11 +774,13 @@ public class QuestTasksScreen extends Screen {
             g.fill(4, 6, 20, 22, 0x22FFFFFF);
             hoveredHeaderTooltip = "Close";
         }
-        g.drawCenteredString(font, "§7←", 12, 10, C_TEXT_DIM);
+        ChroniclesUIKit.drawCenteredString(g, font, "§7←", 12, 10, C_TEXT_DIM);
 
         boolean pinned = playerData != null && playerData.isPinned(node.getId());
         int pinX = width - 20;
-        int editX = pinX - 18;
+        // Collapse the edit button's slot when it's not shown, instead of leaving a fixed-size
+        // gap in the button row.
+        int editX = pinX - (isEditMode ? 18 : 0);
         int fsX = editX - 20;
         int usesX = fsX - 20;
         int titleMaxW = headerTitleMaxW();
@@ -773,14 +796,15 @@ public class QuestTasksScreen extends Screen {
         java.util.List<net.minecraft.util.FormattedCharSequence> subtitleLines = wrapSubtitle(node.getSubtitle(),
                 titleMaxW);
         for (int i = 0; i < subtitleLines.size(); i++) {
-            g.drawString(font, subtitleLines.get(i), 28, 24 + i * SUBTITLE_LINE_H, C_TEXT_DIM, false);
+            ChroniclesUIKit.drawString(g, font, subtitleLines.get(i), 28, 24 + i * SUBTITLE_LINE_H, C_TEXT_DIM, false);
         }
 
         boolean usesHasAny = !node.getPrerequisites().isEmpty() || !node.getChildren().isEmpty();
         boolean usesHov = usesHasAny && mx >= usesX && mx < usesX + 16 && my >= 6 && my < 22;
         if (usesHov || usesPopupOpen) g.fill(usesX, 6, usesX + 16, 22, 0x22FFFFFF);
+        if (usesHov) hoveredHeaderTooltip = "Show prerequisites/unlocks";
 
-        g.drawCenteredString(font, "§b≡", usesX + 8, 10,
+        ChroniclesUIKit.drawCenteredString(g, font, "§b≡", usesX + 8, 10,
                 !usesHasAny ? C_TEXT_FAINT : (usesHov || usesPopupOpen) ? 0xFF55CCFF : C_TEXT_DIM);
 
         boolean fsToggleHov = mx >= fsX && mx < fsX + 16 && my >= 6 && my < 22;
@@ -788,16 +812,25 @@ public class QuestTasksScreen extends Screen {
             g.fill(fsX, 6, fsX + 16, 22, 0x22FFFFFF);
             hoveredHeaderTooltip = "Shrink to compact view";
         }
-        g.drawCenteredString(font, "§d[-]", fsX + 8, 10, 0xFFAA44FF);
+        ChroniclesUIKit.drawCenteredString(g, font, "§d[-]", fsX + 8, 10, 0xFFAA44FF);
 
         if (isEditMode) {
             boolean editHov = mx >= editX && mx < editX + 14 && my >= 6 && my < 22;
-            if (editHov) g.fill(editX, 6, editX + 14, 22, 0x22FFFFFF);
-            g.drawCenteredString(font, editHov ? "§e✎" : "§8✎", editX + 7, 10, editHov ? 0xFFFFDD44 : C_TEXT_FAINT);
+            if (editHov) {
+                g.fill(editX, 6, editX + 14, 22, 0x22FFFFFF);
+                hoveredHeaderTooltip = "Edit quest";
+            }
+            ChroniclesUIKit.drawCenteredString(g, font, editHov ? "§e✎" : "§8✎", editX + 7, 10,
+                    editHov ? 0xFFFFDD44 : C_TEXT_FAINT);
         }
 
-        if (mx >= pinX && mx < width - 4 && my >= 6 && my < 22) g.fill(pinX, 6, width - 4, 22, 0x22FFFFFF);
-        g.drawCenteredString(font, pinned ? "§d📌" : "§8📌", width - 12, 10, pinned ? 0xFFAA44FF : C_TEXT_FAINT);
+        boolean pinHov = mx >= pinX && mx < width - 4 && my >= 6 && my < 22;
+        if (pinHov) {
+            g.fill(pinX, 6, width - 4, 22, 0x22FFFFFF);
+            hoveredHeaderTooltip = pinned ? "Unpin quest" : "Pin quest";
+        }
+        ChroniclesUIKit.drawCenteredString(g, font, pinned ? "§d📌" : "§8📌", width - 12, 10,
+                pinned ? 0xFFAA44FF : C_TEXT_FAINT);
 
         if (usesPopupOpen) renderUsesPopup(g, usesX, mx, my);
     }
@@ -828,7 +861,7 @@ public class QuestTasksScreen extends Screen {
 
         int ry = popupY + padTop;
         if (contentRows == 0) {
-            g.drawString(font, "§8(no connections)", popupX + padW, ry + 2, C_TEXT_FAINT, false);
+            ChroniclesUIKit.drawString(g, font, "§8(no connections)", popupX + padW, ry + 2, C_TEXT_FAINT, false);
         } else {
             ry = renderUsesPopupSection(g, popupX, ry, innerW, padW, rowH, "§8Requires:", requires, mx, my);
             ry = renderUsesPopupSection(g, popupX, ry, innerW, padW, rowH, "§8Unlocks:", unlocks, mx, my);
@@ -839,7 +872,7 @@ public class QuestTasksScreen extends Screen {
     private int renderUsesPopupSection(GuiGraphics g, int popupX, int ry, int innerW, int padW, int rowH,
                                        String header, List<QuestNode> list, int mx, int my) {
         if (list.isEmpty()) return ry;
-        g.drawString(font, header, popupX + padW, ry + 2, C_TEXT_FAINT, false);
+        ChroniclesUIKit.drawString(g, font, header, popupX + padW, ry + 2, C_TEXT_FAINT, false);
         ry += rowH;
         for (QuestNode target : list) {
             boolean hov = mx >= popupX && mx < popupX + innerW && my >= ry && my < ry + rowH;
@@ -850,7 +883,8 @@ public class QuestTasksScreen extends Screen {
             int maxW = innerW - padW * 2 - 10;
             if (font.width(title.replaceAll("§.", "")) > maxW)
                 title = font.plainSubstrByWidth(title, Math.max(0, maxW - font.width("…"))) + "…";
-            g.drawString(font, (state == QuestState.COMPLETED ? "§a●" : "§8○") + " " + (hov ? "§f" : "§7") + title,
+            ChroniclesUIKit.drawString(g, font,
+                    (state == QuestState.COMPLETED ? "§a●" : "§8○") + " " + (hov ? "§f" : "§7") + title,
                     popupX + padW + 8, ry + 2, hov ? C_TEXT : C_TEXT_DIM, false);
             usesPopupRowRects.add(new int[] { popupX, ry, innerW, rowH });
             usesPopupRowTargets.add(target);
@@ -879,7 +913,7 @@ public class QuestTasksScreen extends Screen {
         g.fill(0, 0, width, height, 0x99000000);
         g.fill(popupX, popupY, popupX + innerW, popupY + popupH, 0xF00A0A0E);
         drawBorder(g, popupX, popupY, innerW, popupH);
-        g.drawCenteredString(font, "§6Choose your reward", popupX + innerW / 2, popupY + 8, C_TEXT);
+        ChroniclesUIKit.drawCenteredString(g, font, "§6Choose your reward", popupX + innerW / 2, popupY + 8, C_TEXT);
 
         int ry = popupY + padTop;
         for (QuestReward option : options) {
@@ -892,14 +926,15 @@ public class QuestTasksScreen extends Screen {
                 g.renderItem(stack, iconX, ry + 2);
                 g.renderItemDecorations(font, stack, iconX, ry + 2);
             } else {
-                g.drawCenteredString(font, "§7?", iconX + 8, ry + 6, C_TEXT_DIM);
+                ChroniclesUIKit.drawCenteredString(g, font, "§7?", iconX + 8, ry + 6, C_TEXT_DIM);
             }
 
             String label = option.getSummary().getString();
             int labelMaxW = innerW - padW * 2 - 22;
             if (font.width(label) > labelMaxW)
                 label = font.plainSubstrByWidth(label, labelMaxW - font.width("…")) + "…";
-            g.drawString(font, (hov ? "§f" : "§7") + label, iconX + 20, ry + 6, hov ? C_TEXT : C_TEXT_DIM, false);
+            ChroniclesUIKit.drawString(g, font, (hov ? "§f" : "§7") + label, iconX + 20, ry + 6,
+                    hov ? C_TEXT : C_TEXT_DIM, false);
 
             choiceBoxRowRects.add(new int[] { popupX + padW, ry, innerW - padW * 2, rowH });
             ry += rowH;
@@ -955,12 +990,13 @@ public class QuestTasksScreen extends Screen {
                 g.renderItemDecorations(font, icon, iconX + off, iconY + off);
                 if (done) g.fill(iconX, iconY, iconX + sz, iconY + sz, 0x5500CC55);
             } else {
-                g.drawCenteredString(font, done ? "§a✔" : "§c✗", iconX + sz / 2, iconY + sz / 2 - 4, 0xFFFFFFFF);
+                ChroniclesUIKit.drawCenteredString(g, font, done ? "§a✔" : "§c✗", iconX + sz / 2, iconY + sz / 2 - 4,
+                        0xFFFFFFFF);
             }
 
             if (done) {
                 g.fill(iconX + sz - 7, iconY + sz - 8, iconX + sz, iconY + sz, 0xFF0A2210);
-                g.drawString(font, "§a✔", iconX + sz - 7, iconY + sz - 8, 0xFFFFFFFF, false);
+                ChroniclesUIKit.drawString(g, font, "§a✔", iconX + sz - 7, iconY + sz - 8, 0xFFFFFFFF, false);
             }
             iconX += sz + gap;
         }
@@ -990,14 +1026,15 @@ public class QuestTasksScreen extends Screen {
                 g.renderItem(new ItemStack(ir.getItem(), ir.getCount()), rIconX + off, iconY + off);
                 if (picked) g.fill(rIconX, iconY, rIconX + sz, iconY + sz, 0x55CC8800);
             } else {
-                g.drawCenteredString(font, "§7" + rewardGlyph(display), rIconX + sz / 2, iconY + sz / 2 - 4,
+                ChroniclesUIKit.drawCenteredString(g, font, "§7" + rewardGlyph(display), rIconX + sz / 2,
+                        iconY + sz / 2 - 4,
                         C_TEXT_DIM);
                 if (picked) g.fill(rIconX, iconY, rIconX + sz, iconY + sz, 0x55CC8800);
             }
 
             if (picked) {
                 g.fill(rIconX + sz - 7, iconY + sz - 8, rIconX + sz, iconY + sz, 0xFF1A1000);
-                g.drawString(font, "§6✔", rIconX + sz - 7, iconY + sz - 8, 0xFFFFFFFF, false);
+                ChroniclesUIKit.drawString(g, font, "§6✔", rIconX + sz - 7, iconY + sz - 8, 0xFFFFFFFF, false);
             }
             rIconX += sz + gap;
         }
@@ -1021,7 +1058,8 @@ public class QuestTasksScreen extends Screen {
         g.fill(x, y, x + 1, y + boxH, border);
         g.fill(x + w - 1, y, x + w, y + boxH, border);
         if (hov) g.fill(x + 1, y + 1, x + w - 1, y + boxH - 1, 0x14FFFFFF);
-        g.drawCenteredString(font, (hov ? "§f" : "§8") + label, x + w / 2, y + 4, hov ? C_TEXT : C_TEXT_FAINT);
+        ChroniclesUIKit.drawCenteredString(g, font, (hov ? "§f" : "§8") + label, x + w / 2, y + 4,
+                hov ? C_TEXT : C_TEXT_FAINT);
         return boxH;
     }
 
@@ -1044,7 +1082,7 @@ public class QuestTasksScreen extends Screen {
                 g.fill(dx, fsDescBoxY + fsDescBoxH - 1, dx + 2, fsDescBoxY + fsDescBoxH, dashColor);
             }
             String hint = "§7✎ click to edit";
-            g.drawString(font, hint, fsDescBoxX + fsDescBoxW - font.width(hint) - 2, fsDescBoxY - 9,
+            ChroniclesUIKit.drawString(g, font, hint, fsDescBoxX + fsDescBoxW - font.width(hint) - 2, fsDescBoxY - 9,
                     hoveredFsDescBox ? C_ACTIVE : C_TEXT_FAINT, false);
         }
 
@@ -1067,7 +1105,7 @@ public class QuestTasksScreen extends Screen {
         java.util.List<net.phoenixvine.wiki.client.rich.RichBlock> resolvedDescBlocks = resolveConditionals(
                 descBlocks);
         if (isEditMode && descRaw.isEmpty() && descBlocks.isEmpty()) {
-            g.drawString(font, "§8Click to add a description", x, y, C_TEXT_FAINT, false);
+            ChroniclesUIKit.drawString(g, font, "§8Click to add a description", x, y, C_TEXT_FAINT, false);
         }
 
         float textScale = QuestChroniclesSettings.get().getTextScaleMultiplier();
@@ -1293,9 +1331,9 @@ public class QuestTasksScreen extends Screen {
         int dimColor = 0xFF3A3A42;
         int leftColor = !canPrev ? dimColor : (overLeft ? C_TEXT : C_TEXT_DIM);
         int rightColor = !canNext ? dimColor : (overRight ? C_TEXT : C_TEXT_DIM);
-        g.drawCenteredString(font, "◀", px + arrowW / 2, py + 3, leftColor);
-        g.drawCenteredString(font, pageLabel, px + arrowW + labelW / 2, py + 3, C_TEXT_DIM);
-        g.drawCenteredString(font, "▶", px + pw - arrowW / 2, py + 3, rightColor);
+        ChroniclesUIKit.drawCenteredString(g, font, "◀", px + arrowW / 2, py + 3, leftColor);
+        ChroniclesUIKit.drawCenteredString(g, font, pageLabel, px + arrowW + labelW / 2, py + 3, C_TEXT_DIM);
+        ChroniclesUIKit.drawCenteredString(g, font, "▶", px + pw - arrowW / 2, py + 3, rightColor);
 
         descPagerX = px;
         descPagerY = py;
@@ -1345,7 +1383,8 @@ public class QuestTasksScreen extends Screen {
                 } else if (hov) {
                     g.fill(tabX, tabY, tabX + tabW, tabY + INSP_TAB_H, 0x22FFFFFF);
                 }
-                g.drawString(font, (active ? "§a" : "§8") + label, tabX + 3, tabY + 3, C_TEXT_DIM, false);
+                ChroniclesUIKit.drawString(g, font, (active ? "§a" : "§8") + label, tabX + 3, tabY + 3, C_TEXT_DIM,
+                        false);
                 tabX += tabW + 2;
             }
             cY = y + INSP_TAB_H + 6;
@@ -1374,19 +1413,25 @@ public class QuestTasksScreen extends Screen {
         int m = 6;
         int cy = y - inspectorScrollY + 4;
         int viewBot = y + h;
-        if (lineFullyVisible(cy, y, viewBot)) g.drawString(font, "§8Chapter:", x + m, cy, C_TEXT_FAINT, false);
+        if (lineFullyVisible(cy, y, viewBot))
+            ChroniclesUIKit.drawString(g, font, "§8Chapter:", x + m, cy, C_TEXT_FAINT, false);
         if (lineFullyVisible(cy + 10, y, viewBot))
-            g.drawString(font, "§7" + (node.getChapter() != null ? node.getChapter() : "(none)"), x + m, cy + 10,
+            ChroniclesUIKit.drawString(g, font, "§7" + (node.getChapter() != null ? node.getChapter() : "(none)"),
+                    x + m, cy + 10,
                     C_TEXT, false);
         cy += 24;
-        if (lineFullyVisible(cy, y, viewBot)) g.drawString(font, "§8Visibility:", x + m, cy, C_TEXT_FAINT, false);
+        if (lineFullyVisible(cy, y, viewBot))
+            ChroniclesUIKit.drawString(g, font, "§8Visibility:", x + m, cy, C_TEXT_FAINT, false);
         if (lineFullyVisible(cy + 10, y, viewBot))
-            g.drawString(font, "§7" + (node.getVisibility() != null ? node.getVisibility() : "NORMAL"), x + m,
+            ChroniclesUIKit.drawString(g, font, "§7" + (node.getVisibility() != null ? node.getVisibility() : "NORMAL"),
+                    x + m,
                     cy + 10, C_TEXT, false);
         cy += 24;
-        if (lineFullyVisible(cy, y, viewBot)) g.drawString(font, "§8ID:", x + m, cy, C_TEXT_FAINT, false);
+        if (lineFullyVisible(cy, y, viewBot))
+            ChroniclesUIKit.drawString(g, font, "§8ID:", x + m, cy, C_TEXT_FAINT, false);
         if (lineFullyVisible(cy + 10, y, viewBot))
-            g.drawString(font, "§7" + (node.getId() != null ? node.getId() : "unknown"), x + m, cy + 10, C_TEXT,
+            ChroniclesUIKit.drawString(g, font, "§7" + (node.getId() != null ? node.getId() : "unknown"), x + m,
+                    cy + 10, C_TEXT,
                     false);
         cy += 24;
 
@@ -1399,7 +1444,8 @@ public class QuestTasksScreen extends Screen {
             cy += 6;
             for (var line : splitRespectingNewlines(font, body, w - m * 2)) {
                 if (cy > y + h) break;
-                if (lineFullyVisible(cy, y, viewBot)) g.drawString(font, line, x + m, cy, C_TEXT_DIM, false);
+                if (lineFullyVisible(cy, y, viewBot))
+                    ChroniclesUIKit.drawString(g, font, line, x + m, cy, C_TEXT_DIM, false);
                 cy += 10;
             }
             cy += 4;
@@ -1422,7 +1468,8 @@ public class QuestTasksScreen extends Screen {
         int cy = y - inspectorScrollY + 4;
         int viewBot = y + h;
         if (tasks.isEmpty() && prereqs.isEmpty() && dependents.isEmpty()) {
-            if (lineFullyVisible(cy, y, viewBot)) g.drawString(font, "§8(none)", x + m, cy, C_TEXT_FAINT, false);
+            if (lineFullyVisible(cy, y, viewBot))
+                ChroniclesUIKit.drawString(g, font, "§8(none)", x + m, cy, C_TEXT_FAINT, false);
             if (isEditMode) {
                 int addY = lineFullyVisible(cy, y, viewBot) ? cy + 12 : cy;
                 if (lineFullyVisible(addY, y, viewBot)) {
@@ -1466,7 +1513,7 @@ public class QuestTasksScreen extends Screen {
             if (lineFullyVisible(cy, y, viewBot)) g.fill(x + m, cy, x + w - m, cy + 1, C_BORDER);
             cy += 8;
             if (lineFullyVisible(cy, y, viewBot))
-                g.drawString(font, "§8PREREQUISITES:", x + m, cy, C_TEXT_FAINT, false);
+                ChroniclesUIKit.drawString(g, font, "§8PREREQUISITES:", x + m, cy, C_TEXT_FAINT, false);
             cy += 12;
             for (QuestNode req : prereqs) {
                 QuestState state = playerData != null ? playerData.getQuestState(req.getId(), QuestState.LOCKED) :
@@ -1478,7 +1525,7 @@ public class QuestTasksScreen extends Screen {
                 boolean reqHov = mx >= x + m && mx < x + w - m && my >= cy && my < cy + 10;
                 if (lineFullyVisible(cy, y, viewBot)) {
                     if (reqHov) g.fill(x + m - 2, cy - 1, x + w - m, cy + 9, 0x22FFFFFF);
-                    g.drawString(font, (state == QuestState.COMPLETED ? "§a●" : "§8○") + " " +
+                    ChroniclesUIKit.drawString(g, font, (state == QuestState.COMPLETED ? "§a●" : "§8○") + " " +
                             (reqHov ? "§f" : "§7") + reqTitle, x + m, cy, reqHov ? C_TEXT : C_TEXT_DIM, false);
                     prereqRowRects.add(new int[] { x + m, cy - 1, w - m * 2, 10 });
                     prereqRowTargets.add(req);
@@ -1491,7 +1538,8 @@ public class QuestTasksScreen extends Screen {
             cy += 6;
             if (lineFullyVisible(cy, y, viewBot)) g.fill(x + m, cy, x + w - m, cy + 1, C_BORDER);
             cy += 8;
-            if (lineFullyVisible(cy, y, viewBot)) g.drawString(font, "§8UNLOCKS:", x + m, cy, C_TEXT_FAINT, false);
+            if (lineFullyVisible(cy, y, viewBot))
+                ChroniclesUIKit.drawString(g, font, "§8UNLOCKS:", x + m, cy, C_TEXT_FAINT, false);
             cy += 12;
             for (QuestNode dep : dependents) {
                 QuestState state = playerData != null ? playerData.getQuestState(dep.getId(), QuestState.LOCKED) :
@@ -1503,7 +1551,7 @@ public class QuestTasksScreen extends Screen {
                 boolean depHov = mx >= x + m && mx < x + w - m && my >= cy && my < cy + 10;
                 if (lineFullyVisible(cy, y, viewBot)) {
                     if (depHov) g.fill(x + m - 2, cy - 1, x + w - m, cy + 9, 0x22FFFFFF);
-                    g.drawString(font, (state == QuestState.COMPLETED ? "§a●" : "§8○") + " " +
+                    ChroniclesUIKit.drawString(g, font, (state == QuestState.COMPLETED ? "§a●" : "§8○") + " " +
                             (depHov ? "§f" : "§7") + depTitle, x + m, cy, depHov ? C_TEXT : C_TEXT_DIM, false);
                     prereqRowRects.add(new int[] { x + m, cy - 1, w - m * 2, 10 });
                     prereqRowTargets.add(dep);
@@ -1523,7 +1571,8 @@ public class QuestTasksScreen extends Screen {
         boolean rowHov = mx >= x && mx < x + w && my >= y && my < y + rowH;
         if (rowHov) g.fill(x, y, x + w, y + rowH, 0x14FFFFFF);
 
-        g.drawString(font, done ? "§a✔" : (task.isOptional() ? "§8○" : "§c✗"), x, y + 1, 0xFFFFFFFF, false);
+        ChroniclesUIKit.drawString(g, font, done ? "§a✔" : (task.isOptional() ? "§8○" : "§c✗"), x, y + 1, 0xFFFFFFFF,
+                false);
 
         int cx = x + 10;
         ItemStack icon = getTaskIcon(task);
@@ -1533,7 +1582,7 @@ public class QuestTasksScreen extends Screen {
             if (done) g.fill(cx, y, cx + 16, y + 16, 0x5500AA44);
             cx += 18;
         } else {
-            g.drawString(font, getTaskGlyph(task), cx, y + 1, 0xFFFFFFFF, false);
+            ChroniclesUIKit.drawString(g, font, getTaskGlyph(task), cx, y + 1, 0xFFFFFFFF, false);
             cx += 10;
         }
 
@@ -1578,13 +1627,13 @@ public class QuestTasksScreen extends Screen {
         drawBorder(g, x, y, w, h);
 
         int m = 6;
-        g.drawString(font, "§8Rewards", x + m, y + 5, C_TEXT_FAINT, false);
+        ChroniclesUIKit.drawString(g, font, "§8Rewards", x + m, y + 5, C_TEXT_FAINT, false);
         g.fill(x + m, y + 15, x + w - m, y + 16, C_BORDER);
 
         List<QuestReward> rewards = content.effectiveRewards();
         int cy = y + 21;
         if (rewards.isEmpty()) {
-            g.drawString(font, "§8(none)", x + m, cy, C_TEXT_FAINT, false);
+            ChroniclesUIKit.drawString(g, font, "§8(none)", x + m, cy, C_TEXT_FAINT, false);
             if (isEditMode) {
                 int addY = cy + 12;
                 int boxH = renderAddBox(g, x + m, addY, w - m * 2, "+ Add Reward", mx, my);
@@ -1597,7 +1646,7 @@ public class QuestTasksScreen extends Screen {
         if (node.isRewardChoice()) {
             String choiceHdr = node.getRewardChoiceCount() == 1 ? "§6Pick 1 reward:" :
                     "§6Pick " + node.getRewardChoiceCount() + " rewards:";
-            g.drawString(font, choiceHdr, x + m, cy, C_TEXT, false);
+            ChroniclesUIKit.drawString(g, font, choiceHdr, x + m, cy, C_TEXT, false);
             cy += 12;
         }
 
@@ -1644,7 +1693,8 @@ public class QuestTasksScreen extends Screen {
             } else {
                 prefix = rowHov ? "§f" : "§7";
             }
-            g.drawString(font, prefix + label, x + m + slotSz + 4, cy + 4, rowHov ? C_TEXT : C_TEXT_DIM, false);
+            ChroniclesUIKit.drawString(g, font, prefix + label, x + m + slotSz + 4, cy + 4,
+                    rowHov ? C_TEXT : C_TEXT_DIM, false);
             cy += slotSz + 4;
         }
         if (isEditMode && cy + 16 <= y + h) {
@@ -1668,7 +1718,8 @@ public class QuestTasksScreen extends Screen {
             g.renderItem(stack, x + off, y + off);
             if (sz >= 18) g.renderItemDecorations(font, stack, x + off, y + off);
         } else {
-            g.drawCenteredString(font, "§7" + rewardGlyph(reward), x + sz / 2, y + sz / 2 - 4, C_TEXT_DIM);
+            ChroniclesUIKit.drawCenteredString(g, font, "§7" + rewardGlyph(reward), x + sz / 2, y + sz / 2 - 4,
+                    C_TEXT_DIM);
         }
     }
 
@@ -1686,18 +1737,19 @@ public class QuestTasksScreen extends Screen {
             if (node.isRewardChoice()) {
                 String msg = node.getRewardChoiceCount() == 1 ? "§6Pick a reward ↑" :
                         "§6Pick " + node.getRewardChoiceCount() + " rewards ↑";
-                g.drawCenteredString(font, msg, width / 2, btnY + 6, C_TEXT);
+                ChroniclesUIKit.drawCenteredString(g, font, msg, width / 2, btnY + 6, C_TEXT);
             } else {
                 boolean hov = mx >= btnX && mx < btnX + btnW && my >= btnY && my < btnY + 18;
                 g.fill(btnX, btnY, btnX + btnW, btnY + 18, hov ? 0xFF2A4A2A : 0xFF1A2A1A);
                 g.fill(btnX, btnY, btnX + btnW, btnY + 1, hov ? C_DONE : 0xFF333333);
-                g.drawCenteredString(font, "§a✓ Claim Rewards", btnX + btnW / 2, btnY + 6, hov ? C_DONE : C_TEXT);
+                ChroniclesUIKit.drawCenteredString(g, font, "§a✓ Claim Rewards", btnX + btnW / 2, btnY + 6,
+                        hov ? C_DONE : C_TEXT);
             }
         } else if (rewardsClaimed()) {
-            g.drawCenteredString(font, "§8Rewards claimed", width / 2, footerY + 10, C_TEXT_FAINT);
+            ChroniclesUIKit.drawCenteredString(g, font, "§8Rewards claimed", width / 2, footerY + 10, C_TEXT_FAINT);
         } else {
             String footerMsg = width < 220 ? "§8Complete tasks first" : "§8Complete all tasks to claim rewards";
-            g.drawCenteredString(font, footerMsg, width / 2, footerY + 10, C_TEXT_FAINT);
+            ChroniclesUIKit.drawCenteredString(g, font, footerMsg, width / 2, footerY + 10, C_TEXT_FAINT);
         }
     }
 
@@ -1833,13 +1885,13 @@ public class QuestTasksScreen extends Screen {
         java.util.List<Component> lines = new java.util.ArrayList<>();
         boolean done = isTaskDone(task);
         String status = done ? "§a✔ Complete" : (task.isOptional() ? "§8Optional" : "§c✗ Incomplete");
-        lines.add(Component.literal(status + "  §7" + task.getDescription().getString()));
+        lines.add(ChroniclesUIKit.lit(status + "  §7" + task.getDescription().getString()));
         String detail = getTaskDetail(task);
-        if (detail != null) lines.add(Component.literal("§8" + detail));
+        if (detail != null) lines.add(ChroniclesUIKit.lit("§8" + detail));
         String prog = taskProgressString(task);
-        if (prog != null && !done) lines.add(Component.literal("§7Progress: §f" + prog));
+        if (prog != null && !done) lines.add(ChroniclesUIKit.lit("§7Progress: §f" + prog));
         ItemStack icon = getTaskIcon(task);
-        if (!icon.isEmpty()) lines.add(Component.literal("§8[Click to view in recipe browser]"));
+        if (!icon.isEmpty()) lines.add(ChroniclesUIKit.lit("§8[Click to view in recipe browser]"));
         return lines;
     }
 
@@ -1847,22 +1899,22 @@ public class QuestTasksScreen extends Screen {
         java.util.List<Component> lines = new java.util.ArrayList<>();
         if (reward instanceof QuestReward.ItemReward ir) {
             ItemStack stack = rewardStack(ir);
-            lines.add(Component.literal("§fReward: " + stack.getHoverName().getString() + " §8×" + ir.getCount()));
+            lines.add(ChroniclesUIKit.lit("§fReward: " + stack.getHoverName().getString() + " §8×" + ir.getCount()));
 
             java.util.List<Component> vanillaLines = stack.getTooltipLines(
                     minecraft != null ? minecraft.player : null,
                     net.minecraft.world.item.TooltipFlag.Default.NORMAL);
             for (int i = 1; i < vanillaLines.size(); i++) lines.add(vanillaLines.get(i));
-            lines.add(Component.literal("§8[Click to view in recipe browser]"));
+            lines.add(ChroniclesUIKit.lit("§8[Click to view in recipe browser]"));
         } else if (reward instanceof QuestReward.ChoiceBoxReward box) {
             boolean resolved = playerData != null &&
                     playerData.isChoiceBoxResolved(node.getId(), content.effectiveRewards().indexOf(box));
             lines.add(reward.getSummary());
-            lines.add(Component.literal(resolved ? "§8(already opened)" :
+            lines.add(ChroniclesUIKit.lit(resolved ? "§8(already opened)" :
                     box.getMode() == QuestReward.ChoiceBoxReward.Mode.LOOTBOX ?
                             "§8[Click to open - random pick]" : "§8[Click to choose]"));
         } else {
-            lines.add(Component.literal("§f" + reward.getType().name() + " Reward"));
+            lines.add(ChroniclesUIKit.lit("§f" + reward.getType().name() + " Reward"));
         }
         return lines;
     }
@@ -2036,6 +2088,15 @@ public class QuestTasksScreen extends Screen {
             return true;
         }
 
+        if (mx >= cardX + cardW() - 50 && mx < cardX + cardW() - 36 && my >= cardY + 3 && my < cardY + 17) {
+            if (playerData != null) {
+                playerData.togglePin(node.getId());
+                net.phoenixvine.chronicles.network.ChronicleNetwork.CHANNEL.sendToServer(
+                        new net.phoenixvine.chronicles.network.packet.C2STogglePinPacket(node.getId()));
+            }
+            return true;
+        }
+
         if (mx >= cardX + cardW() - 34 && mx < cardX + cardW() - 20 && my >= cardY + 3 && my < cardY + 17) {
             if (minecraft != null) minecraft.setScreen(parent);
             return true;
@@ -2184,7 +2245,7 @@ public class QuestTasksScreen extends Screen {
         }
 
         int pinX2 = width - 20;
-        int editX2 = pinX2 - 18;
+        int editX2 = pinX2 - (isEditMode ? 18 : 0);
         int fsX2 = editX2 - 20;
         int usesX2 = fsX2 - 20;
 

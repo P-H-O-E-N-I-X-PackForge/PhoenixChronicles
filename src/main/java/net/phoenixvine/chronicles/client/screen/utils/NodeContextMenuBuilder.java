@@ -44,7 +44,7 @@ public class NodeContextMenuBuilder {
         boolean hasNode = (ctxNode != null);
         boolean hasGroup = (ctxGroup != null);
 
-        boolean canEdit = !state.testMode();
+        boolean canEdit = ctx.isDevMode() && !state.testMode();
 
         if (!hasNode && !hasGroup && canEdit) {
             items.add(new ChronicleOverviewScreen.CtxItem("+ New quest", "§a", false, false,

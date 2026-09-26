@@ -502,11 +502,11 @@ public class SidebarPanel {
             g.drawCenteredString(font, collapsed ? "§7▶" : "§7◀", width() / 2, toggleY + 2,
                     toggleHov ? colors.text() : colors.textDim());
 
-            if (collapsed && toggleHov) {
+            if (toggleHov) {
                 g.pose().pushPose();
                 g.pose().translate(0f, 0f, 250f);
                 g.flush();
-                String tip = "§7Show chapters";
+                String tip = collapsed ? "§7Show sidebar" : "§7Collapse sidebar";
                 int ttW = font.width(tip) + 10;
                 int ttX = width() + 3, ttY = toggleY;
                 g.fill(ttX, ttY, ttX + ttW, ttY + 14, 0xFF1A1A24);

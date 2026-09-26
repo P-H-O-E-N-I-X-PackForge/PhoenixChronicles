@@ -162,12 +162,16 @@ public class ChronicleOverviewScreen extends Screen
     private int dbgGlyphIconCount = 0;
     private boolean isDevMode = false;
     private String feedbackMsg = "";
-    private int feedbackTimer = 0;
+    private long feedbackAtMs = 0L;
+    private static final long FEEDBACK_DURATION_MS = 5000L;
     final UndoRedoManager undoRedo = new UndoRedoManager(this::setFeedback);
     private int viewOffX = 0, viewOffY = 0;
     private int pendingPanDX = 0, pendingPanDY = 0;
     private float zoom = 1.0f;
     private boolean isPanning = false;
+    private boolean boxSelecting = false;
+    private int boxSelectStartX, boxSelectStartY, boxSelectCurX, boxSelectCurY;
+    private Set<ResourceLocation> boxSelectBaseSelection = null;
     private boolean hideCompleted = false;
     private long lastCanvasClickTime = 0;
     private int lastCanvasClickX = 0;
@@ -207,6 +211,7 @@ public class ChronicleOverviewScreen extends Screen
     private QuestNode nodeSizeEditMode = null;
     private QuestNode.NodeSize nodeSizeEditStartSize;
     private int nodeSizeEditStartOverridePx, nodeSizeEditStartX, nodeSizeEditStartY;
+    private StringBuilder nodeSizeTypedBuffer = null;
     private double nodeSizeDragAccX = 0, nodeSizeDragAccY = 0;
     private boolean ctxOpen = false;
     private long ctxOpenTimeMs = 0;
@@ -248,7 +253,7 @@ public class ChronicleOverviewScreen extends Screen
     private final Screen parent;
 
     public ChronicleOverviewScreen(Screen parent) {
-        super(Component.literal("Chronicles"));
+        super(ChroniclesUIKit.lit("Chronicles"));
 
         this.parent = parent;
 
@@ -923,6 +928,7 @@ public class ChronicleOverviewScreen extends Screen
     @Override
     public boolean keyPressed(int key, int scan, int mods) {
         if (tryHandleDragCancelEscape(key)) return true;
+        if (tryHandleNodeSizeTypedInput(key)) return true;
 
         boolean ctrl = (mods & 2) != 0;
         boolean shift = (mods & 1) != 0;
@@ -951,6 +957,39 @@ public class ChronicleOverviewScreen extends Screen
     private boolean tryHandleSmokeTestKeybind(int key) {
         if (isDevMode && key == 298) {
             ScreenClickSmokeTest.run(this);
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Lets the player type an exact pixel size while in resize mode (right-click > Resize),
+     * instead of only being able to scroll to it - digits build up a value, Enter applies it,
+     * Backspace edits it. Scroll and drag still work as before; this is purely additive.
+     */
+    private boolean tryHandleNodeSizeTypedInput(int key) {
+        if (nodeSizeEditMode == null) return false;
+        if (key >= 48 && key <= 57) { // '0'-'9'
+            if (nodeSizeTypedBuffer == null) nodeSizeTypedBuffer = new StringBuilder();
+            if (nodeSizeTypedBuffer.length() < 3) nodeSizeTypedBuffer.append((char) key);
+            return true;
+        }
+        if (key == 259) { // Backspace
+            if (nodeSizeTypedBuffer == null || nodeSizeTypedBuffer.isEmpty()) return false;
+            nodeSizeTypedBuffer.deleteCharAt(nodeSizeTypedBuffer.length() - 1);
+            return true;
+        }
+        if (key == 257 || key == 335) { // Enter / numpad Enter
+            if (nodeSizeTypedBuffer == null || nodeSizeTypedBuffer.isEmpty()) return false;
+            try {
+                nodeSizeEditMode.setSizeOverridePx(Integer.parseInt(nodeSizeTypedBuffer.toString()));
+                dragController.refreshNodeScreenPos(nodeSizeEditMode);
+                depLineRenderer.refreshEdgeEndpoints(nodeSizeEditMode.getId(), this::nodeCenterForLine, posZoom(),
+                        QuestChroniclesSettings.get());
+                setFeedback("Size: %dpx  (scroll to resize - shift/ctrl for finer steps, drag to move, " +
+                        "right-click/Esc to finish)", nodeSizeEditMode.getNodePixelSize());
+            } catch (NumberFormatException ignored) {}
+            nodeSizeTypedBuffer = null;
             return true;
         }
         return false;
@@ -1646,10 +1685,32 @@ public class ChronicleOverviewScreen extends Screen
                 }
             }
 
-            editorState.multiSelection.clear();
+            // Ctrl+click-drag on empty canvas box-selects instead of an immediate clear; don't
+            // start it over the sidebar.
+            if (mx > sidebarW()) {
+                boxSelecting = true;
+                boxSelectStartX = boxSelectCurX = (int) mx;
+                boxSelectStartY = boxSelectCurY = (int) my;
+                boxSelectBaseSelection = new HashSet<>(editorState.multiSelection);
+            } else {
+                editorState.multiSelection.clear();
+            }
             return true;
         }
         return false;
+    }
+
+    private void updateBoxSelection() {
+        int x0 = Math.min(boxSelectStartX, boxSelectCurX), x1 = Math.max(boxSelectStartX, boxSelectCurX);
+        int y0 = Math.min(boxSelectStartY, boxSelectCurY), y1 = Math.max(boxSelectStartY, boxSelectCurY);
+        editorState.multiSelection.clear();
+        editorState.multiSelection.addAll(boxSelectBaseSelection);
+        for (Map.Entry<ResourceLocation, NodeHitbox> e : nodeButtons.entrySet()) {
+            NodeHitbox hb = e.getValue();
+            if (!hb.visible) continue;
+            boolean intersects = hb.x < x1 && hb.x + hb.w > x0 && hb.y < y1 && hb.y + hb.h > y0;
+            if (intersects) editorState.multiSelection.add(e.getKey());
+        }
     }
 
     private boolean tryHandlePickupPlaceReleaseClick(int btn) {
@@ -1841,8 +1902,6 @@ public class ChronicleOverviewScreen extends Screen
             if (!hitNode) {
                 unlockPathHighlight.clear();
                 nonDevCtxNode = null;
-
-                if (minecraft != null) minecraft.setScreen(new DepLineSettingsScreen(this, selectedChapter));
             }
         }
     }
@@ -1900,7 +1959,7 @@ public class ChronicleOverviewScreen extends Screen
         for (CtxItem item : items) {
             boolean hov = mx >= x && mx <= x + CTX_W && my >= iy && my <= iy + CTX_ROW;
             if (hov) g.fill(x + 1, iy, x + CTX_W - 1, iy + CTX_ROW, C_CTX_HOVER);
-            g.drawString(font, item.color() + item.label(), x + 6, iy + 4, C_CTX_TEXT);
+            ChroniclesUIKit.drawString(g, font, item.color() + item.label(), x + 6, iy + 4, C_CTX_TEXT);
             iy += CTX_ROW;
         }
 
@@ -2069,6 +2128,12 @@ public class ChronicleOverviewScreen extends Screen
         if (tryHandleNodeSizeEditDrag(btn, dx, dy)) return true;
         if (tryHandlePictureEditDrag(btn, dx, dy)) return true;
 
+        if (btn == 0 && boxSelecting) {
+            boxSelectCurX = (int) mx;
+            boxSelectCurY = (int) my;
+            updateBoxSelection();
+            return true;
+        }
         if (btn == 0 && mmDragging) {
             minimapPanTo(mx, my, sidebarW());
             return true;
@@ -2178,6 +2243,12 @@ public class ChronicleOverviewScreen extends Screen
     @Override
     public boolean mouseReleased(double mx, double my, int btn) {
         resetNodeSizeDragAccumulator(btn);
+
+        if (btn == 0 && boxSelecting) {
+            boxSelecting = false;
+            boxSelectBaseSelection = null;
+            return true;
+        }
 
         if (tryHandleSidebarRowDrop(mx, my, btn)) return true;
 
@@ -2367,7 +2438,6 @@ public class ChronicleOverviewScreen extends Screen
         FrameProfiler.begin("TOTAL render()");
 
         refreshPalette();
-        if (feedbackTimer > 0) feedbackTimer--;
         pendingDeferredDraws.clear();
         updateSidebarHoverPeek(mx, my);
 
@@ -2417,6 +2487,10 @@ public class ChronicleOverviewScreen extends Screen
             if (pos != null) {
                 int nsz = scaledNodeSize(nodeSizeEditMode);
                 ChroniclesUIKit.drawBorder(g, pos[0] - 2, pos[1] - 2, nsz + 4, nsz + 4, 0xFFFFCC33);
+                if (nodeSizeTypedBuffer != null) {
+                    String typed = "§f" + nodeSizeTypedBuffer + "§7px§8 (Enter to apply)";
+                    ChroniclesUIKit.drawCenteredString(g, font, typed, pos[0] + nsz / 2, pos[1] - 12, 0xFFFFCC33);
+                }
             }
         }
 
@@ -2468,12 +2542,12 @@ public class ChronicleOverviewScreen extends Screen
         if (font.width(StringUtil.stripColor(titleFull)) > titleMaxW) {
             titleToDraw = font.plainSubstrByWidth(titleFull, titleMaxW - font.width("…")) + "…";
         }
-        g.drawString(font, titleToDraw, cl + 8, 7, palette.text);
+        ChroniclesUIKit.drawString(g, font, titleToDraw, cl + 8, 7, palette.text);
         if (testMode) g.fill(cl, TOOLBAR_Y - 1, cr, TOOLBAR_Y, 0xFFCC2222);
         if (pictureEditMode != null) {
             g.fill(cl, TOOLBAR_Y - 1, cr, TOOLBAR_Y, 0xFFFFCC33);
             String hint = "§e🖼 Editing picture. Scroll to resize (shift = fine), drag to move, right-click/Esc to finish";
-            g.drawCenteredString(font, hint, (cl + cr) / 2, 7, 0xFFFFEEAA);
+            ChroniclesUIKit.drawCenteredString(g, font, hint, (cl + cr) / 2, 7, 0xFFFFEEAA);
         }
 
         g.enableScissor(0, 0, sidebarVisualW(), TOOLBAR_Y);
@@ -2484,7 +2558,7 @@ public class ChronicleOverviewScreen extends Screen
         int zw = font.width(zoomStr);
         int zx = cr - zw - 10, zy = 3;
         g.fill(zx - 3, zy, zx + zw + 3, zy + 13, 0x22FFFFFF);
-        g.drawString(font, "§7" + zoomStr, zx, zy + 3, palette.textDim);
+        ChroniclesUIKit.drawString(g, font, "§7" + zoomStr, zx, zy + 3, palette.textDim);
 
         int unclaimedCount = unclaimedRewardCount();
         if (unclaimedCount > 0) {
@@ -2493,10 +2567,10 @@ public class ChronicleOverviewScreen extends Screen
             int cpx = zx - cw - 18, cpy = 3;
             boolean claimHov = mx >= cpx - 3 && mx < cpx + cw + 5 && my >= cpy && my < cpy + 13;
             g.fill(cpx - 3, cpy, cpx + cw + 5, cpy + 13, claimHov ? 0x44FFFFFF : 0x33AA4488);
-            g.drawString(font, claimLabel, cpx, cpy + 3, palette.textDim, false);
+            ChroniclesUIKit.drawString(g, font, claimLabel, cpx, cpy + 3, palette.textDim, false);
             if (claimHov) {
                 pendingDeferredDraws.add(() -> g.renderTooltip(font,
-                        Component.literal("§7" + unclaimedCount + " quest(s) with unclaimed rewards - click to open"),
+                        ChroniclesUIKit.lit("§7" + unclaimedCount + " quest(s) with unclaimed rewards - click to open"),
                         mx, my));
             }
             zx = cpx;
@@ -2508,11 +2582,11 @@ public class ChronicleOverviewScreen extends Screen
         int gpx = zx - gw - 18, gpy = 3;
         boolean gridHov = mx >= gpx - 3 && mx < gpx + gw + 5 && my >= gpy && my < gpy + 13;
         g.fill(gpx - 3, gpy, gpx + gw + 5, gpy + 13, gridHov ? 0x44FFFFFF : 0x22FFFFFF);
-        g.drawString(font, gridLabel, gpx, gpy + 3, palette.textDim, false);
+        ChroniclesUIKit.drawString(g, font, gridLabel, gpx, gpy + 3, palette.textDim, false);
         if (gridHov) {
 
             pendingDeferredDraws.add(() -> g.renderTooltip(font,
-                    Component.literal("§7Click to cycle canvas snap grid size"), mx, my));
+                    ChroniclesUIKit.lit("§7Click to cycle canvas snap grid size"), mx, my));
         }
 
         if (isDevMode) {
@@ -2522,15 +2596,15 @@ public class ChronicleOverviewScreen extends Screen
             boolean sgHov = mx >= sgx - 3 && mx < sgx + sgw + 5 && my >= sgy && my < sgy + 13;
             g.fill(sgx - 3, sgy, sgx + sgw + 5, sgy + 13,
                     editorState.subgraphMode ? 0x4444CCFF : (sgHov ? 0x44FFFFFF : 0x22FFFFFF));
-            g.drawString(font, sgLabel, sgx, sgy + 3, palette.textDim, false);
+            ChroniclesUIKit.drawString(g, font, sgLabel, sgx, sgy + 3, palette.textDim, false);
             if (sgHov) {
                 pendingDeferredDraws.add(() -> g.renderComponentTooltip(font, List.of(
-                        Component.literal("§b⊛ Subgraph mode"),
-                        Component.literal("§7Dims every quest that isn't an ancestor or"),
-                        Component.literal("§7descendant of the currently selected one,"),
-                        Component.literal("§7isolating just its dependency chain."),
-                        Component.literal("§8Click a quest to select it, then click this"),
-                        Component.literal("§8pill (or press G) to toggle it on/off.")), mx, my));
+                        ChroniclesUIKit.lit("§b⊛ Subgraph mode"),
+                        ChroniclesUIKit.lit("§7Dims every quest that isn't an ancestor or"),
+                        ChroniclesUIKit.lit("§7descendant of the currently selected one,"),
+                        ChroniclesUIKit.lit("§7isolating just its dependency chain."),
+                        ChroniclesUIKit.lit("§8Click a quest to select it, then click this"),
+                        ChroniclesUIKit.lit("§8pill (or press G) to toggle it on/off.")), mx, my));
             }
 
             String cmLabel = "§8🗺 Chapters";
@@ -2538,10 +2612,10 @@ public class ChronicleOverviewScreen extends Screen
             int cmx = sgx - cmw - 18, cmy = 3;
             boolean cmHov = mx >= cmx - 3 && mx < cmx + cmw + 5 && my >= cmy && my < cmy + 13;
             g.fill(cmx - 3, cmy, cmx + cmw + 5, cmy + 13, cmHov ? 0x44FFFFFF : 0x22FFFFFF);
-            g.drawString(font, cmLabel, cmx, cmy + 3, palette.textDim, false);
+            ChroniclesUIKit.drawString(g, font, cmLabel, cmx, cmy + 3, palette.textDim, false);
             if (cmHov) {
                 pendingDeferredDraws.add(() -> g.renderTooltip(font,
-                        Component.literal("§7See how chapters gate each other"), mx, my));
+                        ChroniclesUIKit.lit("§7See how chapters gate each other"), mx, my));
             }
         }
 
@@ -2571,7 +2645,8 @@ public class ChronicleOverviewScreen extends Screen
         String name = s.getQuestbookName();
         int maxW = sidebarW() - 22;
         if (font.width(name) > maxW) name = font.plainSubstrByWidth(name, maxW - 4) + "…";
-        g.drawString(font, (hov ? "§f" : "§7") + name, 21, 7, hov ? palette.text : palette.textDim, false);
+        ChroniclesUIKit.drawString(g, font, (hov ? "§f" : "§7") + name, 21, 7, hov ? palette.text : palette.textDim,
+                false);
     }
 
     private SidebarPanel.Colors sidebarColors() {
@@ -2657,7 +2732,7 @@ public class ChronicleOverviewScreen extends Screen
         if (srcPos == null) return;
         int sz2 = scaledNodeSize();
         int sx = srcPos[0] + sz2 / 2, sy = srcPos[1] + sz2 / 2;
-        g.drawString(font, "§dRelease on a quest to link", sx - 50, sy - 14, 0xFFAA66FF, false);
+        ChroniclesUIKit.drawString(g, font, "§dRelease on a quest to link", sx - 50, sy - 14, 0xFFAA66FF, false);
     }
 
     private void renderNodesAndDetails(GuiGraphics g, int mx, int my, int cl, int cr, int sz) {
@@ -2665,11 +2740,18 @@ public class ChronicleOverviewScreen extends Screen
     }
 
     private void renderScreenOverlays(GuiGraphics g, int mx, int my, int cl, int cr, int sz) {
-        if (feedbackTimer > 0 && !feedbackMsg.isEmpty()) {
+        if (boxSelecting) {
+            int x0 = Math.min(boxSelectStartX, boxSelectCurX), x1 = Math.max(boxSelectStartX, boxSelectCurX);
+            int y0 = Math.min(boxSelectStartY, boxSelectCurY), y1 = Math.max(boxSelectStartY, boxSelectCurY);
+            g.fill(x0, y0, x1, y1, 0x2255CCFF);
+            ChroniclesUIKit.drawBorder(g, x0, y0, x1 - x0, y1 - y0, 0xFF55CCFF);
+        }
+
+        if (!feedbackMsg.isEmpty() && System.currentTimeMillis() - feedbackAtMs < FEEDBACK_DURATION_MS) {
             g.fill(cl, height - 13, cr, height, palette.header);
             g.fill(cl, height - 13, cl + 1, height, palette.selAccent);
             String clipped = font.plainSubstrByWidth("§7" + feedbackMsg, Math.max(0, cr - cl - 12));
-            g.drawString(font, clipped, cl + 6, height - 10, palette.textDim);
+            ChroniclesUIKit.drawString(g, font, clipped, cl + 6, height - 10, palette.textDim);
         }
 
         if (!isSidebarNarrow()) {
@@ -2727,7 +2809,8 @@ public class ChronicleOverviewScreen extends Screen
                 g.fill(ux + sz + 2, uy - 2, ux + sz + 3, uy + sz + 2, (ringAlpha << 24) | 0x0088FF);
             }
             g.disableScissor();
-            g.drawString(font, "§bUnlock path. §8Esc to clear", cl + 6, height - 10, 0xFF4488FF, false);
+            ChroniclesUIKit.drawString(g, font, "§bUnlock path. §8Esc to clear", cl + 6, height - 10, 0xFF4488FF,
+                    false);
         }
 
         if (!renderingAsBackdrop) renderNonDevCtxMenu(g, (int) mx, (int) my);
@@ -2768,24 +2851,26 @@ public class ChronicleOverviewScreen extends Screen
         g.pose().translate(0, 0, 400f);
         g.fill(px, py, px + panelW, py + panelH, 0xEE0D0D12);
         g.fill(px, py, px + panelW, py + 1, 0xFF00AA55);
-        g.drawString(font, "§aProfiler §8(Ctrl+P close, Ctrl+Shift+P log now)", px + 5, py + 4, 0xFFDDDDDD, false);
+        ChroniclesUIKit.drawString(g, font, "§aProfiler §8(Ctrl+P close, Ctrl+Shift+P log now)", px + 5, py + 4,
+                0xFFDDDDDD, false);
 
         Runtime rt = Runtime.getRuntime();
         long usedMb = (rt.totalMemory() - rt.freeMemory()) / (1024 * 1024);
         long maxMb = rt.maxMemory() / (1024 * 1024);
-        g.drawString(font, "§8Heap: §7" + usedMb + "MB §8/ §7" + maxMb + "MB", px + 5, py + 15, 0xFFAAAAAA, false);
+        ChroniclesUIKit.drawString(g, font, "§8Heap: §7" + usedMb + "MB §8/ §7" + maxMb + "MB", px + 5, py + 15,
+                0xFFAAAAAA, false);
 
         int gapY = py + 26;
         double gapAvg = FrameProfiler.wallClockGapAvgMs();
         double gapMax = FrameProfiler.wallClockGapMaxMs();
         int gapColor = gapMax > 50 ? 0xFFFF5555 : gapMax > 25 ? 0xFFFFAA33 : 0xFF7A9AAA;
-        g.drawString(font, "§8Frame gap: §7" +
+        ChroniclesUIKit.drawString(g, font, "§8Frame gap: §7" +
                 String.format("%.2fms (max %.2fms)", gapAvg, gapMax), px + 5, gapY, gapColor, false);
 
         long gcCount = FrameProfiler.gcCountThisWindow();
         long gcTimeMs = FrameProfiler.gcTimeMsThisWindow();
         int gcColor = gcTimeMs > 0 ? 0xFFFF5555 : 0xFF7A9AAA;
-        g.drawString(font, "§8GC: §7" + gcCount + " collections, " + gcTimeMs + "ms",
+        ChroniclesUIKit.drawString(g, font, "§8GC: §7" + gcCount + " collections, " + gcTimeMs + "ms",
                 px + 5, gapY + rowH, gcColor, false);
 
         double localMax = sections.isEmpty() ? 1.0 : sections.get(0).getValue();
@@ -2798,10 +2883,10 @@ public class ChronicleOverviewScreen extends Screen
             int barColor = frac > 0.66f ? 0xFFFF5555 : frac > 0.33f ? 0xFFFFAA33 : 0xFF55CC77;
             int barW = (int) (frac * (panelW - 110));
             g.fill(px + 5, y + 1, px + 5 + Math.max(1, barW), y + rowH - 2, barColor);
-            g.drawString(font, entry.getKey(), px + 5, y + 1, 0xFF888898, false);
+            ChroniclesUIKit.drawString(g, font, entry.getKey(), px + 5, y + 1, 0xFF888898, false);
 
             String msStr = String.format("%.2f §8/ §7%.2fms", ms, worst);
-            g.drawString(font, msStr, px + panelW - font.width(StringUtil.stripColor(msStr)) - 5,
+            ChroniclesUIKit.drawString(g, font, msStr, px + panelW - font.width(StringUtil.stripColor(msStr)) - 5,
                     y + 1, 0xFFCCCCCC, false);
             y += rowH;
         }
@@ -3216,6 +3301,7 @@ public class ChronicleOverviewScreen extends Screen
     @Override
     public void setNodeSizeEditMode(@Nullable QuestNode node) {
         this.nodeSizeEditMode = node;
+        nodeSizeTypedBuffer = null;
         if (node != null) {
             nodeSizeEditStartSize = node.getNodeSize();
             nodeSizeEditStartOverridePx = node.getSizeOverridePx();
@@ -3230,23 +3316,27 @@ public class ChronicleOverviewScreen extends Screen
         QuestNode.NodeSize startSize = nodeSizeEditStartSize;
         int startOverridePx = nodeSizeEditStartOverridePx, startX = nodeSizeEditStartX, startY = nodeSizeEditStartY;
         int endOverridePx = node.getSizeOverridePx(), endX = node.getCustomX(), endY = node.getCustomY();
-        QuestFileSaver.saveOneQuestToDisk(node);
+        // Resizing only touches layout, never tasks/rewards, so there's nothing for EMI/JEI to
+        // refresh - doing it anyway rebuilds their entire recipe catalog and is what caused the
+        // hang on finishing a resize.
+        QuestFileSaver.saveOneQuestToDisk(node, false);
         if (startOverridePx != endOverridePx || startX != endX || startY != endY) {
             pushUndo("Undo: node resize reverted", () -> {
                 node.setNodeSize(startSize);
                 if (startOverridePx > 0) node.setSizeOverridePx(startOverridePx);
                 node.setCustomPosition(startX, startY);
-                QuestFileSaver.saveOneQuestToDisk(node);
+                QuestFileSaver.saveOneQuestToDisk(node, false);
                 softRebuild();
             }, () -> {
                 node.setNodeSize(startSize);
                 if (endOverridePx > 0) node.setSizeOverridePx(endOverridePx);
                 node.setCustomPosition(endX, endY);
-                QuestFileSaver.saveOneQuestToDisk(node);
+                QuestFileSaver.saveOneQuestToDisk(node, false);
                 softRebuild();
             });
         }
         nodeSizeEditMode = null;
+        nodeSizeTypedBuffer = null;
     }
 
     @Override
@@ -3654,7 +3744,7 @@ public class ChronicleOverviewScreen extends Screen
 
     public void setFeedback(String msg, Object... args) {
         feedbackMsg = msg.formatted(args);
-        feedbackTimer = 100;
+        feedbackAtMs = System.currentTimeMillis();
     }
 
     @Override

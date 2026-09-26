@@ -148,6 +148,7 @@ public class QuestCreatorScreen extends Screen {
     private int cachedSizeOverridePx = 0;
     private String cachedDevNotes = "";
     private String cachedPreviewMachineId = "";
+    private String cachedExternalScreenId = "";
     private int cachedPosX = 40;
     private int cachedPosY = 70;
 
@@ -178,7 +179,7 @@ public class QuestCreatorScreen extends Screen {
     }
 
     public QuestCreatorScreen(Screen parent, String defaultChapter) {
-        super(Component.literal("New Quest"));
+        super(ChroniclesUIKit.lit("New Quest"));
         this.parent = parent;
         this.editingNode = null;
         if (defaultChapter != null && !defaultChapter.isBlank()) this.cachedChapter = defaultChapter;
@@ -190,7 +191,7 @@ public class QuestCreatorScreen extends Screen {
     }
 
     public QuestCreatorScreen(Screen parent, int canvasX, int canvasY, String defaultChapter) {
-        super(Component.literal("New Quest"));
+        super(ChroniclesUIKit.lit("New Quest"));
         this.parent = parent;
         this.editingNode = null;
         this.cachedPosX = canvasX;
@@ -200,7 +201,7 @@ public class QuestCreatorScreen extends Screen {
     }
 
     public QuestCreatorScreen(Screen parent, QuestNode editingNode) {
-        super(Component.literal("Edit Quest"));
+        super(ChroniclesUIKit.lit("Edit Quest"));
         this.parent = parent;
         this.editingNode = editingNode;
 
@@ -232,6 +233,7 @@ public class QuestCreatorScreen extends Screen {
         cachedSizeOverridePx = editingNode.getSizeOverridePx();
         cachedDevNotes = editingNode.getDevNotes();
         cachedPreviewMachineId = editingNode.getPreviewMachineId();
+        cachedExternalScreenId = editingNode.getExternalScreenId();
 
         cachedPosX = editingNode.getCustomX();
         cachedPosY = editingNode.getCustomY();
@@ -256,7 +258,7 @@ public class QuestCreatorScreen extends Screen {
                 String.valueOf(cachedAutoClaimRewards), String.valueOf(cachedRewardChoice),
                 String.valueOf(cachedRewardChoiceCount), String.valueOf(cachedNodeSize),
                 String.valueOf(cachedSizeOverridePx), cachedDevNotes, cachedPreviewMachineId,
-                String.valueOf(cachedPosX), String.valueOf(cachedPosY), prereqKey);
+                cachedExternalScreenId, String.valueOf(cachedPosX), String.valueOf(cachedPosY), prereqKey);
     }
 
     private boolean hasUnsavedChanges() {
@@ -322,23 +324,23 @@ public class QuestCreatorScreen extends Screen {
 
         int fbtnY = height - FOOTER_H + (FOOTER_H - 16) / 2;
         int halfW = (cw - COL_GAP) / 2;
-        addRenderableWidget(Button.builder(Component.literal("§a✓ Save & Close"), b -> {
+        addRenderableWidget(Button.builder(ChroniclesUIKit.lit("§a✓ Save & Close"), b -> {
             save();
             if (!statusIsErr) {
                 ChronicleOverviewScreen.invalidateNodeCachesUpChain(parent, lastSavedNode);
                 if (minecraft != null) minecraft.setScreen(parent);
             }
         }).bounds(cx, fbtnY, halfW, 16)
-                .tooltip(Tooltip.create(Component.literal("Write quest to disk, register it live, and return")))
+                .tooltip(Tooltip.create(ChroniclesUIKit.lit("Write quest to disk, register it live, and return")))
                 .build());
-        addRenderableWidget(Button.builder(Component.literal("§f✕ Cancel"), b -> {
+        addRenderableWidget(Button.builder(ChroniclesUIKit.lit("§f✕ Cancel"), b -> {
             if (hasUnsavedChanges()) {
                 cancelConfirmOpen = true;
             } else if (minecraft != null) {
                 minecraft.setScreen(parent);
             }
         }).bounds(cx + halfW + COL_GAP, fbtnY, halfW, 16)
-                .tooltip(Tooltip.create(Component.literal("Discard unsaved changes and return"))).build());
+                .tooltip(Tooltip.create(ChroniclesUIKit.lit("Discard unsaved changes and return"))).build());
     }
 
     @FunctionalInterface
@@ -368,7 +370,7 @@ public class QuestCreatorScreen extends Screen {
         labels.add(new LabelEntry(cx, y, "§fTitle", C_TEXT_FAINT));
         titleBox = new EditBox(font, cx, rowY, cw - EDIT_W - 2, FIELD_H, Component.empty());
         titleBox.setMaxLength(160);
-        titleBox.setHint(Component.literal("§fQuest title shown to players"));
+        titleBox.setHint(ChroniclesUIKit.lit("§fQuest title shown to players"));
         titleBox.setValue(cachedTitle);
         titleBox.setResponder(v -> {
             cachedTitle = v;
@@ -382,7 +384,7 @@ public class QuestCreatorScreen extends Screen {
             }
         });
         addRenderableWidget(titleBox);
-        addRenderableWidget(Button.builder(Component.literal("§f✎"),
+        addRenderableWidget(Button.builder(ChroniclesUIKit.lit("§f✎"),
                 b -> Minecraft.getInstance().setScreen(new QuestTextInputScreen(this, "Title", cachedTitle, 64,
                         v -> {
                             cachedTitle = v;
@@ -395,11 +397,11 @@ public class QuestCreatorScreen extends Screen {
         labels.add(new LabelEntry(cx, y, "§fDescription", C_TEXT_FAINT));
         descBox = new EditBox(font, cx, rowY, cw - EDIT_W - 2, FIELD_H, Component.empty());
         descBox.setMaxLength(512);
-        descBox.setHint(Component.literal("§fShort description / lore text"));
+        descBox.setHint(ChroniclesUIKit.lit("§fShort description / lore text"));
         descBox.setValue(cachedDesc);
         descBox.setResponder(v -> cachedDesc = v);
         addRenderableWidget(descBox);
-        addRenderableWidget(Button.builder(Component.literal("§f✎"),
+        addRenderableWidget(Button.builder(ChroniclesUIKit.lit("§f✎"),
                 b -> Minecraft.getInstance()
                         .setScreen(new QuestTextInputScreen(this, "Description", cachedDesc, 8192,
                                 v -> {
@@ -421,18 +423,18 @@ public class QuestCreatorScreen extends Screen {
         int catBoxW = catColW - catPickW - 2 - newCatW - 2;
         chapterBox = new EditBox(font, cx, rowY, catBoxW, FIELD_H, Component.empty());
         chapterBox.setMaxLength(32);
-        chapterBox.setHint(Component.literal("§fMAIN  CHAPTER_1  …"));
+        chapterBox.setHint(ChroniclesUIKit.lit("§fMAIN  CHAPTER_1  …"));
         chapterBox.setValue(cachedChapter);
         chapterBox.setResponder(v -> {
             cachedChapter = v;
             chapterDropdownOpen = false;
         });
         addRenderableWidget(chapterBox);
-        addRenderableWidget(Button.builder(Component.literal("§f▾"), b -> {
+        addRenderableWidget(Button.builder(ChroniclesUIKit.lit("§f▾"), b -> {
             chapterDropdownOpen = !chapterDropdownOpen;
             visibilityDropdownOpen = false;
         }).bounds(cx + catBoxW + 2, rowY, catPickW, FIELD_H).build());
-        addRenderableWidget(Button.builder(Component.literal("§a+New"), b -> {
+        addRenderableWidget(Button.builder(ChroniclesUIKit.lit("§a+New"), b -> {
             chapterDropdownOpen = false;
             cachedChapter = "";
             if (chapterBox != null) {
@@ -442,11 +444,11 @@ public class QuestCreatorScreen extends Screen {
         }).bounds(cx + catBoxW + 2 + catPickW + 2, rowY, newCatW, FIELD_H).build());
         subtitleBox = new EditBox(font, subX, rowY, subW - EDIT_W - 2, FIELD_H, Component.empty());
         subtitleBox.setMaxLength(256);
-        subtitleBox.setHint(Component.literal("§fSubtitle…"));
+        subtitleBox.setHint(ChroniclesUIKit.lit("§fSubtitle…"));
         subtitleBox.setValue(cachedSubtitle);
         subtitleBox.setResponder(v -> cachedSubtitle = v);
         addRenderableWidget(subtitleBox);
-        addRenderableWidget(Button.builder(Component.literal("§f✎"),
+        addRenderableWidget(Button.builder(ChroniclesUIKit.lit("§f✎"),
                 b -> Minecraft.getInstance()
                         .setScreen(new QuestTextInputScreen(this, "Subtitle", cachedSubtitle, 128,
                                 v -> {
@@ -470,14 +472,14 @@ public class QuestCreatorScreen extends Screen {
                 ForgeRegistries.ITEMS.getValue(ResourceLocation.parse(cachedIconItemId));
         String iconBtnLabel = (iconItem != null && iconItem != net.minecraft.world.item.Items.AIR) ?
                 "§f" + new net.minecraft.world.item.ItemStack(iconItem).getHoverName().getString() : "§fPick icon…";
-        addRenderableWidget(Button.builder(Component.literal(iconBtnLabel), b -> {
+        addRenderableWidget(Button.builder(ChroniclesUIKit.lit(iconBtnLabel), b -> {
             if (minecraft != null) minecraft.setScreen(new ItemPickerScreen(this, stack -> {
                 ResourceLocation id = ForgeRegistries.ITEMS.getKey(stack.getItem());
                 cachedIconItemId = id != null ? id.toString() : "";
                 rebuildWidgets();
             }));
         }).bounds(cx, rowY, iconW - EDIT_W - 2, FIELD_H).build());
-        addRenderableWidget(Button.builder(Component.literal("§c×"), b -> {
+        addRenderableWidget(Button.builder(ChroniclesUIKit.lit("§c×"), b -> {
             cachedIconItemId = "";
             rebuildWidgets();
         }).bounds(cx + iconW - EDIT_W, rowY, EDIT_W, FIELD_H).build());
@@ -486,7 +488,7 @@ public class QuestCreatorScreen extends Screen {
             ShapeMeta sm = SHAPES[i];
             boolean sel = sm.id().equals(cachedShape);
             addRenderableWidget(Button.builder(
-                    Component.literal((sel ? "§d" : "§f") + sm.glyph()),
+                    ChroniclesUIKit.lit((sel ? "§d" : "§f") + sm.glyph()),
                     b -> {
                         if ("CUSTOM".equals(sm.id())) {
                             if (minecraft != null) minecraft.setScreen(new TextureBrowserScreen(this, rl -> {
@@ -509,12 +511,12 @@ public class QuestCreatorScreen extends Screen {
         bgIds.addAll(QuestBackgroundRegistry.getAll().keySet());
         String bgLabel = cachedBackgroundType.isBlank() ? "§fNo background" : "§d" + cachedBackgroundType;
         labels.add(new LabelEntry(cx, y, "§fBackground (animated, drawn as the node's own body)", C_TEXT_FAINT));
-        addRenderableWidget(Button.builder(Component.literal(bgLabel), b -> {
+        addRenderableWidget(Button.builder(ChroniclesUIKit.lit(bgLabel), b -> {
             int idx = bgIds.indexOf(cachedBackgroundType);
             cachedBackgroundType = bgIds.get((idx + 1) % bgIds.size());
             rebuildWidgets();
         }).bounds(cx, rowY, cw, FIELD_H)
-                .tooltip(Tooltip.create(Component.literal(
+                .tooltip(Tooltip.create(ChroniclesUIKit.lit(
                         "Cycles through every registered animated background (see QuestBackgroundRegistry) - " +
                                 "\"No background\" leaves this quest's normal flat state-colored body. " +
                                 "Custom ones can be added via Java or KubeJS (QuestBackgroundBuilder / " +
@@ -525,10 +527,10 @@ public class QuestCreatorScreen extends Screen {
         if (editingNode != null) {
             rowY = y + LABEL_H + LABEL_GAP;
             labels.add(new LabelEntry(cx, y, "§fAppearance", C_TEXT_FAINT));
-            addRenderableWidget(Button.builder(Component.literal("§f🔔 Design Pop-Up…"),
+            addRenderableWidget(Button.builder(ChroniclesUIKit.lit("§f🔔 Design Pop-Up…"),
                     b -> Minecraft.getInstance().setScreen(new ToastDesignerScreen(this, editingNode)))
                     .bounds(cx, rowY, cw, FIELD_H)
-                    .tooltip(Tooltip.create(Component.literal(
+                    .tooltip(Tooltip.create(ChroniclesUIKit.lit(
                             "Customize this quest's unlock/completion toast popup appearance")))
                     .build());
             y = rowY + FIELD_H;
@@ -546,7 +548,7 @@ public class QuestCreatorScreen extends Screen {
         int halfPosW = (cw - COL_GAP) / 2;
         posXBox = new EditBox(font, cx, rowY, halfPosW, FIELD_H, Component.empty());
         posXBox.setMaxLength(6);
-        posXBox.setHint(Component.literal("§fX"));
+        posXBox.setHint(ChroniclesUIKit.lit("§fX"));
         posXBox.setValue(String.valueOf(cachedPosX));
         posXBox.setResponder(v -> {
             try {
@@ -556,7 +558,7 @@ public class QuestCreatorScreen extends Screen {
         addRenderableWidget(posXBox);
         posYBox = new EditBox(font, cx + halfPosW + COL_GAP, rowY, halfPosW, FIELD_H, Component.empty());
         posYBox.setMaxLength(6);
-        posYBox.setHint(Component.literal("§fY"));
+        posYBox.setHint(ChroniclesUIKit.lit("§fY"));
         posYBox.setValue(String.valueOf(cachedPosY));
         posYBox.setResponder(v -> {
             try {
@@ -578,12 +580,12 @@ public class QuestCreatorScreen extends Screen {
             String lbl = (sel ? "§d" : "§f") + NODE_SIZE_LABELS[i];
             int bx = cx + i * sizeBtnW;
             int bw = (i == NODE_SIZES.length - 1) ? (cw - i * sizeBtnW) : sizeBtnW - 1;
-            addRenderableWidget(Button.builder(Component.literal(lbl), b -> {
+            addRenderableWidget(Button.builder(ChroniclesUIKit.lit(lbl), b -> {
                 cachedNodeSize = sizeOpt;
                 cachedSizeOverridePx = 0;
                 rebuildWidgets();
             }).bounds(bx, rowY, bw, FIELD_H)
-                    .tooltip(Tooltip.create(Component.literal(
+                    .tooltip(Tooltip.create(ChroniclesUIKit.lit(
                             "Node size on the quest canvas.\n\n" +
                                     "Tiny=14px\n" +
                                     "Small=18px\n" +
@@ -605,11 +607,11 @@ public class QuestCreatorScreen extends Screen {
             String lbl = (sel ? "§d" : "§f") + posOpt.charAt(0) + posOpt.substring(1).toLowerCase();
             int bx = cx + i * lblBtnW;
             int bw = (i == LABEL_POSITIONS.length - 1) ? (cw - i * lblBtnW) : lblBtnW - 1;
-            addRenderableWidget(Button.builder(Component.literal(lbl), b -> {
+            addRenderableWidget(Button.builder(ChroniclesUIKit.lit(lbl), b -> {
                 cachedLabelPosition = posOpt;
                 rebuildWidgets();
             }).bounds(bx, rowY, bw, FIELD_H)
-                    .tooltip(Tooltip.create(Component.literal(
+                    .tooltip(Tooltip.create(ChroniclesUIKit.lit(
                             "Where this quest's title text draws relative to its icon on the map.")))
                     .build());
         }
@@ -629,7 +631,7 @@ public class QuestCreatorScreen extends Screen {
                 (pendingWorkingNode != null ? pendingWorkingNode.getRewards().size() : 0);
         labels.add(new LabelEntry(cx, y,
                 "§f" + taskCount + " task(s)  ·  " + rewardCount + " reward(s)", C_TEXT_FAINT));
-        addRenderableWidget(Button.builder(Component.literal("§f⊞ Open Tasks & Rewards Editor"), b -> {
+        addRenderableWidget(Button.builder(ChroniclesUIKit.lit("§f⊞ Open Tasks & Rewards Editor"), b -> {
             chapterDropdownOpen = false;
             visibilityDropdownOpen = false;
             Minecraft.getInstance().setScreen(new TaskRewardEditorScreen(this, resolveWorkingNode()));
@@ -648,12 +650,12 @@ public class QuestCreatorScreen extends Screen {
         int variantCount = editingNode != null ? editingNode.getVariants().size() :
                 (pendingWorkingNode != null ? pendingWorkingNode.getVariants().size() : 0);
         labels.add(new LabelEntry(cx, y, "§f" + variantCount + " variant(s)", C_TEXT_FAINT));
-        addRenderableWidget(Button.builder(Component.literal("§f◈ Open Variants Editor"), b -> {
+        addRenderableWidget(Button.builder(ChroniclesUIKit.lit("§f◈ Open Variants Editor"), b -> {
             chapterDropdownOpen = false;
             visibilityDropdownOpen = false;
             Minecraft.getInstance().setScreen(new VariantEditorScreen(this, resolveWorkingNode()));
         }).bounds(cx, rowY, cw, FIELD_H)
-                .tooltip(Tooltip.create(Component.literal(
+                .tooltip(Tooltip.create(ChroniclesUIKit.lit(
                         "Pack-mode variants: override this quest's title/description/visibility/tasks/rewards based on a flag condition (e.g. config:pack_mode=expert)")))
                 .build());
         return rowY + FIELD_H;
@@ -683,7 +685,7 @@ public class QuestCreatorScreen extends Screen {
         visRowY = y;
         visW = vw;
         addRenderableWidget(Button.builder(
-                Component.literal("§f" + cachedVisibility.name() + " §f▾"),
+                ChroniclesUIKit.lit("§f" + cachedVisibility.name() + " §f▾"),
                 b -> {
                     visibilityDropdownOpen = !visibilityDropdownOpen;
                     chapterDropdownOpen = false;
@@ -704,7 +706,7 @@ public class QuestCreatorScreen extends Screen {
         } else {
             prereqLabel = "§e◑ ANY prereq sufficient";
         }
-        addRenderableWidget(Button.builder(Component.literal(prereqLabel),
+        addRenderableWidget(Button.builder(ChroniclesUIKit.lit(prereqLabel),
                 b -> {
 
                     if (cachedRequireAll == null) cachedRequireAll = true;
@@ -715,7 +717,7 @@ public class QuestCreatorScreen extends Screen {
                 .bounds(cx + vw + COL_GAP, rowY, prereqW, FIELD_H).build());
         if (showBlock) {
             String blkLabel = cachedDisabledBlocksChildren ? "§eBlocks children" : "§fBlocks children";
-            addRenderableWidget(Button.builder(Component.literal(blkLabel),
+            addRenderableWidget(Button.builder(ChroniclesUIKit.lit(blkLabel),
                     b -> {
                         cachedDisabledBlocksChildren = !cachedDisabledBlocksChildren;
                         rebuildWidgets();
@@ -729,16 +731,16 @@ public class QuestCreatorScreen extends Screen {
         boolean anyMode = cachedTaskMinCount > 0;
         String gateLabel = anyMode ? "§e◑ Complete any " + cachedTaskMinCount + " task(s)" :
                 "§a✔ Complete all tasks";
-        addRenderableWidget(Button.builder(Component.literal(gateLabel), b -> {
+        addRenderableWidget(Button.builder(ChroniclesUIKit.lit(gateLabel), b -> {
             cachedTaskMinCount = cachedTaskMinCount == 0 ? 1 : 0;
             rebuildWidgets();
         }).bounds(cx, rowY, anyMode ? cw - 50 : cw, FIELD_H).build());
         if (anyMode) {
-            addRenderableWidget(Button.builder(Component.literal("§f−"), b -> {
+            addRenderableWidget(Button.builder(ChroniclesUIKit.lit("§f−"), b -> {
                 if (cachedTaskMinCount > 1) cachedTaskMinCount--;
                 rebuildWidgets();
             }).bounds(cx + cw - 48, rowY, 22, FIELD_H).build());
-            addRenderableWidget(Button.builder(Component.literal("§f+"), b -> {
+            addRenderableWidget(Button.builder(ChroniclesUIKit.lit("§f+"), b -> {
                 cachedTaskMinCount++;
                 rebuildWidgets();
             }).bounds(cx + cw - 24, rowY, 22, FIELD_H).build());
@@ -749,7 +751,7 @@ public class QuestCreatorScreen extends Screen {
         labels.add(new LabelEntry(cx, y, "§fenable_if", C_TEXT_FAINT));
         EditBox enableIfBox = new EditBox(font, cx, rowY, cw, FIELD_H, Component.empty());
         enableIfBox.setMaxLength(128);
-        enableIfBox.setHint(Component.literal("§fenable_if…"));
+        enableIfBox.setHint(ChroniclesUIKit.lit("§fenable_if…"));
         enableIfBox.setValue(cachedEnableIf);
         enableIfBox.setResponder(v -> {
             cachedEnableIf = v;
@@ -767,7 +769,7 @@ public class QuestCreatorScreen extends Screen {
         String prereqsSummary = cachedPrerequisites.isEmpty() ? "§fNo prerequisites" :
                 "§a" + cachedPrerequisites.stream().map(n -> n.getId().getPath())
                         .reduce((a, b) -> a + ", " + b).orElse("");
-        addRenderableWidget(Button.builder(Component.literal("§fManage Prerequisites…  " + prereqsSummary), b -> {
+        addRenderableWidget(Button.builder(ChroniclesUIKit.lit("§fManage Prerequisites…  " + prereqsSummary), b -> {
             chapterDropdownOpen = false;
             visibilityDropdownOpen = false;
             Minecraft.getInstance().setScreen(ParentSelectorScreen.multiSelect(this, editingNode,
@@ -777,7 +779,7 @@ public class QuestCreatorScreen extends Screen {
                         rebuildWidgets();
                     }));
         }).bounds(cx, rowY, cw, FIELD_H)
-                .tooltip(Tooltip.create(Component.literal(
+                .tooltip(Tooltip.create(ChroniclesUIKit.lit(
                         "Quests that must be completed before this one unlocks - multiple allowed. " +
                                 "The first one picked also becomes this quest's canvas-tree parent " +
                                 "(used only for grouping/layout, not for unlocking). " +
@@ -804,23 +806,23 @@ public class QuestCreatorScreen extends Screen {
             case COOLDOWN -> "§e⏱ Cooldown  §f▸";
             case INFINITE -> "§a∞ Infinite  §f▸";
         };
-        addRenderableWidget(Button.builder(Component.literal(repeatIcon), b -> {
+        addRenderableWidget(Button.builder(ChroniclesUIKit.lit(repeatIcon), b -> {
             QuestNode.RepeatMode[] modes = QuestNode.RepeatMode.values();
             cachedRepeatMode = modes[(cachedRepeatMode.ordinal() + 1) % modes.length];
             rebuildWidgets();
         }).bounds(cx, rowY, repeatBtnWLocal, FIELD_H)
-                .tooltip(Tooltip.create(Component.literal(
+                .tooltip(Tooltip.create(ChroniclesUIKit.lit(
                         "NONE = one-time only  ·  DAILY = resets at midnight  ·  COOLDOWN = custom wait  ·  INFINITE = repeats immediately")))
                 .build());
         if (hasCooldown) {
             int coolW = cw - repeatBtnWLocal - COL_GAP;
             int coolX = cx + repeatBtnWLocal + COL_GAP;
             labels.add(new LabelEntry(coolX + 22, y, "§fCooldown hours", C_TEXT_FAINT));
-            addRenderableWidget(Button.builder(Component.literal("§f−"), b -> {
+            addRenderableWidget(Button.builder(ChroniclesUIKit.lit("§f−"), b -> {
                 if (cachedRepeatCooldownHours > 1) cachedRepeatCooldownHours--;
                 rebuildWidgets();
             }).bounds(coolX, rowY, 18, FIELD_H).build());
-            addRenderableWidget(Button.builder(Component.literal("§f+"), b -> {
+            addRenderableWidget(Button.builder(ChroniclesUIKit.lit("§f+"), b -> {
                 cachedRepeatCooldownHours++;
                 rebuildWidgets();
             }).bounds(coolX + coolW - 18, rowY, 18, FIELD_H).build());
@@ -830,13 +832,13 @@ public class QuestCreatorScreen extends Screen {
         rowY = y + LABEL_H + LABEL_GAP;
         labels.add(new LabelEntry(cx, y, "§fRewards", C_TEXT_FAINT));
         String autoLabel = cachedAutoClaimRewards ? "§a⚡ Auto-claim rewards" : "§f⚡ Auto-claim rewards";
-        addRenderableWidget(Button.builder(Component.literal(autoLabel),
+        addRenderableWidget(Button.builder(ChroniclesUIKit.lit(autoLabel),
                 b -> {
                     cachedAutoClaimRewards = !cachedAutoClaimRewards;
                     rebuildWidgets();
                 })
                 .bounds(cx, rowY, cw, FIELD_H)
-                .tooltip(Tooltip.create(Component.literal(
+                .tooltip(Tooltip.create(ChroniclesUIKit.lit(
                         "Automatically grant rewards on completion. No claim button needed")))
                 .build());
         y = rowY + FIELD_H + ROW_GAP;
@@ -844,17 +846,17 @@ public class QuestCreatorScreen extends Screen {
         rowY = y + LABEL_H + LABEL_GAP;
         labels.add(new LabelEntry(cx, y, "§fChoice reward", C_TEXT_FAINT));
         String choiceLabel = cachedRewardChoice ? "§6◈ Reward choice: ON" : "§f◈ Reward choice: OFF";
-        addRenderableWidget(Button.builder(Component.literal(choiceLabel),
+        addRenderableWidget(Button.builder(ChroniclesUIKit.lit(choiceLabel),
                 b -> {
                     cachedRewardChoice = !cachedRewardChoice;
                     rebuildWidgets();
                 })
                 .bounds(cx, rowY, cachedRewardChoice ? cw - 54 : cw, FIELD_H)
-                .tooltip(Tooltip.create(Component.literal(
+                .tooltip(Tooltip.create(ChroniclesUIKit.lit(
                         "Player picks a reward from the list instead of receiving all")))
                 .build());
         if (cachedRewardChoice) {
-            addRenderableWidget(Button.builder(Component.literal("§f−"),
+            addRenderableWidget(Button.builder(ChroniclesUIKit.lit("§f−"),
                     b -> {
                         if (cachedRewardChoiceCount > 1) {
                             cachedRewardChoiceCount--;
@@ -862,9 +864,9 @@ public class QuestCreatorScreen extends Screen {
                         }
                     })
                     .bounds(cx + cw - 52, rowY, 16, FIELD_H).build());
-            addRenderableWidget(Button.builder(Component.literal("§f" + cachedRewardChoiceCount), b -> {})
+            addRenderableWidget(Button.builder(ChroniclesUIKit.lit("§f" + cachedRewardChoiceCount), b -> {})
                     .bounds(cx + cw - 34, rowY, 18, FIELD_H).build());
-            addRenderableWidget(Button.builder(Component.literal("§f+"),
+            addRenderableWidget(Button.builder(ChroniclesUIKit.lit("§f+"),
                     b -> {
                         cachedRewardChoiceCount++;
                         rebuildWidgets();
@@ -877,14 +879,14 @@ public class QuestCreatorScreen extends Screen {
         int hdepW = (int) (cw * 0.48f);
         labels.add(new LabelEntry(cx, y, "§fDependencies", C_TEXT_FAINT));
         String depToggleLabel = cachedHideDepLine ? "§e⊖ Dependency Lines" : "§f⊕ Dependency Lines";
-        addRenderableWidget(Button.builder(Component.literal(depToggleLabel),
+        addRenderableWidget(Button.builder(ChroniclesUIKit.lit(depToggleLabel),
                 b -> {
                     cachedHideDepLine = !cachedHideDepLine;
                     rebuildWidgets();
                 })
                 .bounds(cx, rowY, hdepW, FIELD_H)
                 .tooltip(Tooltip.create(
-                        Component.literal("Hide all dependency lines connected to this node on the quest canvas")))
+                        ChroniclesUIKit.lit("Hide all dependency lines connected to this node on the quest canvas")))
                 .build());
         if (editingNode != null) {
             int childCount = editingNode.getChildren().size();
@@ -908,7 +910,7 @@ public class QuestCreatorScreen extends Screen {
         int copyW = 36;
         idBox = new EditBox(font, cx, rowY, cw - lockW - copyW - 4, FIELD_H, Component.empty());
         idBox.setMaxLength(128);
-        idBox.setHint(Component.literal("§fauto-generated from title"));
+        idBox.setHint(ChroniclesUIKit.lit("§fauto-generated from title"));
         idBox.setValue(cachedId);
         idBox.setResponder(v -> {
             cachedId = v;
@@ -916,7 +918,7 @@ public class QuestCreatorScreen extends Screen {
         });
         addRenderableWidget(idBox);
         addRenderableWidget(Button.builder(
-                Component.literal(idManuallySet ? "§cLocked" : "§aAuto"),
+                ChroniclesUIKit.lit(idManuallySet ? "§cLocked" : "§aAuto"),
                 b -> {
                     idManuallySet = !idManuallySet;
                     if (!idManuallySet) {
@@ -931,20 +933,20 @@ public class QuestCreatorScreen extends Screen {
                     rebuildWidgets();
                 }).bounds(cx + cw - lockW - copyW - 2, rowY, lockW, FIELD_H).build());
         addRenderableWidget(Button.builder(
-                Component.literal("§f⎘"),
+                ChroniclesUIKit.lit("§f⎘"),
                 b -> {
                     String fullId = "phoenix_chronicles:" + (cachedId.isEmpty() ? "_unnamed_" : cachedId);
                     Minecraft.getInstance().keyboardHandler.setClipboard(fullId);
                 })
                 .bounds(cx + cw - copyW, rowY, copyW, FIELD_H)
-                .tooltip(Tooltip.create(Component.literal("Copy full quest ID to clipboard"))).build());
+                .tooltip(Tooltip.create(ChroniclesUIKit.lit("Copy full quest ID to clipboard"))).build());
         y = rowY + FIELD_H + ROW_GAP;
 
         rowY = y + LABEL_H + LABEL_GAP;
         labels.add(new LabelEntry(cx, y, "§fDev Notes", C_TEXT_FAINT));
         EditBox devNotesBox = new EditBox(font, cx, rowY, cw, FIELD_H, Component.empty());
         devNotesBox.setMaxLength(512);
-        devNotesBox.setHint(Component.literal("§fDev notes (internal, never shown to players)…"));
+        devNotesBox.setHint(ChroniclesUIKit.lit("§fDev notes (internal, never shown to players)…"));
         devNotesBox.setValue(cachedDevNotes);
         devNotesBox.setResponder(v -> cachedDevNotes = v);
         addRenderableWidget(devNotesBox);
@@ -957,12 +959,38 @@ public class QuestCreatorScreen extends Screen {
             EditBox previewMachineBox = new EditBox(font, cx, rowY, cw, FIELD_H, Component.empty());
             previewMachineBox.setMaxLength(128);
             previewMachineBox
-                    .setHint(Component.literal("§fPhantasia machine id shown in the quest viewer (optional)"));
+                    .setHint(ChroniclesUIKit.lit("§fPhantasia machine id shown in the quest viewer (optional)"));
             previewMachineBox.setValue(cachedPreviewMachineId);
             previewMachineBox.setResponder(v -> cachedPreviewMachineId = v);
             addRenderableWidget(previewMachineBox);
             y = rowY + FIELD_H;
         }
+
+        y += ROW_GAP;
+        rowY = y + LABEL_H + LABEL_GAP;
+        labels.add(new LabelEntry(cx, y, "§fExternal Screen ID", C_TEXT_FAINT));
+        int screenPickW = 16;
+        EditBox externalScreenBox = new EditBox(font, cx, rowY, cw - screenPickW - 2, FIELD_H, Component.empty());
+        externalScreenBox.setMaxLength(128);
+        externalScreenBox.setHint(Component
+                .literal(
+                        "§fRegistered external screen id (opens instead of the task viewer; used by \"Screen Opened\" tasks)"));
+        externalScreenBox.setValue(cachedExternalScreenId);
+        externalScreenBox.setResponder(v -> cachedExternalScreenId = v);
+        addRenderableWidget(externalScreenBox);
+        addRenderableWidget(Button.builder(ChroniclesUIKit.lit("§7⊞"), b -> {
+            java.util.Collection<ResourceLocation> ids = net.phoenixvine.chronicles.client.registry.ExternalScreenRegistry
+                    .registeredIds();
+            if (minecraft != null && !ids.isEmpty()) {
+                minecraft.setScreen(new RegistryIdPickerScreen(this, "Pick external screen", ids, id -> {
+                    cachedExternalScreenId = id.toString();
+                    externalScreenBox.setValue(cachedExternalScreenId);
+                }));
+            }
+        }).bounds(cx + cw - screenPickW, rowY, screenPickW, FIELD_H)
+                .tooltip(Tooltip.create(ChroniclesUIKit.lit("Browse registered external screens")))
+                .build());
+        y = rowY + FIELD_H;
         return y;
     }
 
@@ -971,7 +999,7 @@ public class QuestCreatorScreen extends Screen {
     }
 
     private int buildRaw(int y) {
-        addRenderableWidget(Button.builder(Component.literal("§f⎘ Copy SNBT"),
+        addRenderableWidget(Button.builder(ChroniclesUIKit.lit("§f⎘ Copy SNBT"),
                 b -> {
                     if (minecraft != null) minecraft.keyboardHandler.setClipboard(buildCurrentSnbt());
                 })
@@ -1003,7 +1031,7 @@ public class QuestCreatorScreen extends Screen {
         g.fill(0, 0, width, 2, C_ACCENT);
         g.fill(0, HEADER_H - 1, width, HEADER_H, C_BORDER);
         String heading = editingNode != null ? "§fEdit Quest  §f: §f" + editingNode.getId().getPath() : "§fNew Quest";
-        g.drawCenteredString(font, heading, width / 2, (HEADER_H - 8) / 2, C_TEXT);
+        ChroniclesUIKit.drawCenteredString(g, font, heading, width / 2, (HEADER_H - 8) / 2, C_TEXT);
 
         g.fill(0, height - FOOTER_H, width, height, C_HEADER);
         g.fill(0, height - FOOTER_H, width, height - FOOTER_H + 1, C_BORDER);
@@ -1019,19 +1047,21 @@ public class QuestCreatorScreen extends Screen {
             boolean hov = mx >= panelL && mx < panelR && my >= hy && my < hy + r.h();
             g.fill(panelL, hy, panelR, hy + r.h(), hov ? C_SECTION_HEADER_HOV : C_SECTION_HEADER);
             String chevron = collapsed ? "▶" : "▼";
-            g.drawString(font, "§f" + chevron + " §f" + r.section().label, cx, hy + (r.h() - 8) / 2, C_TEXT, false);
+            ChroniclesUIKit.drawString(g, font, "§f" + chevron + " §f" + r.section().label, cx, hy + (r.h() - 8) / 2,
+                    C_TEXT, false);
             if (collapsed) {
                 String summary = sectionSummary(r.section());
                 if (summary != null && !summary.isEmpty()) {
                     int sw = font.width(summary);
-                    g.drawString(font, summary, panelR - SEC_PAD - sw, hy + (r.h() - 8) / 2, C_TEXT_DIM, false);
+                    ChroniclesUIKit.drawString(g, font, summary, panelR - SEC_PAD - sw, hy + (r.h() - 8) / 2,
+                            C_TEXT_DIM, false);
                 }
             }
         }
 
         for (LabelEntry le : labels) {
             if (le.y() + LABEL_H <= scrollContentTop || le.y() >= scrollContentBottom) continue;
-            g.drawString(font, le.text(), le.x(), le.y(), le.color(), false);
+            ChroniclesUIKit.drawString(g, font, le.text(), le.x(), le.y(), le.color(), false);
         }
 
         if (!collapsedSections.contains(Section.BASIC_INFO) &&
@@ -1069,7 +1099,7 @@ public class QuestCreatorScreen extends Screen {
                 }
                 String seg = raw.substring(ci, end).replace("\n", " ");
 
-                g.drawString(font, seg, cx, lineY, 0xFFFFFFFF, false);
+                ChroniclesUIKit.drawString(g, font, seg, cx, lineY, 0xFFFFFFFF, false);
                 lineY += lineH;
                 ci = end;
             }
@@ -1079,7 +1109,7 @@ public class QuestCreatorScreen extends Screen {
         g.disableScissor();
 
         if (!statusMsg.isEmpty()) {
-            g.drawCenteredString(font, (statusIsErr ? "§c" : "§a") + statusMsg,
+            ChroniclesUIKit.drawCenteredString(g, font, (statusIsErr ? "§c" : "§a") + statusMsg,
                     width / 2, height - FOOTER_H - 12, statusIsErr ? C_ERR : C_OK);
         }
 
@@ -1115,7 +1145,8 @@ public class QuestCreatorScreen extends Screen {
                 int ry = dropY + i * (FIELD_H + 1);
                 boolean hov = mx >= cx && mx < cx + visW && my >= ry && my < ry + FIELD_H + 1;
                 if (hov) g.fill(cx + 1, ry, cx + visW - 1, ry + FIELD_H + 1, 0xFF1E1E2A);
-                g.drawString(font, "§f" + VISIBILITIES[i].name(), cx + 5, ry + 3, hov ? C_TEXT : C_TEXT_DIM, false);
+                ChroniclesUIKit.drawString(g, font, "§f" + VISIBILITIES[i].name(), cx + 5, ry + 3,
+                        hov ? C_TEXT : C_TEXT_DIM, false);
             }
         }
 
@@ -1127,13 +1158,14 @@ public class QuestCreatorScreen extends Screen {
             g.fill(cx, dropY, cx + dropW, dropY + dropH, C_PANEL);
             drawBorder(g, cx, dropY, dropW, dropH, C_ACCENT);
             if (cats.isEmpty()) {
-                g.drawString(font, "§fNo categories yet", cx + 5, dropY + 3, C_TEXT_FAINT, false);
+                ChroniclesUIKit.drawString(g, font, "§fNo categories yet", cx + 5, dropY + 3, C_TEXT_FAINT, false);
             } else {
                 for (int i = 0; i < cats.size(); i++) {
                     int ry = dropY + i * (FIELD_H + 1);
                     boolean hov = mx >= cx && mx < cx + dropW && my >= ry && my < ry + FIELD_H + 1;
                     if (hov) g.fill(cx + 1, ry, cx + dropW - 1, ry + FIELD_H + 1, 0xFF1E1E2A);
-                    g.drawString(font, "§f" + cats.get(i), cx + 5, ry + 3, hov ? C_TEXT : C_TEXT_DIM, false);
+                    ChroniclesUIKit.drawString(g, font, "§f" + cats.get(i), cx + 5, ry + 3, hov ? C_TEXT : C_TEXT_DIM,
+                            false);
                 }
             }
         }
@@ -1144,7 +1176,7 @@ public class QuestCreatorScreen extends Screen {
             g.fill(0, 0, width, height, 0x88000000);
             g.fill(px, py, px + pw, py + ph, C_PANEL);
             drawBorder(g, px, py, pw, ph, C_ACCENT);
-            g.drawCenteredString(font, "§fDiscard unsaved changes?", px + pw / 2, py + 10, C_TEXT);
+            ChroniclesUIKit.drawCenteredString(g, font, "§fDiscard unsaved changes?", px + pw / 2, py + 10, C_TEXT);
             int byY = py + ph - 26;
             int bw = (pw - 30) / 2;
             confirmDiscardX = px + 10;
@@ -1155,10 +1187,10 @@ public class QuestCreatorScreen extends Screen {
             boolean hovKeep = mx >= confirmKeepX && mx < confirmKeepX + bw && my >= byY && my < byY + 18;
             g.fill(confirmDiscardX, byY, confirmDiscardX + bw, byY + 18, hovDiscard ? 0xFF3A1A1A : 0xFF241010);
             drawBorder(g, confirmDiscardX, byY, bw, 18, C_BORDER);
-            g.drawCenteredString(font, "§cDiscard", confirmDiscardX + bw / 2, byY + 5, 0xFFFF6666);
+            ChroniclesUIKit.drawCenteredString(g, font, "§cDiscard", confirmDiscardX + bw / 2, byY + 5, 0xFFFF6666);
             g.fill(confirmKeepX, byY, confirmKeepX + bw, byY + 18, hovKeep ? 0xFF1A3A1A : 0xFF102410);
             drawBorder(g, confirmKeepX, byY, bw, 18, C_BORDER);
-            g.drawCenteredString(font, "§aKeep editing", confirmKeepX + bw / 2, byY + 5, C_OK);
+            ChroniclesUIKit.drawCenteredString(g, font, "§aKeep editing", confirmKeepX + bw / 2, byY + 5, C_OK);
         }
 
         g.pose().popPose();
@@ -1352,6 +1384,8 @@ public class QuestCreatorScreen extends Screen {
             if (!cachedDevNotes.isBlank()) tag.putString("dev_notes", cachedDevNotes.trim());
             if (!cachedPreviewMachineId.isBlank())
                 tag.putString("preview_machine_id", cachedPreviewMachineId.trim());
+            if (!cachedExternalScreenId.isBlank())
+                tag.putString("external_screen_id", cachedExternalScreenId.trim());
             if (!cachedIconItemId.isBlank()) tag.putString("icon_item", cachedIconItemId.trim());
             if (editingNode != null && !editingNode.getTasks().isEmpty()) {
                 net.minecraft.nbt.ListTag tl = new net.minecraft.nbt.ListTag();
@@ -1416,6 +1450,7 @@ public class QuestCreatorScreen extends Screen {
                 if (cachedSizeOverridePx > 0) editingNode.setSizeOverridePx(cachedSizeOverridePx);
                 editingNode.setDevNotes(cachedDevNotes.trim());
                 editingNode.setPreviewMachineId(cachedPreviewMachineId.trim());
+                editingNode.setExternalScreenId(cachedExternalScreenId.trim());
                 editingNode.setCustomPosition(cachedPosX, cachedPosY);
                 if (!cachedIconItemId.isBlank()) editingNode.setIconItemById(cachedIconItemId.trim());
 
@@ -1457,6 +1492,7 @@ public class QuestCreatorScreen extends Screen {
                 if (cachedSizeOverridePx > 0) node.setSizeOverridePx(cachedSizeOverridePx);
                 node.setDevNotes(cachedDevNotes.trim());
                 node.setPreviewMachineId(cachedPreviewMachineId.trim());
+                node.setExternalScreenId(cachedExternalScreenId.trim());
                 node.setCustomPosition(cachedPosX, cachedPosY);
                 if (!cachedIconItemId.isBlank()) node.setIconItemById(cachedIconItemId.trim());
 

@@ -53,7 +53,8 @@ Below is a chart of the major features and how they compare to other mods in Chr
 There is also a chart of what we do better or at parity to what others do.
 For more information on any of the features, check the wiki (or if that doesn't exist) ping Phoenixvine on discord.
 
-> NOTE. All comparisons are against **base FTB Quests on 1.20.1**. These comparisons do not cover FTBQ addons or the 1.21.1 version of FTB Quests.
+> NOTE. All comparisons are against **base FTB Quests on 1.20.1**. 
+> These comparisons do not cover FTBQ addons or the 1.21.1 version of FTB Quests.
 
 ### Legend: PR = At Parity, AA = Advantage, PA = Partial, N/A = Not freely applicable but still important.
 

@@ -2,8 +2,8 @@ package net.phoenixvine.chronicles.client.screen;
 
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.network.chat.Component;
 import net.phoenixvine.chronicles.client.profiler.FrameProfiler;
+import net.phoenixvine.chronicles.client.render.ChroniclesUIKit;
 import net.phoenixvine.chronicles.common.codec.QuestChroniclesSettings;
 import net.phoenixvine.chronicles.common.codec.QuestChroniclesSettings.*;
 import net.phoenixvine.chronicles.integration.phantasia.PhantasiaCompat;
@@ -96,14 +96,25 @@ public class SettingsScreen extends Screen {
 
         static Row toggle(String label, Supplier<Boolean> getter, Consumer<Boolean> setter) {
             Runnable flip = () -> setter.accept(!getter.get());
-            return new Row(RowType.TOGGLE, label, () -> getter.get() ? "§aYes" : "§cNo", flip, flip, null);
+            return new Row(RowType.TOGGLE, label, () -> getter.get() ? "§aOn" : "§cOff", flip, flip, null);
         }
 
         static <E extends Enum<E>> Row cycle(String label, Class<E> cls, Supplier<E> getter, Consumer<E> setter) {
             E[] vals = cls.getEnumConstants();
             Runnable left = () -> setter.accept(vals[(getter.get().ordinal() - 1 + vals.length) % vals.length]);
             Runnable right = () -> setter.accept(vals[(getter.get().ordinal() + 1) % vals.length]);
-            return new Row(RowType.CYCLE, label, () -> getter.get().name(), left, right, null);
+            return new Row(RowType.CYCLE, label, () -> formatEnumName(getter.get().name()), left, right, null);
+        }
+
+        private static String formatEnumName(String name) {
+            String[] words = name.split("_");
+            StringBuilder sb = new StringBuilder();
+            for (String word : words) {
+                if (word.isEmpty()) continue;
+                if (!sb.isEmpty()) sb.append(' ');
+                sb.append(Character.toUpperCase(word.charAt(0))).append(word.substring(1).toLowerCase());
+            }
+            return sb.toString();
         }
 
         static Row intCycle(String label, int[] options, Supplier<Integer> getter, Consumer<Integer> setter) {
@@ -136,7 +147,7 @@ public class SettingsScreen extends Screen {
     private int scrollY = 0;
 
     public SettingsScreen(Screen parent) {
-        super(Component.literal("Chronicles Settings"));
+        super(ChroniclesUIKit.lit("Chronicles Settings"));
         this.parent = parent;
         this.settings = QuestChroniclesSettings.load();
     }
@@ -190,14 +201,14 @@ public class SettingsScreen extends Screen {
                         .tip("When opening EMI from a task/reward icon, closing EMI brings you\nback to the quest book instead of EMI's own default (a throwaway\ninventory screen, then straight to gameplay)."));
                 rows.add(Row.cycle("§fSidebar Behavior", SidebarBehavior.class, settings::getSidebarBehavior,
                         settings::setSidebarBehavior)
-                        .tip("COLLAPSIBLE: click the small arrow to pin the sidebar open/closed.\n" +
-                                "HOVER_TO_EXPAND: FTB Quests-style - always collapsed, moving the\n" +
+                        .tip("Collapsible: click the small arrow to pin the sidebar open/closed.\n" +
+                                "Hover To Expand: FTB Quests-style - always collapsed, moving the\n" +
                                 "mouse over it opens it, moving away closes it - no clicking needed."));
                 rows.add(Row.cycle("§fQuest Node Move Style",
                         QuestChroniclesSettings.NodeMoveMode.class,
                         settings::getNodeMoveMode, settings::setNodeMoveMode)
-                        .tip("DRAG: shift+click and hold to move a quest node, release to drop it.\n" +
-                                "PICKUP_PLACE: shift+click once to pick it up (it follows the cursor\n" +
+                        .tip("Drag: shift+click and hold to move a quest node, release to drop it.\n" +
+                                "Pickup Place: shift+click once to pick it up (it follows the cursor\n" +
                                 "with no button held), click again to place it - Escape cancels\n" +
                                 "either way and snaps it back to where it started."));
                 rows.add(Row.link("§fTheme Editor",
@@ -224,8 +235,8 @@ public class SettingsScreen extends Screen {
                         .tip("Shows a row of small reward icons at the bottom of each pinned\nquest's HUD widget, below its remaining tasks."));
             }
             case POPUPS -> {
-                rows.add(Row.toggle("§fShow Pop-Ups", settings::isShowToasts, settings::setShowToasts)
-                        .tip("Master switch - turn off to silence every quest pop-up,\nregardless of the settings below."));
+                rows.add(Row.toggle("§fShow Pop-Ups (Toasts)", settings::isShowToasts, settings::setShowToasts)
+                        .tip("Master switch - turn off to silence every quest pop-up/toast,\nregardless of the settings below."));
                 rows.add(Row.cycle("§fPop-Up Style", ToastStyle.class, settings::getToastStyle,
                         settings::setToastStyle).tip("Overall visual style of the quest completion/unlock pop-up."));
                 rows.add(Row.cycle("§fPop-Up Position", HUDPosition.class, settings::getToastPosition,
@@ -279,8 +290,17 @@ public class SettingsScreen extends Screen {
 
                 rows.add(Row.toggle("§fDev Mode Enabled", () -> !settings.isDevModeDisabled(), on -> {
                     settings.setDevModeDisabled(!on);
+                    if (on) {
+                        // Cascade to the other dev toggles below - but not Always-On Profiler or
+                        // Generate .md Sidecar Files, which are opt-in workflow/perf choices,
+                        // not things dev mode should force on.
+                        settings.setShowDevInfoByDefault(true);
+                        settings.setShowFlagDisabledChapters(true);
+                        settings.setShowFlagDisabledQuests(true);
+                    }
                     settings.save();
-                }).tip("Unlocks debug-only canvas tools (Stats/Validation panels,\nSubgraph mode, FTB import, Dev Wiki) for creative/op players."));
+                    if (parent instanceof ChronicleOverviewScreen overview) overview.rebuild();
+                }).tip("Unlocks debug-only canvas tools (Stats/Validation panels,\nSubgraph mode, FTB import, Dev Wiki) for creative/op players.\nTurning this on also enables the other dev toggles below\n(except Always-On Profiler and Generate .md Sidecar Files)."));
                 rows.add(Row.toggle("§fShow Dev Info by Default", settings::isShowDevInfoByDefault,
                         settings::setShowDevInfoByDefault)
                         .tip("Opens quest editors with dev-only fields expanded by default."));
@@ -353,7 +373,7 @@ public class SettingsScreen extends Screen {
         g.fill(0, 0, vw, HEADER_H, C_HEADER);
         g.fill(0, 0, vw, 2, C_ACCENT);
         g.fill(0, HEADER_H - 1, vw, HEADER_H, C_BORDER);
-        g.drawCenteredString(font, "§fChronicles Settings", vw / 2, 9, C_TEXT);
+        ChroniclesUIKit.drawCenteredString(g, font, "§fChronicles Settings", vw / 2, 9, C_TEXT);
 
         int contentTop = HEADER_H;
         int contentBottom = vh - FOOTER_H;
@@ -372,7 +392,7 @@ public class SettingsScreen extends Screen {
             } else if (hov) {
                 g.fill(off, sy, off + SIDEBAR_W - 1, sy + ROW_H, 0x10FFFFFF);
             }
-            g.drawString(font, (sel ? "§f" : "§7") + cat.label, off + MARGIN, sy + (ROW_H - 8) / 2,
+            ChroniclesUIKit.drawString(g, font, (sel ? "§f" : "§7") + cat.label, off + MARGIN, sy + (ROW_H - 8) / 2,
                     sel ? C_TEXT : C_TEXT_DIM, false);
             sy += ROW_H;
         }
@@ -389,7 +409,7 @@ public class SettingsScreen extends Screen {
                 case INFO -> {
                     int ly = ry;
                     for (String line : r.label.split("\n")) {
-                        g.drawString(font, line, x, ly, C_TEXT_FAINT, false);
+                        ChroniclesUIKit.drawString(g, font, line, x, ly, C_TEXT_FAINT, false);
                         ly += LABEL_LINE_H;
                     }
                 }
@@ -397,8 +417,9 @@ public class SettingsScreen extends Screen {
                     boolean hov = mx >= x && mx < x + w && my >= ry && my < ry + ROW_H;
                     if (hov) g.fill(x, ry, x + w, ry + ROW_H, 0x10FFFFFF);
                     int textY = ry + (ROW_H - 8) / 2;
-                    g.drawString(font, r.label, x + 4, textY, C_TEXT, false);
-                    g.drawCenteredString(font, "§7→", x + w - ARROW_W / 2, textY, hov ? C_ACCENT : C_TEXT_DIM);
+                    ChroniclesUIKit.drawString(g, font, r.label, x + 4, textY, C_TEXT, false);
+                    ChroniclesUIKit.drawCenteredString(g, font, "§7→", x + w - ARROW_W / 2, textY,
+                            hov ? C_ACCENT : C_TEXT_DIM);
                 }
                 default -> renderValueRow(g, x, ry, w, r, mx, my);
             }
@@ -424,14 +445,15 @@ public class SettingsScreen extends Screen {
         g.fill(vw / 2 - btnW - btnGap / 2, btnY, vw / 2 - btnGap / 2, btnY + 18,
                 saveHov ? 0xFF2A4A2A : 0xFF1A2A1A);
         if (saveHov) g.fill(vw / 2 - btnW - btnGap / 2, btnY, vw / 2 - btnGap / 2, btnY + 1, C_OK);
-        g.drawCenteredString(font, "§a✓ Save", vw / 2 - btnW / 2 - btnGap / 2, btnY + 6, saveHov ? C_OK : C_TEXT);
+        ChroniclesUIKit.drawCenteredString(g, font, "§a✓ Save", vw / 2 - btnW / 2 - btnGap / 2, btnY + 6,
+                saveHov ? C_OK : C_TEXT);
 
         boolean cancelHov = mx >= vw / 2 + btnGap / 2 && mx < vw / 2 + btnW + btnGap / 2 && my >= btnY &&
                 my < btnY + 18;
         g.fill(vw / 2 + btnGap / 2, btnY, vw / 2 + btnW + btnGap / 2, btnY + 18,
                 cancelHov ? 0xFF3A3A3A : 0xFF2A2A2A);
         if (cancelHov) g.fill(vw / 2 + btnGap / 2, btnY, vw / 2 + btnW + btnGap / 2, btnY + 1, C_CANCEL);
-        g.drawCenteredString(font, "§7✕ Cancel", vw / 2 + btnW / 2 + btnGap / 2, btnY + 6,
+        ChroniclesUIKit.drawCenteredString(g, font, "§7✕ Cancel", vw / 2 + btnW / 2 + btnGap / 2, btnY + 6,
                 cancelHov ? C_CANCEL : C_TEXT);
 
         if (hoveredTooltip != null) {
@@ -453,13 +475,18 @@ public class SettingsScreen extends Screen {
         if (ty + th > vh) ty = vh - th;
         if (ty < 0) ty = 0;
 
+        g.pose().pushPose();
+        g.pose().translate(0f, 0f, 250f);
+        g.flush();
+
         g.fill(tx - 4, ty - 3, tx + tw + 4, ty + th, 0xFF0A0A0E);
         g.fill(tx - 4, ty - 3, tx + tw + 4, ty - 2, C_ACCENT);
         int ly = ty;
         for (String line : lines) {
-            g.drawString(font, "§7" + line, tx, ly, C_TEXT, false);
+            ChroniclesUIKit.drawString(g, font, "§7" + line, tx, ly, C_TEXT, false);
             ly += LABEL_LINE_H;
         }
+        g.pose().popPose();
     }
 
     private void renderValueRow(GuiGraphics g, int x, int y, int w, Row r, int mx, int my) {
@@ -473,13 +500,15 @@ public class SettingsScreen extends Screen {
         boolean rightHov = mx >= rArrowX && mx < rArrowX + ARROW_W && my >= y && my < y + ROW_H;
         if (leftHov) g.fill(lArrowX, y, lArrowX + ARROW_W, y + ROW_H, 0x33FFFFFF);
         if (rightHov) g.fill(rArrowX, y, rArrowX + ARROW_W, y + ROW_H, 0x33FFFFFF);
-        g.drawCenteredString(font, "§7<", lArrowX + ARROW_W / 2, textY, leftHov ? C_ACCENT : C_TEXT_DIM);
-        g.drawCenteredString(font, "§7>", rArrowX + ARROW_W / 2, textY, rightHov ? C_ACCENT : C_TEXT_DIM);
+        ChroniclesUIKit.drawCenteredString(g, font, "§7<", lArrowX + ARROW_W / 2, textY,
+                leftHov ? C_ACCENT : C_TEXT_DIM);
+        ChroniclesUIKit.drawCenteredString(g, font, "§7>", rArrowX + ARROW_W / 2, textY,
+                rightHov ? C_ACCENT : C_TEXT_DIM);
 
-        g.drawString(font, r.label, x + 4, textY, C_TEXT, false);
+        ChroniclesUIKit.drawString(g, font, r.label, x + 4, textY, C_TEXT, false);
         String value = r.valueFn.get();
         int valueX = lArrowX - 6 - font.width(value);
-        g.drawString(font, value, valueX, textY, C_TEXT_DIM, false);
+        ChroniclesUIKit.drawString(g, font, value, valueX, textY, C_TEXT_DIM, false);
     }
 
     @Override

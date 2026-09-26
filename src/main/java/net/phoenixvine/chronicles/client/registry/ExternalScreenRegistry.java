@@ -6,8 +6,10 @@ import net.phoenixvine.chronicles.common.model.QuestNode;
 
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 
 public final class ExternalScreenRegistry {
@@ -20,6 +22,10 @@ public final class ExternalScreenRegistry {
 
     public static boolean isRegistered(@Nullable ResourceLocation id) {
         return id != null && REGISTRY.containsKey(id);
+    }
+
+    public static Set<ResourceLocation> registeredIds() {
+        return Collections.unmodifiableSet(REGISTRY.keySet());
     }
 
     public static @Nullable Screen open(ResourceLocation id, QuestNode node) {

@@ -2,6 +2,7 @@ package net.phoenixvine.chronicles.client.render;
 
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.network.chat.Component;
 
 import java.util.List;
 import java.util.function.Function;
@@ -9,6 +10,57 @@ import java.util.function.Function;
 public final class ChroniclesUIKit {
 
     private ChroniclesUIKit() {}
+
+    /**
+     * Wraps {@link Component#literal(String)}, additionally remapping the legacy neutral-text
+     * color codes (see {@link ChroniclesThemePalette#adapt}) so light themes stay legible. Use this
+     * for ephemeral UI text (labels, hints, tooltips) - never for text that gets persisted, since
+     * the remap must be re-applied per viewer at render time, not baked in once at save time.
+     */
+    public static Component lit(String raw) {
+        return Component.literal(ChroniclesThemePalette.adapt(raw));
+    }
+
+    public static void drawString(GuiGraphics g, Font font, String text, int x, int y, int color) {
+        g.drawString(font, ChroniclesThemePalette.adapt(text), x, y, color);
+    }
+
+    public static void drawString(GuiGraphics g, Font font, String text, int x, int y, int color,
+                                  boolean dropShadow) {
+        g.drawString(font, ChroniclesThemePalette.adapt(text), x, y, color, dropShadow);
+    }
+
+    public static void drawString(GuiGraphics g, Font font, Component text, int x, int y, int color) {
+        g.drawString(font, text, x, y, color);
+    }
+
+    public static void drawString(GuiGraphics g, Font font, Component text, int x, int y, int color,
+                                  boolean dropShadow) {
+        g.drawString(font, text, x, y, color, dropShadow);
+    }
+
+    public static void drawCenteredString(GuiGraphics g, Font font, String text, int x, int y, int color) {
+        g.drawCenteredString(font, ChroniclesThemePalette.adapt(text), x, y, color);
+    }
+
+    public static void drawCenteredString(GuiGraphics g, Font font, Component text, int x, int y, int color) {
+        g.drawCenteredString(font, text, x, y, color);
+    }
+
+    /**
+     * Pass-through for already-split lines ({@code font.split(...)} results) - the source
+     * {@link Component} they were split from should already have gone through {@link #lit} (or
+     * {@link ChroniclesThemePalette#adapt}) before splitting, so no further remapping is needed here.
+     */
+    public static void drawString(GuiGraphics g, Font font, net.minecraft.util.FormattedCharSequence text, int x,
+                                  int y, int color) {
+        g.drawString(font, text, x, y, color);
+    }
+
+    public static void drawString(GuiGraphics g, Font font, net.minecraft.util.FormattedCharSequence text, int x,
+                                  int y, int color, boolean dropShadow) {
+        g.drawString(font, text, x, y, color, dropShadow);
+    }
 
     public static void drawScrim(GuiGraphics g, int width, int height) {
         g.fill(0, 0, width, height, ChroniclesThemePalette.BG);
@@ -63,7 +115,7 @@ public final class ChroniclesUIKit {
         boolean hov = mouseX >= x && mouseX < x + w && mouseY >= y && mouseY < y + h;
         g.fill(x, y, x + w, y + h, hov ? SECTION_HEADER_BG_HOV : SECTION_HEADER_BG);
         String chevron = collapsed ? "▶" : "▼";
-        g.drawString(font, "§f" + chevron + " §f" + label, x + 4, y + (h - 8) / 2, textColor, false);
+        drawString(g, font, "§f" + chevron + " §f" + label, x + 4, y + (h - 8) / 2, textColor, false);
         if (collapsed && summary != null && !summary.isEmpty()) {
             int sw = font.width(summary);
             g.drawString(font, summary, x + w - 4 - sw, y + (h - 8) / 2, textDimColor, false);
@@ -99,7 +151,7 @@ public final class ChroniclesUIKit {
                 hoveredRow = i;
             }
             String marker = (i == selectedIndex) ? "§a● §7" : "§8  §7";
-            g.drawString(font, marker + labelFn.apply(items.get(i)), x + 6, rowY + (rowH - font.lineHeight) / 2,
+            drawString(g, font, marker + labelFn.apply(items.get(i)), x + 6, rowY + (rowH - font.lineHeight) / 2,
                     hovered ? ChroniclesThemePalette.TEXT : ChroniclesThemePalette.TEXT_DIM);
         }
 

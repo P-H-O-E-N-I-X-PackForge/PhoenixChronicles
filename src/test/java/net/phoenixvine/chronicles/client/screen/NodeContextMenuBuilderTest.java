@@ -352,7 +352,9 @@ class NodeContextMenuBuilderTest {
         assertFalse(anyLabelContains(items, "Show stats"));
         assertFalse(anyLabelContains(items, "Grid Snap"));
 
-        assertTrue(anyLabelContains(items, "New quest"));
+        // Editing (including quest creation) requires real dev mode, not just op/cheats -
+        // otherwise there's no functional difference between the two, which was the bug.
+        assertFalse(anyLabelContains(items, "New quest"));
     }
 
     @Test

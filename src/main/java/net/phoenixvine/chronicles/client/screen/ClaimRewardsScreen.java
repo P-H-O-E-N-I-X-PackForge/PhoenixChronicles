@@ -162,7 +162,15 @@ public class ClaimRewardsScreen extends Screen {
     }
 
     private static int blend(int base, int overlay) {
-        return base | overlay;
+        int oa = (overlay >>> 24) & 0xFF;
+        if (oa == 0) return base;
+        float a = oa / 255f;
+        int br = (base >> 16) & 0xFF, bg = (base >> 8) & 0xFF, bb = base & 0xFF;
+        int or = (overlay >> 16) & 0xFF, og = (overlay >> 8) & 0xFF, ob = overlay & 0xFF;
+        int rr = Math.round(br + (or - br) * a);
+        int rg = Math.round(bg + (og - bg) * a);
+        int rb = Math.round(bb + (ob - bb) * a);
+        return 0xFF000000 | (rr << 16) | (rg << 8) | rb;
     }
 
     private void drawRewardIcon(GuiGraphics g, QuestReward reward, int x, int y) {
