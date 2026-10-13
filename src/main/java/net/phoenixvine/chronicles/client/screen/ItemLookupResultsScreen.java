@@ -45,6 +45,10 @@ public class ItemLookupResultsScreen extends Screen {
                 .bounds(width / 2 - 40, height - FOOTER_H + 5, 80, 18).build());
     }
 
+    @Override
+    public void renderBackground(GuiGraphics context, int mouseX, int mouseY, float delta) {
+    }
+
     private int listTop() {
         return HEADER_H + 6;
     }

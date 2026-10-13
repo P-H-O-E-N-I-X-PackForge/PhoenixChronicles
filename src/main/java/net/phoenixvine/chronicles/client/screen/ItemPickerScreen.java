@@ -69,6 +69,8 @@ public class ItemPickerScreen extends Screen {
         this.hasJei = isModLoaded("jei");
     }
 
+
+
     public ItemPickerScreen withBulk(Consumer<List<ItemStack>> onPickMany) {
         this.onPickMany = onPickMany;
         return this;

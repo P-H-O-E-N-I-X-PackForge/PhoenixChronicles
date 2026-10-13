@@ -370,6 +370,10 @@ public class ChronicleOverviewScreen extends Screen
         return zoom;
     }
 
+    @Override
+    public void renderBackground(GuiGraphics context, int mouseX, int mouseY, float delta) {
+    }
+
     private static float effectiveToRawZoom(float effective) {
         return effective < 1f ? (float) Math.pow(effective, 1f / POSITION_ZOOM_EXPONENT) : effective;
     }

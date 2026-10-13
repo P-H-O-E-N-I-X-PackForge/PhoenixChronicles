@@ -37,6 +37,10 @@ public class AutoClaimSettingsScreen extends Screen {
                 QuestCapabilityProvider.of(minecraft.player).orElse(null) : null;
     }
 
+    @Override
+    public void renderBackground(GuiGraphics context, int mouseX, int mouseY, float delta) {
+    }
+
     private void apply(boolean enabled, EnumSet<AutoClaimCategory> categories) {
         PlayerQuestData data = data();
         if (data != null) {

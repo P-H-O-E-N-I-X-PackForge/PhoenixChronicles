@@ -89,6 +89,8 @@ public class FilterTokenEditorScreen extends Screen {
         for (var mod : ModList.get().getMods()) loadedModIds.add(mod.getModId());
     }
 
+
+
     private void loadExisting() {
         if (fluidMode) {
             IFluidFilter f = FluidFilterTokenItem.getFilter(heldStack);

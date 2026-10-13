@@ -40,6 +40,8 @@ public class NewChapterScreen extends Screen {
         this.onCreated = onCreated;
     }
 
+
+
     @Override
     protected void init() {
         panelLeft = (width - PANEL_W) / 2;

@@ -72,6 +72,10 @@ public class EmergencyItemsScreen extends Screen {
         this.scope = Scope.CHAPTER;
     }
 
+    @Override
+    public void renderBackground(GuiGraphics context, int mouseX, int mouseY, float delta) {
+    }
+
     private String chapter() {
         String c = chapterSupplier != null ? chapterSupplier.get() : node != null ? node.getChapter() : "";
         return c == null ? "" : c.trim();

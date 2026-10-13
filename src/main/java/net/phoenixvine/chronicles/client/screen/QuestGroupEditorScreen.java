@@ -73,6 +73,8 @@ public class QuestGroupEditorScreen extends Screen {
         if (existing != null) icons.addAll(existing.getIcons());
     }
 
+
+
     @Override
     protected void init() {
         dialogH = 30 + ROW_H * 4 + 20 + 16 + 24 + 30;

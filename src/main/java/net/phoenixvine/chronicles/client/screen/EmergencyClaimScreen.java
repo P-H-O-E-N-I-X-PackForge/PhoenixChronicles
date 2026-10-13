@@ -77,6 +77,10 @@ public class EmergencyClaimScreen extends Screen {
         }
     }
 
+    @Override
+    public void renderBackground(GuiGraphics context, int mouseX, int mouseY, float delta) {
+    }
+
     private void refreshRows() {
         List<Row> list = new ArrayList<>();
         PlayerQuestData data = minecraft != null && minecraft.player != null ?

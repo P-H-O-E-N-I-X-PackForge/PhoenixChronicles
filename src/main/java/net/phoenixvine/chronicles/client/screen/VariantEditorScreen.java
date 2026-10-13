@@ -65,6 +65,8 @@ public class VariantEditorScreen extends Screen {
         if (!variants.isEmpty()) selected = 0;
     }
 
+
+
     @Override
     protected void init() {
         PhoenixTheme th = PhoenixTheme.current();

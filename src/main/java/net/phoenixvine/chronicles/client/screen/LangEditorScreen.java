@@ -2,6 +2,7 @@ package net.phoenixvine.chronicles.client.screen;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
@@ -67,7 +68,8 @@ public class LangEditorScreen extends Screen {
     private String statusMsg = "";
     private int statusTimer = 0;
 
-    private final List<net.minecraft.client.gui.components.AbstractWidget> rowBoxes = new ArrayList<>();
+
+    private final List<AbstractWidget> rowBoxes = new ArrayList<>();
 
     private final List<Button> jumpButtons = new ArrayList<>();
 

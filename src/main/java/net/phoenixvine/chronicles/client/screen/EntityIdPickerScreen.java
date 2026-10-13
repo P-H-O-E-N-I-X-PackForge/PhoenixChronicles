@@ -54,6 +54,8 @@ public class EntityIdPickerScreen extends Screen {
 
     private int panelLeft, panelTop;
 
+
+
     public EntityIdPickerScreen(Screen parent, String headerLabel, Collection<ResourceLocation> ids,
                                 Consumer<ResourceLocation> onPick) {
         super(Component.literal(headerLabel));

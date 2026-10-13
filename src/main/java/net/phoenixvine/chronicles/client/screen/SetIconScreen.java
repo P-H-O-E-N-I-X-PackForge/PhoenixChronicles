@@ -29,6 +29,8 @@ public class SetIconScreen extends Screen {
         this.node = node;
     }
 
+
+
     @Override
     protected void init() {
         panelH = 26 + BTN_H * 4 + GAP * 3 + 16;

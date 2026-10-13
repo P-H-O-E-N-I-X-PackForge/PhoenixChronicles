@@ -79,6 +79,8 @@ public class RegistryIdPickerScreen extends Screen {
         }
     }
 
+
+
     @Override
     public void renderBackground(@NotNull GuiGraphics g, int mouseX, int mouseY, float partialTick) {}
 

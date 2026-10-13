@@ -48,6 +48,10 @@ public class TextureBrowserScreen extends Screen {
     }
 
     @Override
+    public void renderBackground(GuiGraphics context, int mouseX, int mouseY, float delta) {
+    }
+
+    @Override
     protected void init() {
         super.init();
         PhoenixTheme t = PhoenixTheme.current();

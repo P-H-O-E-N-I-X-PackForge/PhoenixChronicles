@@ -100,6 +100,8 @@ public class CanvasThemeScreen extends Screen {
         for (ChapterConfig.CanvasOverride ov : cfg.getCanvasOverrides()) overrides.add(ov.copy());
     }
 
+
+
     private int advancedContentH() {
         if (!advancedOpen) return 0;
         int visibleRows = Math.min(overrides.size(), ADV_VISIBLE_ROWS);

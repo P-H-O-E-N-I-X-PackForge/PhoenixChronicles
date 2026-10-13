@@ -191,6 +191,8 @@ public class TaskRewardEditorScreen extends Screen {
         };
     }
 
+
+
     private EditBox rewardEventDataBox;
     private final Map<String, String> externalFieldValues = new LinkedHashMap<>();
     private PhoenixRewardRegistry.Entry externalEntryAtBuild;

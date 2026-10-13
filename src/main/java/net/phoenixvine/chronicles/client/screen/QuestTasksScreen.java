@@ -61,6 +61,10 @@ public class QuestTasksScreen extends Screen
         if (hov) hoveredHeaderTooltip = "Copy a link to this quest to share in chat";
     }
 
+    @Override
+    public void renderBackground(GuiGraphics context, int mouseX, int mouseY, float delta) {
+    }
+
     private boolean clickLinkButton(int x, int y, int w, int h, double mx, double my) {
         if (mx < x || mx >= x + w || my < y || my >= y + h) return false;
         net.phoenixvine.chronicles.client.util.QuestChatLinks.copyToClipboard(node);

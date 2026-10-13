@@ -43,6 +43,10 @@ public class ClaimRewardsScreen extends Screen {
     }
 
     @Override
+    public void renderBackground(GuiGraphics context, int mouseX, int mouseY, float delta) {
+    }
+
+    @Override
     protected void init() {
         refreshList();
 

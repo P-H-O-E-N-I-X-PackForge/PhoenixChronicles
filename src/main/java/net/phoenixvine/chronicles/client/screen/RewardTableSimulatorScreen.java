@@ -47,6 +47,10 @@ public class RewardTableSimulatorScreen extends Screen {
     }
 
     @Override
+    public void renderBackground(GuiGraphics context, int mouseX, int mouseY, float delta) {
+    }
+
+    @Override
     protected void init() {
         this.clearWidgets();
         int midX = width / 2;

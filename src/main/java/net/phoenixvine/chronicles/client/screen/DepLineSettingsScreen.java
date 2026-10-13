@@ -128,6 +128,10 @@ public class DepLineSettingsScreen extends Screen {
     }
 
     @Override
+    public void renderBackground(GuiGraphics context, int mouseX, int mouseY, float delta) {
+    }
+
+    @Override
     public void render(GuiGraphics g, int mx, int my, float partial) {
         pendingTooltip = null;
         g.fill(0, 0, width, height, C_BG);
