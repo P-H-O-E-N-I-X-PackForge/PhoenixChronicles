@@ -1,7 +1,7 @@
 package net.phoenixvine.chronicles.common.flag;
 
 import net.minecraft.server.MinecraftServer;
-import net.minecraftforge.fml.loading.FMLPaths;
+import net.neoforged.fml.loading.FMLPaths;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -44,7 +44,7 @@ public class KubeJsFlagProvider implements QuestFlagProvider {
             return cachedFlags;
         }
 
-        Path configDir = server != null ? server.getServerDirectory().toPath().resolve("config") :
+        Path configDir = server != null ? server.getServerDirectory().resolve("config") :
                 FMLPaths.CONFIGDIR.get();
         Path file = configDir.resolve("phoenix_chronicles").resolve(FLAGS_FILE);
 

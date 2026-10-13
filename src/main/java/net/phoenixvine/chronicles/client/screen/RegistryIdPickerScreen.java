@@ -80,7 +80,7 @@ public class RegistryIdPickerScreen extends Screen {
     }
 
     @Override
-    public void renderBackground(@NotNull GuiGraphics g) {}
+    public void renderBackground(@NotNull GuiGraphics g, int mouseX, int mouseY, float partialTick) {}
 
     @Override
     public void render(@NotNull GuiGraphics g, int mx, int my, float partial) {
@@ -164,7 +164,7 @@ public class RegistryIdPickerScreen extends Screen {
     }
 
     @Override
-    public boolean mouseScrolled(double mx, double my, double delta) {
+    public boolean mouseScrolled(double mx, double my, double scrollX, double delta) {
         int footerY = panelTop + PANEL_H - FOOTER_H;
         int listTop = panelTop + HEADER_H + SEARCH_H + 4;
         int listBottom = footerY - 2;

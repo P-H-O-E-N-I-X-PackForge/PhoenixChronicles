@@ -1,24 +1,24 @@
 package net.phoenixvine.chronicles.common.event;
 
 import net.minecraft.commands.Commands;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.Block;
-import net.minecraftforge.event.AddReloadListenerEvent;
-import net.minecraftforge.event.RegisterCommandsEvent;
-import net.minecraftforge.event.entity.living.LivingDeathEvent;
-import net.minecraftforge.event.entity.player.AdvancementEvent;
-import net.minecraftforge.event.entity.player.PlayerEvent;
-import net.minecraftforge.event.entity.player.PlayerInteractEvent;
-import net.minecraftforge.event.level.BlockEvent;
-import net.minecraftforge.event.server.ServerStartingEvent;
-import net.minecraftforge.event.server.ServerStoppingEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.network.PacketDistributor;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.event.AddReloadListenerEvent;
+import net.neoforged.neoforge.event.RegisterCommandsEvent;
+import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
+import net.neoforged.neoforge.event.entity.player.AdvancementEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
+import net.neoforged.neoforge.event.level.BlockEvent;
+import net.neoforged.neoforge.event.server.ServerStartingEvent;
+import net.neoforged.neoforge.event.server.ServerStoppingEvent;
+import net.neoforged.neoforge.network.PacketDistributor;
 import net.phoenixvine.chronicles.PhoenixChronicles;
 import net.phoenixvine.chronicles.capability.PooledTaskProgress;
 import net.phoenixvine.chronicles.capability.QuestCapabilityProvider;
@@ -32,7 +32,6 @@ import net.phoenixvine.chronicles.common.registry.*;
 import net.phoenixvine.chronicles.common.tasks.*;
 import net.phoenixvine.chronicles.common.tracker.QuestProgressTracker;
 import net.phoenixvine.chronicles.common.tracker.TeamKeyResolver;
-import net.phoenixvine.chronicles.network.ChronicleNetwork;
 import net.phoenixvine.chronicles.network.packet.S2CSyncPlayerProgressPacket;
 import net.phoenixvine.chronicles.network.packet.S2CSyncPooledProgressPacket;
 import net.phoenixvine.chronicles.network.packet.S2CSyncQuestsPacket;
@@ -44,11 +43,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-@Mod.EventBusSubscriber(modid = PhoenixChronicles.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
+@EventBusSubscriber(modid = PhoenixChronicles.MOD_ID)
 public class ChronicleEvents {
 
     public static MinecraftServer getCachedServer() {
-        return net.minecraftforge.server.ServerLifecycleHooks.getCurrentServer();
+        return net.neoforged.neoforge.server.ServerLifecycleHooks.getCurrentServer();
     }
 
     private static net.minecraft.resources.ResourceLocation parseQuestArg(String raw) {
@@ -74,7 +73,7 @@ public class ChronicleEvents {
                     .resolve("phoenix_chronicles");
             if (java.nio.file.Files.exists(worldSpecific)) return worldSpecific;
         } catch (Exception ignored) {}
-        return server.getServerDirectory().toPath().resolve("config").resolve("phoenix_chronicles");
+        return server.getServerDirectory().resolve("config").resolve("phoenix_chronicles");
     }
 
     @SubscribeEvent
@@ -99,7 +98,7 @@ public class ChronicleEvents {
         QuestFileLoader.loadAdditiveFromDisk(configDir);
         QuestFileWatcher.start(event.getServer(), configDir);
         hasServerStarted = true;
-        net.minecraftforge.common.MinecraftForge.EVENT_BUS.post(new QuestEvent.TreeReloaded());
+        net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(new QuestEvent.TreeReloaded());
     }
 
     @SubscribeEvent
@@ -109,11 +108,11 @@ public class ChronicleEvents {
     }
 
     @SubscribeEvent
-    public static void onItemPickup(net.minecraftforge.event.entity.player.EntityItemPickupEvent event) {
-        Player player = event.getEntity();
+    public static void onItemPickup(net.neoforged.neoforge.event.entity.player.ItemEntityPickupEvent.Pre event) {
+        Player player = event.getPlayer();
         if (player.level().isClientSide) return;
 
-        player.getCapability(QuestCapabilityProvider.PLAYER_QUESTS).ifPresent(data -> {
+        QuestCapabilityProvider.of(player).ifPresent(data -> {
             boolean needSync = false;
             for (QuestNode node : QuestTreeRegistry.getAllQuests().values()) {
                 QuestState state = data.getQuestState(node.getId(), QuestState.LOCKED);
@@ -144,11 +143,11 @@ public class ChronicleEvents {
         Player player = event.getEntity();
         if (player.level().isClientSide) return;
 
-        ResourceLocation itemId = ForgeRegistries.ITEMS.getKey(event.getCrafting().getItem());
+        ResourceLocation itemId = BuiltInRegistries.ITEM.getKey(event.getCrafting().getItem());
         if (itemId == null) return;
         int amount = event.getCrafting().getCount();
 
-        player.getCapability(QuestCapabilityProvider.PLAYER_QUESTS).ifPresent(data -> {
+        QuestCapabilityProvider.of(player).ifPresent(data -> {
             boolean needSync = false;
             for (QuestNode node : QuestTreeRegistry.getAllQuests().values()) {
                 QuestState state = data.getQuestState(node.getId(), QuestState.LOCKED);
@@ -182,10 +181,10 @@ public class ChronicleEvents {
         if (event.getSource().getEntity() instanceof Player player) {
             if (player.level().isClientSide) return;
 
-            ResourceLocation entityId = ForgeRegistries.ENTITY_TYPES.getKey(event.getEntity().getType());
+            ResourceLocation entityId = BuiltInRegistries.ENTITY_TYPE.getKey(event.getEntity().getType());
             if (entityId == null) return;
 
-            player.getCapability(QuestCapabilityProvider.PLAYER_QUESTS).ifPresent(data -> {
+            QuestCapabilityProvider.of(player).ifPresent(data -> {
                 boolean needSync = false;
                 for (QuestNode node : QuestTreeRegistry.getAllQuests().values()) {
                     QuestState state = data.getQuestState(node.getId(), QuestState.LOCKED);
@@ -216,9 +215,9 @@ public class ChronicleEvents {
         Player player = event.getEntity();
         if (player.level().isClientSide) return;
 
-        ResourceLocation advancementId = event.getAdvancement().getId();
+        ResourceLocation advancementId = event.getAdvancement().id();
 
-        player.getCapability(QuestCapabilityProvider.PLAYER_QUESTS).ifPresent(data -> {
+        QuestCapabilityProvider.of(player).ifPresent(data -> {
             boolean needSync = false;
             for (QuestNode node : QuestTreeRegistry.getAllQuests().values()) {
                 QuestState state = data.getQuestState(node.getId(), QuestState.LOCKED);
@@ -248,7 +247,7 @@ public class ChronicleEvents {
         if (!(event.getPlayer() instanceof net.minecraft.server.level.ServerPlayer player)) return;
         if (player.level().isClientSide) return;
         net.minecraft.world.level.block.Block broken = event.getState().getBlock();
-        player.getCapability(QuestCapabilityProvider.PLAYER_QUESTS).ifPresent(data -> {
+        QuestCapabilityProvider.of(player).ifPresent(data -> {
             boolean needSync = false;
             for (QuestNode node : QuestTreeRegistry.getAllQuests().values()) {
                 QuestState state = data.getQuestState(node.getId(), QuestState.LOCKED);
@@ -292,7 +291,7 @@ public class ChronicleEvents {
     }
 
     private static void handleBlockEvent(Player player, Block block, String action) {
-        player.getCapability(QuestCapabilityProvider.PLAYER_QUESTS).ifPresent(data -> {
+        QuestCapabilityProvider.of(player).ifPresent(data -> {
             boolean needSync = false;
             for (QuestNode node : QuestTreeRegistry.getAllQuests().values()) {
                 QuestState state = data.getQuestState(node.getId(), QuestState.LOCKED);
@@ -322,10 +321,10 @@ public class ChronicleEvents {
         if (player.level().isClientSide) return;
 
         var dimension = event.getTo();
-        player.getCapability(QuestCapabilityProvider.PLAYER_QUESTS).ifPresent(data -> {
+        QuestCapabilityProvider.of(player).ifPresent(data -> {
 
             if (player instanceof net.minecraft.server.level.ServerPlayer spInit) {
-                ChronicleNetwork.CHANNEL.send(PacketDistributor.PLAYER.with(() -> spInit),
+                net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(spInit,
                         new S2CSyncPlayerProgressPacket(data, true));
             }
 
@@ -381,8 +380,7 @@ public class ChronicleEvents {
                                         ctx.getSource().sendFailure(Component.literal("Quest not found: " + qStr));
                                         return 0;
                                     }
-                                    QuestState state = sp.getCapability(
-                                            QuestCapabilityProvider.PLAYER_QUESTS)
+                                    QuestState state = QuestCapabilityProvider.of(sp)
                                             .map(d -> d.getQuestState(questId, QuestState.LOCKED))
                                             .orElse(QuestState.LOCKED);
                                     String stateLabel = switch (state) {
@@ -513,7 +511,7 @@ public class ChronicleEvents {
                                     server);
                             int playerCount = 0;
                             for (net.minecraft.server.level.ServerPlayer sp : server.getPlayerList().getPlayers()) {
-                                ChronicleNetwork.CHANNEL.send(PacketDistributor.PLAYER.with(() -> sp), syncPacket);
+                                net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(sp, syncPacket);
                                 playerCount++;
                             }
                             final int fp = playerCount;
@@ -688,17 +686,14 @@ public class ChronicleEvents {
             return 0;
         }
         final net.minecraft.server.level.ServerPlayer fsp = sp;
-        fsp.getCapability(
-                QuestCapabilityProvider.PLAYER_QUESTS)
+        QuestCapabilityProvider.of(fsp)
                 .ifPresent(data -> {
                     data.setQuestState(questId, target);
                     QuestProgressTracker.updateActiveTracking(
                             fsp.getUUID(), node, target);
 
-                    ChronicleNetwork.CHANNEL.send(
-                            net.minecraftforge.network.PacketDistributor.PLAYER.with(() -> fsp),
-                            new S2CSyncPlayerProgressPacket(
-                                    data));
+                    net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(fsp, new S2CSyncPlayerProgressPacket(
+                            data));
                 });
         String label = target == QuestState.COMPLETED ? "§acompleted" :
                 target == QuestState.ACTIVE ? "§estarted" :
@@ -772,15 +767,13 @@ public class ChronicleEvents {
         net.minecraft.server.level.ServerPlayer fsp = sp;
         net.phoenixvine.chronicles.capability.TaskProgressAccess.clear(fsp, taskId);
 
-        fsp.getCapability(QuestCapabilityProvider.PLAYER_QUESTS).ifPresent(data -> {
+        QuestCapabilityProvider.of(fsp).ifPresent(data -> {
             if (data.getQuestState(node.getId(), QuestState.LOCKED) == QuestState.COMPLETED) {
                 data.setQuestState(node.getId(), QuestState.UNLOCKED);
                 data.clearClaimedRewards(node.getId());
                 data.clearChosenRewardIndices(node.getId());
             }
-            ChronicleNetwork.CHANNEL.send(
-                    net.minecraftforge.network.PacketDistributor.PLAYER.with(() -> fsp),
-                    new S2CSyncPlayerProgressPacket(data));
+            net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(fsp, new S2CSyncPlayerProgressPacket(data));
         });
         QuestProgressTracker.sendProgressSync(fsp);
 
@@ -816,8 +809,7 @@ public class ChronicleEvents {
         List<net.minecraft.resources.ResourceLocation> taskIds = new java.util.ArrayList<>();
         for (QuestTask t : node.getTasks()) taskIds.add(t.getTaskId());
         final net.minecraft.server.level.ServerPlayer fsp = sp;
-        fsp.getCapability(
-                QuestCapabilityProvider.PLAYER_QUESTS)
+        QuestCapabilityProvider.of(fsp)
                 .ifPresent(data -> {
                     data.resetQuestProgress(questId, taskIds);
 
@@ -829,10 +821,8 @@ public class ChronicleEvents {
 
                     QuestProgressTracker.relockUnsatisfied(fsp);
 
-                    ChronicleNetwork.CHANNEL.send(
-                            net.minecraftforge.network.PacketDistributor.PLAYER.with(() -> fsp),
-                            new S2CSyncPlayerProgressPacket(
-                                    data));
+                    net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(fsp, new S2CSyncPlayerProgressPacket(
+                            data));
                 });
         String name = fsp.getName().getString();
         ctx.getSource().sendSuccess(
@@ -878,13 +868,13 @@ public class ChronicleEvents {
 
             net.phoenixvine.chronicles.capability.importer.FtbProgressImporter.ImportResult result;
         };
-        fsp.getCapability(QuestCapabilityProvider.PLAYER_QUESTS).ifPresent(data -> {
+        QuestCapabilityProvider.of(fsp).ifPresent(data -> {
             resultHolder.result = net.phoenixvine.chronicles.capability.importer.FtbProgressImporter
                     .importProgress(ftbChaptersDir, ftbPlayerSaveFile, playerUuidHex, data);
 
             QuestProgressTracker.autoUnlockSatisfiedQuests(fsp);
 
-            ChronicleNetwork.CHANNEL.send(PacketDistributor.PLAYER.with(() -> fsp),
+            net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(fsp,
                     new S2CSyncPlayerProgressPacket(data, true));
         });
 
@@ -959,7 +949,7 @@ public class ChronicleEvents {
                 QuestTreeRegistry.getAllQuests(), server);
         int playerCount = 0;
         for (net.minecraft.server.level.ServerPlayer sp : server.getPlayerList().getPlayers()) {
-            ChronicleNetwork.CHANNEL.send(PacketDistributor.PLAYER.with(() -> sp), syncPacket);
+            net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(sp, syncPacket);
             playerCount++;
         }
         final int fp = playerCount;
@@ -987,7 +977,7 @@ public class ChronicleEvents {
                     .resolve("ftbquests").resolve("quests").resolve("chapters");
             if (java.nio.file.Files.isDirectory(worldSpecific)) return worldSpecific;
         } catch (Exception ignored) {}
-        return server.getServerDirectory().toPath().resolve("config").resolve("ftbquests").resolve("quests")
+        return server.getServerDirectory().resolve("config").resolve("ftbquests").resolve("quests")
                 .resolve("chapters");
     }
 
@@ -1056,14 +1046,14 @@ public class ChronicleEvents {
                 if (localReload) {
                     net.phoenixvine.chronicles.network.packet.S2CReloadQuestsFromDiskPacket reloadPacket = new net.phoenixvine.chronicles.network.packet.S2CReloadQuestsFromDiskPacket();
                     for (net.minecraft.server.level.ServerPlayer sp : server.getPlayerList().getPlayers()) {
-                        ChronicleNetwork.CHANNEL.send(PacketDistributor.PLAYER.with(() -> sp), reloadPacket);
+                        net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(sp, reloadPacket);
                         playerCount++;
                     }
                 } else {
                     net.phoenixvine.chronicles.network.packet.S2CSyncQuestsPacket syncPacket = new net.phoenixvine.chronicles.network.packet.S2CSyncQuestsPacket(
                             QuestTreeRegistry.getAllQuests(), server);
                     for (net.minecraft.server.level.ServerPlayer sp : server.getPlayerList().getPlayers()) {
-                        ChronicleNetwork.CHANNEL.send(PacketDistributor.PLAYER.with(() -> sp), syncPacket);
+                        net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(sp, syncPacket);
                         playerCount++;
                     }
                 }
@@ -1099,15 +1089,8 @@ public class ChronicleEvents {
 
     @SubscribeEvent
     public static void onPlayerClone(PlayerEvent.Clone event) {
-        event.getOriginal().reviveCaps();
-        event.getOriginal().getCapability(QuestCapabilityProvider.PLAYER_QUESTS)
-                .ifPresent(oldData -> event.getEntity().getCapability(QuestCapabilityProvider.PLAYER_QUESTS)
-                        .ifPresent(newData -> newData.deserializeNBT(oldData.serializeNBT())));
-        event.getOriginal().invalidateCaps();
-
-        event.getEntity().getCapability(QuestCapabilityProvider.PLAYER_QUESTS)
-                .ifPresent(newData -> QuestProgressTracker
-                        .cachePlayerData(event.getEntity().getUUID(), newData));
+        QuestCapabilityProvider.of(event.getEntity())
+                .ifPresent(newData -> QuestProgressTracker.cachePlayerData(event.getEntity().getUUID(), newData));
     }
 
     @SubscribeEvent
@@ -1115,8 +1098,8 @@ public class ChronicleEvents {
         if (!(event.getEntity() instanceof net.minecraft.server.level.ServerPlayer serverPlayer)) return;
         if (serverPlayer.level().isClientSide) return;
 
-        serverPlayer.getCapability(QuestCapabilityProvider.PLAYER_QUESTS)
-                .ifPresent(data -> ChronicleNetwork.CHANNEL.send(PacketDistributor.PLAYER.with(() -> serverPlayer),
+        QuestCapabilityProvider.of(serverPlayer)
+                .ifPresent(data -> net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(serverPlayer,
                         new S2CSyncPlayerProgressPacket(data, true)));
     }
 
@@ -1138,19 +1121,18 @@ public class ChronicleEvents {
 
             QuestProgressTracker.beginLoginSync(serverPlayer.getUUID());
 
-            serverPlayer.getCapability(QuestCapabilityProvider.PLAYER_QUESTS)
+            QuestCapabilityProvider.of(serverPlayer)
                     .ifPresent(data -> QuestProgressTracker.cachePlayerData(serverPlayer.getUUID(), data));
 
             Map<ResourceLocation, QuestNode> serverQuests = QuestTreeRegistry.getAllQuests();
-            ChronicleNetwork.CHANNEL.send(
-                    PacketDistributor.PLAYER.with(() -> serverPlayer),
+            net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(serverPlayer,
                     new S2CSyncQuestsPacket(serverQuests, serverPlayer.getServer()));
 
             QuestProgressTracker.autoUnlockSatisfiedQuests(serverPlayer);
             QuestProgressTracker.sendProgressSync(serverPlayer);
             sendInitialPooledSync(serverPlayer);
 
-            ChronicleNetwork.CHANNEL.send(PacketDistributor.PLAYER.with(() -> serverPlayer),
+            net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(serverPlayer,
                     new net.phoenixvine.chronicles.network.packet.S2CSyncTeamKeyPacket(
                             TeamKeyResolver.resolve(serverPlayer).orElse("")));
         }
@@ -1168,7 +1150,7 @@ public class ChronicleEvents {
                 }
             }
             if (!bulk.isEmpty()) {
-                ChronicleNetwork.CHANNEL.send(PacketDistributor.PLAYER.with(() -> player),
+                net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(player,
                         new S2CSyncPooledProgressPacket(bulk));
             }
         });

@@ -55,14 +55,12 @@ public class ScriptTask extends QuestTask {
         return s != null ? s : (isCompletedFor(player) ? "Done" : "Pending");
     }
 
-    @Override
     public CompoundTag serializeNBT() {
         CompoundTag tag = data.copy();
         tag.putString("type", typeId);
         return tag;
     }
 
-    @Override
     public void deserializeNBT(CompoundTag nbt) {
         this.data = nbt.copy();
     }

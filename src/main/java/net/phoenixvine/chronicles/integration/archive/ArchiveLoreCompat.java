@@ -1,7 +1,7 @@
 package net.phoenixvine.chronicles.integration.archive;
 
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraftforge.fml.ModList;
+import net.neoforged.fml.ModList;
 
 public final class ArchiveLoreCompat {
 
@@ -35,6 +35,10 @@ public final class ArchiveLoreCompat {
                     if (!id.isEmpty()) ArchiveLoreCompatImpl.unlockEntry(player, id);
                 })
                 .register();
+    }
+
+    public static java.util.Collection<String> allEntryIds() {
+        return null;
     }
 
     public static boolean hasEntry(String entryId) {

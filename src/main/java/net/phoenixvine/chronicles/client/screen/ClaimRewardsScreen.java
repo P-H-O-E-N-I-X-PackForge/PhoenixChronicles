@@ -12,7 +12,7 @@ import net.phoenixvine.chronicles.common.model.QuestNode;
 import net.phoenixvine.chronicles.common.model.QuestReward;
 import net.phoenixvine.chronicles.common.model.QuestState;
 import net.phoenixvine.chronicles.common.registry.QuestTreeRegistry;
-import net.phoenixvine.chronicles.network.ChronicleNetwork;
+import net.phoenixvine.chronicles.common.util.ItemData;
 import net.phoenixvine.chronicles.network.packet.C2SClaimAllRewardsPacket;
 import net.phoenixvine.chronicles.network.packet.C2SClaimQuestRewardPacket;
 import net.phoenixvine.wiki.theme.PhoenixTheme;
@@ -48,7 +48,7 @@ public class ClaimRewardsScreen extends Screen {
 
         addRenderableWidget(
                 Button.builder(Component.translatable("phoenix_chronicles.screen.claim_rewards.claim_all"), b -> {
-                    ChronicleNetwork.CHANNEL.sendToServer(new C2SClaimAllRewardsPacket());
+                    net.neoforged.neoforge.network.PacketDistributor.sendToServer(new C2SClaimAllRewardsPacket());
                 }).bounds(MARGIN, height - FOOTER_H + 6, 110, 18).build());
 
         addRenderableWidget(Button.builder(Component.literal("§e⚡ Auto-claim…"), b -> {
@@ -78,7 +78,7 @@ public class ClaimRewardsScreen extends Screen {
             unclaimed = list;
             return;
         }
-        PlayerQuestData data = minecraft.player.getCapability(QuestCapabilityProvider.PLAYER_QUESTS).orElse(null);
+        PlayerQuestData data = QuestCapabilityProvider.of(minecraft.player).orElse(null);
         if (data == null) {
             unclaimed = list;
             return;
@@ -99,7 +99,7 @@ public class ClaimRewardsScreen extends Screen {
     private List<QuestReward> remainingRewards(QuestNode node) {
         List<QuestReward> all = node.getRewards();
         PlayerQuestData data = minecraft != null && minecraft.player != null ?
-                minecraft.player.getCapability(QuestCapabilityProvider.PLAYER_QUESTS).orElse(null) : null;
+                QuestCapabilityProvider.of(minecraft.player).orElse(null) : null;
         if (data == null) return all;
         List<QuestReward> remaining = new ArrayList<>();
         for (int i = 0; i < all.size(); i++) {
@@ -210,7 +210,7 @@ public class ClaimRewardsScreen extends Screen {
         g.fill(x, y, x + ICON_SZ, y + ICON_SZ, 0xFF0F0F18);
         if (reward instanceof QuestReward.ItemReward ir) {
             ItemStack stack = new ItemStack(ir.getItem(), ir.getCount());
-            if (ir.getNbt() != null && !ir.getNbt().isEmpty()) stack.setTag(ir.getNbt().copy());
+            if (ir.getNbt() != null && !ir.getNbt().isEmpty()) ItemData.setTag(stack, ir.getNbt().copy());
             g.renderItem(stack, x, y);
         } else if (reward instanceof QuestReward.ChoiceBoxReward box) {
             String glyph = box.getMode() == QuestReward.ChoiceBoxReward.Mode.LOOTBOX ? "🎲" : "🎁";
@@ -245,7 +245,8 @@ public class ClaimRewardsScreen extends Screen {
                                 }
                             }
                         } else {
-                            ChronicleNetwork.CHANNEL.sendToServer(new C2SClaimQuestRewardPacket(node.getId(), -1));
+                            net.neoforged.neoforge.network.PacketDistributor
+                                    .sendToServer(new C2SClaimQuestRewardPacket(node.getId(), -1));
                         }
                         return true;
                     }
@@ -257,7 +258,7 @@ public class ClaimRewardsScreen extends Screen {
     }
 
     @Override
-    public boolean mouseScrolled(double mx, double my, double delta) {
+    public boolean mouseScrolled(double mx, double my, double scrollX, double delta) {
         int maxScroll = Math.max(0, unclaimed.size() * ROW_H - (listBottom() - listTop()));
         scrollY = Math.max(0, Math.min(maxScroll, scrollY - (int) (delta * ROW_H)));
         return true;

@@ -3,11 +3,11 @@ package net.phoenixvine.chronicles.client.registry;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.material.Fluid;
-import net.minecraftforge.registries.ForgeRegistries;
 import net.phoenixvine.chronicles.common.codec.QuestChroniclesSettings;
 import net.phoenixvine.chronicles.common.model.QuestGroup;
 import net.phoenixvine.chronicles.common.model.QuestNode;
@@ -335,7 +335,7 @@ public class QuestToastManager {
         try {
             switch (icon.kind) {
                 case ITEM -> {
-                    Item item = ForgeRegistries.ITEMS.getValue(ResourceLocation.parse(icon.id));
+                    Item item = BuiltInRegistries.ITEM.get(ResourceLocation.parse(icon.id));
                     if (item == null || item == net.minecraft.world.item.Items.AIR) return;
                     float scale = size / 16f;
                     g.pose().pushPose();
@@ -348,7 +348,7 @@ public class QuestToastManager {
                     }
                 }
                 case FLUID -> {
-                    Fluid fluid = ForgeRegistries.FLUIDS.getValue(ResourceLocation.parse(icon.id));
+                    Fluid fluid = BuiltInRegistries.FLUID.get(ResourceLocation.parse(icon.id));
                     com.mojang.blaze3d.systems.RenderSystem.setShaderColor(1f, 1f, 1f, alpha);
                     try {
                         net.phoenixvine.chronicles.client.render.ChroniclesUIKit.drawFluidIcon(g, fluid, x, y, size);

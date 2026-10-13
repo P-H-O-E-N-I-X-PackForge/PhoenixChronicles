@@ -1,7 +1,7 @@
 package net.phoenixvine.chronicles.common.item;
 
 import net.minecraft.data.PackOutput;
-import net.minecraftforge.common.data.LanguageProvider;
+import net.neoforged.neoforge.common.data.LanguageProvider;
 import net.phoenixvine.chronicles.PhoenixChronicles;
 
 public class ChroniclesLanguageProvider extends LanguageProvider {

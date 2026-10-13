@@ -2,7 +2,7 @@ package net.phoenixvine.chronicles.integration.curios;
 
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.fml.ModList;
+import net.neoforged.fml.ModList;
 
 import org.jetbrains.annotations.NotNull;
 

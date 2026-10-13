@@ -168,7 +168,7 @@ public class ChapterDependencyScreen extends Screen {
     }
 
     @Override
-    public boolean mouseScrolled(double mx, double my, double delta) {
+    public boolean mouseScrolled(double mx, double my, double scrollX, double delta) {
         int maxScroll = Math.max(0, rows.size() - visibleRows());
         scroll = Math.max(0, Math.min(maxScroll, scroll - (int) Math.signum(delta)));
         return true;

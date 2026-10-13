@@ -157,7 +157,7 @@ public class TextureBrowserScreen extends Screen {
     }
 
     @Override
-    public boolean mouseScrolled(double mx, double my, double delta) {
+    public boolean mouseScrolled(double mx, double my, double scrollX, double delta) {
         int cols = Math.max(1, (width - 16) / (THUMB + THUMB_PAD));
         int rows = (filtered.size() + cols - 1) / cols;
         int totalH = rows * (THUMB + THUMB_PAD + 12);

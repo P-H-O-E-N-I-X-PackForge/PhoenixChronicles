@@ -3,11 +3,11 @@ package net.phoenixvine.chronicles.client.screen.widgets;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.ShaderInstance;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraftforge.registries.ForgeRegistries;
 import net.phoenixvine.chronicles.client.profiler.FrameProfiler;
 import net.phoenixvine.chronicles.client.render.ChroniclesUIKit;
 import net.phoenixvine.chronicles.client.render.NodeRenderer;
@@ -714,8 +714,7 @@ public class SidebarPanel {
 
     private @Nullable Item resolveCategoryIcon(@NotNull String iconId) {
         try {
-            Item item = ForgeRegistries.ITEMS
-                    .getValue(ResourceLocation.parse(iconId));
+            Item item = BuiltInRegistries.ITEM.get(ResourceLocation.parse(iconId));
             return (item != null && item != Items.AIR) ? item : null;
         } catch (Exception e) {
             return null;

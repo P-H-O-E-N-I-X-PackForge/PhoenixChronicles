@@ -11,7 +11,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.material.Fluid;
-import net.minecraftforge.fml.ModList;
+import net.neoforged.fml.ModList;
 import net.phoenixvine.chronicles.client.render.ChroniclesThemePalette;
 import net.phoenixvine.chronicles.client.render.ChroniclesUIKit;
 import net.phoenixvine.chronicles.common.filter.FluidFilters;
@@ -261,14 +261,14 @@ public class FilterTokenEditorScreen extends Screen {
                 filterTag = combined.serialize();
             }
 
-            net.phoenixvine.chronicles.network.ChronicleNetwork.CHANNEL.sendToServer(
+            net.neoforged.neoforge.network.PacketDistributor.sendToServer(
                     new net.phoenixvine.chronicles.network.packet.C2SSetFilterTokenPacket(filterTag));
         }
         if (minecraft != null) minecraft.setScreen(parent);
     }
 
     @Override
-    public void renderBackground(@NotNull GuiGraphics g) {}
+    public void renderBackground(@NotNull GuiGraphics g, int mouseX, int mouseY, float partialTick) {}
 
     @Override
     public void render(@NotNull GuiGraphics g, int mx, int my, float partial) {
@@ -387,7 +387,7 @@ public class FilterTokenEditorScreen extends Screen {
     }
 
     @Override
-    public boolean mouseScrolled(double mx, double my, double delta) {
+    public boolean mouseScrolled(double mx, double my, double scrollX, double delta) {
         int visRows = Math.max(1, (listBottom - listTop) / ROW_H);
         int maxScroll = Math.max(0, entries.size() - visRows);
         scrollOffset = Math.max(0, Math.min(scrollOffset - (int) Math.signum(delta), maxScroll));

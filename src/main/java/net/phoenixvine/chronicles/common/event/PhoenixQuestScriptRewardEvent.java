@@ -2,7 +2,7 @@ package net.phoenixvine.chronicles.common.event;
 
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.event.entity.player.PlayerEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 
 import lombok.Getter;
 

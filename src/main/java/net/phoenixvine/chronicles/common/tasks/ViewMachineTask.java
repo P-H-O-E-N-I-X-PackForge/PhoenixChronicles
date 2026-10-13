@@ -40,7 +40,6 @@ public class ViewMachineTask extends QuestTask {
         return isCompletedFor(player) ? "Viewed" : (minSeconds > 0 ? "View for " + (int) minSeconds + "s" : "View");
     }
 
-    @Override
     public CompoundTag serializeNBT() {
         CompoundTag tag = new CompoundTag();
         tag.putString("type", "view_machine");
@@ -49,7 +48,6 @@ public class ViewMachineTask extends QuestTask {
         return tag;
     }
 
-    @Override
     public void deserializeNBT(CompoundTag nbt) {
         this.machineId = nbt.getString("machine_id");
         this.minSeconds = nbt.contains("min_seconds") ? nbt.getFloat("min_seconds") : 3.0f;

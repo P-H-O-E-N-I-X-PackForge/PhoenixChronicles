@@ -332,7 +332,7 @@ public class CanvasThemeScreen extends Screen {
     }
 
     @Override
-    public void renderBackground(@NotNull GuiGraphics g) {}
+    public void renderBackground(@NotNull GuiGraphics g, int mouseX, int mouseY, float partialTick) {}
 
     @Override
     public void render(@NotNull GuiGraphics g, int rmx, int rmy, float partial) {
@@ -577,7 +577,7 @@ public class CanvasThemeScreen extends Screen {
     }
 
     @Override
-    public boolean mouseScrolled(double rmx, double rmy, double delta) {
+    public boolean mouseScrolled(double rmx, double rmy, double scrollX, double delta) {
         double mx = rmx / uiScale;
         double my = rmy / uiScale;
         if (advancedOpen && overrides.size() > ADV_VISIBLE_ROWS) {
@@ -592,7 +592,7 @@ public class CanvasThemeScreen extends Screen {
                 return true;
             }
         }
-        return super.mouseScrolled(mx, my, delta);
+        return super.mouseScrolled(mx, my, 0.0, delta);
     }
 
     @Override

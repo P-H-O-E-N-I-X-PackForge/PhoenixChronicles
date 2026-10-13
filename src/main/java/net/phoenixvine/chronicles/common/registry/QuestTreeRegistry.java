@@ -73,7 +73,8 @@ public class QuestTreeRegistry {
             ROOT_NODES.put(node.getId(), node);
         }
 
-        net.minecraft.server.MinecraftServer server = net.minecraftforge.server.ServerLifecycleHooks.getCurrentServer();
+        net.minecraft.server.MinecraftServer server = net.neoforged.neoforge.server.ServerLifecycleHooks
+                .getCurrentServer();
         if (server != null) {
             for (net.minecraft.server.level.ServerPlayer player : server.getPlayerList().getPlayers()) {
                 QuestProgressTracker.autoUnlockSatisfiedQuests(player);

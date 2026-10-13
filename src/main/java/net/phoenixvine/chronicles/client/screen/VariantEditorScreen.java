@@ -194,7 +194,7 @@ public class VariantEditorScreen extends Screen {
     }
 
     @Override
-    public void renderBackground(@NotNull GuiGraphics g) {}
+    public void renderBackground(@NotNull GuiGraphics g, int mouseX, int mouseY, float partialTick) {}
 
     @Override
     public void render(@NotNull GuiGraphics g, int rawMx, int rawMy, float partial) {
@@ -332,8 +332,8 @@ public class VariantEditorScreen extends Screen {
     }
 
     @Override
-    public boolean mouseScrolled(double rawMx, double rawMy, double delta) {
-        return super.mouseScrolled(rawMx / uiScale, rawMy / uiScale, delta);
+    public boolean mouseScrolled(double rawMx, double rawMy, double scrollX, double delta) {
+        return super.mouseScrolled(rawMx / uiScale, rawMy / uiScale, 0.0, delta);
     }
 
     @Override

@@ -10,10 +10,11 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 import net.phoenixvine.chronicles.common.filter.IItemFilter;
 import net.phoenixvine.chronicles.common.filter.ItemFilters;
+import net.phoenixvine.chronicles.common.util.ItemData;
 
 import org.jetbrains.annotations.Nullable;
 
@@ -29,7 +30,7 @@ public class ItemFilterTokenItem extends Item {
 
     @Nullable
     public static IItemFilter getFilter(ItemStack stack) {
-        CompoundTag tag = stack.getTag();
+        CompoundTag tag = ItemData.getTag(stack);
         if (tag == null || !tag.contains(TAG_FILTER)) return null;
         try {
             return ItemFilters.deserialize(tag.getCompound(TAG_FILTER));
@@ -39,8 +40,7 @@ public class ItemFilterTokenItem extends Item {
     }
 
     public static void setFilter(ItemStack stack, IItemFilter filter) {
-        CompoundTag tag = stack.getOrCreateTag();
-        tag.put(TAG_FILTER, filter.serialize());
+        ItemData.edit(stack, tag -> tag.put(TAG_FILTER, filter.serialize()));
     }
 
     public static boolean isFilterToken(ItemStack stack) {
@@ -55,7 +55,7 @@ public class ItemFilterTokenItem extends Item {
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> lines, TooltipFlag flag) {
+    public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> lines, TooltipFlag flag) {
         IItemFilter filter = getFilter(stack);
         if (filter == null) {
             lines.add(Component.literal("§7Right-click to configure this filter.").withStyle(ChatFormatting.ITALIC));
@@ -74,8 +74,8 @@ public class ItemFilterTokenItem extends Item {
         ItemStack stack = player.getItemInHand(hand);
         if (player.isShiftKeyDown()) {
             if (level.isClientSide) {
-                stack.removeTagKey(TAG_FILTER);
-                net.phoenixvine.chronicles.network.ChronicleNetwork.CHANNEL.sendToServer(
+                ItemData.removeKey(stack, TAG_FILTER);
+                net.neoforged.neoforge.network.PacketDistributor.sendToServer(
                         new net.phoenixvine.chronicles.network.packet.C2SSetFilterTokenPacket((CompoundTag) null));
             }
             return InteractionResultHolder.sidedSuccess(stack, level.isClientSide);

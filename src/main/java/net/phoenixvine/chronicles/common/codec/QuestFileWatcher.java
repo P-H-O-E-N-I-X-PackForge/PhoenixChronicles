@@ -1,10 +1,9 @@
 package net.phoenixvine.chronicles.common.codec;
 
 import net.minecraft.server.MinecraftServer;
-import net.minecraftforge.network.PacketDistributor;
+import net.neoforged.neoforge.network.PacketDistributor;
 import net.phoenixvine.chronicles.common.event.QuestEvent;
 import net.phoenixvine.chronicles.common.registry.*;
-import net.phoenixvine.chronicles.network.ChronicleNetwork;
 import net.phoenixvine.chronicles.network.packet.S2CSyncQuestsPacket;
 
 import java.io.IOException;
@@ -124,19 +123,19 @@ public final class QuestFileWatcher {
             if (server.isSingleplayer()) {
                 net.phoenixvine.chronicles.network.packet.S2CReloadQuestsFromDiskPacket reloadPacket = new net.phoenixvine.chronicles.network.packet.S2CReloadQuestsFromDiskPacket();
                 for (net.minecraft.server.level.ServerPlayer sp : server.getPlayerList().getPlayers()) {
-                    ChronicleNetwork.CHANNEL.send(PacketDistributor.PLAYER.with(() -> sp), reloadPacket);
+                    net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(sp, reloadPacket);
                     playerCount++;
                 }
             } else {
                 S2CSyncQuestsPacket syncPacket = new S2CSyncQuestsPacket(QuestTreeRegistry.getAllQuests(), server);
                 for (net.minecraft.server.level.ServerPlayer sp : server.getPlayerList().getPlayers()) {
-                    ChronicleNetwork.CHANNEL.send(PacketDistributor.PLAYER.with(() -> sp), syncPacket);
+                    net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(sp, syncPacket);
                     playerCount++;
                 }
             }
             System.out.printf("[Phoenix Chronicles] Auto-reloaded %d quest(s) from disk (synced to %d player(s))%n",
                     questCount, playerCount);
-            net.minecraftforge.common.MinecraftForge.EVENT_BUS.post(
+            net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(
                     new QuestEvent.TreeReloaded());
         });
     }

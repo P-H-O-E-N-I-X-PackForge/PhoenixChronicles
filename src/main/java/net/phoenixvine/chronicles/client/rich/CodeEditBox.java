@@ -21,12 +21,12 @@ public class CodeEditBox extends EditBox {
         int c = getCursorPosition();
         if (c >= 2 && v.charAt(c - 2) == '&' && CodeInput.isCodeChar(v.charAt(c - 1))) {
             setValue(v.substring(0, c - 2) + '§' + v.substring(c - 1));
-            moveCursorTo(c);
+            moveCursorTo(c, false);
             return;
         }
         if (c >= 8 && v.charAt(c - 8) == '&' && v.charAt(c - 7) == '#' && CodeInput.isHex6(v, c - 6)) {
             setValue(v.substring(0, c - 8) + "{#" + v.substring(c - 6, c) + "}" + v.substring(c));
-            moveCursorTo(c + 1);
+            moveCursorTo(c + 1, false);
         }
     }
 }

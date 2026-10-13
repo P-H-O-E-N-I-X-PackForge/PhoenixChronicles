@@ -42,10 +42,10 @@ class GenerateEmptyStructureTemplate {
         blocks.add(block);
         root.put("blocks", blocks);
 
-        Path out = Path.of("src", "main", "resources", "data", "phoenix_chronicles", "structures",
+        Path out = Path.of("src", "main", "resources", "data", "phoenix_chronicles", "structure",
                 "gametest_empty.nbt");
         Files.createDirectories(out.getParent());
-        NbtIo.writeCompressed(root, out.toFile());
+        NbtIo.writeCompressed(root, out);
 
         System.out.println("Wrote " + out.toAbsolutePath());
     }

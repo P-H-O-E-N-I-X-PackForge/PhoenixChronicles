@@ -91,7 +91,7 @@ public final class PhoenixTaskRegistry {
         }
 
         public boolean isAvailable() {
-            return requiredModId == null || net.minecraftforge.fml.ModList.get().isLoaded(requiredModId);
+            return requiredModId == null || net.neoforged.fml.ModList.get().isLoaded(requiredModId);
         }
     }
 
@@ -622,7 +622,7 @@ public final class PhoenixTaskRegistry {
         try {
             if (tag.contains("description")) {
                 net.minecraft.network.chat.Component c = net.minecraft.network.chat.Component.Serializer
-                        .fromJson(tag.getString("description"));
+                        .fromJson(tag.getString("description"), net.minecraft.core.RegistryAccess.EMPTY);
                 if (c != null) return c;
             }
         } catch (Exception ignored) {}

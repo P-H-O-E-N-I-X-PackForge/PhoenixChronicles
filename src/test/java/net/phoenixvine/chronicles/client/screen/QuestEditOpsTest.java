@@ -24,7 +24,7 @@ class QuestEditOpsTest {
     private final List<QuestNode> registered = new ArrayList<>();
 
     private @NotNull QuestNode node(@NotNull String path, int customX) {
-        QuestNode n = new QuestNode(new ResourceLocation("phoenix_chronicles", path),
+        QuestNode n = new QuestNode(ResourceLocation.fromNamespaceAndPath("phoenix_chronicles", path),
                 Component.literal(path), Component.literal(""));
         n.setCustomPosition(customX, 0);
         QuestTreeRegistry.registerBareQuestNode(n);

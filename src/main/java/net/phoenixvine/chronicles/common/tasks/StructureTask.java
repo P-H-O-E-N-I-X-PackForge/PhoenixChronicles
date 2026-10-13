@@ -4,7 +4,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.TagKey;
@@ -50,8 +49,8 @@ public class StructureTask extends QuestTask {
 
         boolean inside = false;
         for (ResourceLocation id : matcher.ids()) {
-            ResourceKey<Structure> key = ResourceKey.create(Registries.STRUCTURE, id);
-            if (structures.getStructureWithPieceAt(pos, key).isValid()) {
+            Structure structure = serverLevel.registryAccess().registryOrThrow(Registries.STRUCTURE).get(id);
+            if (structure != null && structures.getStructureWithPieceAt(pos, structure).isValid()) {
                 inside = true;
                 break;
             }
@@ -74,7 +73,6 @@ public class StructureTask extends QuestTask {
         return TaskProgressAccess.getOrEmpty(player, getTaskId()).getBoolean("completed");
     }
 
-    @Override
     public CompoundTag serializeNBT() {
         CompoundTag tag = new CompoundTag();
         tag.putString("type", "structure");
@@ -82,7 +80,6 @@ public class StructureTask extends QuestTask {
         return tag;
     }
 
-    @Override
     public void deserializeNBT(CompoundTag nbt) {
         if (nbt.contains("structure_id")) {
             TaskIdMatcher parsed = TaskIdMatcher.parse(nbt.getString("structure_id"));

@@ -62,7 +62,7 @@ public class TutorialProgressTracker {
     private static void load() {
         if (dataFile == null || !Files.exists(dataFile)) return;
         try {
-            CompoundTag tag = NbtIo.read(dataFile.toFile());
+            CompoundTag tag = NbtIo.read(dataFile);
             if (tag != null) tag.getAllKeys().forEach(k -> STEPS.put(k, tag.getInt(k)));
         } catch (IOException ignored) {}
     }
@@ -73,7 +73,7 @@ public class TutorialProgressTracker {
             CompoundTag tag = new CompoundTag();
             STEPS.forEach(tag::putInt);
             Files.createDirectories(dataFile.getParent());
-            NbtIo.write(tag, dataFile.toFile());
+            NbtIo.write(tag, dataFile);
         } catch (IOException ignored) {}
     }
 }

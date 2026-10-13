@@ -15,7 +15,6 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.TooltipFlag;
-import net.minecraftforge.registries.ForgeRegistries;
 import net.phoenixvine.chronicles.capability.PlayerQuestData;
 import net.phoenixvine.chronicles.capability.QuestCapabilityProvider;
 import net.phoenixvine.chronicles.client.event.ChronicleKeyBindings;
@@ -40,8 +39,8 @@ import net.phoenixvine.chronicles.common.registry.QuestTreeRegistry;
 import net.phoenixvine.chronicles.common.tasks.ItemRequirementTask;
 import net.phoenixvine.chronicles.common.tasks.ScreenOpenedTask;
 import net.phoenixvine.chronicles.common.tracker.QuestProgressTracker;
+import net.phoenixvine.chronicles.common.util.ItemData;
 import net.phoenixvine.chronicles.integration.phantasia.PhantasiaCompat;
-import net.phoenixvine.chronicles.network.ChronicleNetwork;
 import net.phoenixvine.chronicles.network.packet.C2SScreenOpenedTaskPacket;
 import net.phoenixvine.chronicles.network.packet.C2STogglePinPacket;
 import net.phoenixvine.chronicles.network.packet.S2CSyncPlayerProgressPacket;
@@ -435,7 +434,7 @@ public class ChronicleOverviewScreen extends Screen
         for (QuestTask task : node.getTasks()) {
             if (HiddenParts.taskTargetHidden(node, task)) continue;
             ResourceLocation id = task.getDisplayItemId();
-            Item item = ForgeRegistries.ITEMS.getValue(id);
+            Item item = BuiltInRegistries.ITEM.get(id);
             if (item != null && item != Items.AIR) return item;
         }
         return null;
@@ -446,7 +445,7 @@ public class ChronicleOverviewScreen extends Screen
         for (QuestTask task : node.getTasks()) {
             if (HiddenParts.taskTargetHidden(node, task)) continue;
             ResourceLocation id = task.getDisplayItemId();
-            Item item = ForgeRegistries.ITEMS.getValue(id);
+            Item item = BuiltInRegistries.ITEM.get(id);
             if (item != null && item != Items.AIR) return task;
         }
         return null;
@@ -470,7 +469,7 @@ public class ChronicleOverviewScreen extends Screen
         }
         return nbtIconStackCache.computeIfAbsent(task, k -> {
             ItemStack stack = new ItemStack(icon);
-            stack.setTag(t.getNbtFilter().copy());
+            ItemData.setTag(stack, t.getNbtFilter().copy());
             return stack;
         });
     }
@@ -699,7 +698,7 @@ public class ChronicleOverviewScreen extends Screen
         if (minecraft != null && minecraft.player != null) {
 
             isDevMode = !QuestChroniclesSettings.get().isDevModeDisabled() && minecraft.player.hasPermissions(2);
-            playerData = minecraft.player.getCapability(QuestCapabilityProvider.PLAYER_QUESTS).orElse(null);
+            playerData = QuestCapabilityProvider.of(minecraft.player).orElse(null);
         }
 
         int cl = sidebarW(), cr = width;
@@ -800,7 +799,7 @@ public class ChronicleOverviewScreen extends Screen
                             minecraft.player)) {
                         if (task instanceof ScreenOpenedTask &&
                                 minecraft.player != null && !task.isCompletedFor(minecraft.player)) {
-                            ChronicleNetwork.CHANNEL.sendToServer(
+                            net.neoforged.neoforge.network.PacketDistributor.sendToServer(
                                     new C2SScreenOpenedTaskPacket(
                                             task.getTaskId()));
                         }
@@ -1090,7 +1089,7 @@ public class ChronicleOverviewScreen extends Screen
         if (ChronicleKeyBindings.PIN_QUEST.matches(key, scan)) {
             if (lastHoveredNodeId != null && playerData != null) {
                 playerData.togglePin(lastHoveredNodeId);
-                ChronicleNetwork.CHANNEL.sendToServer(
+                net.neoforged.neoforge.network.PacketDistributor.sendToServer(
                         new C2STogglePinPacket(lastHoveredNodeId));
                 QuestNode hovered = QuestTreeRegistry.getQuest(lastHoveredNodeId);
                 boolean nowPinned = playerData.isPinned(lastHoveredNodeId);
@@ -1276,11 +1275,11 @@ public class ChronicleOverviewScreen extends Screen
     }
 
     @Override
-    public boolean mouseScrolled(double mx, double my, double delta) {
+    public boolean mouseScrolled(double mx, double my, double scrollX, double delta) {
         if (tryHandleMoveCatDropdownScroll(mx, my, delta)) return true;
         if (tryHandleNodeSizeEditScroll(delta)) return true;
         if (tryHandlePictureEditScroll(delta)) return true;
-        if (statsPanel.isVisible(this) && statsPanel.mouseScrolled(mx, my, delta)) return true;
+        if (statsPanel.isVisible(this) && statsPanel.mouseScrolled(mx, my, 0.0, delta)) return true;
 
         int cl = sidebarW(), cr = width;
         if (mx <= cl && my > HEADER_H) {
@@ -1288,7 +1287,7 @@ public class ChronicleOverviewScreen extends Screen
             sidebarPanel.scrollBy(delta, sidebarContentHeight(), sidebarScrollAreaHeight());
             return true;
         }
-        if (mx <= cl || mx >= cr || my <= HEADER_H) return super.mouseScrolled(mx, my, delta);
+        if (mx <= cl || mx >= cr || my <= HEADER_H) return super.mouseScrolled(mx, my, 0.0, delta);
 
         return handleCanvasZoomScroll(mx, my, delta, cl, cr);
     }
@@ -2615,7 +2614,7 @@ public class ChronicleOverviewScreen extends Screen
     }
 
     private void renderHeaderAndBaseLayout(GuiGraphics g, int mx, int my, int cl, int cr) {
-        renderBackground(g);
+        renderBackground(g, mx, my, 0f);
 
         int visW = sidebarVisualW();
         g.fill(0, 0, visW, height, palette.panelDark);
@@ -3182,8 +3181,7 @@ public class ChronicleOverviewScreen extends Screen
 
             ResourceLocation displayId = HiddenParts.taskTargetHidden(n, task) ? null : task.getDisplayItemId();
             if (displayId != null) {
-                Item item = ForgeRegistries.ITEMS
-                        .getValue(displayId);
+                Item item = BuiltInRegistries.ITEM.get(displayId);
                 if (item != null && item != Items.AIR) {
 
                     sb.append(item.getDescription().getString().toLowerCase()).append(' ');
@@ -3207,8 +3205,9 @@ public class ChronicleOverviewScreen extends Screen
                         ItemStack stack = new ItemStack(item);
                         LocalPlayer localPlayer = Minecraft
                                 .getInstance().player;
-                        var tooltipLines = stack.getTooltipLines(localPlayer,
-                                TooltipFlag.Default.NORMAL);
+                        var tooltipLines = stack.getTooltipLines(
+                                net.minecraft.world.item.Item.TooltipContext.of(Minecraft.getInstance().level),
+                                localPlayer, TooltipFlag.Default.NORMAL);
                         for (int ti = 1; ti < tooltipLines.size(); ti++) {
 
                             String txt = tooltipLines.get(ti).getString().trim().toLowerCase();
@@ -3223,7 +3222,7 @@ public class ChronicleOverviewScreen extends Screen
             if (HiddenParts.rewardTargetHidden(n, reward)) continue;
             sb.append(reward.getSummary().getString()).append(' ');
             if (reward instanceof QuestReward.ItemReward ir) {
-                ResourceLocation rid = ForgeRegistries.ITEMS.getKey(ir.getItem());
+                ResourceLocation rid = BuiltInRegistries.ITEM.getKey(ir.getItem());
                 if (rid != null) {
                     sb.append(rid.getPath().replace('_', ' ')).append(' ');
                     sb.append(rid).append(' ');
@@ -4010,8 +4009,7 @@ public class ChronicleOverviewScreen extends Screen
         Set<ResourceLocation> visited = new HashSet<>();
         Minecraft mc = Minecraft.getInstance();
         PlayerQuestData data = mc.player == null ? null :
-                mc.player.getCapability(
-                        QuestCapabilityProvider.PLAYER_QUESTS)
+                QuestCapabilityProvider.of(mc.player)
                         .orElse(null);
         while (!queue.isEmpty()) {
             QuestNode n = queue.poll();

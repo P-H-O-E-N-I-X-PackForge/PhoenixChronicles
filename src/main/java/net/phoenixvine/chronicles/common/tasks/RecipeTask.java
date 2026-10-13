@@ -63,7 +63,6 @@ public class RecipeTask extends QuestTask {
         });
     }
 
-    @Override
     public CompoundTag serializeNBT() {
         CompoundTag tag = new CompoundTag();
         tag.putString("type", "recipe");
@@ -73,7 +72,6 @@ public class RecipeTask extends QuestTask {
         return tag;
     }
 
-    @Override
     public void deserializeNBT(CompoundTag nbt) {
         ResourceLocation parsedType = ResourceLocation.tryParse(nbt.getString("recipe_type"));
         if (parsedType != null) this.recipeType = parsedType;

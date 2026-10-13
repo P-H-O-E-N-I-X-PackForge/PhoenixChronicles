@@ -5,10 +5,10 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.capability.IFluidHandler;
-import net.minecraftforge.fluids.capability.IFluidHandlerItem;
+import net.neoforged.neoforge.capabilities.Capabilities;
+import net.neoforged.neoforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.capability.IFluidHandler;
+import net.neoforged.neoforge.fluids.capability.IFluidHandlerItem;
 import net.phoenixvine.chronicles.capability.TaskProgressAccess;
 import net.phoenixvine.chronicles.common.filter.FluidFilters;
 import net.phoenixvine.chronicles.common.filter.IFluidFilter;
@@ -38,9 +38,8 @@ public class FilterFluidTask extends QuestTask {
         int total = 0;
         for (ItemStack stack : player.getInventory().items) {
             if (stack.isEmpty()) continue;
-            var cap = stack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM);
-            if (!cap.isPresent()) continue;
-            IFluidHandlerItem handler = cap.orElseThrow(IllegalStateException::new);
+            IFluidHandlerItem handler = stack.getCapability(Capabilities.FluidHandler.ITEM);
+            if (handler == null) continue;
             for (int i = 0; i < handler.getTanks(); i++) {
                 FluidStack fluid = handler.getFluidInTank(i);
                 if (!fluid.isEmpty() && filter.test(fluid)) {
@@ -52,9 +51,8 @@ public class FilterFluidTask extends QuestTask {
 
         for (ItemStack stack : player.getInventory().offhand) {
             if (stack.isEmpty()) continue;
-            var cap = stack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM);
-            if (!cap.isPresent()) continue;
-            IFluidHandlerItem handler = cap.orElseThrow(IllegalStateException::new);
+            IFluidHandlerItem handler = stack.getCapability(Capabilities.FluidHandler.ITEM);
+            if (handler == null) continue;
             for (int i = 0; i < handler.getTanks(); i++) {
                 FluidStack fluid = handler.getFluidInTank(i);
                 if (!fluid.isEmpty() && filter.test(fluid)) {
@@ -66,9 +64,8 @@ public class FilterFluidTask extends QuestTask {
 
         for (ItemStack stack : CuriosCompat.getEquippedCurios(player)) {
             if (stack.isEmpty()) continue;
-            var cap = stack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM);
-            if (!cap.isPresent()) continue;
-            IFluidHandlerItem handler = cap.orElseThrow(IllegalStateException::new);
+            IFluidHandlerItem handler = stack.getCapability(Capabilities.FluidHandler.ITEM);
+            if (handler == null) continue;
             for (int i = 0; i < handler.getTanks(); i++) {
                 FluidStack fluid = handler.getFluidInTank(i);
                 if (!fluid.isEmpty() && filter.test(fluid)) {
@@ -119,7 +116,7 @@ public class FilterFluidTask extends QuestTask {
         if (fluid == null) return null;
         var bucket = fluid.getBucket();
         if (bucket == null || bucket == net.minecraft.world.item.Items.AIR) return null;
-        return net.minecraftforge.registries.ForgeRegistries.ITEMS.getKey(bucket);
+        return net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(bucket);
     }
 
     @Override
@@ -139,15 +136,14 @@ public class FilterFluidTask extends QuestTask {
         for (int i = 0; i < list.size() && remaining > 0; i++) {
             ItemStack stack = list.get(i);
             if (stack.isEmpty()) continue;
-            var cap = stack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM);
-            if (!cap.isPresent()) continue;
-            IFluidHandlerItem handler = cap.orElseThrow(IllegalStateException::new);
+            IFluidHandlerItem handler = stack.getCapability(Capabilities.FluidHandler.ITEM);
+            if (handler == null) continue;
 
             for (int t = 0; t < handler.getTanks() && remaining > 0; t++) {
                 FluidStack fluid = handler.getFluidInTank(t);
                 if (fluid.isEmpty() || !filter.test(fluid)) continue;
                 int amountToDrain = Math.min(remaining, fluid.getAmount());
-                FluidStack toDrain = new FluidStack(fluid.getFluid(), amountToDrain, fluid.getTag());
+                FluidStack toDrain = fluid.copyWithAmount(amountToDrain);
                 FluidStack drained = handler.drain(toDrain, IFluidHandler.FluidAction.EXECUTE);
                 if (!drained.isEmpty()) {
                     remaining -= drained.getAmount();
@@ -158,7 +154,6 @@ public class FilterFluidTask extends QuestTask {
         return remaining;
     }
 
-    @Override
     public CompoundTag serializeNBT() {
         CompoundTag tag = new CompoundTag();
         tag.putString("type", "filter_fluid");
@@ -170,7 +165,6 @@ public class FilterFluidTask extends QuestTask {
         return tag;
     }
 
-    @Override
     public void deserializeNBT(CompoundTag nbt) {
         this.amount = Math.max(1, nbt.getInt("amount"));
         this.consume = nbt.getBoolean("consume");

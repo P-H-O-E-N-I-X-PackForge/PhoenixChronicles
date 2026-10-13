@@ -3,7 +3,7 @@ package net.phoenixvine.chronicles;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
-import net.minecraftforge.common.MinecraftForge;
+import net.neoforged.neoforge.common.NeoForge;
 import net.phoenixvine.chronicles.capability.QuestCapabilityProvider;
 import net.phoenixvine.chronicles.common.event.QuestEvent;
 import net.phoenixvine.chronicles.common.model.QuestNode;
@@ -93,14 +93,14 @@ public final class QuestAPI {
                     triggerId);
             return;
         }
-        if (!player.getCapability(QuestCapabilityProvider.PLAYER_QUESTS).isPresent()) {
+        if (!QuestCapabilityProvider.of(player).isPresent()) {
             warnOnce("fireExternalEvent:no-cap:" + player.getGameProfile().getName(), "fireExternalEvent(\"{}\") " +
                     "called for player {}, who has no quest-progress capability attached - ignored. This usually " +
                     "means it was called on something other than a real player entity.",
                     triggerId, player.getGameProfile().getName());
         }
 
-        player.getCapability(QuestCapabilityProvider.PLAYER_QUESTS).ifPresent(questData -> {
+        QuestCapabilityProvider.of(player).ifPresent(questData -> {
             for (QuestNode node : QuestTreeRegistry.getAllQuests().values()) {
                 if (node.isFlagDisabled(Objects.requireNonNull(player.getServer()))) continue;
                 if (node.getEffectiveVisibility(player.getServer(), player) == QuestNode.Visibility.DISABLED) continue;
@@ -113,7 +113,8 @@ public final class QuestAPI {
                     if (!triggerId.equals(ext.getTriggerId())) continue;
                     if (ext.isCompletedFor(player)) continue;
 
-                    if (MinecraftForge.EVENT_BUS.post(new QuestEvent.ExternalEvent(player, node, triggerId, data)))
+                    if (NeoForge.EVENT_BUS.post(new QuestEvent.ExternalEvent(player, node, triggerId, data))
+                            .isCanceled())
                         continue;
 
                     ext.onExternalEvent(player, data);
@@ -128,7 +129,7 @@ public final class QuestAPI {
                                            @Nullable ResourceLocation recipeId, int times) {
         if (player == null || recipeType == null || player.level().isClientSide() || player.getServer() == null) return;
 
-        player.getCapability(QuestCapabilityProvider.PLAYER_QUESTS).ifPresent(questData -> {
+        QuestCapabilityProvider.of(player).ifPresent(questData -> {
             boolean changedAny = false;
             for (QuestNode node : QuestTreeRegistry.getAllQuests().values()) {
                 if (node.isFlagDisabled(player.getServer())) continue;
@@ -197,7 +198,7 @@ public final class QuestAPI {
             warnOnce("getAllStates:null-player", "getAllStates() called with a null player - returning an empty map.");
             return Collections.emptyMap();
         }
-        return player.getCapability(QuestCapabilityProvider.PLAYER_QUESTS)
+        return QuestCapabilityProvider.of(player)
                 .map(data -> Map.copyOf(data.getAllStates()))
                 .orElse(Collections.emptyMap());
     }

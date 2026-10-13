@@ -14,7 +14,7 @@ public final class HiddenParts {
     public static boolean questCompleted(QuestNode node) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null || node == null) return false;
-        return mc.player.getCapability(QuestCapabilityProvider.PLAYER_QUESTS)
+        return QuestCapabilityProvider.of(mc.player)
                 .map(d -> d.getQuestState(node.getId(), QuestState.LOCKED) == QuestState.COMPLETED).orElse(false);
     }
 

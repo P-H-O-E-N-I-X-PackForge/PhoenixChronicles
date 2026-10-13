@@ -34,7 +34,6 @@ public class ViewGuideTask extends QuestTask {
         return isCompletedFor(player) ? "Viewed" : "View";
     }
 
-    @Override
     public CompoundTag serializeNBT() {
         CompoundTag tag = new CompoundTag();
         tag.putString("type", "view_guide");
@@ -42,7 +41,6 @@ public class ViewGuideTask extends QuestTask {
         return tag;
     }
 
-    @Override
     public void deserializeNBT(CompoundTag nbt) {
         this.guideId = nbt.getString("guide_id");
     }

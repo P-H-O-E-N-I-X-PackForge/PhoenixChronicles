@@ -5,6 +5,7 @@ import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -15,7 +16,6 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Block;
-import net.minecraftforge.registries.ForgeRegistries;
 import net.phoenixvine.chronicles.client.registry.LangSyncScheduler;
 import net.phoenixvine.chronicles.client.render.ChroniclesThemeRenderer;
 import net.phoenixvine.chronicles.client.render.ChroniclesUIKit;
@@ -37,6 +37,7 @@ import net.phoenixvine.chronicles.common.registry.PhoenixTaskRegistry;
 import net.phoenixvine.chronicles.common.registry.QuestTreeRegistry;
 import net.phoenixvine.chronicles.common.registry.RewardTableRegistry;
 import net.phoenixvine.chronicles.common.tasks.*;
+import net.phoenixvine.chronicles.common.util.ItemData;
 import net.phoenixvine.chronicles.integration.ae2.AE2Compat;
 import net.phoenixvine.wiki.theme.PhoenixTheme;
 
@@ -441,7 +442,7 @@ public class TaskRewardEditorScreen extends Screen {
                 addRenderableWidget(Button.builder(ChroniclesUIKit.lit("§7⊞"), b -> {
                     if (minecraft != null) minecraft.setScreen(new ItemPickerScreen(this, stack -> {
                         if (applyPickedItemFilter(stack)) return;
-                        ResourceLocation id = ForgeRegistries.ITEMS.getKey(stack.getItem());
+                        ResourceLocation id = BuiltInRegistries.ITEM.getKey(stack.getItem());
                         if (id != null && taskTargetBox != null) taskTargetBox.setValue(id.toString());
                     }).withBulk(this::bulkAddItemTasks));
                 }).bounds(tx + tw, fy, 16, FIELD_H)
@@ -453,7 +454,7 @@ public class TaskRewardEditorScreen extends Screen {
                 addRenderableWidget(Button.builder(ChroniclesUIKit.lit("§7⊞"), b -> {
                     if (minecraft != null) minecraft.setScreen(new ItemPickerScreen(this, stack -> {
                         if (applyPickedItemFilter(stack)) return;
-                        ResourceLocation id = ForgeRegistries.ITEMS.getKey(stack.getItem());
+                        ResourceLocation id = BuiltInRegistries.ITEM.getKey(stack.getItem());
                         if (id == null || taskTargetBox == null) return;
                         String cur = taskTargetBox.getValue().trim();
                         taskTargetBox.setValue(cur.isEmpty() ? id.toString() : cur + ";" + id);
@@ -481,7 +482,7 @@ public class TaskRewardEditorScreen extends Screen {
                 addRenderableWidget(Button.builder(ChroniclesUIKit.lit("§7⊞"), b -> {
                     if (minecraft != null) minecraft.setScreen(new ItemPickerScreen(this, stack -> {
                         Block block = Block.byItem(stack.getItem());
-                        ResourceLocation id = ForgeRegistries.BLOCKS.getKey(block);
+                        ResourceLocation id = BuiltInRegistries.BLOCK.getKey(block);
                         if (id != null && taskTargetBox != null) taskTargetBox.setValue(id.toString());
                     }));
                 }).bounds(tx + tw, fy, 16, FIELD_H)
@@ -490,8 +491,8 @@ public class TaskRewardEditorScreen extends Screen {
                         .build());
             } else if (hasEntityPicker) {
                 addRenderableWidget(Button.builder(ChroniclesUIKit.lit("§7⊞"), b -> {
-                    java.util.Collection<ResourceLocation> ids = net.minecraftforge.registries.ForgeRegistries.ENTITY_TYPES
-                            .getKeys();
+                    java.util.Collection<ResourceLocation> ids = net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE
+                            .keySet();
                     if (minecraft != null) {
                         minecraft.setScreen(new EntityIdPickerScreen(this, "Pick entity", ids, id -> {
                             if (taskTargetBox != null) taskTargetBox.setValue(id.toString());
@@ -511,7 +512,7 @@ public class TaskRewardEditorScreen extends Screen {
                 addRenderableWidget(Button.builder(ChroniclesUIKit.lit("§7⊞"), b -> {
                     if (minecraft != null) {
                         minecraft.setScreen(new RegistryIdPickerScreen(this, "Pick recipe type",
-                                ForgeRegistries.RECIPE_TYPES.getKeys(), id -> {
+                                net.minecraft.core.registries.BuiltInRegistries.RECIPE_TYPE.keySet(), id -> {
                                     if (taskTargetBox != null) taskTargetBox.setValue(id.toString());
                                 }));
                     }
@@ -614,10 +615,11 @@ public class TaskRewardEditorScreen extends Screen {
                     ResourceLocation wantedType = taskTargetBox != null ?
                             ResourceLocation.tryParse(taskTargetBox.getValue().trim()) : null;
                     java.util.List<ResourceLocation> ids = new ArrayList<>();
-                    for (net.minecraft.world.item.crafting.Recipe<?> recipe : minecraft.level.getRecipeManager()
+                    for (net.minecraft.world.item.crafting.RecipeHolder<?> recipe : minecraft.level.getRecipeManager()
                             .getRecipes()) {
-                        ResourceLocation typeKey = ForgeRegistries.RECIPE_TYPES.getKey(recipe.getType());
-                        if (wantedType == null || wantedType.equals(typeKey)) ids.add(recipe.getId());
+                        ResourceLocation typeKey = net.minecraft.core.registries.BuiltInRegistries.RECIPE_TYPE
+                                .getKey(recipe.value().getType());
+                        if (wantedType == null || wantedType.equals(typeKey)) ids.add(recipe.id());
                     }
                     minecraft.setScreen(new RegistryIdPickerScreen(this,
                             wantedType != null ? "Pick " + wantedType + " recipe" : "Pick recipe", ids, id -> {
@@ -1258,14 +1260,14 @@ public class TaskRewardEditorScreen extends Screen {
     @Nullable
     private java.util.Collection<ResourceLocation> registryIdsFor(String taskType) {
         return switch (taskType) {
-            case "enchantment" -> net.minecraftforge.registries.ForgeRegistries.ENCHANTMENTS.getKeys();
-            case "tag_item" -> net.minecraftforge.registries.ForgeRegistries.ITEMS.tags().getTagNames()
+            case "enchantment" -> registryKeysOrNull(net.minecraft.core.registries.Registries.ENCHANTMENT);
+            case "tag_item" -> net.minecraft.core.registries.BuiltInRegistries.ITEM.getTagNames()
                     .map(net.minecraft.tags.TagKey::location).toList();
             case "stat" -> net.minecraft.core.registries.BuiltInRegistries.CUSTOM_STAT.keySet();
             case "advancement" -> {
                 if (minecraft == null || minecraft.player == null || minecraft.player.connection == null) yield null;
-                yield minecraft.player.connection.getAdvancements().getAdvancements().getAllAdvancements().stream()
-                        .map(net.minecraft.advancements.Advancement::getId).toList();
+                yield minecraft.player.connection.getAdvancements().getTree().nodes().stream()
+                        .map(node -> node.holder().id()).toList();
             }
             case "biome" -> registryKeysOrNull(net.minecraft.core.registries.Registries.BIOME);
             case "structure" -> registryKeysOrNull(net.minecraft.core.registries.Registries.STRUCTURE);
@@ -1292,14 +1294,13 @@ public class TaskRewardEditorScreen extends Screen {
     private java.util.Collection<String> stringIdsFor(String taskType) {
         return switch (taskType) {
             case "view_machine" -> net.phoenixvine.chronicles.integration.phantasia.PhantasiaCompat.isAvailable() ?
-                    net.phoenixvine.phantasia.api.PhantasiaAPI.getAllMachineIds() : null;
+                    net.phoenixvine.chronicles.integration.phantasia.PhantasiaCompat.allMachineIds() : null;
             case "view_scene" -> net.phoenixvine.chronicles.integration.phantasia.PhantasiaCompat.isAvailable() ?
-                    net.phoenixvine.phantasia.api.PhantasiaAPI.getAllSceneIds() : null;
+                    net.phoenixvine.chronicles.integration.phantasia.PhantasiaCompat.allSceneIds() : null;
             case "view_guide" -> net.phoenixvine.chronicles.integration.phantasia.PhantasiaCompat.isAvailable() ?
-                    net.phoenixvine.phantasia.api.PhantasiaAPI.getAllGuideIds() : null;
+                    net.phoenixvine.chronicles.integration.phantasia.PhantasiaCompat.allGuideIds() : null;
             case "archive_entry" -> net.phoenixvine.chronicles.integration.archive.ArchiveLoreCompat.isAvailable() ?
-                    net.phoenix_archives.phoenix_archive.api.LoreDataLoader.LORE_ENTRIES.keySet().stream()
-                            .map(ResourceLocation::toString).toList() :
+                    net.phoenixvine.chronicles.integration.archive.ArchiveLoreCompat.allEntryIds() :
                     null;
             case "external_trigger" -> net.phoenixvine.chronicles.QuestAPI.getRegisteredExternalTriggers().keySet();
             default -> null;
@@ -1331,7 +1332,7 @@ public class TaskRewardEditorScreen extends Screen {
         boolean ae2 = taskCheckAe2Storage;
         int hidden = taskHiddenParts;
         for (ItemStack stack : picked) {
-            ResourceLocation id = ForgeRegistries.ITEMS.getKey(stack.getItem());
+            ResourceLocation id = BuiltInRegistries.ITEM.getKey(stack.getItem());
             if (id == null || taskTargetBox == null) continue;
             String name = stack.getHoverName().getString();
             String verb = taskType.equals("craft_item") ? "Craft " : "Collect ";
@@ -1359,7 +1360,7 @@ public class TaskRewardEditorScreen extends Screen {
         final int hidden = rewardHiddenParts;
         final List<QuestReward> added = new ArrayList<>();
         for (ItemStack stack : picked) {
-            QuestReward r = new QuestReward.ItemReward(stack.getItem(), qty, stack.getTag(), rewardPushAe2);
+            QuestReward r = new QuestReward.ItemReward(stack.getItem(), qty, ItemData.getTag(stack), rewardPushAe2);
             r.setHiddenParts(hidden);
             added.add(r);
         }
@@ -1383,7 +1384,7 @@ public class TaskRewardEditorScreen extends Screen {
 
         if (desc.isEmpty() && taskType.equals("item_check") && !target.isEmpty()) {
             try {
-                Item targetItem = ForgeRegistries.ITEMS.getValue(ResourceLocation.parse(target));
+                Item targetItem = BuiltInRegistries.ITEM.get(ResourceLocation.parse(target));
                 if (targetItem != null) {
                     String itemName = new net.minecraft.world.item.ItemStack(targetItem).getHoverName().getString();
                     desc = count > 1 ? "Collect " + count + "x " + itemName : "Collect " + itemName;
@@ -1409,7 +1410,7 @@ public class TaskRewardEditorScreen extends Screen {
                     yield m.isEmpty() ? null : new KillEntityTask(taskId, descComp, m.spec(), count, taskConsume);
                 }
                 case "item_check" -> {
-                    Item item = ForgeRegistries.ITEMS.getValue(ResourceLocation.parse(target));
+                    Item item = BuiltInRegistries.ITEM.get(ResourceLocation.parse(target));
                     if (item == null) yield null;
                     ItemRequirementTask irt = new ItemRequirementTask(taskId, descComp, item, count, taskConsume);
                     String nbtStr = taskNbtBox != null ? taskNbtBox.getValue().trim() : "";
@@ -1439,7 +1440,7 @@ public class TaskRewardEditorScreen extends Screen {
                         for (String part : target.split(";")) {
                             String id = part.trim();
                             if (id.isEmpty()) continue;
-                            Item item = ForgeRegistries.ITEMS.getValue(ResourceLocation.parse(id));
+                            Item item = BuiltInRegistries.ITEM.get(ResourceLocation.parse(id));
                             if (item != null && item != Items.AIR) alts.add(ItemFilters.exact(item));
                         }
                         if (alts.isEmpty()) yield null;
@@ -1456,7 +1457,7 @@ public class TaskRewardEditorScreen extends Screen {
                         for (String part : target.split(";")) {
                             String id = part.trim();
                             if (id.isEmpty()) continue;
-                            var fluid = ForgeRegistries.FLUIDS.getValue(ResourceLocation.parse(id));
+                            var fluid = BuiltInRegistries.FLUID.get(ResourceLocation.parse(id));
                             if (fluid != null && fluid != net.minecraft.world.level.material.Fluids.EMPTY)
                                 alts.add(FluidFilters
                                         .exact(ResourceLocation.parse(id)));
@@ -1471,12 +1472,12 @@ public class TaskRewardEditorScreen extends Screen {
                     yield fft;
                 }
                 case "block_interact" -> {
-                    var block = ForgeRegistries.BLOCKS.getValue(ResourceLocation.parse(target));
+                    var block = BuiltInRegistries.BLOCK.get(ResourceLocation.parse(target));
                     String mode = second.isEmpty() ? "PLACE" : second.toUpperCase();
                     yield block != null ? new BlockInteractTask(taskId, descComp, block, mode, count) : null;
                 }
                 case "block_break" -> {
-                    var block = ForgeRegistries.BLOCKS.getValue(ResourceLocation.parse(target));
+                    var block = BuiltInRegistries.BLOCK.get(ResourceLocation.parse(target));
                     yield block != null ? new BlockBreakTask(taskId, descComp, block, count) : null;
                 }
                 case "enchantment" -> new EnchantmentTask(taskId, descComp, ResourceLocation.parse(target), count);
@@ -1603,7 +1604,7 @@ public class TaskRewardEditorScreen extends Screen {
             pendingTaskCount = String.valueOf(kt.getRequiredCount());
             taskConsume = kt.shouldConsume();
         } else if (t instanceof ItemRequirementTask it) {
-            ResourceLocation id = it.getItem() != null ? ForgeRegistries.ITEMS.getKey(it.getItem()) : null;
+            ResourceLocation id = it.getItem() != null ? BuiltInRegistries.ITEM.getKey(it.getItem()) : null;
             pendingTaskTarget = id != null ? id.toString() : "";
             pendingTaskCount = String.valueOf(it.getRequiredCount());
             taskConsume = it.shouldConsume();
@@ -1623,12 +1624,12 @@ public class TaskRewardEditorScreen extends Screen {
         } else if (t instanceof AdvancementTask at) {
             pendingTaskTarget = at.getAdvancementId().toString();
         } else if (t instanceof BlockInteractTask bit) {
-            ResourceLocation id = ForgeRegistries.BLOCKS.getKey(bit.getTargetBlock());
+            ResourceLocation id = BuiltInRegistries.BLOCK.getKey(bit.getTargetBlock());
             pendingTaskTarget = id != null ? id.toString() : "";
             pendingTaskSecondary = bit.getMode();
             pendingTaskCount = String.valueOf(bit.getRequired());
         } else if (t instanceof BlockBreakTask bbt) {
-            ResourceLocation id = ForgeRegistries.BLOCKS.getKey(bbt.getTargetBlock());
+            ResourceLocation id = BuiltInRegistries.BLOCK.getKey(bbt.getTargetBlock());
             pendingTaskTarget = id != null ? id.toString() : "";
             pendingTaskCount = String.valueOf(bbt.getRequired());
         } else if (t instanceof EnchantmentTask ent) {
@@ -1690,7 +1691,7 @@ public class TaskRewardEditorScreen extends Screen {
 
     private static String describeItemFilterAsIdList(IItemFilter f) {
         if (f instanceof ItemFilters.ExactItem ex) {
-            ResourceLocation id = ForgeRegistries.ITEMS.getKey(ex.item());
+            ResourceLocation id = BuiltInRegistries.ITEM.getKey(ex.item());
             return id != null ? id.toString() : "";
         }
         if (f instanceof ItemFilters.AnyOf any) {
@@ -1781,13 +1782,13 @@ public class TaskRewardEditorScreen extends Screen {
 
         QuestReward reward = switch (rewardType) {
             case "item" -> rewardPickedItem != null ?
-                    new QuestReward.ItemReward(rewardPickedItem.getItem(), count, rewardPickedItem.getTag(),
+                    new QuestReward.ItemReward(rewardPickedItem.getItem(), count, ItemData.getTag(rewardPickedItem),
                             rewardPushAe2) :
                     null;
             case "fluid" -> {
                 String fid = rewardCommandBox != null ? rewardCommandBox.getValue().trim() : "";
                 ResourceLocation frl = fid.isEmpty() ? null : ResourceLocation.tryParse(fid);
-                net.minecraft.world.level.material.Fluid fl = frl != null ? ForgeRegistries.FLUIDS.getValue(frl) : null;
+                net.minecraft.world.level.material.Fluid fl = frl != null ? BuiltInRegistries.FLUID.get(frl) : null;
                 yield (fl == null || fl == net.minecraft.world.level.material.Fluids.EMPTY) ? null :
                         new QuestReward.FluidReward(fl, count, null, rewardPushAe2);
             }
@@ -1904,14 +1905,14 @@ public class TaskRewardEditorScreen extends Screen {
         if (r instanceof QuestReward.FluidReward fr) {
             rewardType = "fluid";
             rewardPushAe2 = fr.isPushToAe2();
-            ResourceLocation fid = ForgeRegistries.FLUIDS.getKey(fr.getFluid());
+            ResourceLocation fid = BuiltInRegistries.FLUID.getKey(fr.getFluid());
             pendingRewardCommand = fid != null ? fid.toString() : "";
             pendingRewardCount = String.valueOf(fr.getAmountMb());
         } else if (r instanceof QuestReward.ItemReward ir) {
             rewardType = "item";
             rewardPushAe2 = ir.isPushToAe2();
             rewardPickedItem = new ItemStack(ir.getItem(), ir.getCount());
-            if (ir.getNbt() != null) rewardPickedItem.setTag(ir.getNbt().copy());
+            if (ir.getNbt() != null) ItemData.setTag(rewardPickedItem, ir.getNbt().copy());
             pendingRewardCount = String.valueOf(ir.getCount());
         } else if (r instanceof QuestReward.XPReward xr) {
             rewardType = "xp";
@@ -1992,7 +1993,7 @@ public class TaskRewardEditorScreen extends Screen {
 
         editingBoxOptionIndex = idx;
         boxOptionPickedItem = new ItemStack(ir.getItem(), ir.getCount());
-        if (ir.getNbt() != null) boxOptionPickedItem.setTag(ir.getNbt().copy());
+        if (ir.getNbt() != null) ItemData.setTag(boxOptionPickedItem, ir.getNbt().copy());
         pendingBoxOptionCount = String.valueOf(ir.getCount());
         pendingBoxOptionNbt = ir.getNbt() != null && !ir.getNbt().isEmpty() ? ir.getNbt().toString() : "";
         forcePendingBoxOptionValues = true;
@@ -2070,7 +2071,7 @@ public class TaskRewardEditorScreen extends Screen {
             for (QuestReward r : rewards) questNode.addReward(r);
 
             if (addedRequiredTask && QuestTreeRegistry.getQuest(questNode.getId()) == questNode) {
-                net.phoenixvine.chronicles.network.ChronicleNetwork.CHANNEL.sendToServer(
+                net.neoforged.neoforge.network.PacketDistributor.sendToServer(
                         new net.phoenixvine.chronicles.network.packet.C2SReopenCompletedQuestPacket(
                                 questNode.getId()));
             }
@@ -2083,7 +2084,7 @@ public class TaskRewardEditorScreen extends Screen {
     }
 
     @Override
-    public void renderBackground(@NotNull GuiGraphics g) {}
+    public void renderBackground(@NotNull GuiGraphics g, int mouseX, int mouseY, float partialTick) {}
 
     @Override
     public void render(@NotNull GuiGraphics g, int rawMx, int rawMy, float partial) {
@@ -2440,7 +2441,7 @@ public class TaskRewardEditorScreen extends Screen {
     }
 
     @Override
-    public boolean mouseScrolled(double rawMx, double rawMy, double delta) {
+    public boolean mouseScrolled(double rawMx, double rawMy, double scrollX, double delta) {
         double mx = rawMx / uiScale;
         double my = rawMy / uiScale;
         if (taskTypeDropOpen) {
@@ -2475,7 +2476,7 @@ public class TaskRewardEditorScreen extends Screen {
                 return true;
             }
         }
-        return super.mouseScrolled(mx, my, delta);
+        return super.mouseScrolled(mx, my, 0.0, delta);
     }
 
     @Override
@@ -2739,12 +2740,12 @@ public class TaskRewardEditorScreen extends Screen {
     private ItemStack getTaskIconStack(QuestTask task) {
         ResourceLocation id = task.getDisplayItemId();
         if (id == null) return ItemStack.EMPTY;
-        Item item = ForgeRegistries.ITEMS.getValue(id);
+        Item item = BuiltInRegistries.ITEM.get(id);
         if (item == null || item == Items.AIR) return ItemStack.EMPTY;
         ItemStack stack = new ItemStack(item);
 
         if (task instanceof ItemRequirementTask t && t.getNbtFilter() != null && !t.getNbtFilter().isEmpty()) {
-            stack.setTag(t.getNbtFilter().copy());
+            ItemData.setTag(stack, t.getNbtFilter().copy());
         }
         return stack;
     }
@@ -2755,7 +2756,7 @@ public class TaskRewardEditorScreen extends Screen {
             return t.getItem() != null ?
                     t.getItem().getDefaultInstance().getHoverName().getString() + " ×" + t.getRequiredCount() : null;
         if (task instanceof CraftItemTask t) {
-            Item item = ForgeRegistries.ITEMS.getValue(t.getItemId());
+            Item item = BuiltInRegistries.ITEM.get(t.getItemId());
             return item != null ? item.getDefaultInstance().getHoverName().getString() + " ×" + t.getRequiredCount() :
                     t.getItemId().toString();
         }

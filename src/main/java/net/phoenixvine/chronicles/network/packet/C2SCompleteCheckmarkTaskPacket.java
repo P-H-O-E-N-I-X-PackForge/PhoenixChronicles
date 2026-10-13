@@ -1,9 +1,11 @@
 package net.phoenixvine.chronicles.network.packet;
 
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.network.NetworkEvent;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
 import net.phoenixvine.chronicles.common.model.QuestNode;
 import net.phoenixvine.chronicles.common.model.QuestState;
 import net.phoenixvine.chronicles.common.model.QuestTask;
@@ -11,9 +13,17 @@ import net.phoenixvine.chronicles.common.registry.QuestTreeRegistry;
 import net.phoenixvine.chronicles.common.tasks.CheckmarkTask;
 import net.phoenixvine.chronicles.common.tracker.QuestProgressTracker;
 
-import java.util.function.Supplier;
+public class C2SCompleteCheckmarkTaskPacket implements CustomPacketPayload {
 
-public class C2SCompleteCheckmarkTaskPacket {
+    public static final Type<C2SCompleteCheckmarkTaskPacket> TYPE = new Type<>(
+            ResourceLocation.fromNamespaceAndPath("phoenix_chronicles", "c2_s_complete_checkmark_task"));
+    public static final StreamCodec<net.minecraft.network.RegistryFriendlyByteBuf, C2SCompleteCheckmarkTaskPacket> STREAM_CODEC = StreamCodec
+            .ofMember(C2SCompleteCheckmarkTaskPacket::encode, C2SCompleteCheckmarkTaskPacket::new);
+
+    @Override
+    public Type<? extends CustomPacketPayload> type() {
+        return TYPE;
+    }
 
     private final ResourceLocation taskId;
 
@@ -29,9 +39,9 @@ public class C2SCompleteCheckmarkTaskPacket {
         buf.writeResourceLocation(taskId);
     }
 
-    public void handle(Supplier<NetworkEvent.Context> ctx) {
-        ctx.get().enqueueWork(() -> {
-            ServerPlayer player = ctx.get().getSender();
+    public void handle(IPayloadContext context) {
+        context.enqueueWork(() -> {
+            ServerPlayer player = (net.minecraft.server.level.ServerPlayer) context.player();
             if (player == null || taskId == null) return;
 
             QuestNode node = QuestTreeRegistry.getTaskOwner(taskId);
@@ -50,6 +60,5 @@ public class C2SCompleteCheckmarkTaskPacket {
             QuestProgressTracker.checkAndTryComplete(player, node);
             QuestProgressTracker.sendProgressSync(player);
         });
-        ctx.get().setPacketHandled(true);
     }
 }

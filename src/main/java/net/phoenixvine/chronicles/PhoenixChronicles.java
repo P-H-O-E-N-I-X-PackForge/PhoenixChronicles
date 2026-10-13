@@ -1,25 +1,21 @@
 package net.phoenixvine.chronicles;
 
-import com.gregtechceu.gtceu.api.registry.registrate.GTRegistrate;
-
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.PackType;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Items;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.AddPackFindersEvent;
-import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
-import net.minecraftforge.eventbus.api.IEventBus;
-import net.minecraftforge.fml.ModList;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
-import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
-import net.minecraftforge.fml.loading.FMLEnvironment;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.fml.ModContainer;
+import net.neoforged.fml.ModList;
+import net.neoforged.fml.common.Mod;
+import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.neoforged.fml.loading.FMLEnvironment;
+import net.neoforged.neoforge.event.AddPackFindersEvent;
+import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
 import net.phoenixvine.chronicles.client.ChronicleShaders;
 import net.phoenixvine.chronicles.client.ChroniclesClient;
 import net.phoenixvine.chronicles.client.registry.ChroniclesLangPack;
 import net.phoenixvine.chronicles.common.item.ChronicleItems;
-import net.phoenixvine.chronicles.integration.gtceu.GTCEuCompat;
 import net.phoenixvine.chronicles.integration.phantasia.PhantasiaCompat;
 import net.phoenixvine.chronicles.network.ChronicleNetwork;
 import net.phoenixvine.wiki.theme.PhoenixTheme;
@@ -28,19 +24,16 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 @Mod(PhoenixChronicles.MOD_ID)
-@SuppressWarnings("removal")
 public class PhoenixChronicles {
 
     public static final String MOD_ID = "phoenix_chronicles";
     public static final Logger LOGGER = LogManager.getLogger();
 
-    public static GTRegistrate CHRONICLES_REGISTRATE = null;
-
-    public PhoenixChronicles() {
-        IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
-
+    public PhoenixChronicles(IEventBus modEventBus, ModContainer container) {
         ChronicleItems.ITEMS.register(modEventBus);
+        net.phoenixvine.chronicles.capability.QuestCapabilityProvider.ATTACHMENTS.register(modEventBus);
         modEventBus.addListener(this::commonSetup);
+        modEventBus.addListener(ChronicleNetwork::register);
 
         if (FMLEnvironment.dist.isClient()) {
             modEventBus.addListener(ChroniclesClient::onClientSetup);
@@ -49,12 +42,6 @@ public class PhoenixChronicles {
 
         modEventBus.addListener(this::addPackFinders);
         modEventBus.addListener(this::buildCreativeTab);
-
-        MinecraftForge.EVENT_BUS.register(this);
-
-        if (GTCEuCompat.isAvailable()) {
-            GTCEuCompat.init(modEventBus);
-        }
     }
 
     public static ResourceLocation id(String path) {
@@ -64,8 +51,6 @@ public class PhoenixChronicles {
     private void commonSetup(final FMLCommonSetupEvent event) {
         event.enqueueWork(() -> {
             LOGGER.info("[Phoenix Chronicles] Bootstrapping standalone quest engine core...");
-
-            ChronicleNetwork.init();
 
             PhoenixTheme.loadThemes();
 
@@ -84,9 +69,9 @@ public class PhoenixChronicles {
 
     private void buildCreativeTab(BuildCreativeModeTabContentsEvent event) {
         if (event.getTabKey() != CreativeModeTabs.TOOLS_AND_UTILITIES) return;
-        event.accept(ChronicleItems.CHRONICLE_BOOK);
-        event.accept(ChronicleItems.CHRONICLE_LOOT_CRATE);
-        event.accept(ChronicleItems.ITEM_FILTER_TOKEN);
-        event.accept(ChronicleItems.FLUID_FILTER_TOKEN);
+        event.accept(ChronicleItems.CHRONICLE_BOOK.get());
+        event.accept(ChronicleItems.CHRONICLE_LOOT_CRATE.get());
+        event.accept(ChronicleItems.ITEM_FILTER_TOKEN.get());
+        event.accept(ChronicleItems.FLUID_FILTER_TOKEN.get());
     }
 }

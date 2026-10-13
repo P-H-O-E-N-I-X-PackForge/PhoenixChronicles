@@ -1,13 +1,13 @@
 package net.phoenixvine.chronicles.mixin;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.registries.ForgeRegistries;
 import net.phoenixvine.chronicles.QuestAPI;
 
 import java.util.UUID;
@@ -37,7 +37,7 @@ public final class GtmHooks {
     public static void onMultiblockFormed(Level level, BlockPos controllerPos) {
         if (!(level instanceof ServerLevel serverLevel) || controllerPos == null) return;
 
-        ResourceLocation machineId = ForgeRegistries.BLOCKS.getKey(
+        ResourceLocation machineId = BuiltInRegistries.BLOCK.getKey(
                 serverLevel.getBlockState(controllerPos).getBlock());
         if (machineId == null) return;
 

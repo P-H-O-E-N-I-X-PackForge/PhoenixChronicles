@@ -54,7 +54,6 @@ public class DimensionTask extends QuestTask {
         }
     }
 
-    @Override
     public CompoundTag serializeNBT() {
         CompoundTag tag = new CompoundTag();
         tag.putString("type", "dimension");
@@ -63,7 +62,6 @@ public class DimensionTask extends QuestTask {
         return tag;
     }
 
-    @Override
     public void deserializeNBT(CompoundTag nbt) {
         String raw = nbt.contains("target") ? nbt.getString("target") :
                 nbt.contains("dimension_id") ? nbt.getString("dimension_id") : null;

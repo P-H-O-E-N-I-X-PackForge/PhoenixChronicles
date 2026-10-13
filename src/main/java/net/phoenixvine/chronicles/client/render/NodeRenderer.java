@@ -535,8 +535,8 @@ public class NodeRenderer {
         net.minecraft.world.level.material.Fluid pickedFluid = null;
         if (customIcon == null && pickedTexture == null && !displaySource.getIconFluid().isEmpty()) {
             try {
-                net.minecraft.world.level.material.Fluid f = net.minecraftforge.registries.ForgeRegistries.FLUIDS
-                        .getValue(ResourceLocation.parse(displaySource.getIconFluid()));
+                net.minecraft.world.level.material.Fluid f = net.minecraft.core.registries.BuiltInRegistries.FLUID
+                        .get(ResourceLocation.parse(displaySource.getIconFluid()));
                 if (f != null && f != net.minecraft.world.level.material.Fluids.EMPTY) pickedFluid = f;
             } catch (Exception ignored) {}
         }
@@ -565,7 +565,7 @@ public class NodeRenderer {
             int pad = Math.max(2, fillSz / 8);
             int iconSz = Math.max(1, Math.round((fillSz - pad * 2) * shapeIconScale));
             int off = (sz - iconSz) / 2;
-            int col = net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions.of(pickedFluid)
+            int col = net.neoforged.neoforge.client.extensions.common.IClientFluidTypeExtensions.of(pickedFluid)
                     .getTintColor() | 0xFF000000;
             g.fill(x + off, y + off, x + off + iconSz, y + off + iconSz, col);
             state.setDbgFluidIconCount(state.dbgFluidIconCount() + 1);
@@ -575,7 +575,7 @@ public class NodeRenderer {
             if (icon == null) {
                 iconTask = state.fallbackTaskIconTask(displaySource);
                 icon = iconTask != null ?
-                        net.minecraftforge.registries.ForgeRegistries.ITEMS.getValue(iconTask.getDisplayItemId()) :
+                        net.minecraft.core.registries.BuiltInRegistries.ITEM.get(iconTask.getDisplayItemId()) :
                         null;
             } else {
                 iconTask = state.matchingIconTask(displaySource, icon);
@@ -709,8 +709,8 @@ public class NodeRenderer {
         try {
             switch (icon.kind) {
                 case ITEM -> {
-                    Item item = net.minecraftforge.registries.ForgeRegistries.ITEMS
-                            .getValue(ResourceLocation.parse(icon.id));
+                    Item item = net.minecraft.core.registries.BuiltInRegistries.ITEM
+                            .get(ResourceLocation.parse(icon.id));
                     if (item == null || item == Items.AIR) return;
                     float scale = size / 16f;
                     g.pose().pushPose();
@@ -725,8 +725,8 @@ public class NodeRenderer {
                     }
                 }
                 case FLUID -> {
-                    net.minecraft.world.level.material.Fluid fluid = net.minecraftforge.registries.ForgeRegistries.FLUIDS
-                            .getValue(ResourceLocation.parse(icon.id));
+                    net.minecraft.world.level.material.Fluid fluid = net.minecraft.core.registries.BuiltInRegistries.FLUID
+                            .get(ResourceLocation.parse(icon.id));
                     ChroniclesUIKit.drawFluidIcon(g, fluid, x, y, size);
                     g.fill(x, y, x + size, y + 1, 0xFF444455);
                     g.fill(x, y + size - 1, x + size, y + size, 0xFF444455);

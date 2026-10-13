@@ -1,5 +1,6 @@
 package net.phoenixvine.chronicles.common.codec;
 
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
@@ -7,7 +8,6 @@ import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.SimpleJsonResourceReloadListener;
 import net.minecraft.util.profiling.ProfilerFiller;
 import net.minecraft.world.item.Item;
-import net.minecraftforge.registries.ForgeRegistries;
 import net.phoenixvine.chronicles.common.event.ChronicleEvents;
 import net.phoenixvine.chronicles.common.model.QuestNode;
 import net.phoenixvine.chronicles.common.model.QuestTask;
@@ -52,8 +52,10 @@ public class ChronicleDataLoader extends SimpleJsonResourceReloadListener {
             try {
                 JsonObject json = entry.getValue().getAsJsonObject();
 
-                Component title = Component.Serializer.fromJson(json.get("title"));
-                Component desc = Component.Serializer.fromJson(json.get("description"));
+                Component title = Component.Serializer.fromJson(json.get("title"),
+                        net.minecraft.core.RegistryAccess.EMPTY);
+                Component desc = Component.Serializer.fromJson(json.get("description"),
+                        net.minecraft.core.RegistryAccess.EMPTY);
 
                 QuestNode node = new QuestNode(questId, title, desc);
 
@@ -105,7 +107,8 @@ public class ChronicleDataLoader extends SimpleJsonResourceReloadListener {
                     json.getAsJsonArray("tasks").forEach(element -> {
                         JsonObject taskJson = element.getAsJsonObject();
                         ResourceLocation taskId = ResourceLocation.parse(taskJson.get("id").getAsString());
-                        Component taskDesc = Component.Serializer.fromJson(taskJson.get("description"));
+                        Component taskDesc = Component.Serializer.fromJson(taskJson.get("description"),
+                                net.minecraft.core.RegistryAccess.EMPTY);
 
                         String type = taskJson.get("type").getAsString();
                         boolean isOptional = taskJson.has("optional") && taskJson.get("optional").getAsBoolean();
@@ -122,7 +125,7 @@ public class ChronicleDataLoader extends SimpleJsonResourceReloadListener {
                             }
                             case "item_check" -> {
                                 ResourceLocation itemId = ResourceLocation.parse(taskJson.get("item_id").getAsString());
-                                Item item = ForgeRegistries.ITEMS.getValue(itemId);
+                                Item item = BuiltInRegistries.ITEM.get(itemId);
                                 int amount = taskJson.has("amount") ? taskJson.get("amount").getAsInt() : 1;
                                 if (item != null) {
                                     addedTask = new ItemRequirementTask(taskId, taskDesc, item, amount, defaultConsume);

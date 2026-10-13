@@ -1,16 +1,16 @@
 package net.phoenixvine.chronicles.client.event;
 
 import net.minecraft.client.KeyMapping;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
 import net.phoenixvine.chronicles.PhoenixChronicles;
 
 import org.jetbrains.annotations.NotNull;
 import org.lwjgl.glfw.GLFW;
 
-@Mod.EventBusSubscriber(modid = PhoenixChronicles.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
+@EventBusSubscriber(modid = PhoenixChronicles.MOD_ID, value = Dist.CLIENT)
 public class ChronicleKeyBindings {
 
     public static final KeyMapping ITEM_LOOKUP = new KeyMapping(

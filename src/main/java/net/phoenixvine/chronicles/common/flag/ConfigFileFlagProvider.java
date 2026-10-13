@@ -1,7 +1,7 @@
 package net.phoenixvine.chronicles.common.flag;
 
 import net.minecraft.server.MinecraftServer;
-import net.minecraftforge.fml.loading.FMLPaths;
+import net.neoforged.fml.loading.FMLPaths;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -58,7 +58,7 @@ public class ConfigFileFlagProvider implements QuestFlagProvider {
             return cached.flat();
         }
 
-        Path baseConfigDir = server != null ? server.getServerDirectory().toPath().resolve("config") :
+        Path baseConfigDir = server != null ? server.getServerDirectory().resolve("config") :
                 FMLPaths.CONFIGDIR.get();
 
         boolean rootRelative = filename.startsWith("/");

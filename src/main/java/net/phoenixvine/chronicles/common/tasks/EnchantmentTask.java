@@ -8,7 +8,6 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
-import net.minecraftforge.registries.ForgeRegistries;
 import net.phoenixvine.chronicles.common.model.QuestTask;
 import net.phoenixvine.chronicles.integration.curios.CuriosCompat;
 
@@ -36,7 +35,11 @@ public class EnchantmentTask extends QuestTask {
 
     @Override
     public boolean isCompletedFor(Player player) {
-        Enchantment ench = ForgeRegistries.ENCHANTMENTS.getValue(enchantmentId);
+        net.minecraft.core.Holder<Enchantment> ench = player.registryAccess()
+                .lookupOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT)
+                .get(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.ENCHANTMENT,
+                        enchantmentId))
+                .orElse(null);
         if (ench == null) return false;
         for (EquipmentSlot slot : SLOTS) {
             ItemStack stack = player.getItemBySlot(slot);
@@ -50,7 +53,6 @@ public class EnchantmentTask extends QuestTask {
         return false;
     }
 
-    @Override
     public CompoundTag serializeNBT() {
         CompoundTag tag = new CompoundTag();
         tag.putString("type", "enchantment");
@@ -59,7 +61,6 @@ public class EnchantmentTask extends QuestTask {
         return tag;
     }
 
-    @Override
     public void deserializeNBT(CompoundTag nbt) {
         if (nbt.contains("enchantment_id")) {
             String raw = nbt.getString("enchantment_id");

@@ -3,11 +3,11 @@ package net.phoenixvine.chronicles.common.tracker;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.network.PacketDistributor;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.tick.PlayerTickEvent;
+import net.neoforged.neoforge.network.PacketDistributor;
 import net.phoenixvine.chronicles.PhoenixChronicles;
 import net.phoenixvine.chronicles.capability.PlayerQuestData;
 import net.phoenixvine.chronicles.capability.QuestCapabilityProvider;
@@ -18,7 +18,7 @@ import net.phoenixvine.chronicles.common.model.QuestState;
 import net.phoenixvine.chronicles.common.model.QuestTask;
 import net.phoenixvine.chronicles.common.registry.QuestTreeRegistry;
 import net.phoenixvine.chronicles.common.tasks.*;
-import net.phoenixvine.chronicles.network.ChronicleNetwork;
+import net.phoenixvine.chronicles.common.util.ItemData;
 import net.phoenixvine.chronicles.network.packet.S2CSyncPlayerProgressPacket;
 
 import org.jetbrains.annotations.Nullable;
@@ -29,7 +29,7 @@ import java.time.ZoneId;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-@Mod.EventBusSubscriber(modid = PhoenixChronicles.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
+@EventBusSubscriber(modid = PhoenixChronicles.MOD_ID)
 public class QuestProgressTracker {
 
     private static final java.util.Map<java.util.UUID, Integer> lastInventoryFingerprint = new java.util.HashMap<>();
@@ -50,7 +50,7 @@ public class QuestProgressTracker {
     static PlayerQuestData resolveData(Player player) {
         PlayerQuestData cached = capabilityCache.get(player.getUUID());
         if (cached != null) return cached;
-        PlayerQuestData resolved = player.getCapability(QuestCapabilityProvider.PLAYER_QUESTS).orElse(null);
+        PlayerQuestData resolved = QuestCapabilityProvider.of(player).orElse(null);
         if (resolved != null) capabilityCache.put(player.getUUID(), resolved);
         return resolved;
     }
@@ -121,7 +121,7 @@ public class QuestProgressTracker {
     private static int fingerprintStack(net.minecraft.world.item.ItemStack s) {
         if (s.isEmpty()) return 0;
         int h = s.getItem().hashCode() * 31 + s.getCount();
-        return s.getTag() != null ? h * 31 + s.getTag().hashCode() : h;
+        return ItemData.getTag(s) != null ? h * 31 + ItemData.getTag(s).hashCode() : h;
     }
 
     private static boolean skipInventoryScan(QuestTask task, Player player, boolean invChanged) {
@@ -129,10 +129,10 @@ public class QuestProgressTracker {
     }
 
     @SubscribeEvent
-    public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
-        if (event.phase != TickEvent.Phase.END || event.player.level().isClientSide) return;
+    public static void onPlayerTick(PlayerTickEvent.Post event) {
+        if (event.getEntity().level().isClientSide) return;
 
-        Player player = event.player;
+        Player player = event.getEntity();
         PlayerQuestData data = resolveData(player);
         java.util.Set<net.minecraft.resources.ResourceLocation> tracked = data != null ?
                 activeTrackedSet(player, data) : null;
@@ -172,7 +172,7 @@ public class QuestProgressTracker {
                 if (state == QuestState.COMPLETED || state == QuestState.LOCKED) continue;
 
                 boolean cancelled = QuestEvent.PlayerTick.hasAnyListeners() &&
-                        MinecraftForge.EVENT_BUS.post(new QuestEvent.PlayerTick(player, node));
+                        NeoForge.EVENT_BUS.post(new QuestEvent.PlayerTick(player, node)).isCanceled();
                 if (!cancelled) {
 
                     List<QuestTask> tasks = node.getEffectiveTasks(player.getServer(), player);
@@ -367,7 +367,7 @@ public class QuestProgressTracker {
 
         data.setQuestState(node.getId(), newState);
         updateActiveTracking(player.getUUID(), node, newState);
-        MinecraftForge.EVENT_BUS.post(new QuestEvent.StateChanged(player, node, oldState, newState));
+        NeoForge.EVENT_BUS.post(new QuestEvent.StateChanged(player, node, oldState, newState));
 
         if (newState == QuestState.COMPLETED) {
             data.recordCompletion(node.getId());
@@ -389,12 +389,12 @@ public class QuestProgressTracker {
     }
 
     private static void propagateSharedCompletion(net.minecraft.server.level.ServerPlayer source, QuestNode node) {
-        if (net.minecraftforge.fml.ModList.get().isLoaded("phoenix_guilds") &&
+        if (net.neoforged.fml.ModList.get().isLoaded("phoenix_guilds") &&
                 GuildsSharedCompletion.propagate(source, node)) {
             return;
         }
 
-        if (net.minecraftforge.fml.ModList.get().isLoaded("ftbteams") &&
+        if (net.neoforged.fml.ModList.get().isLoaded("ftbteams") &&
                 FtbTeamsSharedCompletion.propagate(source, node)) {
             return;
         }
@@ -656,7 +656,7 @@ public class QuestProgressTracker {
         PlayerQuestData data = resolveData(player);
         if (data == null) return;
         if (data.hasClaimedRewards(node.getId())) return;
-        if (MinecraftForge.EVENT_BUS.post(new QuestEvent.RewardClaimed(player, node))) return;
+        if (NeoForge.EVENT_BUS.post(new QuestEvent.RewardClaimed(player, node)).isCanceled()) return;
 
         List<QuestReward> rewards = node.getEffectiveRewards(player.getServer(), player);
         for (int i = 0; i < rewards.size(); i++) {
@@ -781,7 +781,7 @@ public class QuestProgressTracker {
             boolean initialSync = isInLoginSync(serverPlayer.getUUID());
             PlayerQuestData data = resolveData(serverPlayer);
             if (data != null) {
-                ChronicleNetwork.CHANNEL.send(PacketDistributor.PLAYER.with(() -> serverPlayer),
+                net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(serverPlayer,
                         new S2CSyncPlayerProgressPacket(data, initialSync));
             }
         }

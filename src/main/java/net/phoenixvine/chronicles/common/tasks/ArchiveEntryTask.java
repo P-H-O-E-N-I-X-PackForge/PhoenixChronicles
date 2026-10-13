@@ -34,7 +34,6 @@ public class ArchiveEntryTask extends QuestTask {
         return isCompletedFor(player) ? "Viewed" : "View";
     }
 
-    @Override
     public CompoundTag serializeNBT() {
         CompoundTag tag = new CompoundTag();
         tag.putString("type", "archive_entry");
@@ -42,7 +41,6 @@ public class ArchiveEntryTask extends QuestTask {
         return tag;
     }
 
-    @Override
     public void deserializeNBT(CompoundTag nbt) {
         this.archiveEntryId = nbt.getString("archive_entry_id");
     }

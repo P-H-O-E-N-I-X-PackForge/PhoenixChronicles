@@ -4,9 +4,9 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.registries.ForgeRegistries;
 import net.phoenixvine.chronicles.client.registry.QuestToastConfig;
 import net.phoenixvine.chronicles.client.registry.QuestToastManager;
 import net.phoenixvine.chronicles.client.registry.QuestToastPresetRegistry;
@@ -296,7 +296,7 @@ public class ToastDesignerScreen extends Screen {
         int iconBtnW = (fw - 8) / 3;
         addRenderableWidget(Button.builder(Component.literal("§7+ Item"), b -> {
             if (minecraft != null) minecraft.setScreen(new ItemPickerScreen(this, stack -> {
-                ResourceLocation id = ForgeRegistries.ITEMS.getKey(stack.getItem());
+                ResourceLocation id = BuiltInRegistries.ITEM.getKey(stack.getItem());
                 if (id != null) addIconEntry(QuestGroup.IconKind.ITEM, id.toString());
             }));
         }).bounds(fx, y, iconBtnW, FIELD_H).build());
@@ -522,7 +522,7 @@ public class ToastDesignerScreen extends Screen {
     }
 
     @Override
-    public void renderBackground(@NotNull GuiGraphics g) {}
+    public void renderBackground(@NotNull GuiGraphics g, int mouseX, int mouseY, float partialTick) {}
 
     @Override
     public void render(@NotNull GuiGraphics g, int rawMx, int rawMy, float partial) {
@@ -667,8 +667,7 @@ public class ToastDesignerScreen extends Screen {
         try {
             switch (icon.kind) {
                 case ITEM -> {
-                    net.minecraft.world.item.Item item = ForgeRegistries.ITEMS
-                            .getValue(ResourceLocation.parse(icon.id));
+                    net.minecraft.world.item.Item item = BuiltInRegistries.ITEM.get(ResourceLocation.parse(icon.id));
                     if (item == null || item == net.minecraft.world.item.Items.AIR) return;
                     float scale = size / 16f;
                     g.pose().pushPose();
@@ -678,8 +677,8 @@ public class ToastDesignerScreen extends Screen {
                     g.pose().popPose();
                 }
                 case FLUID -> {
-                    net.minecraft.world.level.material.Fluid fluid = ForgeRegistries.FLUIDS
-                            .getValue(ResourceLocation.parse(icon.id));
+                    net.minecraft.world.level.material.Fluid fluid = BuiltInRegistries.FLUID
+                            .get(ResourceLocation.parse(icon.id));
                     ChroniclesUIKit.drawFluidIcon(g, fluid, x, y, size);
                     ChroniclesUIKit.drawBorder(g, x, y, size, size, 0xFF444455);
                 }
@@ -857,7 +856,7 @@ public class ToastDesignerScreen extends Screen {
     }
 
     @Override
-    public boolean mouseScrolled(double rawMx, double rawMy, double delta) {
+    public boolean mouseScrolled(double rawMx, double rawMy, double scrollX, double delta) {
         double mx = rawMx / uiScale;
         double my = rawMy / uiScale;
         if (mx >= vw - PANEL_W) {
@@ -865,7 +864,7 @@ public class ToastDesignerScreen extends Screen {
             rebuildFields();
             return true;
         }
-        return super.mouseScrolled(mx, my, delta);
+        return super.mouseScrolled(mx, my, 0.0, delta);
     }
 
     private static final int SNAP_PX = 4;

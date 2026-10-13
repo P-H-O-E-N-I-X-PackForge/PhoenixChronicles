@@ -46,7 +46,6 @@ public class ConfluxResearchTask extends QuestTask {
         return flagMode ? ConfluxCompat.hasFlag(player, flag) : ConfluxCompat.isUnlocked(player, nodeId);
     }
 
-    @Override
     public CompoundTag serializeNBT() {
         CompoundTag tag = new CompoundTag();
         tag.putString("type", "conflux_research");
@@ -56,7 +55,6 @@ public class ConfluxResearchTask extends QuestTask {
         return tag;
     }
 
-    @Override
     public void deserializeNBT(CompoundTag nbt) {
         if (nbt.contains("flag_mode")) this.flagMode = nbt.getBoolean("flag_mode");
         if (nbt.contains("node_id")) {

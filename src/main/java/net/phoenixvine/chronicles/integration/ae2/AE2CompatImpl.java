@@ -5,7 +5,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.material.Fluid;
-import net.minecraftforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.FluidStack;
 import net.phoenixvine.chronicles.common.filter.IFluidFilter;
 import net.phoenixvine.chronicles.common.filter.IItemFilter;
 import net.phoenixvine.chronicles.integration.curios.CuriosCompat;
@@ -50,7 +50,7 @@ final class AE2CompatImpl {
         }
 
         if (player.containerMenu instanceof MEStorageMenu meMenu) {
-            IGridNode node = meMenu.getNetworkNode();
+            IGridNode node = meMenu.getGridNode();
             if (node != null) return node.getGrid();
         }
 
@@ -60,7 +60,7 @@ final class AE2CompatImpl {
     @Nullable
     private static IGrid getLinkedGrid(@NotNull Player player, @NotNull ItemStack stack) {
         if (!(stack.getItem() instanceof WirelessTerminalItem term)) return null;
-        return term.getLinkedGrid(stack, player.level(), player);
+        return term.getLinkedGrid(stack, player.level(), player::sendSystemMessage);
     }
 
     static long getStoredAmount(@NotNull Player player, @NotNull Item item) {
@@ -103,7 +103,10 @@ final class AE2CompatImpl {
     }
 
     static long insert(@NotNull Player player, @NotNull Fluid fluid, @Nullable CompoundTag tag, long amountMb) {
-        return insert(player, AEFluidKey.of(fluid, tag), amountMb);
+        return insert(player,
+                AEFluidKey.of(new net.neoforged.neoforge.fluids.FluidStack(fluid.builtInRegistryHolder(), 1,
+                        net.phoenixvine.chronicles.common.util.ItemData.patchOf(tag))),
+                amountMb);
     }
 
     private static long insert(@NotNull Player player, @Nullable AEKey key, long amount) {

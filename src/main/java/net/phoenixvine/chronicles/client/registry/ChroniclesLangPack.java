@@ -6,7 +6,7 @@ import net.minecraft.server.packs.PackType;
 import net.minecraft.server.packs.PathPackResources;
 import net.minecraft.server.packs.repository.Pack;
 import net.minecraft.server.packs.repository.PackSource;
-import net.minecraftforge.event.AddPackFindersEvent;
+import net.neoforged.neoforge.event.AddPackFindersEvent;
 import net.phoenixvine.chronicles.common.registry.QuestLangRegistry;
 
 import org.jetbrains.annotations.NotNull;
@@ -22,13 +22,12 @@ public class ChroniclesLangPack {
 
         event.addRepositorySource(consumer -> {
             Pack pack = Pack.readMetaAndCreate(
-                    "phoenix_chronicles_lang",
-                    Component.literal("Phoenix Chronicles Quest Translations"),
-                    true,
-                    id -> new PathPackResources(id, root, false),
+                    new net.minecraft.server.packs.PackLocationInfo("phoenix_chronicles_lang",
+                            Component.literal("Phoenix Chronicles Quest Translations"), PackSource.BUILT_IN,
+                            java.util.Optional.empty()),
+                    new PathPackResources.PathResourcesSupplier(root),
                     PackType.CLIENT_RESOURCES,
-                    Pack.Position.TOP,
-                    PackSource.BUILT_IN);
+                    new net.minecraft.server.packs.PackSelectionConfig(true, Pack.Position.TOP, false));
             if (pack != null) consumer.accept(pack);
         });
     }

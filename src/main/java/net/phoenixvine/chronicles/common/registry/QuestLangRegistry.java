@@ -16,7 +16,7 @@ import java.util.stream.Stream;
 public class QuestLangRegistry {
 
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
-    private static final int PACK_FORMAT = 15;
+    private static final int PACK_FORMAT = 34;
 
     public static Path langDir(Path configDir) {
         return configDir.resolve("assets").resolve("phoenix_chronicles").resolve("lang");
@@ -26,7 +26,9 @@ public class QuestLangRegistry {
         try {
             Files.createDirectories(langDir(configDir));
             Path meta = configDir.resolve("pack.mcmeta");
-            if (!Files.exists(meta)) {
+
+            if (!Files.exists(meta) || !Files.readString(meta, StandardCharsets.UTF_8)
+                    .contains("\"pack_format\": " + PACK_FORMAT)) {
                 String json = "{\n  \"pack\": {\n    \"pack_format\": " + PACK_FORMAT + ",\n" +
                         "    \"description\": \"Phoenix Chronicles quest translations\"\n  }\n}\n";
                 Files.writeString(meta, json, StandardCharsets.UTF_8);

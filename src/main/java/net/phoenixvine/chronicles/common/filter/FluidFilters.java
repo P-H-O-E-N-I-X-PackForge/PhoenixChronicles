@@ -1,13 +1,14 @@
 package net.phoenixvine.chronicles.common.filter;
 
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.level.material.Fluid;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.neoforged.neoforge.fluids.FluidStack;
+import net.phoenixvine.chronicles.common.util.ItemData;
 
 import org.jetbrains.annotations.Nullable;
 
@@ -27,9 +28,9 @@ public final class FluidFilters {
 
         @Override
         public boolean test(FluidStack stack) {
-            ResourceLocation id = ForgeRegistries.FLUIDS.getKey(stack.getFluid());
+            ResourceLocation id = BuiltInRegistries.FLUID.getKey(stack.getFluid());
             if (!fluidId.equals(id)) return false;
-            return NbtMatchUtil.matches(stack.getTag(), nbt);
+            return NbtMatchUtil.matches(ItemData.getTag(stack), nbt);
         }
 
         @Override
@@ -39,7 +40,7 @@ public final class FluidFilters {
 
         @Override
         public net.minecraft.world.level.material.Fluid getDisplayFluid() {
-            return ForgeRegistries.FLUIDS.getValue(fluidId);
+            return BuiltInRegistries.FLUID.get(fluidId);
         }
 
         @Override
@@ -93,7 +94,7 @@ public final class FluidFilters {
 
         @Override
         public boolean test(FluidStack stack) {
-            ResourceLocation id = ForgeRegistries.FLUIDS.getKey(stack.getFluid());
+            ResourceLocation id = BuiltInRegistries.FLUID.getKey(stack.getFluid());
             return id != null && id.getNamespace().equals(modId);
         }
 
@@ -104,9 +105,9 @@ public final class FluidFilters {
 
         @Override
         public net.minecraft.world.level.material.Fluid getDisplayFluid() {
-            return java.util.stream.StreamSupport.stream(ForgeRegistries.FLUIDS.spliterator(), false)
+            return java.util.stream.StreamSupport.stream(BuiltInRegistries.FLUID.spliterator(), false)
                     .filter(fluid -> {
-                        ResourceLocation id = ForgeRegistries.FLUIDS.getKey(fluid);
+                        ResourceLocation id = BuiltInRegistries.FLUID.getKey(fluid);
                         return id != null && id.getNamespace().equals(modId);
                     })
                     .findFirst().orElse(null);

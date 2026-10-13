@@ -3,7 +3,7 @@ package net.phoenixvine.chronicles.common.tracker;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.scores.Team;
-import net.minecraftforge.fml.ModList;
+import net.neoforged.fml.ModList;
 import net.phoenixvine.chronicles.client.util.ClientTeamCache;
 
 import java.util.Optional;

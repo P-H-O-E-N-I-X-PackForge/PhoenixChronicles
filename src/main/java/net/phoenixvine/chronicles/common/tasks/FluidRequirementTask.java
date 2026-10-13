@@ -1,18 +1,19 @@
 package net.phoenixvine.chronicles.common.tasks;
 
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.capability.IFluidHandler;
-import net.minecraftforge.fluids.capability.IFluidHandlerItem;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.neoforged.neoforge.capabilities.Capabilities;
+import net.neoforged.neoforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.capability.IFluidHandler;
+import net.neoforged.neoforge.fluids.capability.IFluidHandlerItem;
 import net.phoenixvine.chronicles.capability.TaskProgressAccess;
 import net.phoenixvine.chronicles.common.filter.NbtMatchUtil;
 import net.phoenixvine.chronicles.common.model.QuestTask;
+import net.phoenixvine.chronicles.common.util.ItemData;
 import net.phoenixvine.chronicles.integration.ae2.AE2Compat;
 import net.phoenixvine.chronicles.integration.curios.CuriosCompat;
 
@@ -77,9 +78,9 @@ public class FluidRequirementTask extends QuestTask {
 
     private boolean fluidMatches(FluidStack fs) {
         if (fs.isEmpty()) return false;
-        ResourceLocation candidateId = ForgeRegistries.FLUIDS.getKey(fs.getFluid());
+        ResourceLocation candidateId = BuiltInRegistries.FLUID.getKey(fs.getFluid());
         if (candidateId == null || !candidateId.equals(fluidId)) return false;
-        return NbtMatchUtil.matches(fs.getTag(), nbtFilter);
+        return NbtMatchUtil.matches(ItemData.getTag(fs), nbtFilter);
     }
 
     private boolean checksAe2Storage() {
@@ -108,7 +109,7 @@ public class FluidRequirementTask extends QuestTask {
     }
 
     private net.minecraft.world.level.material.Fluid getFluid() {
-        return fluidId == null ? null : ForgeRegistries.FLUIDS.getValue(fluidId);
+        return fluidId == null ? null : BuiltInRegistries.FLUID.get(fluidId);
     }
 
     private Iterable<ItemStack> fluidContainerSlots(Player player) {
@@ -122,9 +123,8 @@ public class FluidRequirementTask extends QuestTask {
         for (ItemStack stack : fluidContainerSlots(player)) {
             if (stack.isEmpty()) continue;
 
-            var fluidHandlerCap = stack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM);
-            if (fluidHandlerCap.isPresent()) {
-                IFluidHandlerItem handler = fluidHandlerCap.orElseThrow(IllegalStateException::new);
+            IFluidHandlerItem handler = stack.getCapability(Capabilities.FluidHandler.ITEM);
+            if (handler != null) {
                 for (int i = 0; i < handler.getTanks(); i++) {
                     FluidStack fluidStack = handler.getFluidInTank(i);
 
@@ -148,9 +148,8 @@ public class FluidRequirementTask extends QuestTask {
             ItemStack stack = player.getInventory().getItem(i);
             if (stack.isEmpty() || remainingToDrain <= 0) break;
 
-            var fluidHandlerCap = stack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM);
-            if (fluidHandlerCap.isPresent()) {
-                IFluidHandlerItem handler = fluidHandlerCap.orElseThrow(IllegalStateException::new);
+            IFluidHandlerItem handler = stack.getCapability(Capabilities.FluidHandler.ITEM);
+            if (handler != null) {
 
                 FluidStack simulatedDrain = handler.drain(remainingToDrain, IFluidHandler.FluidAction.SIMULATE);
                 if (simulatedDrain.isEmpty()) continue;
@@ -182,14 +181,13 @@ public class FluidRequirementTask extends QuestTask {
     @Override
     public ResourceLocation getDisplayItemId() {
         if (fluidId == null) return null;
-        var fluid = ForgeRegistries.FLUIDS.getValue(fluidId);
+        var fluid = BuiltInRegistries.FLUID.get(fluidId);
         if (fluid == null) return null;
         var bucket = fluid.getBucket();
         if (bucket == null || bucket == net.minecraft.world.item.Items.AIR) return null;
-        return ForgeRegistries.ITEMS.getKey(bucket);
+        return BuiltInRegistries.ITEM.getKey(bucket);
     }
 
-    @Override
     public CompoundTag serializeNBT() {
         CompoundTag tag = new CompoundTag();
         tag.putString("type", "fluid_check");
@@ -202,7 +200,6 @@ public class FluidRequirementTask extends QuestTask {
         return tag;
     }
 
-    @Override
     public void deserializeNBT(CompoundTag nbt) {
         if (nbt.contains("nbt_filter")) this.nbtFilter = nbt.getCompound("nbt_filter");
         if (nbt.contains("fluid_id")) {

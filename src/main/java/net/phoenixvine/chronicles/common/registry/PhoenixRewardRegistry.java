@@ -27,7 +27,7 @@ public final class PhoenixRewardRegistry {
                         @Nullable Function<CompoundTag, String> summary) {
 
         public boolean isAvailable() {
-            return requiredModId == null || net.minecraftforge.fml.ModList.get().isLoaded(requiredModId);
+            return requiredModId == null || net.neoforged.fml.ModList.get().isLoaded(requiredModId);
         }
 
         public String displayName() {

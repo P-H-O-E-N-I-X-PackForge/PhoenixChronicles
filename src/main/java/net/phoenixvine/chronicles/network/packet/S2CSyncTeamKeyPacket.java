@@ -1,13 +1,22 @@
 package net.phoenixvine.chronicles.network.packet;
 
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.fml.DistExecutor;
-import net.minecraftforge.network.NetworkEvent;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceLocation;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
 
-import java.util.function.Supplier;
+public class S2CSyncTeamKeyPacket implements CustomPacketPayload {
 
-public class S2CSyncTeamKeyPacket {
+    public static final Type<S2CSyncTeamKeyPacket> TYPE = new Type<>(
+            ResourceLocation.fromNamespaceAndPath("phoenix_chronicles", "s2_c_sync_team_key"));
+    public static final StreamCodec<net.minecraft.network.RegistryFriendlyByteBuf, S2CSyncTeamKeyPacket> STREAM_CODEC = StreamCodec
+            .ofMember(S2CSyncTeamKeyPacket::encode, S2CSyncTeamKeyPacket::new);
+
+    @Override
+    public Type<? extends CustomPacketPayload> type() {
+        return TYPE;
+    }
 
     private final String teamKey;
 
@@ -23,9 +32,7 @@ public class S2CSyncTeamKeyPacket {
         buf.writeUtf(teamKey);
     }
 
-    public void handle(Supplier<NetworkEvent.Context> ctx) {
-        ctx.get().enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT,
-                () -> () -> net.phoenixvine.chronicles.client.util.ClientTeamCache.set(teamKey)));
-        ctx.get().setPacketHandled(true);
+    public void handle(IPayloadContext context) {
+        context.enqueueWork(() -> net.phoenixvine.chronicles.client.util.ClientTeamCache.set(teamKey));
     }
 }

@@ -8,7 +8,7 @@ import net.minecraft.tags.ItemTags;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.phoenixvine.chronicles.common.util.ItemData;
 
 import org.jetbrains.annotations.Nullable;
 
@@ -30,12 +30,12 @@ public final class ItemFilters {
         @Override
         public boolean test(ItemStack stack) {
             if (stack.getItem() != item) return false;
-            return NbtMatchUtil.matches(stack.getTag(), nbt);
+            return NbtMatchUtil.matches(ItemData.getTag(stack), nbt);
         }
 
         @Override
         public String describe() {
-            ResourceLocation id = ForgeRegistries.ITEMS.getKey(item);
+            ResourceLocation id = BuiltInRegistries.ITEM.getKey(item);
             String base = id != null ? id.toString() : "unknown";
             return nbt != null && !nbt.isEmpty() ? base + " {…}" : base;
         }
@@ -49,14 +49,14 @@ public final class ItemFilters {
         public CompoundTag serialize() {
             CompoundTag t = new CompoundTag();
             t.putString("filter_type", TYPE_EXACT);
-            ResourceLocation id = ForgeRegistries.ITEMS.getKey(item);
+            ResourceLocation id = BuiltInRegistries.ITEM.getKey(item);
             t.putString("item", id != null ? id.toString() : "minecraft:air");
             if (nbt != null && !nbt.isEmpty()) t.put("nbt", nbt);
             return t;
         }
 
         public static ExactItem deserialize(CompoundTag t) {
-            Item item = ForgeRegistries.ITEMS.getValue(ResourceLocation.parse(t.getString("item")));
+            Item item = BuiltInRegistries.ITEM.get(ResourceLocation.parse(t.getString("item")));
             CompoundTag nbt = t.contains("nbt") ? t.getCompound("nbt") : null;
             return new ExactItem(item == null ? net.minecraft.world.item.Items.AIR : item, nbt);
         }
@@ -97,7 +97,7 @@ public final class ItemFilters {
 
         @Override
         public boolean test(ItemStack stack) {
-            ResourceLocation id = ForgeRegistries.ITEMS.getKey(stack.getItem());
+            ResourceLocation id = BuiltInRegistries.ITEM.getKey(stack.getItem());
             return id != null && id.getNamespace().equals(modId);
         }
 
@@ -108,9 +108,9 @@ public final class ItemFilters {
 
         @Override
         public ItemStack getDisplayStack() {
-            return StreamSupport.stream(ForgeRegistries.ITEMS.spliterator(), false)
+            return StreamSupport.stream(BuiltInRegistries.ITEM.spliterator(), false)
                     .filter(item -> {
-                        ResourceLocation id = ForgeRegistries.ITEMS.getKey(item);
+                        ResourceLocation id = BuiltInRegistries.ITEM.getKey(item);
                         return id != null && id.getNamespace().equals(modId);
                     })
                     .map(ItemStack::new)

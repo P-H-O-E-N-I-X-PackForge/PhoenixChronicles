@@ -9,11 +9,9 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 import net.phoenixvine.chronicles.client.screen.ChronicleOverviewScreen;
-
-import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
@@ -24,7 +22,7 @@ public class ChronicleBookItem extends Item {
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> lines, TooltipFlag flag) {
+    public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> lines, TooltipFlag flag) {
         lines.add(Component.translatable("phoenix_chronicles.item.chronicle_book.tooltip")
                 .withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC));
     }

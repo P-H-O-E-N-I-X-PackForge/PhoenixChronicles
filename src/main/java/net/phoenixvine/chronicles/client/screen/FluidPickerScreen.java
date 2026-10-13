@@ -4,11 +4,11 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
-import net.minecraftforge.registries.ForgeRegistries;
 import net.phoenixvine.chronicles.client.render.ChroniclesThemePalette;
 import net.phoenixvine.chronicles.client.render.ChroniclesUIKit;
 
@@ -82,9 +82,9 @@ public class FluidPickerScreen extends Screen {
     private void rebuildList() {
         displayFluids.clear();
         String q = searchQuery.toLowerCase().trim();
-        for (Fluid fluid : ForgeRegistries.FLUIDS) {
+        for (Fluid fluid : BuiltInRegistries.FLUID) {
             if (fluid == Fluids.EMPTY) continue;
-            ResourceLocation id = ForgeRegistries.FLUIDS.getKey(fluid);
+            ResourceLocation id = BuiltInRegistries.FLUID.getKey(fluid);
             if (id == null) continue;
 
             if (id.getPath().contains("flowing")) continue;
@@ -96,7 +96,7 @@ public class FluidPickerScreen extends Screen {
     }
 
     @Override
-    public void renderBackground(@NotNull GuiGraphics g) {}
+    public void renderBackground(@NotNull GuiGraphics g, int mouseX, int mouseY, float partialTick) {}
 
     @Override
     public void render(@NotNull GuiGraphics g, int mx, int my, float partial) {
@@ -158,7 +158,7 @@ public class FluidPickerScreen extends Screen {
             ChroniclesUIKit.drawBorder(g, panelLeft + 4, ry + 2, 16, ROW_H - 4, 0xFF444455);
 
             String name = fluid.getFluidType().getDescription().getString();
-            ResourceLocation id = ForgeRegistries.FLUIDS.getKey(fluid);
+            ResourceLocation id = BuiltInRegistries.FLUID.getKey(fluid);
             String idStr = id != null ? "§8" + id : "";
             int labelX = panelLeft + 24;
             int maxW = PANEL_W - 28;
@@ -177,7 +177,7 @@ public class FluidPickerScreen extends Screen {
             g.fill(panelLeft, prevY, panelLeft + PANEL_W, footerY, ChroniclesThemePalette.PANEL_DARK);
             ChroniclesUIKit.drawFluidIcon(g, selectedFluid, panelLeft + 4, prevY + 1, 16);
             ChroniclesUIKit.drawBorder(g, panelLeft + 4, prevY + 1, 16, 16, 0xFF444455);
-            ResourceLocation selId = ForgeRegistries.FLUIDS.getKey(selectedFluid);
+            ResourceLocation selId = BuiltInRegistries.FLUID.getKey(selectedFluid);
             String selStr = selId != null ? selId.toString() : "?";
             g.drawString(font, "§f" + selStr, panelLeft + 24, prevY + 5, ChroniclesThemePalette.TEXT);
         }
@@ -212,7 +212,7 @@ public class FluidPickerScreen extends Screen {
     }
 
     @Override
-    public boolean mouseScrolled(double mx, double my, double delta) {
+    public boolean mouseScrolled(double mx, double my, double scrollX, double delta) {
         int footerY = panelTop + PANEL_H - FOOTER_H;
         int listTop = panelTop + HEADER_H + SEARCH_H + 4;
         int listBottom = footerY - (selectedFluid != null ? 20 : 2);
@@ -225,15 +225,15 @@ public class FluidPickerScreen extends Screen {
     private void confirm() {
         if (!multiSelected.isEmpty()) {
             for (Fluid fluid : multiSelected) {
-                ResourceLocation id = ForgeRegistries.FLUIDS.getKey(fluid);
+                ResourceLocation id = BuiltInRegistries.FLUID.getKey(fluid);
                 if (id != null) onPick.accept(id.toString());
             }
             if (selectedFluid != null && !multiSelected.contains(selectedFluid)) {
-                ResourceLocation id = ForgeRegistries.FLUIDS.getKey(selectedFluid);
+                ResourceLocation id = BuiltInRegistries.FLUID.getKey(selectedFluid);
                 if (id != null) onPick.accept(id.toString());
             }
         } else if (selectedFluid != null) {
-            ResourceLocation id = ForgeRegistries.FLUIDS.getKey(selectedFluid);
+            ResourceLocation id = BuiltInRegistries.FLUID.getKey(selectedFluid);
             if (id != null) onPick.accept(id.toString());
         }
         if (minecraft != null) minecraft.setScreen(parent);

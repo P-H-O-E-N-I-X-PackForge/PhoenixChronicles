@@ -1,172 +1,55 @@
 package net.phoenixvine.chronicles.network;
 
-import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.network.NetworkDirection;
-import net.minecraftforge.network.NetworkRegistry;
-import net.minecraftforge.network.simple.SimpleChannel;
+import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
+import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 import net.phoenixvine.chronicles.network.packet.*;
-
-import java.util.Optional;
 
 public class ChronicleNetwork {
 
     private static final String PROTOCOL = "1";
 
-    public static SimpleChannel CHANNEL;
-    private static int id = 0;
-
-    public static void init() {
-        CHANNEL = NetworkRegistry.newSimpleChannel(
-                ResourceLocation.fromNamespaceAndPath("phoenix_chronicles", "main"),
-                () -> PROTOCOL,
-                PROTOCOL::equals,
-                PROTOCOL::equals);
-
-        CHANNEL.registerMessage(id++,
-                S2CSyncQuestsPacket.class,
-                S2CSyncQuestsPacket::encode,
-                S2CSyncQuestsPacket::new,
-                S2CSyncQuestsPacket::handle,
-                Optional.of(NetworkDirection.PLAY_TO_CLIENT));
-
-        CHANNEL.registerMessage(id++,
-                C2SClaimQuestRewardPacket.class,
-                C2SClaimQuestRewardPacket::encode,
-                C2SClaimQuestRewardPacket::new,
-                C2SClaimQuestRewardPacket::handle,
-                Optional.of(NetworkDirection.PLAY_TO_SERVER));
-
-        CHANNEL.registerMessage(id++,
-                C2SResolveChoiceBoxPacket.class,
-                C2SResolveChoiceBoxPacket::encode,
-                C2SResolveChoiceBoxPacket::new,
-                C2SResolveChoiceBoxPacket::handle,
-                Optional.of(NetworkDirection.PLAY_TO_SERVER));
-
-        CHANNEL.registerMessage(id++,
-                C2SSetQuestStatePacket.class,
-                C2SSetQuestStatePacket::encode,
-                C2SSetQuestStatePacket::new,
-                C2SSetQuestStatePacket::handle,
-                Optional.of(NetworkDirection.PLAY_TO_SERVER));
-
-        CHANNEL.registerMessage(id++,
-                S2CSyncPlayerProgressPacket.class,
-                S2CSyncPlayerProgressPacket::encode,
-                S2CSyncPlayerProgressPacket::new,
-                S2CSyncPlayerProgressPacket::handle,
-                Optional.of(NetworkDirection.PLAY_TO_CLIENT));
-
-        CHANNEL.registerMessage(id++,
-                C2SAcknowledgeInfoTasksPacket.class,
-                C2SAcknowledgeInfoTasksPacket::encode,
-                C2SAcknowledgeInfoTasksPacket::new,
-                C2SAcknowledgeInfoTasksPacket::handle,
-                Optional.of(NetworkDirection.PLAY_TO_SERVER));
-
-        CHANNEL.registerMessage(id++,
-                C2SCompleteCheckmarkTaskPacket.class,
-                C2SCompleteCheckmarkTaskPacket::encode,
-                C2SCompleteCheckmarkTaskPacket::new,
-                C2SCompleteCheckmarkTaskPacket::handle,
-                Optional.of(NetworkDirection.PLAY_TO_SERVER));
-
-        CHANNEL.registerMessage(id++,
-                S2CReloadQuestsFromDiskPacket.class,
-                S2CReloadQuestsFromDiskPacket::encode,
-                S2CReloadQuestsFromDiskPacket::new,
-                S2CReloadQuestsFromDiskPacket::handle,
-                Optional.of(NetworkDirection.PLAY_TO_CLIENT));
-
-        CHANNEL.registerMessage(id++,
-                C2STogglePinPacket.class,
-                C2STogglePinPacket::encode,
-                C2STogglePinPacket::new,
-                C2STogglePinPacket::handle,
-                Optional.of(NetworkDirection.PLAY_TO_SERVER));
-
-        CHANNEL.registerMessage(id++,
-                C2SPhantasiaTaskCompletePacket.class,
-                C2SPhantasiaTaskCompletePacket::encode,
-                C2SPhantasiaTaskCompletePacket::new,
-                C2SPhantasiaTaskCompletePacket::handle,
-                Optional.of(NetworkDirection.PLAY_TO_SERVER));
-
-        CHANNEL.registerMessage(id++,
-                C2SScreenOpenedTaskPacket.class,
-                C2SScreenOpenedTaskPacket::encode,
-                C2SScreenOpenedTaskPacket::new,
-                C2SScreenOpenedTaskPacket::handle,
-                Optional.of(NetworkDirection.PLAY_TO_SERVER));
-
-        CHANNEL.registerMessage(id++,
-                S2COpenExternalScreenPacket.class,
-                S2COpenExternalScreenPacket::encode,
-                S2COpenExternalScreenPacket::new,
-                S2COpenExternalScreenPacket::handle,
-                Optional.of(NetworkDirection.PLAY_TO_CLIENT));
-
-        CHANNEL.registerMessage(id++,
-                C2SClaimAllRewardsPacket.class,
-                C2SClaimAllRewardsPacket::encode,
-                C2SClaimAllRewardsPacket::new,
-                C2SClaimAllRewardsPacket::handle,
-                Optional.of(NetworkDirection.PLAY_TO_SERVER));
-
-        CHANNEL.registerMessage(id++,
-                C2SReopenCompletedQuestPacket.class,
-                C2SReopenCompletedQuestPacket::encode,
-                C2SReopenCompletedQuestPacket::new,
-                C2SReopenCompletedQuestPacket::handle,
-                Optional.of(NetworkDirection.PLAY_TO_SERVER));
-
-        CHANNEL.registerMessage(id++,
-                C2SSetAutoClaimPacket.class,
-                C2SSetAutoClaimPacket::encode,
-                C2SSetAutoClaimPacket::new,
-                C2SSetAutoClaimPacket::handle,
-                Optional.of(NetworkDirection.PLAY_TO_SERVER));
-
-        CHANNEL.registerMessage(id++,
-                C2SSetFilterTokenPacket.class,
-                C2SSetFilterTokenPacket::encode,
-                C2SSetFilterTokenPacket::new,
-                C2SSetFilterTokenPacket::handle,
-                Optional.of(NetworkDirection.PLAY_TO_SERVER));
-
-        CHANNEL.registerMessage(id++,
-                C2SBulkQuestActionPacket.class,
-                C2SBulkQuestActionPacket::encode,
-                C2SBulkQuestActionPacket::new,
-                C2SBulkQuestActionPacket::handle,
-                Optional.of(NetworkDirection.PLAY_TO_SERVER));
-
-        CHANNEL.registerMessage(id++,
-                S2CSyncPooledProgressPacket.class,
-                S2CSyncPooledProgressPacket::encode,
-                S2CSyncPooledProgressPacket::new,
-                S2CSyncPooledProgressPacket::handle,
-                Optional.of(NetworkDirection.PLAY_TO_CLIENT));
-
-        CHANNEL.registerMessage(id++,
-                S2CSyncTeamKeyPacket.class,
-                S2CSyncTeamKeyPacket::encode,
-                S2CSyncTeamKeyPacket::new,
-                S2CSyncTeamKeyPacket::handle,
-                Optional.of(NetworkDirection.PLAY_TO_CLIENT));
-
-        CHANNEL.registerMessage(id++,
-                C2SRequestEmergencyItemsPacket.class,
-                C2SRequestEmergencyItemsPacket::encode,
-                C2SRequestEmergencyItemsPacket::new,
-                C2SRequestEmergencyItemsPacket::handle,
-                Optional.of(NetworkDirection.PLAY_TO_SERVER));
-
-        CHANNEL.registerMessage(id++,
-                C2SSubmitItemTaskPacket.class,
-                C2SSubmitItemTaskPacket::encode,
-                C2SSubmitItemTaskPacket::new,
-                C2SSubmitItemTaskPacket::handle,
-                Optional.of(NetworkDirection.PLAY_TO_SERVER));
+    public static void register(RegisterPayloadHandlersEvent event) {
+        PayloadRegistrar registrar = event.registrar(PROTOCOL);
+        registrar.playToServer(C2SAcknowledgeInfoTasksPacket.TYPE, C2SAcknowledgeInfoTasksPacket.STREAM_CODEC,
+                (msg, ctx) -> msg.handle(ctx));
+        registrar.playToServer(C2SBulkQuestActionPacket.TYPE, C2SBulkQuestActionPacket.STREAM_CODEC,
+                (msg, ctx) -> msg.handle(ctx));
+        registrar.playToServer(C2SClaimAllRewardsPacket.TYPE, C2SClaimAllRewardsPacket.STREAM_CODEC,
+                (msg, ctx) -> msg.handle(ctx));
+        registrar.playToServer(C2SClaimQuestRewardPacket.TYPE, C2SClaimQuestRewardPacket.STREAM_CODEC,
+                (msg, ctx) -> msg.handle(ctx));
+        registrar.playToServer(C2SCompleteCheckmarkTaskPacket.TYPE, C2SCompleteCheckmarkTaskPacket.STREAM_CODEC,
+                (msg, ctx) -> msg.handle(ctx));
+        registrar.playToServer(C2SPhantasiaTaskCompletePacket.TYPE, C2SPhantasiaTaskCompletePacket.STREAM_CODEC,
+                (msg, ctx) -> msg.handle(ctx));
+        registrar.playToServer(C2SReopenCompletedQuestPacket.TYPE, C2SReopenCompletedQuestPacket.STREAM_CODEC,
+                (msg, ctx) -> msg.handle(ctx));
+        registrar.playToServer(C2SRequestEmergencyItemsPacket.TYPE, C2SRequestEmergencyItemsPacket.STREAM_CODEC,
+                (msg, ctx) -> msg.handle(ctx));
+        registrar.playToServer(C2SResolveChoiceBoxPacket.TYPE, C2SResolveChoiceBoxPacket.STREAM_CODEC,
+                (msg, ctx) -> msg.handle(ctx));
+        registrar.playToServer(C2SScreenOpenedTaskPacket.TYPE, C2SScreenOpenedTaskPacket.STREAM_CODEC,
+                (msg, ctx) -> msg.handle(ctx));
+        registrar.playToServer(C2SSetAutoClaimPacket.TYPE, C2SSetAutoClaimPacket.STREAM_CODEC,
+                (msg, ctx) -> msg.handle(ctx));
+        registrar.playToServer(C2SSetFilterTokenPacket.TYPE, C2SSetFilterTokenPacket.STREAM_CODEC,
+                (msg, ctx) -> msg.handle(ctx));
+        registrar.playToServer(C2SSetQuestStatePacket.TYPE, C2SSetQuestStatePacket.STREAM_CODEC,
+                (msg, ctx) -> msg.handle(ctx));
+        registrar.playToServer(C2SSubmitItemTaskPacket.TYPE, C2SSubmitItemTaskPacket.STREAM_CODEC,
+                (msg, ctx) -> msg.handle(ctx));
+        registrar.playToServer(C2STogglePinPacket.TYPE, C2STogglePinPacket.STREAM_CODEC, (msg, ctx) -> msg.handle(ctx));
+        registrar.playToClient(S2COpenExternalScreenPacket.TYPE, S2COpenExternalScreenPacket.STREAM_CODEC,
+                (msg, ctx) -> msg.handle(ctx));
+        registrar.playToClient(S2CReloadQuestsFromDiskPacket.TYPE, S2CReloadQuestsFromDiskPacket.STREAM_CODEC,
+                (msg, ctx) -> msg.handle(ctx));
+        registrar.playToClient(S2CSyncPlayerProgressPacket.TYPE, S2CSyncPlayerProgressPacket.STREAM_CODEC,
+                (msg, ctx) -> msg.handle(ctx));
+        registrar.playToClient(S2CSyncPooledProgressPacket.TYPE, S2CSyncPooledProgressPacket.STREAM_CODEC,
+                (msg, ctx) -> msg.handle(ctx));
+        registrar.playToClient(S2CSyncQuestsPacket.TYPE, S2CSyncQuestsPacket.STREAM_CODEC,
+                (msg, ctx) -> msg.handle(ctx));
+        registrar.playToClient(S2CSyncTeamKeyPacket.TYPE, S2CSyncTeamKeyPacket.STREAM_CODEC,
+                (msg, ctx) -> msg.handle(ctx));
     }
 }

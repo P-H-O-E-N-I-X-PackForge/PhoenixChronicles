@@ -57,10 +57,10 @@ public class QuestFileSaver {
     }
 
     private static void refreshRecipeViewers() {
-        if (net.minecraftforge.fml.ModList.get().isLoaded("emi")) {
+        if (net.neoforged.fml.ModList.get().isLoaded("emi")) {
             net.phoenixvine.chronicles.integration.emi.ChroniclesEmiPlugin.refreshQuestRecipes();
         }
-        if (net.minecraftforge.fml.ModList.get().isLoaded("jei")) {
+        if (net.neoforged.fml.ModList.get().isLoaded("jei")) {
             net.phoenixvine.chronicles.integration.jei.ChroniclesJeiPlugin.refreshQuestRecipes();
         }
     }
@@ -226,7 +226,8 @@ public class QuestFileSaver {
                 CompoundTag tTag = t.serializeWithMeta();
                 tTag.putString("task_id", t.getTaskId().toString());
                 tTag.putString("description",
-                        net.minecraft.network.chat.Component.Serializer.toJson(t.getDescriptionRaw()));
+                        net.minecraft.network.chat.Component.Serializer.toJson(t.getDescriptionRaw(),
+                                net.minecraft.core.RegistryAccess.EMPTY));
                 tTag.putBoolean("optional", t.isOptional());
                 taskList.add(tTag);
             }
@@ -253,7 +254,8 @@ public class QuestFileSaver {
                         CompoundTag tTag = t.serializeWithMeta();
                         tTag.putString("task_id", t.getTaskId().toString());
                         tTag.putString("description",
-                                net.minecraft.network.chat.Component.Serializer.toJson(t.getDescriptionRaw()));
+                                net.minecraft.network.chat.Component.Serializer.toJson(t.getDescriptionRaw(),
+                                        net.minecraft.core.RegistryAccess.EMPTY));
                         tTag.putBoolean("optional", t.isOptional());
                         taskList.add(tTag);
                     }

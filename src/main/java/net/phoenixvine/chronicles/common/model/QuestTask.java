@@ -1,12 +1,11 @@
 package net.phoenixvine.chronicles.common.model;
 
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.common.util.INBTSerializable;
-import net.minecraftforge.registries.ForgeRegistries;
 import net.phoenixvine.chronicles.capability.TaskProgressAccess;
 import net.phoenixvine.chronicles.client.event.ClientTextOverrides;
 
@@ -14,12 +13,10 @@ import lombok.Getter;
 import lombok.Setter;
 
 @Getter
-public abstract class QuestTask implements INBTSerializable<CompoundTag> {
+public abstract class QuestTask {
 
-    @Override
     public abstract CompoundTag serializeNBT();
 
-    @Override
     public abstract void deserializeNBT(CompoundTag nbt);
 
     public static final int HIDE_AMOUNT = 1;
@@ -53,7 +50,7 @@ public abstract class QuestTask implements INBTSerializable<CompoundTag> {
 
     public Component getDescription() {
         if (taskId != null &&
-                net.minecraftforge.fml.loading.FMLEnvironment.dist == net.minecraftforge.api.distmarker.Dist.CLIENT) {
+                net.neoforged.fml.loading.FMLEnvironment.dist == net.neoforged.api.distmarker.Dist.CLIENT) {
             String override = ClientTextOverrides.get(langKey());
             if (override != null) return Component.literal(override);
             Component d = ClientLangLookup.resolve(langKey());
@@ -69,7 +66,7 @@ public abstract class QuestTask implements INBTSerializable<CompoundTag> {
     public void setDescription(Component description) {
         this.description = description != null ? description : Component.empty();
         if (taskId != null &&
-                net.minecraftforge.fml.loading.FMLEnvironment.dist == net.minecraftforge.api.distmarker.Dist.CLIENT) {
+                net.neoforged.fml.loading.FMLEnvironment.dist == net.neoforged.api.distmarker.Dist.CLIENT) {
             ClientTextOverrides.put(langKey(), this.description.getString());
         }
     }
@@ -113,6 +110,6 @@ public abstract class QuestTask implements INBTSerializable<CompoundTag> {
         if (stack == null || stack.isEmpty()) return false;
         ResourceLocation displayId = getDisplayItemId();
         if (displayId == null) return false;
-        return displayId.equals(ForgeRegistries.ITEMS.getKey(stack.getItem()));
+        return displayId.equals(BuiltInRegistries.ITEM.getKey(stack.getItem()));
     }
 }

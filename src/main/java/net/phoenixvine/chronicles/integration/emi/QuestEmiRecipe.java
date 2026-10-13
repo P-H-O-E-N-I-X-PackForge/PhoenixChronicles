@@ -2,6 +2,7 @@ package net.phoenixvine.chronicles.integration.emi;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.FormattedCharSequence;
@@ -10,13 +11,13 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
-import net.minecraftforge.registries.ForgeRegistries;
 import net.phoenixvine.chronicles.client.screen.ChronicleOverviewScreen;
 import net.phoenixvine.chronicles.common.model.QuestNode;
 import net.phoenixvine.chronicles.common.model.QuestTask;
 import net.phoenixvine.chronicles.common.tasks.CraftItemTask;
 import net.phoenixvine.chronicles.common.tasks.FluidRequirementTask;
 import net.phoenixvine.chronicles.common.tasks.ItemRequirementTask;
+import net.phoenixvine.chronicles.common.util.ItemData;
 import net.phoenixvine.chronicles.integration.QuestRewardDisplay;
 
 import dev.emi.emi.api.recipe.EmiRecipe;
@@ -61,16 +62,16 @@ public class QuestEmiRecipe implements EmiRecipe {
             if (task instanceof ItemRequirementTask itemTask) {
                 ItemStack itemStack = new ItemStack(itemTask.getItem(), itemTask.getRequiredCount());
                 if (itemTask.getNbtFilter() != null && !itemTask.getNbtFilter().isEmpty()) {
-                    itemStack.setTag(itemTask.getNbtFilter().copy());
+                    ItemData.setTag(itemStack, itemTask.getNbtFilter().copy());
                 }
                 dynamicInputs.add(EmiStack.of(itemStack));
             } else if (task instanceof CraftItemTask craftTask) {
-                Item item = ForgeRegistries.ITEMS.getValue(craftTask.getItemId());
+                Item item = BuiltInRegistries.ITEM.get(craftTask.getItemId());
                 if (item != null && item != Items.AIR) {
                     dynamicInputs.add(EmiStack.of(item, craftTask.getRequiredCount()));
                 }
             } else if (task instanceof FluidRequirementTask fluidTask) {
-                Fluid fluid = ForgeRegistries.FLUIDS.getValue(fluidTask.getFluidId());
+                Fluid fluid = BuiltInRegistries.FLUID.get(fluidTask.getFluidId());
                 if (fluid != null && fluid != Fluids.EMPTY) {
                     dynamicInputs.add(EmiStack.of(fluid, fluidTask.getRequiredAmount()));
                 }
@@ -93,7 +94,7 @@ public class QuestEmiRecipe implements EmiRecipe {
 
     private static EmiStack toEmiStack(QuestRewardDisplay.Entry entry) {
         if (entry.isFluid()) {
-            return EmiStack.of(entry.fluid(), entry.fluidNbt(), entry.fluidAmountMb());
+            return EmiStack.of(entry.fluid(), ItemData.patchOf(entry.fluidNbt()), entry.fluidAmountMb());
         }
         return EmiStack.of(entry.stack());
     }

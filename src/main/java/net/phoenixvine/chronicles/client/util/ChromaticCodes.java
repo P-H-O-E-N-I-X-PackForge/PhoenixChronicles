@@ -1,6 +1,6 @@
 package net.phoenixvine.chronicles.client.util;
 
-import net.minecraftforge.fml.ModList;
+import net.neoforged.fml.ModList;
 import net.phoenixvine.chronicles.integration.chromatic.ChromaticCodesBridge;
 
 import java.util.HashMap;

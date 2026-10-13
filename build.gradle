@@ -1,27 +1,20 @@
-buildscript {
-    repositories {
-        maven { url = 'https://repo.spongepowered.org/repository/maven-public/' }
-        mavenCentral()
-    }
-}
-
 plugins {
-    id "idea"
-    id "eclipse"
-    id "maven-publish"
-    id 'net.neoforged.moddev.legacyforge' version '2.0.91'
+    id 'java-library'
+    id 'maven-publish'
+    id 'idea'
+    id 'net.neoforged.moddev' version '2.0.143'
     id 'com.diffplug.spotless' version '7.0.2'
 }
 
-sourceSets {
-    main.resources {
-        srcDir 'src/generated/resources'
-    }
-    // Mixins that only exist for GregTech 8.x. Compiled against GT 8 and shipped in the same jar; the mixin plugin
-    // applies them only when GT 8 is the installed version, so players on 7.x never load them.
-    gtm8 {
-        java.srcDir 'src/gtm8/java'
-    }
+tasks.named('wrapper', Wrapper).configure {
+    distributionType = Wrapper.DistributionType.BIN
+}
+
+version = mod_version
+group = mod_group_id
+
+sourceSets.main.resources {
+    srcDir 'src/generated/resources'
 }
 
 repositories {
@@ -29,213 +22,179 @@ repositories {
     mavenCentral()
     maven {
         name = 'GTCEu Maven'
-        url = 'https://maven.gtceu.com'
+        url = 'https://maven.gtceu.com/'
         content {
             includeGroup 'com.gregtechceu.gtceu'
             includeGroup 'brachy.modularui'
         }
     }
     maven {
-        name = "Repsy"
-        url = uri("https://repo.repsy.io/mvn/user75142941/phoenixsuite")
+        name = 'ParchmentMC'
+        url = 'https://maven.parchmentmc.org'
     }
     maven {
-        name 'FirstDarkDev'
-        url "https://maven.firstdark.dev/snapshots/"
+        name = 'BlameJared Maven'
+        url = 'https://maven.blamejared.com/'
     }
-    maven { // Registrate
-        url = "https://maven.tterrag.com/"
+    maven {
+        name = 'Devos Snapshot Maven'
+        url = 'https://mvn.devos.one/snapshots/'
         content {
-            // need to be specific here due to version overlaps
-            includeGroup("com.tterrag.registrate")
+            includeGroup 'com.tterrag.registrate'
         }
     }
     maven {
-        // Patchouli, JEI
-        name = "BlameJared"
-        url = "https://maven.blamejared.com/"
-    }
-    maven {
-        url = "https://maven.theillusivec4.top/"
-    }
-    maven {
-        // Curse Forge File
-        url "https://cursemaven.com/"
+        name = 'LatvianDev Maven'
+        url = 'https://maven.latvian.dev/releases/'
         content {
-            includeGroup "curse.maven"
+            includeGroup 'dev.latvian.mods'
+            includeGroup 'dev.latvian.apps'
         }
     }
     maven {
-        name = "ftbMavenReleases"
-        url = uri("https://maven.ftb.dev/releases")
+        name = 'Sleeping Town'
+        url = 'https://repo.sleeping.town/'
+        content {
+            includeGroup 'dev.emi'
+        }
     }
     maven {
-        // EMI
-        name = "TerraformersMC"
-        url = "https://maven.terraformersmc.com/"
+        name = 'TheIllusiveC4 Maven'
+        url = 'https://maven.theillusivec4.top/'
     }
     maven {
-        url = "https://maven.architectury.dev"
+        name = 'Architectury Maven'
+        url = 'https://maven.architectury.dev/'
+        content {
+            includeGroup 'dev.architectury'
+        }
     }
     maven {
-        // KubeJS, Rhino
-        name = "LatvianModder"
-        url = "https://maven.latvian.dev/releases"
+        name = 'Repsy Toma Maven'
+        url = 'https://repo.repsy.io/mvn/toma/public/'
+        content {
+            includeGroup 'dev.toma.configuration'
+        }
     }
     maven {
-        // Applied Energistics 2
-        name = "ModMaven"
-        url = "https://modmaven.dev/"
+        name = 'JitPack'
+        url = 'https://jitpack.io'
+        content {
+            includeGroup 'com.github.rtyley'
+        }
     }
     maven {
-        url = "https://thedarkcolour.github.io/KotlinForForge/"
+        name = 'FTB Maven'
+        url = 'https://maven.ftb.dev/releases'
+    }
+    maven {
+        name = 'ModMaven'
+        url = 'https://maven.modmaven.dev/'
+        content {
+            includeGroup 'org.appliedenergistics'
+        }
+    }
+    maven {
+        name = 'CurseMaven'
+        url = 'https://cursemaven.com/'
+        content {
+            includeGroup 'curse.maven'
+        }
+    }
+    maven {
+        name = 'Repsy'
+        url = uri('https://repo.repsy.io/mvn/user75142941/phoenixsuite')
     }
     flatDir {
         dir 'libs'
     }
 }
 
-version = mod_version
-group = maven_group
-base { archivesName = archives_base_name }
-java { sourceCompatibility = targetCompatibility = JavaVersion.VERSION_17 }
+base {
+    archivesName = archives_base_name
+}
 
-legacyForge {
-    version = project.minecraft_version + '-' + project.forge_version
+java.toolchain.languageVersion = JavaLanguageVersion.of(21)
+
+neoForge {
+    version = project.neo_version
 
     parchment {
-        mappingsVersion = project.mapping_version
-        minecraftVersion = project.minecraft_version
+        mappingsVersion = project.parchment_mappings_version
+        minecraftVersion = project.parchment_minecraft_version
     }
 
+    accessTransformers.from('src/main/resources/META-INF/accesstransformer.cfg')
+
     runs {
-        configureEach {
-            systemProperty 'forge.logging.markers', 'REGISTRIES'
-            logLevel = org.slf4j.event.Level.DEBUG
-        }
         client {
             client()
-            sourceSet = sourceSets.main
-            programArguments.addAll('--refresh-dependencies')
-            systemProperty('forge.enabledGameTestNamespaces', project.mod_id)
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
         }
         server {
             server()
-            sourceSet = sourceSets.main
-            systemProperty('forge.enabledGameTestNamespaces', project.mod_id)
-            programArguments.addAll('--nogui', '--world', 'world-extra')
-        }
-        data {
-            data()
-            sourceSet = sourceSets.main
-            programArguments.addAll('--mod', project.mod_id, '--all', '--output', file('src/generated/resources/').getAbsolutePath(), '--existing', file('src/main/resources/').getAbsolutePath())
-            programArguments.addAll('--existing-mod', 'gtceu')
+            programArgument '--nogui'
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
         }
         gameTestServer {
             type = 'gameTestServer'
-            sourceSet = sourceSets.main
-            systemProperty('forge.enabledGameTestNamespaces', project.mod_id)
+            gameDirectory = project.file('run/gametest')
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+        }
+        data {
+            data()
+            programArguments.addAll '--mod', project.mod_id, '--all', '--output', file('src/generated/resources/').getAbsolutePath(), '--existing', file('src/main/resources/').getAbsolutePath()
+        }
+        configureEach {
+            systemProperty 'neoforge.logging.markers', 'REGISTRIES'
+            logLevel = org.slf4j.event.Level.DEBUG
         }
     }
 
     mods {
         "${mod_id}" {
             sourceSet(sourceSets.main)
-            // The GregTech 8 classes are listed in the mixin config, so they must be on the dev classpath too.
-            sourceSet(sourceSets.gtm8)
         }
     }
 }
 
-mixin {
-    add sourceSets.main, 'phoenix_chronicles.refmap.json'
-    config 'phoenix_chronicles.mixins.json'
-}
-
 configurations {
-    gtm8CompileOnly.extendsFrom(compileOnly, implementation)
+    runtimeClasspath.extendsFrom localRuntime
 }
-def gtm8Remapped = obfuscation.createRemappingConfiguration(configurations.gtm8CompileOnly)
-sourceSets.gtm8.compileClasspath += sourceSets.main.output + sourceSets.main.compileClasspath
 
 apply from: "$rootDir/gradle/scripts/spotless.gradle"
 
 dependencies {
-    modGtm8CompileOnly("com.gregtechceu.gtceu:gtceu-${minecraft_version}:${gtceu8_version}:slim") { transitive = false }
+    compileOnly 'org.jetbrains:annotations:26.0.2'
+    compileOnly 'org.projectlombok:lombok:1.18.30'
+    annotationProcessor 'org.projectlombok:lombok:1.18.30'
 
-    compileOnly("org.jetbrains:annotations:26.0.1")
-    annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
-
-    // JEI, EMI, Jade
-    modCompileOnly("mezz.jei:jei-${minecraft_version}-forge-api:${jei_version}")
-    modCompileOnly("mezz.jei:jei-${minecraft_version}-common-api:${jei_version}")
-    modRuntimeOnly("mezz.jei:jei-${minecraft_version}-forge:${jei_version}")
-    modRuntimeOnly("dev.emi:emi-forge:${project.findProperty('gtm') == '8' ? '1.1.24' : emi_version}+${minecraft_version}")
-    modRuntimeOnly("curse.maven:jade-324717:5390389")
-    modCompileOnly("dev.emi:emi-forge:${emi_version}+${minecraft_version}")
-
-    modCompileOnly("net.phoenix.core:Phantasia:${phantasia_version}")
-    // Phantasia 4.0.3 still calls GTRegistrate.registerRegistrate(), which the GT 8 snapshot removed, so it is left out
-    // of snapshot dev runs (-Pgtm=8) until it is updated.
-    if (project.findProperty('gtm') != '8') {
-        modRuntimeOnly("net.phoenix.core:Phantasia:${phantasia_version}")
+    // Phoenix suite
+    jarJar(implementation("net.phoenixvine.wiki:neoforge:${phoenix_wiki_version}")) {
+        version { strictly "[${phoenix_wiki_version},)"; prefer phoenix_wiki_version }
     }
 
-    modRuntimeOnly("dev.architectury:architectury-forge:${architectury_version}")
-    modCompileOnly("dev.ftb.mods:ftb-library-forge:${ftblibrary_version}")
-    modCompileOnly("dev.ftb.mods:ftb-teams-forge:${ftbteams_version}")
+    // Optional integrations
+    compileOnly "org.appliedenergistics:appliedenergistics2:${ae2_version}"
+    compileOnly "top.theillusivec4.curios:curios-neoforge:${curios_version}"
+    compileOnly "dev.ftb.mods:ftb-teams-neoforge:${ftbteams_version}"
+    compileOnly "dev.ftb.mods:ftb-library-neoforge:${ftblibrary_version}"
+    compileOnly "dev.emi:emi-neoforge:${emi_version}+${minecraft_version}"
+    compileOnly "mezz.jei:jei-${minecraft_version}-neoforge-api:${jei_version}"
+    compileOnly "mezz.jei:jei-${minecraft_version}-common-api:${jei_version}"
+    compileOnly "dev.latvian.mods:kubejs-neoforge:${kubejs_version}"
+    compileOnly "curse.maven:phoenixs-chromatic-colors-1483210:8388618"
+    compileOnly "net.phoenixvine.guilds:phoenix-guilds-neoforge:${phoenix_guilds_version}"
+    compileOnly("com.gregtechceu.gtceu:gtceu-${minecraft_version}:${gtm_version}") { transitive = false }
+    compileOnly("brachy.modularui:modularui-mc${minecraft_version}:${mui_version}") { transitive = false }
 
-    modCompileOnly("dev.latvian.mods:kubejs-forge:${kubejs_version}")
-    modRuntimeOnly("dev.latvian.mods:kubejs-forge:${kubejs_version}")
-
-    modCompileOnly("dev.latvian.mods:rhino-forge:${rhino_version}")
-    modRuntimeOnly("dev.latvian.mods:rhino-forge:${rhino_version}")
-
-    modCompileOnly("appeng:appliedenergistics2-forge:${appeng_version}")
-    modRuntimeOnly("appeng:appliedenergistics2-forge:${appeng_version}")
-
-    modCompileOnly("top.theillusivec4.curios:curios-forge:${curios_version}")
-    modRuntimeOnly("top.theillusivec4.curios:curios-forge:${curios_version}")
-
-    modRuntimeOnly("dev.ftb.mods:ftb-library-forge:${ftblibrary_version}")
-  //  modRuntimeOnly("dev.ftb.mods:ftb-teams-forge:${ftbteams_version}")
-
-    modCompileOnly('net.phoenixvine.guilds:phoenix_guilds:1.6.3')
-    modRuntimeOnly('net.phoenixvine.guilds:phoenix_guilds:1.6.3')
-
-    jarJar(modImplementation("net.phoenixvine.wiki:phoenix_wiki:0.5.7"))
-
-    modCompileOnly("net.phoenix.phoenix_archive:phoenix_archive:${phoenix_archive_version}")
-    modCompileOnly("net.phoenix.chromatic_codes:chromatic_codes:${chromatic_codes_version}")
-    modRuntimeOnly("net.phoenix.phoenix_archive:phoenix_archive:${phoenix_archive_version}")
-
-    modRuntimeOnly("net.phoenix.chromatic_codes:chromatic_codes:${chromatic_codes_version}")
-
-    modCompileOnly("net.phoenix.core:PhoenixCore:${phoenixcore_version}:slim") { transitive = false }
-
-    // Compile against GregTech 7.x; the GT 8 mixins and bootstrap compile in the gtm8 source set.
-    modCompileOnly("com.gregtechceu.gtceu:gtceu-${minecraft_version}:${gtceu_version}:slim") { transitive = false }
-    // The GT 8 snapshot jar-in-jars these (its slim jar leaves them out), so a dev run on it has to provide them.
-    if (project.findProperty('gtm') == '8') {
-        modRuntimeOnly("brachy.modularui:modularui-mc1.20.1:3.3.0-SNAPSHOT") { transitive = false }
-        modRuntimeOnly("io.github.llamalad7:mixinextras-forge:0.5.3")
-        modRuntimeOnly("top.theillusivec4.curios:curios-forge:5.9.1+1.20.1")
-    }
-    // Which GregTech the dev client/server runs: 7.x by default, GT 8 snapshot with -Pgtm=8, or any exact version with -Pgtm=<version> (e.g. -Pgtm=8.0.0).
-    modRuntimeOnly("com.gregtechceu.gtceu:gtceu-${minecraft_version}:${project.findProperty('gtm') == '8' ? gtceu8_version : (project.findProperty('gtm') ?: gtceu_version)}:slim") { transitive = false }
-
-
-
-    modCompileOnly("com.lowdragmc.ldlib:ldlib-forge-${minecraft_version}:${ldlib_version}") { transitive = false }
-    modCompileOnly("com.tterrag.registrate:Registrate:${registrate_version}")
-    modCompileOnly("curse.maven:configuration-444699:5840405") // Configuration 3.1.0 (GregTech 8 needs 3.1+)
-
-    modRuntimeOnly("com.lowdragmc.ldlib:ldlib-forge-${minecraft_version}:${ldlib_version}") { transitive = false }
-    modRuntimeOnly("com.tterrag.registrate:Registrate:${registrate_version}")
-    modRuntimeOnly("curse.maven:configuration-444699:5840405") // Configuration 3.1.0 (GregTech 8 needs 3.1+)
-
-    compileOnly 'org.projectlombok:lombok:1.18.24'
-    annotationProcessor 'org.projectlombok:lombok:1.18.24'
+    // GregTech in the dev client, so its hooks can be exercised
+    localRuntime "curse.maven:phoenixs-chromatic-colors-1483210:8388618"
+    localRuntime "dev.latvian.mods:kubejs-neoforge:${kubejs_version}"
+    localRuntime "com.gregtechceu.gtceu:gtceu-${minecraft_version}:${gtm_version}"
+    localRuntime "brachy.modularui:modularui-mc${minecraft_version}:${mui_version}"
+    localRuntime "com.tterrag.registrate:Registrate:${registrate_version}"
+    compileOnly "com.tterrag.registrate:Registrate:${registrate_version}"
 
     testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
@@ -253,77 +212,51 @@ tasks.named('test', Test).configure {
 }
 
 tasks.named('processResources', ProcessResources).configure {
-    var properties = [
-            "mod_license": mod_license,
-            "mod_id": mod_id,
-            "version": version,
-            "mod_name": mod_name,
-            "mod_url": mod_url,
-            "mod_author": mod_author,
-            "forge_version": forge_version.split("\\.")[0],
-            "minecraft_version": minecraft_version,
-            "gtceu_version": gtceu_version,
+    var replaceProperties = [
+            minecraft_version      : minecraft_version,
+            minecraft_version_range: minecraft_version_range,
+            neo_version            : neo_version,
+            loader_version_range   : loader_version_range,
+            mod_id                 : mod_id,
+            mod_name               : mod_name,
+            mod_license            : mod_license,
+            mod_version            : mod_version,
+            mod_author             : mod_author,
+            mod_url                : mod_url,
     ]
-    inputs.properties(properties)
-
-    filesMatching("META-INF/mods.toml") {
-        expand properties + [project: project]
+    inputs.properties replaceProperties
+    filesMatching('META-INF/neoforge.mods.toml') {
+        expand replaceProperties
     }
 }
 
-tasks.named('jar', Jar).configure {
-    from sourceSets.gtm8.output
-    manifest {
-        attributes(['MixinConfigs': 'phoenix_chronicles.mixins.json'])
-    }
-    finalizedBy 'reobfJar'
-}
 tasks.withType(JavaCompile).configureEach {
-    options.encoding = "UTF-8"
-    options.release.set(17)
-    options.compilerArgs << "-Aquiet=true"
-}
-
-tasks.register('publishToDomains', Copy) {
-    group = 'phoenix'
-    description = 'Builds this mod and copies the jar into ../Phoenix-Domains/libs, so Domains picks up local changes.'
-    dependsOn 'reobfJar'
-    from(layout.buildDirectory.dir('libs')) {
-        include '*.jar'
-        exclude '*-sources.jar'
-    }
-    into '../Phoenix-Domains/libs'
+    options.encoding = 'UTF-8'
+    options.compilerArgs << '-Xmaxerrs' << '5000'
 }
 
 publishing {
     publications {
-        create('mavenJava', MavenPublication) {
+        register('mavenJava', MavenPublication) {
             artifactId = base.archivesName.get()
             from components.java
         }
     }
     repositories {
         maven {
-            name = "Repsy"
-            url = uri("https://repo.repsy.io/mvn/user75142941/phoenixsuite")
+            name = 'Repsy'
+            url = uri('https://repo.repsy.io/mvn/user75142941/phoenixsuite')
             credentials {
-                username = project.findProperty("repsyUsername") ?: System.getenv("REPSY_USERNAME")
-                password = project.findProperty("repsyPassword") ?: System.getenv("REPSY_PASSWORD")
+                username = project.findProperty('repsyUsername') ?: System.getenv('REPSY_USERNAME')
+                password = project.findProperty('repsyPassword') ?: System.getenv('REPSY_PASSWORD')
             }
         }
     }
 }
 
-// One-click dev runs against newer GregTech, visible in IntelliJ's Gradle tool window under "mod development".
-// They re-run the normal runClient / runServer with the -Pgtm switch set (see the modRuntimeOnly GregTech line).
-[['Gtm8', '8', 'the GregTech 8 development snapshot'], ['Gtm8Release', '8.0.0', 'the GregTech 8.0.0 release']].each { suffix, version, label ->
-    ['Client', 'Server'].each { side ->
-        tasks.register("run${side}${suffix}", GradleBuild) {
-            group = 'mod development'
-            description = "Runs the dev ${side.toLowerCase()} with ${label} instead of GregTech ${gtceu_version}."
-            dir = projectDir
-            tasks = ["run${side}".toString()]
-            startParameter.projectProperties = [gtm: version]
-        }
+idea {
+    module {
+        downloadSources = true
+        downloadJavadoc = true
     }
 }

@@ -7,10 +7,10 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
-import net.minecraftforge.common.util.FakePlayerFactory;
-import net.minecraftforge.fml.ModList;
-import net.minecraftforge.gametest.GameTestHolder;
-import net.minecraftforge.gametest.PrefixGameTestTemplate;
+import net.neoforged.fml.ModList;
+import net.neoforged.neoforge.common.util.FakePlayerFactory;
+import net.neoforged.neoforge.gametest.GameTestHolder;
+import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 import net.phoenixvine.chronicles.PhoenixChronicles;
 import net.phoenixvine.chronicles.common.flag.PhoenixQuestFlags;
 import net.phoenixvine.chronicles.common.model.QuestNode;
@@ -44,7 +44,7 @@ public class QuestProgressGameTests {
             QuestTreeRegistry.registerBareQuestNode(gate);
             QuestTreeRegistry.registerBareQuestNode(dependent);
 
-            Player player = helper.makeMockPlayer();
+            Player player = helper.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
 
             helper.assertTrue(QuestProgressTracker.getQuestState(player, gate) == QuestState.LOCKED,
                     "gate should start LOCKED");
@@ -75,7 +75,7 @@ public class QuestProgressGameTests {
             QuestTreeRegistry.registerBareQuestNode(gate);
             QuestTreeRegistry.registerBareQuestNode(dependent);
 
-            Player player = helper.makeMockPlayer();
+            Player player = helper.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
 
             helper.assertTrue(QuestProgressTracker.getQuestState(player, gate) == QuestState.LOCKED,
                     "unrelated registration must not affect the gate's own state");
@@ -90,8 +90,8 @@ public class QuestProgressGameTests {
 
     @GameTest(template = "gametest_empty", timeoutTicks = 200)
     public static void flagSetForOnePlayerDoesNotLeakToAnother(@NotNull GameTestHelper helper) {
-        Player alice = helper.makeMockPlayer();
-        Player bob = helper.makeMockPlayer();
+        Player alice = helper.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
+        Player bob = helper.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
         String flagName = "gametest_has_nether_star";
 
         try {

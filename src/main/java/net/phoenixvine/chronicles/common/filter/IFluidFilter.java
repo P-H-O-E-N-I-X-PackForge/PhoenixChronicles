@@ -2,7 +2,7 @@ package net.phoenixvine.chronicles.common.filter;
 
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.material.Fluid;
-import net.minecraftforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.FluidStack;
 
 public interface IFluidFilter {
 

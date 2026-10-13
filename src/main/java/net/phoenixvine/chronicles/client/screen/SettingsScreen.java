@@ -586,7 +586,7 @@ public class SettingsScreen extends Screen {
     }
 
     @Override
-    public boolean mouseScrolled(double mx, double my, double delta) {
+    public boolean mouseScrolled(double mx, double my, double scrollX, double delta) {
         scrollY = Math.max(0, (int) (scrollY - delta * 12));
         return true;
     }

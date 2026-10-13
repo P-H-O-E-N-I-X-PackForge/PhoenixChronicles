@@ -3,7 +3,6 @@ package net.phoenixvine.chronicles.common.model;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
-import net.minecraft.world.item.ItemStack;
 import net.phoenixvine.chronicles.common.registry.QuestEngineConfig;
 
 import java.util.ArrayList;
@@ -109,10 +108,12 @@ public final class EmergencyKit {
         if (items == null) return kit;
         for (Tag t : items) {
             if (!(t instanceof CompoundTag ct)) continue;
-            ItemStack stack = ItemStack.of(ct);
-            if (stack.isEmpty()) continue;
-            kit.rewards.add(new QuestReward.ItemReward(stack.getItem(), stack.getCount(),
-                    stack.hasTag() ? stack.getTag().copy() : null, false));
+
+            net.minecraft.world.item.Item item = net.minecraft.core.registries.BuiltInRegistries.ITEM
+                    .get(net.minecraft.resources.ResourceLocation.parse(ct.getString("id")));
+            if (item == net.minecraft.world.item.Items.AIR) continue;
+            kit.rewards.add(new QuestReward.ItemReward(item, Math.max(1, ct.getInt("Count")),
+                    ct.contains("tag") ? ct.getCompound("tag").copy() : null, false));
         }
         return kit;
     }

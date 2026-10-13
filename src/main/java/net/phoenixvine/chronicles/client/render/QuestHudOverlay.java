@@ -5,12 +5,13 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.InputEvent;
-import net.minecraftforge.client.event.RenderGuiOverlayEvent;
-import net.minecraftforge.client.gui.overlay.VanillaGuiOverlay;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.neoforge.client.event.InputEvent;
+import net.neoforged.neoforge.client.event.RenderGuiLayerEvent;
+import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
 import net.phoenixvine.chronicles.PhoenixChronicles;
 import net.phoenixvine.chronicles.capability.PlayerQuestData;
 import net.phoenixvine.chronicles.capability.QuestCapabilityProvider;
@@ -28,7 +29,7 @@ import net.phoenixvine.chronicles.common.registry.QuestTreeRegistry;
 
 import java.util.List;
 
-@Mod.EventBusSubscriber(modid = PhoenixChronicles.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
+@EventBusSubscriber(modid = PhoenixChronicles.MOD_ID, value = Dist.CLIENT)
 public class QuestHudOverlay {
 
     private static final int WIDGET_W = 148;
@@ -64,7 +65,7 @@ public class QuestHudOverlay {
     private static final long FADE_MS = 200;
 
     @SubscribeEvent
-    public static void onMouseButton(InputEvent.MouseButton event) {
+    public static void onMouseButton(InputEvent.MouseButton.Pre event) {
         if (event.getButton() != 0 || event.getAction() != 1) return;
         Minecraft mc = Minecraft.getInstance();
         if (mc.screen != null || mc.player == null || lastWidgetBounds.isEmpty()) return;
@@ -81,8 +82,7 @@ public class QuestHudOverlay {
     }
 
     @SubscribeEvent
-    public static void onClientTick(net.minecraftforge.event.TickEvent.ClientTickEvent event) {
-        if (event.phase != net.minecraftforge.event.TickEvent.Phase.END) return;
+    public static void onClientTick(ClientTickEvent.Post event) {
         QuestToastManager.get().tick();
 
         while (ChronicleKeyBindings.OPEN_QUESTBOOK.consumeClick()) {
@@ -112,8 +112,8 @@ public class QuestHudOverlay {
     }
 
     @SubscribeEvent
-    public static void onRenderHud(RenderGuiOverlayEvent.Post event) {
-        if (event.getOverlay() != VanillaGuiOverlay.HOTBAR.type()) return;
+    public static void onRenderHud(RenderGuiLayerEvent.Post event) {
+        if (!event.getName().equals(VanillaGuiLayers.HOTBAR)) return;
 
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null || mc.player.isDeadOrDying()) return;
@@ -133,7 +133,7 @@ public class QuestHudOverlay {
 
     private static void renderPinnedWidgets(Minecraft mc, GuiGraphics g, int screenW, int screenH) {
         lastWidgetBounds.clear();
-        PlayerQuestData data = mc.player.getCapability(QuestCapabilityProvider.PLAYER_QUESTS).orElse(null);
+        PlayerQuestData data = QuestCapabilityProvider.of(mc.player).orElse(null);
         if (data == null) return;
 
         java.util.Set<ResourceLocation> pinnedIds = data.getPinnedQuestIds();
@@ -201,7 +201,7 @@ public class QuestHudOverlay {
 
         for (ResourceLocation id : toUnpin) {
             data.unpin(id);
-            net.phoenixvine.chronicles.network.ChronicleNetwork.CHANNEL.sendToServer(
+            net.neoforged.neoforge.network.PacketDistributor.sendToServer(
                     new net.phoenixvine.chronicles.network.packet.C2STogglePinPacket(id));
         }
     }

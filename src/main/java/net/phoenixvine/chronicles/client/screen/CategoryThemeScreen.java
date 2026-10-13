@@ -6,13 +6,13 @@ import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.renderer.ShaderInstance;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraftforge.registries.ForgeRegistries;
 import net.phoenixvine.chronicles.client.render.ChroniclesThemePalette;
 import net.phoenixvine.chronicles.client.render.ChroniclesUIKit;
 import net.phoenixvine.chronicles.client.render.background.BackgroundRenderUtil;
@@ -166,7 +166,7 @@ public class CategoryThemeScreen extends Screen {
         addRenderableWidget(Button.builder(Component.literal("§7Change Icon"),
                 b -> {
                     if (minecraft != null) minecraft.setScreen(new ItemPickerScreen(this, stack -> {
-                        ResourceLocation key = ForgeRegistries.ITEMS.getKey(stack.getItem());
+                        ResourceLocation key = BuiltInRegistries.ITEM.getKey(stack.getItem());
                         cachedIcon = key != null ? key.toString() : "";
                     }));
                 })
@@ -264,7 +264,7 @@ public class CategoryThemeScreen extends Screen {
     private Item resolveIconPreview() {
         if (cachedIcon != null && !cachedIcon.isEmpty()) {
             try {
-                Item item = ForgeRegistries.ITEMS.getValue(ResourceLocation.parse(cachedIcon));
+                Item item = BuiltInRegistries.ITEM.get(ResourceLocation.parse(cachedIcon));
                 if (item != null && item != Items.AIR) return item;
             } catch (Exception ignored) {}
         }
@@ -282,7 +282,7 @@ public class CategoryThemeScreen extends Screen {
     }
 
     @Override
-    public void renderBackground(@NotNull GuiGraphics g) {}
+    public void renderBackground(@NotNull GuiGraphics g, int mouseX, int mouseY, float partialTick) {}
 
     @Override
     public void render(@NotNull GuiGraphics g, int rmx, int rmy, float partial) {
@@ -432,7 +432,7 @@ public class CategoryThemeScreen extends Screen {
     }
 
     @Override
-    public boolean mouseScrolled(double rmx, double rmy, double delta) {
+    public boolean mouseScrolled(double rmx, double rmy, double scrollX, double delta) {
         double mx = rmx / uiScale;
         double my = rmy / uiScale;
         if (advancedOpen && overrides.size() > ADV_VISIBLE_ROWS) {
@@ -447,7 +447,7 @@ public class CategoryThemeScreen extends Screen {
                 return true;
             }
         }
-        return super.mouseScrolled(mx, my, delta);
+        return super.mouseScrolled(mx, my, 0.0, delta);
     }
 
     @Override

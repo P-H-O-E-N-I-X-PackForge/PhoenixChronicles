@@ -96,7 +96,7 @@ public final class TaskIdMatcher {
     }
 
     public boolean matchesEntity(EntityType<?> type) {
-        ResourceLocation key = net.minecraftforge.registries.ForgeRegistries.ENTITY_TYPES.getKey(type);
+        ResourceLocation key = net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getKey(type);
         if (matchesId(key)) return true;
         for (ResourceLocation tag : tags) {
             if (type.is(TagKey.create(Registries.ENTITY_TYPE, tag))) return true;

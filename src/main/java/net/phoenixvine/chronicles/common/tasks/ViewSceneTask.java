@@ -40,7 +40,6 @@ public class ViewSceneTask extends QuestTask {
         return isCompletedFor(player) ? "Viewed" : (minSeconds > 0 ? "View for " + (int) minSeconds + "s" : "View");
     }
 
-    @Override
     public CompoundTag serializeNBT() {
         CompoundTag tag = new CompoundTag();
         tag.putString("type", "view_scene");
@@ -49,7 +48,6 @@ public class ViewSceneTask extends QuestTask {
         return tag;
     }
 
-    @Override
     public void deserializeNBT(CompoundTag nbt) {
         this.sceneId = nbt.getString("scene_id");
         this.minSeconds = nbt.contains("min_seconds") ? nbt.getFloat("min_seconds") : 5.0f;

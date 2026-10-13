@@ -1,7 +1,7 @@
 package net.phoenixvine.chronicles.mixin;
 
 import com.gregtechceu.gtceu.api.machine.MetaMachine;
-import com.gregtechceu.gtceu.api.machine.trait.RecipeLogic;
+import com.gregtechceu.gtceu.api.machine.trait.recipe.RecipeLogic;
 import com.gregtechceu.gtceu.api.recipe.GTRecipe;
 
 import org.spongepowered.asm.mixin.Mixin;
@@ -22,7 +22,7 @@ public abstract class GTRecipeFinishedMixin {
         if (recipe == null || recipe.recipeType == null) return;
 
         MetaMachine meta = ((RecipeLogic) (Object) this).getMachine();
-        GtmHooks.onRecipeFinished(meta.getLevel(), meta.getPos(), meta.getOwnerUUID(),
-                recipe.recipeType.registryName, recipe.id);
+        GtmHooks.onRecipeFinished(meta.getLevel(), meta.getBlockPos(), meta.getOwnerUUID(),
+                recipe.recipeType.id, recipe.id);
     }
 }

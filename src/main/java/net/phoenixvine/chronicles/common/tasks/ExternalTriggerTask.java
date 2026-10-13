@@ -55,7 +55,6 @@ public class ExternalTriggerTask extends QuestTask {
         });
     }
 
-    @Override
     public CompoundTag serializeNBT() {
         CompoundTag tag = new CompoundTag();
         tag.putString("type", kjsTypeId != null ? kjsTypeId : "external_trigger");
@@ -64,7 +63,6 @@ public class ExternalTriggerTask extends QuestTask {
         return tag;
     }
 
-    @Override
     public void deserializeNBT(CompoundTag nbt) {
         if (nbt.contains("trigger_id")) this.triggerId = nbt.getString("trigger_id");
         if (nbt.contains("required")) this.required = Math.max(1, nbt.getInt("required"));

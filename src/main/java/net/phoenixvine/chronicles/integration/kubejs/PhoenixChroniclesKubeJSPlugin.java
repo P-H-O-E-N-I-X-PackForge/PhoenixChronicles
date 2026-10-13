@@ -1,6 +1,6 @@
 package net.phoenixvine.chronicles.integration.kubejs;
 
-import net.minecraftforge.fml.loading.FMLEnvironment;
+import net.neoforged.fml.loading.FMLEnvironment;
 import net.phoenixvine.chronicles.QuestAPI;
 import net.phoenixvine.chronicles.client.render.IQuestBackground;
 import net.phoenixvine.chronicles.client.render.background.BackgroundEffect;
@@ -18,16 +18,14 @@ import net.phoenixvine.chronicles.common.registry.PhoenixTaskRegistry;
 import net.phoenixvine.chronicles.common.registry.QuestBackgroundRegistry;
 import net.phoenixvine.chronicles.common.tasks.ScriptTask;
 
-import dev.latvian.mods.kubejs.KubeJSPlugin;
-import dev.latvian.mods.kubejs.script.BindingsEvent;
-import dev.latvian.mods.kubejs.script.ScriptType;
-import dev.latvian.mods.kubejs.util.ClassFilter;
-import org.jetbrains.annotations.NotNull;
+import dev.latvian.mods.kubejs.plugin.ClassFilter;
+import dev.latvian.mods.kubejs.plugin.KubeJSPlugin;
+import dev.latvian.mods.kubejs.script.BindingRegistry;
 
-public class PhoenixChroniclesKubeJSPlugin extends KubeJSPlugin {
+public class PhoenixChroniclesKubeJSPlugin implements KubeJSPlugin {
 
     @Override
-    public void registerClasses(ScriptType type, @NotNull ClassFilter filter) {
+    public void registerClasses(ClassFilter filter) {
         filter.allow(QuestAPI.class);
         filter.allow(QuestState.class);
         filter.allow(QuestNode.class);
@@ -59,19 +57,19 @@ public class PhoenixChroniclesKubeJSPlugin extends KubeJSPlugin {
     }
 
     @Override
-    public void registerBindings(@NotNull BindingsEvent event) {
-        event.add("QuestAPI", QuestAPI.class);
-        event.add("PhoenixTaskRegistry", PhoenixTaskRegistry.class);
-        event.add("PhoenixQuestFlags", PhoenixQuestFlags.class);
-        event.add("PhoenixRewardRegistry", net.phoenixvine.chronicles.common.registry.PhoenixRewardRegistry.class);
-        event.add("ArchiveEntries", net.phoenixvine.chronicles.integration.archive.ArchiveEntries.class);
+    public void registerBindings(BindingRegistry registry) {
+        registry.add("QuestAPI", QuestAPI.class);
+        registry.add("PhoenixTaskRegistry", PhoenixTaskRegistry.class);
+        registry.add("PhoenixQuestFlags", PhoenixQuestFlags.class);
+        registry.add("PhoenixRewardRegistry", net.phoenixvine.chronicles.common.registry.PhoenixRewardRegistry.class);
+        registry.add("ArchiveEntries", net.phoenixvine.chronicles.integration.archive.ArchiveEntries.class);
 
         if (FMLEnvironment.dist.isClient()) {
-            event.add("QuestBackgroundRegistry", QuestBackgroundRegistry.class);
-            event.add("QuestBackgroundBuilder", QuestBackgroundBuilder.class);
-            event.add("BackgroundEffects", BackgroundEffects.class);
-            event.add("SunBackground", SunBackground.class);
-            event.add("GlitchShearBackground", GlitchShearBackground.class);
+            registry.add("QuestBackgroundRegistry", QuestBackgroundRegistry.class);
+            registry.add("QuestBackgroundBuilder", QuestBackgroundBuilder.class);
+            registry.add("BackgroundEffects", BackgroundEffects.class);
+            registry.add("SunBackground", SunBackground.class);
+            registry.add("GlitchShearBackground", GlitchShearBackground.class);
         }
     }
 }

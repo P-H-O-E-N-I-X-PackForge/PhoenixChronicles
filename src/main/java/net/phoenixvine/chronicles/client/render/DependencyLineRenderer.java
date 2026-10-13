@@ -1520,9 +1520,8 @@ public class DependencyLineRenderer {
 
     private static void writeVert(com.mojang.blaze3d.vertex.VertexConsumer vc, org.joml.Matrix4f mat, float x, float y,
                                   int color) {
-        vc.vertex(mat, x, y, 0.0f)
-                .color((color >>> 16) & 0xFF, (color >>> 8) & 0xFF, color & 0xFF, (color >>> 24) & 0xFF)
-                .endVertex();
+        vc.addVertex(mat, x, y, 0.0f).setColor((color >>> 16) & 0xFF, (color >>> 8) & 0xFF, color & 0xFF,
+                (color >>> 24) & 0xFF);
     }
 
     private void drawBezierSpark(GuiGraphics g, int x1, int y1, int x2, int y2, long animMs, int lineIdx) {
@@ -1597,8 +1596,7 @@ public class DependencyLineRenderer {
         com.mojang.blaze3d.systems.RenderSystem.defaultBlendFunc();
 
         com.mojang.blaze3d.vertex.Tesselator tesselator = com.mojang.blaze3d.vertex.Tesselator.getInstance();
-        com.mojang.blaze3d.vertex.BufferBuilder bb = tesselator.getBuilder();
-        bb.begin(com.mojang.blaze3d.vertex.VertexFormat.Mode.QUADS,
+        com.mojang.blaze3d.vertex.BufferBuilder bb = tesselator.begin(com.mojang.blaze3d.vertex.VertexFormat.Mode.QUADS,
                 com.mojang.blaze3d.vertex.DefaultVertexFormat.POSITION_COLOR);
 
         for (RibbonQuad q : ribbonQueue) {
@@ -1606,13 +1604,13 @@ public class DependencyLineRenderer {
             int r = (q.color >>> 16) & 0xFF;
             int gg = (q.color >>> 8) & 0xFF;
             int b = q.color & 0xFF;
-            bb.vertex(mat, q.x0, q.y0, 0f).color(r, gg, b, alpha).endVertex();
-            bb.vertex(mat, q.x1, q.y1, 0f).color(r, gg, b, alpha).endVertex();
-            bb.vertex(mat, q.x2, q.y2, 0f).color(r, gg, b, alpha).endVertex();
-            bb.vertex(mat, q.x3, q.y3, 0f).color(r, gg, b, alpha).endVertex();
+            bb.addVertex(mat, q.x0, q.y0, 0f).setColor(r, gg, b, alpha);
+            bb.addVertex(mat, q.x1, q.y1, 0f).setColor(r, gg, b, alpha);
+            bb.addVertex(mat, q.x2, q.y2, 0f).setColor(r, gg, b, alpha);
+            bb.addVertex(mat, q.x3, q.y3, 0f).setColor(r, gg, b, alpha);
         }
 
-        com.mojang.blaze3d.vertex.BufferUploader.drawWithShader(bb.end());
+        com.mojang.blaze3d.vertex.BufferUploader.drawWithShader(bb.buildOrThrow());
         ribbonQueue.clear();
     }
 
@@ -1631,8 +1629,7 @@ public class DependencyLineRenderer {
         com.mojang.blaze3d.systems.RenderSystem.defaultBlendFunc();
 
         com.mojang.blaze3d.vertex.Tesselator tesselator = com.mojang.blaze3d.vertex.Tesselator.getInstance();
-        com.mojang.blaze3d.vertex.BufferBuilder bb = tesselator.getBuilder();
-        bb.begin(com.mojang.blaze3d.vertex.VertexFormat.Mode.QUADS,
+        com.mojang.blaze3d.vertex.BufferBuilder bb = tesselator.begin(com.mojang.blaze3d.vertex.VertexFormat.Mode.QUADS,
                 com.mojang.blaze3d.vertex.DefaultVertexFormat.POSITION_TEX_COLOR);
 
         for (ArrowInstance a : arrowQueue) {
@@ -1656,13 +1653,13 @@ public class DependencyLineRenderer {
             float brX = cx + rx * halfWid - fx * halfLen, brY = cy + ry * halfWid - fy * halfLen;
             float blX = cx - rx * halfWid - fx * halfLen, blY = cy - ry * halfWid - fy * halfLen;
 
-            bb.vertex(mat, tlX, tlY, 0f).uv(0f, 0f).color(r, gg, b, alpha).endVertex();
-            bb.vertex(mat, blX, blY, 0f).uv(0f, 1f).color(r, gg, b, alpha).endVertex();
-            bb.vertex(mat, brX, brY, 0f).uv(1f, 1f).color(r, gg, b, alpha).endVertex();
-            bb.vertex(mat, trX, trY, 0f).uv(1f, 0f).color(r, gg, b, alpha).endVertex();
+            bb.addVertex(mat, tlX, tlY, 0f).setUv(0f, 0f).setColor(r, gg, b, alpha);
+            bb.addVertex(mat, blX, blY, 0f).setUv(0f, 1f).setColor(r, gg, b, alpha);
+            bb.addVertex(mat, brX, brY, 0f).setUv(1f, 1f).setColor(r, gg, b, alpha);
+            bb.addVertex(mat, trX, trY, 0f).setUv(1f, 0f).setColor(r, gg, b, alpha);
         }
 
-        com.mojang.blaze3d.vertex.BufferUploader.drawWithShader(bb.end());
+        com.mojang.blaze3d.vertex.BufferUploader.drawWithShader(bb.buildOrThrow());
         arrowQueue.clear();
     }
 }

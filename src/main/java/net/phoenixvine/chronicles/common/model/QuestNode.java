@@ -1,11 +1,11 @@
 package net.phoenixvine.chronicles.common.model;
 
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
-import net.minecraftforge.registries.ForgeRegistries;
 import net.phoenixvine.chronicles.client.event.ClientTextOverrides;
 import net.phoenixvine.chronicles.common.codec.QuestChroniclesSettings;
 import net.phoenixvine.chronicles.common.flag.PhoenixQuestFlags;
@@ -330,7 +330,7 @@ public class QuestNode {
             QuestNode target = QuestTreeRegistry.getQuest(linkTarget);
             if (target != null && target != this) return target.getTitle(depth + 1);
         }
-        if (net.minecraftforge.fml.loading.FMLEnvironment.dist == net.minecraftforge.api.distmarker.Dist.CLIENT) {
+        if (net.neoforged.fml.loading.FMLEnvironment.dist == net.neoforged.api.distmarker.Dist.CLIENT) {
             String override = ClientTextOverrides.get(langKey("title"));
             if (override != null) return Component.literal(override);
             Component t = ClientLangLookup.resolve(langKey("title"));
@@ -342,7 +342,7 @@ public class QuestNode {
     public void setTitle(Component t) {
         this.title = t != null ? t : Component.empty();
 
-        if (net.minecraftforge.fml.loading.FMLEnvironment.dist == net.minecraftforge.api.distmarker.Dist.CLIENT)
+        if (net.neoforged.fml.loading.FMLEnvironment.dist == net.neoforged.api.distmarker.Dist.CLIENT)
             ClientTextOverrides.put(langKey("title"), this.title.getString());
     }
 
@@ -359,7 +359,7 @@ public class QuestNode {
             QuestNode target = QuestTreeRegistry.getQuest(linkTarget);
             if (target != null && target != this) return target.getDescription(depth + 1);
         }
-        if (net.minecraftforge.fml.loading.FMLEnvironment.dist == net.minecraftforge.api.distmarker.Dist.CLIENT) {
+        if (net.neoforged.fml.loading.FMLEnvironment.dist == net.neoforged.api.distmarker.Dist.CLIENT) {
             String override = ClientTextOverrides.get(langKey("description"));
             if (override != null) return Component.literal(override);
             Component d = ClientLangLookup.resolve(langKey("description"));
@@ -370,7 +370,7 @@ public class QuestNode {
 
     public void setDescription(Component d) {
         this.description = d != null ? d : Component.empty();
-        if (net.minecraftforge.fml.loading.FMLEnvironment.dist == net.minecraftforge.api.distmarker.Dist.CLIENT)
+        if (net.neoforged.fml.loading.FMLEnvironment.dist == net.neoforged.api.distmarker.Dist.CLIENT)
             ClientTextOverrides.put(langKey("description"),
                     this.description.getString());
     }
@@ -501,7 +501,7 @@ public class QuestNode {
             return;
         }
         try {
-            Item found = ForgeRegistries.ITEMS.getValue(ResourceLocation.parse(id));
+            Item found = BuiltInRegistries.ITEM.get(ResourceLocation.parse(id));
             this.iconItem = (found != null && found != Items.AIR) ? found : null;
         } catch (Exception ignored) {
             this.iconItem = null;
@@ -510,7 +510,7 @@ public class QuestNode {
 
     public String getIconItemId() {
         if (iconItem == null) return "";
-        ResourceLocation key = ForgeRegistries.ITEMS.getKey(iconItem);
+        ResourceLocation key = BuiltInRegistries.ITEM.getKey(iconItem);
         return key != null ? key.toString() : "";
     }
 
@@ -554,7 +554,7 @@ public class QuestNode {
             QuestNode target = QuestTreeRegistry.getQuest(linkTarget);
             if (target != null && target != this) return target.getSubtitle(depth + 1);
         }
-        if (net.minecraftforge.fml.loading.FMLEnvironment.dist == net.minecraftforge.api.distmarker.Dist.CLIENT) {
+        if (net.neoforged.fml.loading.FMLEnvironment.dist == net.neoforged.api.distmarker.Dist.CLIENT) {
             String override = ClientTextOverrides.get(langKey("subtitle"));
             if (override != null) return override;
             Component s = ClientLangLookup.resolve(langKey("subtitle"));
@@ -569,7 +569,7 @@ public class QuestNode {
 
     public void setSubtitle(String s) {
         this.subtitle = s != null ? s : "";
-        if (net.minecraftforge.fml.loading.FMLEnvironment.dist == net.minecraftforge.api.distmarker.Dist.CLIENT)
+        if (net.neoforged.fml.loading.FMLEnvironment.dist == net.neoforged.api.distmarker.Dist.CLIENT)
             ClientTextOverrides.put(langKey("subtitle"), this.subtitle);
     }
 

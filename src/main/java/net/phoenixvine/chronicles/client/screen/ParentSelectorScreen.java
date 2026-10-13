@@ -234,7 +234,7 @@ public class ParentSelectorScreen extends Screen implements SuiteHudBar.Aware {
     }
 
     @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+    public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double delta) {
         if (this.chapterDropdownOpen) {
             int visibleDropRows = visibleDropRows();
             int maxDropScroll = Math.max(0, this.availableChapters.size() - visibleDropRows);
@@ -248,7 +248,7 @@ public class ParentSelectorScreen extends Screen implements SuiteHudBar.Aware {
             rebuildResultButtons();
             return true;
         }
-        return super.mouseScrolled(mouseX, mouseY, delta);
+        return super.mouseScrolled(mouseX, mouseY, 0.0, delta);
     }
 
     @Override
@@ -298,7 +298,7 @@ public class ParentSelectorScreen extends Screen implements SuiteHudBar.Aware {
     }
 
     @Override
-    public void renderBackground(@NotNull GuiGraphics g) {}
+    public void renderBackground(@NotNull GuiGraphics g, int mouseX, int mouseY, float partialTick) {}
 
     @Override
     public void render(@NotNull GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {

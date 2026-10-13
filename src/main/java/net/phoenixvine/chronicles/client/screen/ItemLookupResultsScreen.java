@@ -3,12 +3,12 @@ package net.phoenixvine.chronicles.client.screen;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraftforge.registries.ForgeRegistries;
 import net.phoenixvine.chronicles.client.util.ChapterConfig;
 import net.phoenixvine.chronicles.client.util.HiddenParts;
 import net.phoenixvine.chronicles.common.model.QuestNode;
@@ -146,7 +146,7 @@ public class ItemLookupResultsScreen extends Screen {
         for (QuestTask task : node.getTasks()) {
             ResourceLocation id = task.getDisplayItemId();
             if (id == null || HiddenParts.taskTargetHidden(node, task)) continue;
-            Item item = ForgeRegistries.ITEMS.getValue(id);
+            Item item = BuiltInRegistries.ITEM.get(id);
             if (item != null && item != Items.AIR) return item;
         }
         return null;
@@ -175,7 +175,7 @@ public class ItemLookupResultsScreen extends Screen {
     }
 
     @Override
-    public boolean mouseScrolled(double mx, double my, double delta) {
+    public boolean mouseScrolled(double mx, double my, double scrollX, double delta) {
         int contentH = matches.size() * (CARD_H + CARD_GAP);
         int maxScroll = Math.max(0, contentH - (listBottom() - listTop()));
         scrollY = Math.max(0, Math.min(maxScroll, scrollY - (int) (delta * (CARD_H + CARD_GAP))));

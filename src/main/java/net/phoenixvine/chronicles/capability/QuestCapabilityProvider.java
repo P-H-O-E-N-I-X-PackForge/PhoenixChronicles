@@ -1,52 +1,27 @@
 package net.phoenixvine.chronicles.capability;
 
-import net.minecraft.core.Direction;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
-import net.minecraftforge.common.capabilities.*;
-import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.event.AttachCapabilitiesEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.neoforge.attachment.AttachmentType;
+import net.neoforged.neoforge.registries.DeferredRegister;
+import net.neoforged.neoforge.registries.NeoForgeRegistries;
 import net.phoenixvine.chronicles.PhoenixChronicles;
 
-import org.jetbrains.annotations.Nullable;
+import java.util.Optional;
+import java.util.function.Supplier;
 
-@Mod.EventBusSubscriber(modid = PhoenixChronicles.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
-public class QuestCapabilityProvider implements ICapabilitySerializable<CompoundTag> {
+public final class QuestCapabilityProvider {
 
-    public static final Capability<PlayerQuestData> PLAYER_QUESTS = CapabilityManager.get(new CapabilityToken<>() {});
-    private static final ResourceLocation KEY = ResourceLocation.fromNamespaceAndPath(PhoenixChronicles.MOD_ID,
-            "player_quests");
+    public static final DeferredRegister<AttachmentType<?>> ATTACHMENTS = DeferredRegister
+            .create(NeoForgeRegistries.ATTACHMENT_TYPES, PhoenixChronicles.MOD_ID);
 
-    private final PlayerQuestData instance = new PlayerQuestData();
-    private final LazyOptional<PlayerQuestData> optional = LazyOptional.of(() -> instance);
+    public static final Supplier<AttachmentType<PlayerQuestData>> PLAYER_QUESTS = ATTACHMENTS.register(
+            "player_quests",
+            () -> AttachmentType.serializable(PlayerQuestData::new).copyOnDeath().build());
 
-    @Override
-    public <T> LazyOptional<T> getCapability(Capability<T> cap, @Nullable Direction side) {
-        return cap == PLAYER_QUESTS ? optional.cast() : LazyOptional.empty();
-    }
+    private QuestCapabilityProvider() {}
 
-    @Override
-    public CompoundTag serializeNBT() {
-        return instance.serializeNBT();
-    }
-
-    @Override
-    public void deserializeNBT(CompoundTag nbt) {
-        instance.deserializeNBT(nbt);
-    }
-
-    @SubscribeEvent
-    public static void onAttachCapabilities(AttachCapabilitiesEvent<Entity> event) {
-        if (event.getObject() instanceof Player) {
-            event.addCapability(KEY, new QuestCapabilityProvider());
-        }
-    }
-
-    public static void register(RegisterCapabilitiesEvent event) {
-        event.register(PlayerQuestData.class);
+    public static Optional<PlayerQuestData> of(Entity entity) {
+        return entity instanceof Player ? Optional.of(entity.getData(PLAYER_QUESTS)) : Optional.empty();
     }
 }

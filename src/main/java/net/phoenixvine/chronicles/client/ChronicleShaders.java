@@ -1,7 +1,7 @@
 package net.phoenixvine.chronicles.client;
 
 import net.minecraft.client.renderer.ShaderInstance;
-import net.minecraftforge.client.event.RegisterShadersEvent;
+import net.neoforged.neoforge.client.event.RegisterShadersEvent;
 
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import org.apache.logging.log4j.LogManager;

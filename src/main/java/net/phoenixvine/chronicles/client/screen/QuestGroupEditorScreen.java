@@ -5,13 +5,13 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.material.Fluid;
-import net.minecraftforge.registries.ForgeRegistries;
 import net.phoenixvine.chronicles.client.render.ChroniclesThemePalette;
 import net.phoenixvine.chronicles.client.render.ChroniclesUIKit;
 import net.phoenixvine.chronicles.client.rich.CodeEditBox;
@@ -123,7 +123,7 @@ public class QuestGroupEditorScreen extends Screen {
         int iconBtnW = (fieldW - 8) / 3;
         addRenderableWidget(Button.builder(Component.literal("§7+ Item"), b -> {
             if (minecraft != null) minecraft.setScreen(new ItemPickerScreen(this, stack -> {
-                ResourceLocation id = ForgeRegistries.ITEMS.getKey(stack.getItem());
+                ResourceLocation id = BuiltInRegistries.ITEM.getKey(stack.getItem());
                 if (id != null) icons.add(new QuestGroup.GroupIcon(QuestGroup.IconKind.ITEM, id.toString()));
             }));
         }).bounds(fieldX, row, iconBtnW, FIELD_H).build());
@@ -273,7 +273,7 @@ public class QuestGroupEditorScreen extends Screen {
     }
 
     @Override
-    public void renderBackground(@NotNull GuiGraphics g) {}
+    public void renderBackground(@NotNull GuiGraphics g, int mouseX, int mouseY, float partialTick) {}
 
     @Override
     public void render(@NotNull GuiGraphics g, int mx, int my, float partial) {
@@ -352,7 +352,7 @@ public class QuestGroupEditorScreen extends Screen {
         try {
             switch (icon.kind) {
                 case ITEM -> {
-                    Item item = ForgeRegistries.ITEMS.getValue(ResourceLocation.parse(icon.id));
+                    Item item = BuiltInRegistries.ITEM.get(ResourceLocation.parse(icon.id));
                     if (item == null || item == Items.AIR) return;
                     float scale = size / 16f;
                     g.pose().pushPose();
@@ -362,7 +362,7 @@ public class QuestGroupEditorScreen extends Screen {
                     g.pose().popPose();
                 }
                 case FLUID -> {
-                    Fluid fluid = ForgeRegistries.FLUIDS.getValue(ResourceLocation.parse(icon.id));
+                    Fluid fluid = BuiltInRegistries.FLUID.get(ResourceLocation.parse(icon.id));
                     ChroniclesUIKit.drawFluidIcon(g, fluid, x, y, size);
                     ChroniclesUIKit.drawBorder(g, x, y, size, size, 0xFF444455);
                 }

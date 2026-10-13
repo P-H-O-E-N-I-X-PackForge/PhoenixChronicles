@@ -4,12 +4,12 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.decoration.ArmorStand;
-import net.minecraftforge.registries.ForgeRegistries;
 import net.phoenixvine.chronicles.client.render.ChroniclesThemePalette;
 import net.phoenixvine.chronicles.client.render.ChroniclesUIKit;
 
@@ -104,7 +104,7 @@ public class EntityIdPickerScreen extends Screen {
     private Optional<LivingEntity> previewFor(ResourceLocation id) {
         return previewCache.computeIfAbsent(id, i -> {
             if (minecraft == null || minecraft.level == null) return Optional.empty();
-            EntityType<?> type = ForgeRegistries.ENTITY_TYPES.getValue(i);
+            EntityType<?> type = BuiltInRegistries.ENTITY_TYPE.get(i);
             if (type == null) return Optional.empty();
 
             if (type == EntityType.PLAYER) return Optional.ofNullable(minecraft.player);
@@ -132,7 +132,7 @@ public class EntityIdPickerScreen extends Screen {
     }
 
     @Override
-    public void renderBackground(@NotNull GuiGraphics g) {}
+    public void renderBackground(@NotNull GuiGraphics g, int mouseX, int mouseY, float partialTick) {}
 
     @Override
     public void render(@NotNull GuiGraphics g, int mx, int my, float partial) {
@@ -210,7 +210,8 @@ public class EntityIdPickerScreen extends Screen {
         float yRotO = entity.yRotO, xRotO = entity.xRotO, bodyRotO = entity.yBodyRotO, headRotO = entity.yHeadRotO;
         if (isLocalPlayer) faceViewer(entity);
         try {
-            InventoryScreen.renderEntityInInventory(g, x, bottomY, scale,
+            InventoryScreen.renderEntityInInventory(g, (float) x, (float) bottomY, (float) scale,
+                    new org.joml.Vector3f(0f, entity.getBbHeight() / 2.0f, 0f),
                     new Quaternionf().rotateZ((float) Math.PI), null, entity);
         } finally {
             if (isLocalPlayer) {
@@ -252,7 +253,7 @@ public class EntityIdPickerScreen extends Screen {
     }
 
     @Override
-    public boolean mouseScrolled(double mx, double my, double delta) {
+    public boolean mouseScrolled(double mx, double my, double scrollX, double delta) {
         int footerY = panelTop + PANEL_H - FOOTER_H;
         int listTop = panelTop + HEADER_H + SEARCH_H + 4;
         int listBottom = footerY - 2;

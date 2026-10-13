@@ -54,7 +54,7 @@ public class StatsPanel implements TogglePanel {
         open = false;
     }
 
-    public boolean mouseScrolled(double mx, double my, double delta) {
+    public boolean mouseScrolled(double mx, double my, double scrollX, double delta) {
         if (!open || mx < panX || mx >= panX + panW || my < panY || my >= panY + panH) return false;
         int visibleRows = Math.max(1, (listBottom - listTop) / ROW_H);
         int total = stats != null ? stats.chapters.size() : 0;

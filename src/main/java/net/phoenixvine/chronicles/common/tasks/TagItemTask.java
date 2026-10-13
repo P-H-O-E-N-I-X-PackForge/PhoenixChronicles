@@ -86,7 +86,7 @@ public class TagItemTask extends QuestTask {
     public ResourceLocation getDisplayItemId() {
         if (tag == null) return null;
         var iter = net.minecraft.core.registries.BuiltInRegistries.ITEM.getTagOrEmpty(tag).iterator();
-        return iter.hasNext() ? net.minecraftforge.registries.ForgeRegistries.ITEMS.getKey(iter.next().value()) : null;
+        return iter.hasNext() ? net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(iter.next().value()) : null;
     }
 
     @Override
@@ -94,7 +94,6 @@ public class TagItemTask extends QuestTask {
         return tag != null && stack != null && !stack.isEmpty() && stack.is(tag);
     }
 
-    @Override
     public CompoundTag serializeNBT() {
         CompoundTag t = new CompoundTag();
         t.putString("type", "tag_item");
@@ -104,7 +103,6 @@ public class TagItemTask extends QuestTask {
         return t;
     }
 
-    @Override
     public void deserializeNBT(CompoundTag nbt) {
         if (nbt.contains("tag")) {
             String raw = nbt.getString("tag");

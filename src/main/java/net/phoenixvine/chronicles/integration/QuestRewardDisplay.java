@@ -1,5 +1,6 @@
 package net.phoenixvine.chronicles.integration;
 
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -8,9 +9,9 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
-import net.minecraftforge.registries.ForgeRegistries;
 import net.phoenixvine.chronicles.common.model.QuestNode;
 import net.phoenixvine.chronicles.common.model.QuestReward;
+import net.phoenixvine.chronicles.common.util.ItemData;
 import net.phoenixvine.chronicles.integration.ae2.AE2Compat;
 
 import org.jetbrains.annotations.Nullable;
@@ -51,7 +52,7 @@ public final class QuestRewardDisplay {
             Item item = ir.getItem();
             if (item == null || item == Items.AIR) return null;
             ItemStack stack = new ItemStack(item, ir.getCount());
-            if (ir.getNbt() != null && !ir.getNbt().isEmpty()) stack.setTag(ir.getNbt().copy());
+            if (ir.getNbt() != null && !ir.getNbt().isEmpty()) ItemData.setTag(stack, ir.getNbt().copy());
             return new Entry(reward, stack, null, 0, null, ae2Note(ir.isPushToAe2()));
         }
 
@@ -86,8 +87,8 @@ public final class QuestRewardDisplay {
         } else if (reward instanceof QuestReward.LootTableReward || reward instanceof QuestReward.RewardTableReward) {
             icon = new ItemStack(Items.BUNDLE);
         } else if (reward instanceof QuestReward.LootCrateReward) {
-            Item crate = ForgeRegistries.ITEMS
-                    .getValue(ResourceLocation.fromNamespaceAndPath("phoenix_chronicles", "loot_crate"));
+            Item crate = BuiltInRegistries.ITEM
+                    .get(ResourceLocation.fromNamespaceAndPath("phoenix_chronicles", "loot_crate"));
             icon = new ItemStack(crate != null && crate != Items.AIR ? crate : Items.CHEST);
         } else if (reward instanceof QuestReward.CommandReward || reward instanceof QuestReward.ScriptEventReward) {
             icon = new ItemStack(Items.COMMAND_BLOCK);

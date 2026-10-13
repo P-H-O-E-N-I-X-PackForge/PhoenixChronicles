@@ -37,14 +37,13 @@ final class LineRenderUtil {
         RenderSystem.setShader(GameRenderer::getPositionColorShader);
 
         Tesselator tess = Tesselator.getInstance();
-        BufferBuilder buf = tess.getBuilder();
-        buf.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
-        buf.vertex(pose.pose(), x1 - nx, y1 - ny, 0).color(r, gc, b, a).endVertex();
-        buf.vertex(pose.pose(), x1 + nx, y1 + ny, 0).color(r, gc, b, a).endVertex();
-        buf.vertex(pose.pose(), x2 + nx, y2 + ny, 0).color(r, gc, b, a).endVertex();
-        buf.vertex(pose.pose(), x2 - nx, y2 - ny, 0).color(r, gc, b, a).endVertex();
+        BufferBuilder buf = tess.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
+        buf.addVertex(pose.pose(), x1 - nx, y1 - ny, 0).setColor(r, gc, b, a);
+        buf.addVertex(pose.pose(), x1 + nx, y1 + ny, 0).setColor(r, gc, b, a);
+        buf.addVertex(pose.pose(), x2 + nx, y2 + ny, 0).setColor(r, gc, b, a);
+        buf.addVertex(pose.pose(), x2 - nx, y2 - ny, 0).setColor(r, gc, b, a);
 
-        BufferUploader.drawWithShader(buf.end());
+        BufferUploader.drawWithShader(buf.buildOrThrow());
 
         RenderSystem.disableBlend();
     }

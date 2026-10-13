@@ -2,12 +2,12 @@ package net.phoenixvine.chronicles.client.screen;
 
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.registries.ForgeRegistries;
 import net.phoenixvine.chronicles.capability.PlayerQuestData;
 import net.phoenixvine.chronicles.client.event.ChronicleKeyBindings;
 import net.phoenixvine.chronicles.client.registry.LangSyncScheduler;
@@ -21,7 +21,7 @@ import net.phoenixvine.chronicles.common.flag.PhoenixQuestFlags;
 import net.phoenixvine.chronicles.common.model.*;
 import net.phoenixvine.chronicles.common.registry.QuestTreeRegistry;
 import net.phoenixvine.chronicles.common.tasks.*;
-import net.phoenixvine.chronicles.network.ChronicleNetwork;
+import net.phoenixvine.chronicles.common.util.ItemData;
 import net.phoenixvine.chronicles.network.packet.C2SAcknowledgeInfoTasksPacket;
 import net.phoenixvine.chronicles.network.packet.C2SClaimQuestRewardPacket;
 import net.phoenixvine.chronicles.network.packet.C2SResolveChoiceBoxPacket;
@@ -237,7 +237,8 @@ public class QuestTasksScreen extends Screen
                     InfoTask.acknowledge(player, task.getTaskId());
                 }
             }
-            ChronicleNetwork.CHANNEL.sendToServer(new C2SAcknowledgeInfoTasksPacket(node.getId()));
+            net.neoforged.neoforge.network.PacketDistributor
+                    .sendToServer(new C2SAcknowledgeInfoTasksPacket(node.getId()));
         }
 
         PhoenixTheme t = PhoenixTheme.current();
@@ -291,8 +292,8 @@ public class QuestTasksScreen extends Screen
                 break;
             }
             if (r.span() instanceof net.phoenixvine.wiki.client.rich.RichSpan.ItemIcon icon) {
-                net.minecraft.world.item.Item item = net.minecraftforge.registries.ForgeRegistries.ITEMS
-                        .getValue(icon.itemId());
+                net.minecraft.world.item.Item item = net.minecraft.core.registries.BuiltInRegistries.ITEM
+                        .get(icon.itemId());
                 if (item != null) {
                     g.pose().pushPose();
                     g.pose().translate(0f, 0f, 500f);
@@ -827,7 +828,7 @@ public class QuestTasksScreen extends Screen
             return true;
         }
         emergencyArmedUntilMs = 0;
-        ChronicleNetwork.CHANNEL.sendToServer(
+        net.neoforged.neoforge.network.PacketDistributor.sendToServer(
                 new net.phoenixvine.chronicles.network.packet.C2SRequestEmergencyItemsPacket(node.getId()));
         return true;
     }
@@ -1498,7 +1499,7 @@ public class QuestTasksScreen extends Screen
             aet.markCompletedClient(player);
             QuestNode owner = QuestTreeRegistry.getTaskOwner(aet.getTaskId());
             if (owner != null) {
-                net.phoenixvine.chronicles.network.ChronicleNetwork.CHANNEL.sendToServer(
+                net.neoforged.neoforge.network.PacketDistributor.sendToServer(
                         new net.phoenixvine.chronicles.network.packet.C2SPhantasiaTaskCompletePacket(owner.getId(),
                                 aet.getTaskId()));
             }
@@ -1975,7 +1976,7 @@ public class QuestTasksScreen extends Screen
 
     private ItemStack rewardStack(QuestReward.ItemReward reward) {
         ItemStack stack = new ItemStack(reward.getItem(), reward.getCount());
-        if (reward.getNbt() != null && !reward.getNbt().isEmpty()) stack.setTag(reward.getNbt().copy());
+        if (reward.getNbt() != null && !reward.getNbt().isEmpty()) ItemData.setTag(stack, reward.getNbt().copy());
         return stack;
     }
 
@@ -2010,13 +2011,13 @@ public class QuestTasksScreen extends Screen
     private ItemStack getTaskIcon(QuestTask task) {
         ResourceLocation id = task.getDisplayItemId();
         if (id == null || taskTargetMasked(task)) return ItemStack.EMPTY;
-        Item item = ForgeRegistries.ITEMS.getValue(id);
+        Item item = BuiltInRegistries.ITEM.get(id);
         if (item == null || item == net.minecraft.world.item.Items.AIR) return ItemStack.EMPTY;
         ItemStack stack = new ItemStack(item, taskAmountMasked(task) ? 1 : taskRequiredCount(task));
 
         if (task instanceof ItemRequirementTask t && t.getNbtFilter() != null &&
                 !t.getNbtFilter().isEmpty()) {
-            stack.setTag(t.getNbtFilter().copy());
+            ItemData.setTag(stack, t.getNbtFilter().copy());
         }
         return stack;
     }
@@ -2067,7 +2068,8 @@ public class QuestTasksScreen extends Screen
             String name = "item";
             if (t.getItem() != null) {
                 ItemStack display = t.getItem().getDefaultInstance();
-                if (t.getNbtFilter() != null && !t.getNbtFilter().isEmpty()) display.setTag(t.getNbtFilter().copy());
+                if (t.getNbtFilter() != null && !t.getNbtFilter().isEmpty())
+                    ItemData.setTag(display, t.getNbtFilter().copy());
                 name = display.getHoverName().getString();
             }
             String suffix = "";
@@ -2080,7 +2082,7 @@ public class QuestTasksScreen extends Screen
             return name + (t.getRequiredCount() > 1 ? "  ×" + t.getRequiredCount() : "") + suffix;
         }
         if (task instanceof CraftItemTask t) {
-            Item item = t.getItemId() != null ? ForgeRegistries.ITEMS.getValue(t.getItemId()) : null;
+            Item item = t.getItemId() != null ? BuiltInRegistries.ITEM.get(t.getItemId()) : null;
             String name = item != null ? item.getDefaultInstance().getHoverName().getString() :
                     (t.getItemId() != null ? t.getItemId().getPath() : "item");
             return "Craft: " + name + (t.getRequiredCount() > 1 ? " ×" + t.getRequiredCount() : "");
@@ -2178,6 +2180,7 @@ public class QuestTasksScreen extends Screen
                     rewardAmountMasked(ir) ? "?" : String.valueOf(ir.getCount())));
             if (!rewardTargetMasked(ir)) {
                 java.util.List<Component> vanillaLines = rewardStack(ir).getTooltipLines(
+                        net.minecraft.world.item.Item.TooltipContext.of(minecraft != null ? minecraft.level : null),
                         minecraft != null ? minecraft.player : null,
                         net.minecraft.world.item.TooltipFlag.Default.NORMAL);
                 for (int i = 1; i < vanillaLines.size(); i++) lines.add(vanillaLines.get(i));
@@ -2190,6 +2193,7 @@ public class QuestTasksScreen extends Screen
                     ir.getCount()));
 
             java.util.List<Component> vanillaLines = stack.getTooltipLines(
+                    net.minecraft.world.item.Item.TooltipContext.of(minecraft != null ? minecraft.level : null),
                     minecraft != null ? minecraft.player : null,
                     net.minecraft.world.item.TooltipFlag.Default.NORMAL);
             for (int i = 1; i < vanillaLines.size(); i++) lines.add(vanillaLines.get(i));
@@ -2269,7 +2273,7 @@ public class QuestTasksScreen extends Screen
                 for (int i = 0; i < choiceBoxRowRects.size(); i++) {
                     int[] r = choiceBoxRowRects.get(i);
                     if (mx >= r[0] && mx < r[0] + r[2] && my >= r[1] && my < r[1] + r[3]) {
-                        ChronicleNetwork.CHANNEL.sendToServer(
+                        net.neoforged.neoforge.network.PacketDistributor.sendToServer(
                                 new C2SResolveChoiceBoxPacket(node.getId(), openChoiceBoxRewardIndex, i));
                         openChoiceBox = null;
                         openChoiceBoxRewardIndex = -1;
@@ -2384,7 +2388,7 @@ public class QuestTasksScreen extends Screen
         if (mx >= cardX + cardW() - 50 && mx < cardX + cardW() - 36 && my >= cardY + 3 && my < cardY + 17) {
             if (playerData != null) {
                 playerData.togglePin(node.getId());
-                net.phoenixvine.chronicles.network.ChronicleNetwork.CHANNEL.sendToServer(
+                net.neoforged.neoforge.network.PacketDistributor.sendToServer(
                         new net.phoenixvine.chronicles.network.packet.C2STogglePinPacket(node.getId()));
             }
             return true;
@@ -2471,7 +2475,8 @@ public class QuestTasksScreen extends Screen
             QuestState state = playerData != null ? playerData.getQuestState(node.getId(), QuestState.LOCKED) :
                     QuestState.LOCKED;
             if (state == QuestState.COMPLETED && !rewardsClaimed() && !rewards.isEmpty()) {
-                ChronicleNetwork.CHANNEL.sendToServer(new C2SClaimQuestRewardPacket(node.getId(), -1));
+                net.neoforged.neoforge.network.PacketDistributor
+                        .sendToServer(new C2SClaimQuestRewardPacket(node.getId(), -1));
             }
         }
         return true;
@@ -2568,7 +2573,7 @@ public class QuestTasksScreen extends Screen
         if (mx >= pinX2 && mx < width - 4 && my >= 6 && my < 22 && btn == 0) {
             if (playerData != null) {
                 playerData.togglePin(node.getId());
-                net.phoenixvine.chronicles.network.ChronicleNetwork.CHANNEL.sendToServer(
+                net.neoforged.neoforge.network.PacketDistributor.sendToServer(
                         new net.phoenixvine.chronicles.network.packet.C2STogglePinPacket(node.getId()));
             }
             return true;
@@ -2633,7 +2638,8 @@ public class QuestTasksScreen extends Screen
                     QuestState.LOCKED;
             if (state == QuestState.COMPLETED && !rewardsClaimed() && !content.effectiveRewards().isEmpty() &&
                     !node.isRewardChoice()) {
-                ChronicleNetwork.CHANNEL.sendToServer(new C2SClaimQuestRewardPacket(node.getId(), -1));
+                net.neoforged.neoforge.network.PacketDistributor
+                        .sendToServer(new C2SClaimQuestRewardPacket(node.getId(), -1));
                 return true;
             }
         }
@@ -2714,7 +2720,7 @@ public class QuestTasksScreen extends Screen
     }
 
     @Override
-    public boolean mouseScrolled(double mx, double my, double delta) {
+    public boolean mouseScrolled(double mx, double my, double scrollX, double delta) {
         if (descPagerPageCount > 1 && mx >= descPagerX && mx < descPagerX + descPagerW &&
                 my >= descPagerY && my < descPagerY + descPagerH) {
             if (delta > 0 && descPage > 0) descPage--;
@@ -2979,7 +2985,8 @@ public class QuestTasksScreen extends Screen
         if (box != null && box.getMode() != QuestReward.ChoiceBoxReward.Mode.ALL) {
             if (playerData != null && playerData.isChoiceBoxResolved(node.getId(), rewardIndex)) return false;
             if (box.getMode() == QuestReward.ChoiceBoxReward.Mode.LOOTBOX) {
-                ChronicleNetwork.CHANNEL.sendToServer(new C2SResolveChoiceBoxPacket(node.getId(), rewardIndex, -1));
+                net.neoforged.neoforge.network.PacketDistributor
+                        .sendToServer(new C2SResolveChoiceBoxPacket(node.getId(), rewardIndex, -1));
             } else {
                 openChoiceBox(box, rewardIndex);
             }
@@ -2991,9 +2998,11 @@ public class QuestTasksScreen extends Screen
             if (rewardIndex < 0) return false;
             if (playerData != null && playerData.getChosenRewardIndices(node.getId()).contains(rewardIndex))
                 return false;
-            ChronicleNetwork.CHANNEL.sendToServer(new C2SClaimQuestRewardPacket(node.getId(), rewardIndex));
+            net.neoforged.neoforge.network.PacketDistributor
+                    .sendToServer(new C2SClaimQuestRewardPacket(node.getId(), rewardIndex));
         } else {
-            ChronicleNetwork.CHANNEL.sendToServer(new C2SClaimQuestRewardPacket(node.getId(), -1));
+            net.neoforged.neoforge.network.PacketDistributor
+                    .sendToServer(new C2SClaimQuestRewardPacket(node.getId(), -1));
         }
         return true;
     }
@@ -3021,7 +3030,7 @@ public class QuestTasksScreen extends Screen
 
         if (!it.hasRequiredItems(minecraft.player) && !it.usesAe2Storage()) return false;
 
-        ChronicleNetwork.CHANNEL.sendToServer(
+        net.neoforged.neoforge.network.PacketDistributor.sendToServer(
                 new net.phoenixvine.chronicles.network.packet.C2SSubmitItemTaskPacket(task.getTaskId()));
         return true;
     }
@@ -3034,7 +3043,7 @@ public class QuestTasksScreen extends Screen
                 QuestState.LOCKED;
         if (state != QuestState.UNLOCKED && state != QuestState.ACTIVE) return true;
 
-        ChronicleNetwork.CHANNEL.sendToServer(
+        net.neoforged.neoforge.network.PacketDistributor.sendToServer(
                 new net.phoenixvine.chronicles.network.packet.C2SCompleteCheckmarkTaskPacket(task.getTaskId()));
         return true;
     }

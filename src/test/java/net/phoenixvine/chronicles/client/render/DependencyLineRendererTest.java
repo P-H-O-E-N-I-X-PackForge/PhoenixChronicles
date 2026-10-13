@@ -19,8 +19,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class DependencyLineRendererTest {
 
-    private static final ResourceLocation PARENT_ID = new ResourceLocation("phoenix_chronicles", "parent");
-    private static final ResourceLocation CHILD_ID = new ResourceLocation("phoenix_chronicles", "child");
+    private static final ResourceLocation PARENT_ID = ResourceLocation.fromNamespaceAndPath("phoenix_chronicles",
+            "parent");
+    private static final ResourceLocation CHILD_ID = ResourceLocation.fromNamespaceAndPath("phoenix_chronicles",
+            "child");
 
     private static int[] edge(int px, int py, int cx, int cy, int lineStyleOrdinal, int horizontalBulge) {
         return new int[] { px, py, cx, cy, 0xFFFFFFFF, 0, lineStyleOrdinal, -1, -1, -1, 0, 0, 0, 0, 1,

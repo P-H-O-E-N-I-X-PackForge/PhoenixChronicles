@@ -250,8 +250,8 @@ public class ChapterConfig {
     public net.minecraft.world.item.@NotNull Item getIconItem() {
         if (!icon.isEmpty()) {
             try {
-                net.minecraft.world.item.Item item = net.minecraftforge.registries.ForgeRegistries.ITEMS
-                        .getValue(net.minecraft.resources.ResourceLocation.parse(icon));
+                net.minecraft.world.item.Item item = net.minecraft.core.registries.BuiltInRegistries.ITEM
+                        .get(net.minecraft.resources.ResourceLocation.parse(icon));
                 if (item != null && item != net.minecraft.world.item.Items.AIR) return item;
             } catch (Exception ignored) {}
         }

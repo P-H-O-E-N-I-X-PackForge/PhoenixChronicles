@@ -1,12 +1,12 @@
 package net.phoenixvine.chronicles.common.tasks;
 
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraftforge.registries.ForgeRegistries;
 import net.phoenixvine.chronicles.capability.TaskProgressAccess;
 import net.phoenixvine.chronicles.common.model.QuestTask;
 
@@ -66,11 +66,10 @@ public class BlockInteractTask extends QuestTask {
         }
     }
 
-    @Override
     public CompoundTag serializeNBT() {
         CompoundTag tag = new CompoundTag();
         tag.putString("type", "block_interact");
-        ResourceLocation id = ForgeRegistries.BLOCKS.getKey(targetBlock);
+        ResourceLocation id = BuiltInRegistries.BLOCK.getKey(targetBlock);
         tag.putString("block_id", id != null ? id.toString() : "minecraft:air");
         tag.putString("mode", mode != null ? mode : "PLACE");
         if (required > 1) tag.putInt("required", required);
@@ -78,10 +77,9 @@ public class BlockInteractTask extends QuestTask {
         return tag;
     }
 
-    @Override
     public void deserializeNBT(CompoundTag nbt) {
         if (nbt.contains("block_id")) {
-            this.targetBlock = ForgeRegistries.BLOCKS.getValue(ResourceLocation.parse(nbt.getString("block_id")));
+            this.targetBlock = BuiltInRegistries.BLOCK.get(ResourceLocation.parse(nbt.getString("block_id")));
         } else {
             this.targetBlock = Blocks.AIR;
         }

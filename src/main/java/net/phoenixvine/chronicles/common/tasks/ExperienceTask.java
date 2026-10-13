@@ -26,7 +26,6 @@ public class ExperienceTask extends QuestTask {
 
     public void checkPlayerLevel(Player player) {}
 
-    @Override
     public CompoundTag serializeNBT() {
         CompoundTag nbt = new CompoundTag();
         nbt.putString("type", "experience");
@@ -34,7 +33,6 @@ public class ExperienceTask extends QuestTask {
         return nbt;
     }
 
-    @Override
     public void deserializeNBT(CompoundTag nbt) {
         this.requiredLevel = nbt.getInt("RequiredLevel");
     }

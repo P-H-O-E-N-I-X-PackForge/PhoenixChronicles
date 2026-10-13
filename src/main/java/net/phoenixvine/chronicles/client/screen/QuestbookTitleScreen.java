@@ -63,7 +63,8 @@ public class QuestbookTitleScreen extends Screen {
                 Button.builder(Component.translatable("phoenix_chronicles.screen.questbook_title.change_icon"),
                         b -> {
                             if (minecraft != null) minecraft.setScreen(new ItemPickerScreen(this, stack -> {
-                                cachedIcon = net.minecraftforge.registries.ForgeRegistries.ITEMS.getKey(stack.getItem())
+                                cachedIcon = net.minecraft.core.registries.BuiltInRegistries.ITEM
+                                        .getKey(stack.getItem())
                                         .toString();
                             }));
                         })
@@ -85,8 +86,8 @@ public class QuestbookTitleScreen extends Screen {
     private Item resolveIconPreview() {
         if (cachedIcon != null && !cachedIcon.isEmpty()) {
             try {
-                Item item = net.minecraftforge.registries.ForgeRegistries.ITEMS
-                        .getValue(net.minecraft.resources.ResourceLocation.parse(cachedIcon));
+                Item item = net.minecraft.core.registries.BuiltInRegistries.ITEM
+                        .get(net.minecraft.resources.ResourceLocation.parse(cachedIcon));
                 if (item != null && item != Items.AIR) return item;
             } catch (Exception ignored) {}
         }
@@ -102,7 +103,7 @@ public class QuestbookTitleScreen extends Screen {
     }
 
     @Override
-    public void renderBackground(@NotNull GuiGraphics g) {}
+    public void renderBackground(@NotNull GuiGraphics g, int mouseX, int mouseY, float partialTick) {}
 
     @Override
     public void render(@NotNull GuiGraphics g, int mx, int my, float partial) {

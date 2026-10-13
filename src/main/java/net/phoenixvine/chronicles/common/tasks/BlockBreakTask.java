@@ -1,12 +1,12 @@
 package net.phoenixvine.chronicles.common.tasks;
 
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraftforge.registries.ForgeRegistries;
 import net.phoenixvine.chronicles.capability.TaskProgressAccess;
 import net.phoenixvine.chronicles.common.model.QuestTask;
 
@@ -48,20 +48,18 @@ public class BlockBreakTask extends QuestTask {
         return TaskProgressAccess.getOrEmpty(player, getTaskId()).getInt("count");
     }
 
-    @Override
     public CompoundTag serializeNBT() {
         CompoundTag tag = new CompoundTag();
         tag.putString("type", "block_break");
-        ResourceLocation id = ForgeRegistries.BLOCKS.getKey(targetBlock);
+        ResourceLocation id = BuiltInRegistries.BLOCK.getKey(targetBlock);
         tag.putString("block_id", id != null ? id.toString() : "minecraft:air");
         tag.putInt("required", required);
         return tag;
     }
 
-    @Override
     public void deserializeNBT(CompoundTag nbt) {
         if (nbt.contains("block_id")) {
-            Block b = ForgeRegistries.BLOCKS.getValue(ResourceLocation.parse(nbt.getString("block_id")));
+            Block b = BuiltInRegistries.BLOCK.get(ResourceLocation.parse(nbt.getString("block_id")));
             this.targetBlock = b != null ? b : Blocks.AIR;
         }
         if (nbt.contains("required")) this.required = Math.max(1, nbt.getInt("required"));

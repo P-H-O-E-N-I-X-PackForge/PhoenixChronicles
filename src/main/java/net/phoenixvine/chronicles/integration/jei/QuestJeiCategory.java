@@ -3,6 +3,7 @@ package net.phoenixvine.chronicles.integration.jei;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.FormattedCharSequence;
@@ -11,13 +12,13 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
-import net.minecraftforge.registries.ForgeRegistries;
 import net.phoenixvine.chronicles.client.screen.ChronicleOverviewScreen;
 import net.phoenixvine.chronicles.common.model.QuestNode;
 import net.phoenixvine.chronicles.common.model.QuestTask;
 import net.phoenixvine.chronicles.common.tasks.CraftItemTask;
 import net.phoenixvine.chronicles.common.tasks.FluidRequirementTask;
 import net.phoenixvine.chronicles.common.tasks.ItemRequirementTask;
+import net.phoenixvine.chronicles.common.util.ItemData;
 import net.phoenixvine.chronicles.integration.QuestRewardDisplay;
 
 import com.mojang.blaze3d.platform.InputConstants;
@@ -90,13 +91,13 @@ public class QuestJeiCategory implements IRecipeCategory<QuestNode> {
                 if (task instanceof ItemRequirementTask itemTask) {
                     ItemStack stack = new ItemStack(itemTask.getItem(), itemTask.getRequiredCount());
                     if (itemTask.getNbtFilter() != null && !itemTask.getNbtFilter().isEmpty()) {
-                        stack.setTag(itemTask.getNbtFilter().copy());
+                        ItemData.setTag(stack, itemTask.getNbtFilter().copy());
                     }
                     builder.addSlot(RecipeIngredientRole.INPUT, taskX + i * 18, slotY)
                             .setStandardSlotBackground().addItemStack(stack);
                     i++;
                 } else if (task instanceof CraftItemTask craftTask) {
-                    Item item = ForgeRegistries.ITEMS.getValue(craftTask.getItemId());
+                    Item item = BuiltInRegistries.ITEM.get(craftTask.getItemId());
                     if (item != null && item != Items.AIR) {
                         builder.addSlot(RecipeIngredientRole.INPUT, taskX + i * 18, slotY)
                                 .setStandardSlotBackground()
@@ -104,7 +105,7 @@ public class QuestJeiCategory implements IRecipeCategory<QuestNode> {
                         i++;
                     }
                 } else if (task instanceof FluidRequirementTask fluidTask) {
-                    Fluid fluid = ForgeRegistries.FLUIDS.getValue(fluidTask.getFluidId());
+                    Fluid fluid = BuiltInRegistries.FLUID.get(fluidTask.getFluidId());
                     if (fluid != null && fluid != Fluids.EMPTY) {
                         builder.addSlot(RecipeIngredientRole.INPUT, taskX + i * 18, slotY)
                                 .setStandardSlotBackground().addFluidStack(fluid, fluidTask.getRequiredAmount());
@@ -127,7 +128,7 @@ public class QuestJeiCategory implements IRecipeCategory<QuestNode> {
                         .setStandardSlotBackground();
                 if (entry.isFluid()) {
                     if (entry.fluidNbt() != null) slot.addFluidStack(entry.fluid(), entry.fluidAmountMb(),
-                            entry.fluidNbt());
+                            ItemData.patchOf(entry.fluidNbt()));
                     else slot.addFluidStack(entry.fluid(), entry.fluidAmountMb());
                 } else {
                     slot.addItemStack(entry.stack());

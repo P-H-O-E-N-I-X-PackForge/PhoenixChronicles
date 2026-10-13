@@ -4,12 +4,12 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraftforge.registries.ForgeRegistries;
 import net.phoenixvine.chronicles.client.render.ChroniclesThemePalette;
 import net.phoenixvine.chronicles.client.render.ChroniclesUIKit;
 
@@ -134,11 +134,11 @@ public class ItemPickerScreen extends Screen {
 
     private void populateFromRegistry() {
         String q = searchQuery.toLowerCase().trim();
-        for (Item item : ForgeRegistries.ITEMS) {
+        for (Item item : BuiltInRegistries.ITEM) {
             if (item == Items.AIR) continue;
             ItemStack stack = new ItemStack(item);
             if (!q.isEmpty()) {
-                ResourceLocation id = ForgeRegistries.ITEMS.getKey(item);
+                ResourceLocation id = BuiltInRegistries.ITEM.getKey(item);
                 boolean matchesId = id != null && id.toString().contains(q);
                 boolean matchesName = stack.getHoverName().getString().toLowerCase().contains(q);
                 if (!matchesId && !matchesName) continue;
@@ -226,7 +226,7 @@ public class ItemPickerScreen extends Screen {
     }
 
     @Override
-    public void renderBackground(@NotNull GuiGraphics g) {}
+    public void renderBackground(@NotNull GuiGraphics g, int mouseX, int mouseY, float partialTick) {}
 
     @Override
     public void render(@NotNull GuiGraphics g, int mx, int my, float partial) {
@@ -378,7 +378,7 @@ public class ItemPickerScreen extends Screen {
     }
 
     @Override
-    public boolean mouseScrolled(double mx, double my, double delta) {
+    public boolean mouseScrolled(double mx, double my, double scrollX, double delta) {
         int maxRows = (int) Math.ceil(displayItems.size() / (double) SLOTS_PER_ROW);
         int gridTop = panelTop + HEADER_H + 34;
         int gridBottom = panelTop + PANEL_H - FOOTER_H - (selectedStack != null ? 20 : 2);
@@ -408,7 +408,7 @@ public class ItemPickerScreen extends Screen {
 
     private static boolean isModLoaded(String modId) {
         try {
-            return net.minecraftforge.fml.ModList.get().isLoaded(modId);
+            return net.neoforged.fml.ModList.get().isLoaded(modId);
         } catch (Exception e) {
             return false;
         }

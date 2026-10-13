@@ -53,7 +53,6 @@ public class TimerTask extends QuestTask {
         return clamped + "/" + durationSeconds + "s";
     }
 
-    @Override
     public CompoundTag serializeNBT() {
         CompoundTag tag = new CompoundTag();
         tag.putString("type", "timer");
@@ -61,7 +60,6 @@ public class TimerTask extends QuestTask {
         return tag;
     }
 
-    @Override
     public void deserializeNBT(CompoundTag nbt) {
         if (nbt.contains("duration_seconds")) durationSeconds = Math.max(1, nbt.getInt("duration_seconds"));
     }

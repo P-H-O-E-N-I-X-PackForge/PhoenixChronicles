@@ -3,10 +3,10 @@ package net.phoenixvine.chronicles.network.packet;
 import net.minecraft.client.Minecraft;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.fml.DistExecutor;
-import net.minecraftforge.network.NetworkEvent;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
 import net.phoenixvine.chronicles.capability.PlayerQuestData;
 import net.phoenixvine.chronicles.capability.QuestCapabilityProvider;
 import net.phoenixvine.chronicles.client.registry.QuestToastManager;
@@ -19,9 +19,18 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.function.Supplier;
 
-public class S2CSyncPlayerProgressPacket {
+public class S2CSyncPlayerProgressPacket implements CustomPacketPayload {
+
+    public static final Type<S2CSyncPlayerProgressPacket> TYPE = new Type<>(
+            ResourceLocation.fromNamespaceAndPath("phoenix_chronicles", "s2_c_sync_player_progress"));
+    public static final StreamCodec<net.minecraft.network.RegistryFriendlyByteBuf, S2CSyncPlayerProgressPacket> STREAM_CODEC = StreamCodec
+            .ofMember(S2CSyncPlayerProgressPacket::encode, S2CSyncPlayerProgressPacket::new);
+
+    @Override
+    public Type<? extends CustomPacketPayload> type() {
+        return TYPE;
+    }
 
     @Nullable
     private final CompoundTag progressNbt;
@@ -90,14 +99,16 @@ public class S2CSyncPlayerProgressPacket {
         buf.writeBoolean(initialSync);
     }
 
-    public void handle(Supplier<NetworkEvent.Context> ctx) {
-        ctx.get().enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
+    public void handle(IPayloadContext context) {
+        context.enqueueWork(() -> ((Runnable) () -> {
             Minecraft mc = Minecraft.getInstance();
             if (mc.player == null || progressNbt == null) return;
 
             net.phoenixvine.chronicles.client.util.ClientEmergencyState.update(progressNbt);
 
-            mc.player.getCapability(QuestCapabilityProvider.PLAYER_QUESTS).ifPresent(data -> {
+            // The context player is typed as a plain Player; naming the client-only LocalPlayer here would make the
+            // class fail to verify on a dedicated server.
+            QuestCapabilityProvider.of(context.player()).ifPresent(data -> {
                 if (initialSync) {
                     data.deserializeNBT(progressNbt);
                     version++;
@@ -136,7 +147,7 @@ public class S2CSyncPlayerProgressPacket {
                                     node.getChapter(),
                                     net.phoenixvine.chronicles.client.util.ChapterConfig::getUnlockSoundId,
                                     net.minecraft.sounds.SoundEvents.EXPERIENCE_ORB_PICKUP);
-                            mc.player.playSound(sound, 0.5f, 1.4f);
+                            context.player().playSound(sound, 0.5f, 1.4f);
                         }
                     } else if (newState == QuestState.COMPLETED) {
                         QuestToastManager.get().push(node, QuestToastManager.ToastType.COMPLETED);
@@ -145,13 +156,12 @@ public class S2CSyncPlayerProgressPacket {
                                     node.getChapter(),
                                     net.phoenixvine.chronicles.client.util.ChapterConfig::getCompleteSoundId,
                                     net.minecraft.sounds.SoundEvents.PLAYER_LEVELUP);
-                            mc.player.playSound(sound, 0.6f, 1.0f);
+                            context.player().playSound(sound, 0.6f, 1.0f);
                         }
                     }
                 }
             });
         }));
-        ctx.get().setPacketHandled(true);
     }
 
     private static final Map<String, Long> LAST_NOTIFIED = new HashMap<>();
@@ -181,6 +191,6 @@ public class S2CSyncPlayerProgressPacket {
     private static net.minecraft.sounds.SoundEvent lookupSound(@Nullable String id) {
         if (id == null || id.isBlank()) return null;
         net.minecraft.resources.ResourceLocation rl = net.minecraft.resources.ResourceLocation.tryParse(id.trim());
-        return rl != null ? net.minecraftforge.registries.ForgeRegistries.SOUND_EVENTS.getValue(rl) : null;
+        return rl != null ? net.minecraft.core.registries.BuiltInRegistries.SOUND_EVENT.get(rl) : null;
     }
 }

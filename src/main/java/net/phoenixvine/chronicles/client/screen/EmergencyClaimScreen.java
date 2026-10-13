@@ -15,7 +15,6 @@ import net.phoenixvine.chronicles.common.model.QuestReward;
 import net.phoenixvine.chronicles.common.model.QuestState;
 import net.phoenixvine.chronicles.common.registry.QuestTreeRegistry;
 import net.phoenixvine.chronicles.common.tracker.QuestProgressTracker;
-import net.phoenixvine.chronicles.network.ChronicleNetwork;
 import net.phoenixvine.chronicles.network.packet.C2SRequestEmergencyItemsPacket;
 import net.phoenixvine.wiki.theme.PhoenixTheme;
 
@@ -81,7 +80,7 @@ public class EmergencyClaimScreen extends Screen {
     private void refreshRows() {
         List<Row> list = new ArrayList<>();
         PlayerQuestData data = minecraft != null && minecraft.player != null ?
-                minecraft.player.getCapability(QuestCapabilityProvider.PLAYER_QUESTS).orElse(null) : null;
+                QuestCapabilityProvider.of(minecraft.player).orElse(null) : null;
         if (data != null) {
             for (QuestNode node : QuestTreeRegistry.getAllQuests().values()) {
                 if (node.isFlagDisabled(null)) continue;
@@ -289,11 +288,11 @@ public class EmergencyClaimScreen extends Screen {
             return;
         }
         armedQuest = null;
-        ChronicleNetwork.CHANNEL.sendToServer(new C2SRequestEmergencyItemsPacket(id));
+        net.neoforged.neoforge.network.PacketDistributor.sendToServer(new C2SRequestEmergencyItemsPacket(id));
     }
 
     @Override
-    public boolean mouseScrolled(double mx, double my, double delta) {
+    public boolean mouseScrolled(double mx, double my, double scrollX, double delta) {
         int maxScroll = Math.max(0, rows.size() * ROW_H - (listBottom() - listTop()));
         scrollY = Math.max(0, Math.min(maxScroll, scrollY - (int) (delta * ROW_H)));
         return true;

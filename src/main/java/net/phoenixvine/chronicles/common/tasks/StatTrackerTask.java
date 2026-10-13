@@ -100,7 +100,6 @@ public class StatTrackerTask extends QuestTask {
         return cached.getInt("current") + "/" + targetValue;
     }
 
-    @Override
     public CompoundTag serializeNBT() {
         CompoundTag tag = new CompoundTag();
         tag.putString("type", "stat");
@@ -110,7 +109,6 @@ public class StatTrackerTask extends QuestTask {
         return tag;
     }
 
-    @Override
     public void deserializeNBT(CompoundTag nbt) {
         if (nbt.contains("stat_id")) {
             this.statId = ResourceLocation.parse(nbt.getString("stat_id"));

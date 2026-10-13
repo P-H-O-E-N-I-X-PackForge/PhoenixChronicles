@@ -12,7 +12,6 @@ import net.phoenixvine.chronicles.common.model.CategoryDefinition;
 import net.phoenixvine.chronicles.common.model.QuestNode;
 import net.phoenixvine.chronicles.common.registry.CategoryRegistry;
 import net.phoenixvine.chronicles.common.registry.QuestTreeRegistry;
-import net.phoenixvine.chronicles.network.ChronicleNetwork;
 import net.phoenixvine.chronicles.network.packet.C2SBulkQuestActionPacket;
 
 import org.jetbrains.annotations.NotNull;
@@ -49,7 +48,7 @@ public class ChapterActions {
             ctx.setFeedback("§7No quests in '%s'", ctx.friendly(chapter));
             return;
         }
-        ChronicleNetwork.CHANNEL.sendToServer(
+        net.neoforged.neoforge.network.PacketDistributor.sendToServer(
                 new C2SBulkQuestActionPacket(ids, C2SBulkQuestActionPacket.Action.FORCE_COMPLETE));
         ctx.setFeedback("§aForce-completed %d quest(s) in %s", ids.size(), ctx.friendly(chapter));
     }
@@ -60,7 +59,7 @@ public class ChapterActions {
             ctx.setFeedback("§7No quests in '%s'", ctx.friendly(chapter));
             return;
         }
-        ChronicleNetwork.CHANNEL.sendToServer(
+        net.neoforged.neoforge.network.PacketDistributor.sendToServer(
                 new C2SBulkQuestActionPacket(ids, C2SBulkQuestActionPacket.Action.RESET));
         ctx.setFeedback("§7Reset %d quest(s) in %s", ids.size(), ctx.friendly(chapter));
     }
@@ -73,7 +72,7 @@ public class ChapterActions {
             ctx.setFeedback("§7No quests in '%s'", label);
             return;
         }
-        ChronicleNetwork.CHANNEL.sendToServer(
+        net.neoforged.neoforge.network.PacketDistributor.sendToServer(
                 new C2SBulkQuestActionPacket(ids, C2SBulkQuestActionPacket.Action.FORCE_COMPLETE));
         ctx.setFeedback("§aForce-completed %d quest(s) in %s", ids.size(), label);
     }
@@ -86,7 +85,7 @@ public class ChapterActions {
             ctx.setFeedback("§7No quests in '%s'", label);
             return;
         }
-        ChronicleNetwork.CHANNEL.sendToServer(
+        net.neoforged.neoforge.network.PacketDistributor.sendToServer(
                 new C2SBulkQuestActionPacket(ids, C2SBulkQuestActionPacket.Action.RESET));
         ctx.setFeedback("§7Reset %d quest(s) in %s", ids.size(), label);
     }

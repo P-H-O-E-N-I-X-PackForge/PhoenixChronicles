@@ -1,6 +1,5 @@
 package net.phoenixvine.chronicles.client.rich;
 
-import net.minecraft.SharedConstants;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
@@ -263,7 +262,7 @@ public class MultilineTextArea extends AbstractWidget {
     }
 
     @Override
-    public boolean mouseScrolled(double mx, double my, double delta) {
+    public boolean mouseScrolled(double mx, double my, double scrollX, double delta) {
         if (mx < getX() || mx >= getX() + width || my < getY() || my >= getY() + height) return false;
         return scrollBy(delta);
     }
@@ -393,7 +392,7 @@ public class MultilineTextArea extends AbstractWidget {
 
     @Override
     public boolean charTyped(char ch, int mods) {
-        if (isFocused() && SharedConstants.isAllowedChatCharacter(ch)) {
+        if (isFocused() && net.minecraft.util.StringUtil.isAllowedChatCharacter(ch)) {
             textField.insertText(Character.toString(ch));
             convertTypedCodes();
             fireChanged();

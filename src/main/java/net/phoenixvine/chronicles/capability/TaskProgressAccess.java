@@ -4,13 +4,12 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
-import net.minecraftforge.network.PacketDistributor;
+import net.neoforged.neoforge.network.PacketDistributor;
 import net.phoenixvine.chronicles.client.util.ClientPooledProgress;
 import net.phoenixvine.chronicles.common.model.QuestNode;
 import net.phoenixvine.chronicles.common.registry.QuestTreeRegistry;
 import net.phoenixvine.chronicles.common.tracker.QuestProgressTracker;
 import net.phoenixvine.chronicles.common.tracker.TeamKeyResolver;
-import net.phoenixvine.chronicles.network.ChronicleNetwork;
 import net.phoenixvine.chronicles.network.packet.S2CSyncPooledProgressPacket;
 
 import org.jetbrains.annotations.Nullable;
@@ -58,7 +57,7 @@ public final class TaskProgressAccess {
                 return ClientPooledProgress.get(taskId);
             }
         }
-        return player.getCapability(QuestCapabilityProvider.PLAYER_QUESTS)
+        return QuestCapabilityProvider.of(player)
                 .map(data -> data.getOrCreateTaskProgress(taskId))
                 .orElse(null);
     }
@@ -70,14 +69,14 @@ public final class TaskProgressAccess {
             var packet = new S2CSyncPooledProgressPacket(Map.of(taskId, tag.copy()));
             for (ServerPlayer member : source.getServer().getPlayerList().getPlayers()) {
                 if (TeamKeyResolver.resolve(member).filter(teamKey::equals).isPresent()) {
-                    ChronicleNetwork.CHANNEL.send(PacketDistributor.PLAYER.with(() -> member), packet);
+                    net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(member, packet);
                 }
             }
         });
     }
 
     public static void clear(Player player, ResourceLocation taskId) {
-        player.getCapability(QuestCapabilityProvider.PLAYER_QUESTS)
+        QuestCapabilityProvider.of(player)
                 .ifPresent(data -> data.clearTaskProgress(taskId));
 
         QuestNode owner = QuestTreeRegistry.getTaskOwner(taskId);

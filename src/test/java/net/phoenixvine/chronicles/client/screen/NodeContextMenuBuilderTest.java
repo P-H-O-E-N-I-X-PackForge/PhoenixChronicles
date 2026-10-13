@@ -290,7 +290,7 @@ class NodeContextMenuBuilderTest {
     }
 
     private static @NotNull QuestNode node(@NotNull String path) {
-        return new QuestNode(new ResourceLocation("phoenix_chronicles", path),
+        return new QuestNode(ResourceLocation.fromNamespaceAndPath("phoenix_chronicles", path),
                 Component.literal(path), Component.literal(""));
     }
 
@@ -330,8 +330,8 @@ class NodeContextMenuBuilderTest {
 
     @Test
     void multiSelectionOfTwoOrMoreAddsChainAndFanItems() {
-        editorState.multiSelection.add(new ResourceLocation("phoenix_chronicles", "a"));
-        editorState.multiSelection.add(new ResourceLocation("phoenix_chronicles", "b"));
+        editorState.multiSelection.add(ResourceLocation.fromNamespaceAndPath("phoenix_chronicles", "a"));
+        editorState.multiSelection.add(ResourceLocation.fromNamespaceAndPath("phoenix_chronicles", "b"));
         FakeScreenContext ctx = new FakeScreenContext();
         var items = new NodeContextMenuBuilder(ctx, new FakeCtxMenuState(), new FakeBuilderState(), editorState)
                 .buildCtxItems();

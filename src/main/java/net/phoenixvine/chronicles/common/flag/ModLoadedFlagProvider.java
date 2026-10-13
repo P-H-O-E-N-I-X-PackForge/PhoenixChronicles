@@ -1,7 +1,7 @@
 package net.phoenixvine.chronicles.common.flag;
 
 import net.minecraft.server.MinecraftServer;
-import net.minecraftforge.fml.ModList;
+import net.neoforged.fml.ModList;
 
 import javax.annotation.Nullable;
 

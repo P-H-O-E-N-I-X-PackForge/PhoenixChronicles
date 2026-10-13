@@ -1,5 +1,6 @@
 package net.phoenixvine.chronicles.capability;
 
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
@@ -12,12 +13,15 @@ import java.util.Map;
 
 public class PooledTaskProgress extends SavedData {
 
+    private static final SavedData.Factory<PooledTaskProgress> FACTORY = new SavedData.Factory<>(
+            PooledTaskProgress::new, PooledTaskProgress::load);
+
     private static final String NAME = "phoenix_chronicles_pooled_progress";
 
     private final Map<String, Map<ResourceLocation, CompoundTag>> byTeam = new HashMap<>();
 
     public static PooledTaskProgress get(ServerLevel level) {
-        return level.getDataStorage().computeIfAbsent(PooledTaskProgress::load, PooledTaskProgress::new, NAME);
+        return level.getDataStorage().computeIfAbsent(FACTORY, NAME);
     }
 
     public CompoundTag getOrCreate(String teamKey, ResourceLocation taskId) {
@@ -34,7 +38,7 @@ public class PooledTaskProgress extends SavedData {
         if (changed) setDirty();
     }
 
-    public static PooledTaskProgress load(CompoundTag root) {
+    public static PooledTaskProgress load(CompoundTag root, HolderLookup.Provider provider) {
         PooledTaskProgress data = new PooledTaskProgress();
         ListTag teams = root.getList("Teams", Tag.TAG_COMPOUND);
         for (int i = 0; i < teams.size(); i++) {
@@ -54,7 +58,7 @@ public class PooledTaskProgress extends SavedData {
     }
 
     @Override
-    public CompoundTag save(CompoundTag root) {
+    public CompoundTag save(CompoundTag root, HolderLookup.Provider provider) {
         ListTag teams = new ListTag();
         byTeam.forEach((teamKey, tasks) -> {
             CompoundTag teamEntry = new CompoundTag();

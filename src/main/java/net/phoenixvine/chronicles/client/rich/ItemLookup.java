@@ -2,11 +2,11 @@ package net.phoenixvine.chronicles.client.rich;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.registries.ForgeRegistries;
 import net.phoenixvine.chronicles.client.screen.ChronicleOverviewScreen;
 import net.phoenixvine.chronicles.client.util.HiddenParts;
 import net.phoenixvine.chronicles.common.model.QuestNode;
@@ -31,7 +31,7 @@ public final class ItemLookup {
             return;
         }
 
-        ResourceLocation itemId = ForgeRegistries.ITEMS.getKey(stack.getItem());
+        ResourceLocation itemId = BuiltInRegistries.ITEM.getKey(stack.getItem());
         if (itemId == null) return;
 
         List<QuestNode> matches = findQuestsRequiring(stack, itemId);
@@ -79,12 +79,12 @@ public final class ItemLookup {
         for (QuestReward reward : node.getRewards()) {
             if (HiddenParts.rewardTargetHidden(node, reward)) continue;
             if (reward instanceof QuestReward.ItemReward ir) {
-                ResourceLocation id = ForgeRegistries.ITEMS.getKey(ir.getItem());
+                ResourceLocation id = BuiltInRegistries.ITEM.getKey(ir.getItem());
                 if (id != null && id.equals(itemId)) return true;
             }
         }
         if (node.getIconItem() != null) {
-            ResourceLocation id = ForgeRegistries.ITEMS.getKey(node.getIconItem());
+            ResourceLocation id = BuiltInRegistries.ITEM.getKey(node.getIconItem());
             return id != null && id.equals(itemId);
         }
         return false;

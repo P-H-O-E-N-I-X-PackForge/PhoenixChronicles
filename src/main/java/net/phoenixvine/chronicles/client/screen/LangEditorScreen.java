@@ -331,7 +331,7 @@ public class LangEditorScreen extends Screen {
     }
 
     @Override
-    public void renderBackground(@NotNull GuiGraphics g) {
+    public void renderBackground(@NotNull GuiGraphics g, int mouseX, int mouseY, float partialTick) {
         g.fill(0, 0, width, height, ChroniclesThemePalette.BG);
     }
 
@@ -342,7 +342,7 @@ public class LangEditorScreen extends Screen {
 
     @Override
     public void render(@NotNull GuiGraphics g, int rmx, int rmy, float partial) {
-        renderBackground(g);
+        renderBackground(g, rmx, rmy, partial);
         if (statusTimer > 0) statusTimer--;
 
         int mx = Math.round(rmx / uiScale);
@@ -551,7 +551,7 @@ public class LangEditorScreen extends Screen {
     }
 
     @Override
-    public boolean mouseScrolled(double rmx, double rmy, double delta) {
+    public boolean mouseScrolled(double rmx, double rmy, double scrollX, double delta) {
         double mx = rmx / uiScale;
 
         if (mx < SIDEBAR_W) {
@@ -656,7 +656,8 @@ public class LangEditorScreen extends Screen {
                                 net.minecraft.nbt.CompoundTag tTag = taskList.getCompound(idx).copy();
                                 tTag.putString("description",
                                         net.minecraft.network.chat.Component.Serializer.toJson(
-                                                net.minecraft.network.chat.Component.literal(v)));
+                                                net.minecraft.network.chat.Component.literal(v),
+                                                net.minecraft.core.RegistryAccess.EMPTY));
                                 taskList.set(idx, tTag);
                             }
                         }

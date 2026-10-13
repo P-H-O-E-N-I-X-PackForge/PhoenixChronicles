@@ -60,7 +60,6 @@ public class CraftItemTask extends QuestTask {
         return currentCount + "/" + requiredCount;
     }
 
-    @Override
     public CompoundTag serializeNBT() {
         CompoundTag tag = new CompoundTag();
         tag.putString("type", "craft_item");
@@ -70,7 +69,6 @@ public class CraftItemTask extends QuestTask {
         return tag;
     }
 
-    @Override
     public void deserializeNBT(CompoundTag nbt) {
         if (nbt.contains("item_id")) {
             this.itemId = ResourceLocation.parse(nbt.getString("item_id"));

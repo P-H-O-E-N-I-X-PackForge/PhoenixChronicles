@@ -1,15 +1,16 @@
 package net.phoenixvine.chronicles.common.tasks;
 
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.registries.ForgeRegistries;
 import net.phoenixvine.chronicles.capability.TaskProgressAccess;
 import net.phoenixvine.chronicles.common.filter.NbtMatchUtil;
 import net.phoenixvine.chronicles.common.model.QuestTask;
+import net.phoenixvine.chronicles.common.util.ItemData;
 import net.phoenixvine.chronicles.integration.ae2.AE2Compat;
 import net.phoenixvine.chronicles.integration.curios.CuriosCompat;
 
@@ -74,12 +75,12 @@ public class ItemRequirementTask extends QuestTask {
 
     @Override
     public ResourceLocation getDisplayItemId() {
-        return item == null ? null : ForgeRegistries.ITEMS.getKey(item);
+        return item == null ? null : BuiltInRegistries.ITEM.getKey(item);
     }
 
     private boolean stackMatches(ItemStack stack) {
         if (stack.isEmpty() || stack.getItem() != item) return false;
-        return NbtMatchUtil.matches(stack.getTag(), nbtFilter);
+        return NbtMatchUtil.matches(ItemData.getTag(stack), nbtFilter);
     }
 
     private Iterable<ItemStack> allSlots(Player player) {
@@ -187,11 +188,10 @@ public class ItemRequirementTask extends QuestTask {
         return Math.min(found, requiredCount) + "/" + requiredCount;
     }
 
-    @Override
     public CompoundTag serializeNBT() {
         CompoundTag tag = new CompoundTag();
         tag.putString("type", "item_check");
-        ResourceLocation id = ForgeRegistries.ITEMS.getKey(item);
+        ResourceLocation id = BuiltInRegistries.ITEM.getKey(item);
         tag.putString("item_id", id != null ? id.toString() : "minecraft:air");
         tag.putInt("count", requiredCount);
         tag.putBoolean("consume", consume);
@@ -201,11 +201,10 @@ public class ItemRequirementTask extends QuestTask {
         return tag;
     }
 
-    @Override
     public void deserializeNBT(CompoundTag nbt) {
         String itemKey = nbt.contains("item_id") ? "item_id" : nbt.contains("item") ? "item" : null;
         if (itemKey != null)
-            this.item = ForgeRegistries.ITEMS.getValue(ResourceLocation.parse(nbt.getString(itemKey)));
+            this.item = BuiltInRegistries.ITEM.get(ResourceLocation.parse(nbt.getString(itemKey)));
         this.requiredCount = nbt.contains("count") ? nbt.getInt("count") : nbt.getInt("amount");
         this.consume = nbt.getBoolean("consume");
 

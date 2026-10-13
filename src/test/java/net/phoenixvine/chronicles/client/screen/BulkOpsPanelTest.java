@@ -78,8 +78,8 @@ class BulkOpsPanelTest {
 
     private @NotNull GraphEditorState twoSelectedEditorState() {
         GraphEditorState editorState = new GraphEditorState();
-        editorState.multiSelection.add(new ResourceLocation("phoenix_chronicles", "unregistered_a"));
-        editorState.multiSelection.add(new ResourceLocation("phoenix_chronicles", "unregistered_b"));
+        editorState.multiSelection.add(ResourceLocation.fromNamespaceAndPath("phoenix_chronicles", "unregistered_a"));
+        editorState.multiSelection.add(ResourceLocation.fromNamespaceAndPath("phoenix_chronicles", "unregistered_b"));
         return editorState;
     }
 
@@ -88,7 +88,7 @@ class BulkOpsPanelTest {
         FakeScreenContext ctx = new FakeScreenContext();
         RecordingState state = new RecordingState();
         GraphEditorState editorState = new GraphEditorState();
-        editorState.multiSelection.add(new ResourceLocation("phoenix_chronicles", "only_one"));
+        editorState.multiSelection.add(ResourceLocation.fromNamespaceAndPath("phoenix_chronicles", "only_one"));
         BulkOpsPanel panel = new BulkOpsPanel(ctx, state, editorState);
 
         assertFalse(panel.mouseClicked(START_X + 5, SLOT_Y + 5, 0, CL));

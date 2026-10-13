@@ -10,7 +10,6 @@ import net.phoenixvine.chronicles.capability.QuestCapabilityProvider;
 import net.phoenixvine.chronicles.client.render.ChroniclesThemePalette;
 import net.phoenixvine.chronicles.client.render.ChroniclesUIKit;
 import net.phoenixvine.chronicles.common.model.AutoClaimCategory;
-import net.phoenixvine.chronicles.network.ChronicleNetwork;
 import net.phoenixvine.chronicles.network.packet.C2SSetAutoClaimPacket;
 
 import org.jetbrains.annotations.NotNull;
@@ -35,7 +34,7 @@ public class AutoClaimSettingsScreen extends Screen {
 
     private @Nullable PlayerQuestData data() {
         return minecraft != null && minecraft.player != null ?
-                minecraft.player.getCapability(QuestCapabilityProvider.PLAYER_QUESTS).orElse(null) : null;
+                QuestCapabilityProvider.of(minecraft.player).orElse(null) : null;
     }
 
     private void apply(boolean enabled, EnumSet<AutoClaimCategory> categories) {
@@ -44,7 +43,8 @@ public class AutoClaimSettingsScreen extends Screen {
             data.setAutoClaimEnabled(enabled);
             data.setAutoClaimCategories(categories);
         }
-        ChronicleNetwork.CHANNEL.sendToServer(new C2SSetAutoClaimPacket(enabled, AutoClaimCategory.toMask(categories)));
+        net.neoforged.neoforge.network.PacketDistributor
+                .sendToServer(new C2SSetAutoClaimPacket(enabled, AutoClaimCategory.toMask(categories)));
     }
 
     @Override

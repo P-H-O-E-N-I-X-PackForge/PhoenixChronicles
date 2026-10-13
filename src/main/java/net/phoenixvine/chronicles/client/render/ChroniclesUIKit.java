@@ -192,7 +192,7 @@ public final class ChroniclesUIKit {
     public static void drawFluidIcon(GuiGraphics g, net.minecraft.world.level.material.Fluid fluid, int x, int y,
                                      int size) {
         if (fluid == null || fluid == net.minecraft.world.level.material.Fluids.EMPTY) return;
-        net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions ext = net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions
+        net.neoforged.neoforge.client.extensions.common.IClientFluidTypeExtensions ext = net.neoforged.neoforge.client.extensions.common.IClientFluidTypeExtensions
                 .of(fluid);
         int tint = ext.getTintColor();
         net.minecraft.resources.ResourceLocation stillTexture = ext.getStillTexture();

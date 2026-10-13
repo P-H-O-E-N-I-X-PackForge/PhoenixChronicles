@@ -10,9 +10,9 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.ModelEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.client.event.ModelEvent;
 import net.phoenixvine.chronicles.PhoenixChronicles;
 import net.phoenixvine.chronicles.common.filter.IFluidFilter;
 import net.phoenixvine.chronicles.common.filter.IItemFilter;
@@ -24,12 +24,12 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
-@Mod.EventBusSubscriber(modid = PhoenixChronicles.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
+@EventBusSubscriber(modid = PhoenixChronicles.MOD_ID, value = Dist.CLIENT)
 public final class FilterTokenModelSwap {
 
     private FilterTokenModelSwap() {}
 
-    @net.minecraftforge.eventbus.api.SubscribeEvent
+    @net.neoforged.bus.api.SubscribeEvent
     public static void onModifyBaking(ModelEvent.ModifyBakingResult event) {
         swap(event, ChronicleItems.ITEM_FILTER_TOKEN.getId(), true);
         swap(event, ChronicleItems.FLUID_FILTER_TOKEN.getId(), false);

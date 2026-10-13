@@ -1,5 +1,6 @@
 package net.phoenixvine.chronicles.common.model;
 
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
@@ -14,14 +15,15 @@ import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.level.storage.loot.LootTable;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParamSets;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.neoforged.neoforge.common.NeoForge;
 import net.phoenixvine.chronicles.PhoenixChronicles;
+import net.phoenixvine.chronicles.capability.QuestCapabilityProvider;
 import net.phoenixvine.chronicles.common.event.PhoenixQuestScriptRewardEvent;
 import net.phoenixvine.chronicles.common.item.ChronicleLootCrateItem;
 import net.phoenixvine.chronicles.common.registry.PhoenixRewardRegistry;
 import net.phoenixvine.chronicles.common.registry.QuestEngineConfig;
 import net.phoenixvine.chronicles.common.registry.RewardTableRegistry;
+import net.phoenixvine.chronicles.common.util.ItemData;
 import net.phoenixvine.chronicles.integration.ae2.AE2Compat;
 
 import java.util.ArrayList;
@@ -119,7 +121,7 @@ public abstract class QuestReward {
 
         if (pushToAe2 && QuestEngineConfig.isAe2PushRewardsEnabled() && AE2Compat.isAvailable()) {
             ItemStack template = new ItemStack(item, 1);
-            if (nbt != null && !nbt.isEmpty()) template.setTag(nbt.copy());
+            if (nbt != null && !nbt.isEmpty()) ItemData.setTag(template, nbt.copy());
             remaining = (int) Math.min(Integer.MAX_VALUE, AE2Compat.insert(player, template, count));
             if (remaining <= 0) return;
         }
@@ -128,12 +130,12 @@ public abstract class QuestReward {
 
     private static void giveItemToPlayer(ServerPlayer player, Item item, int count, CompoundTag nbt) {
         int remaining = count;
-        int maxStack = Math.max(1, item.getMaxStackSize());
+        int maxStack = Math.max(1, item.getDefaultMaxStackSize());
         while (remaining > 0) {
             int batch = Math.min(remaining, maxStack);
             ItemStack stack = new ItemStack(item, batch);
             if (nbt != null && !nbt.isEmpty()) {
-                stack.setTag(nbt.copy());
+                ItemData.setTag(stack, nbt.copy());
             }
             if (!player.addItem(stack)) {
                 player.drop(stack, false);
@@ -227,7 +229,7 @@ public abstract class QuestReward {
         public CompoundTag serializeNBT() {
             CompoundTag tag = new CompoundTag();
             tag.putString("type", "item");
-            ResourceLocation id = ForgeRegistries.ITEMS.getKey(item);
+            ResourceLocation id = BuiltInRegistries.ITEM.getKey(item);
             tag.putString("item_id", id != null ? id.toString() : "minecraft:air");
             tag.putInt("count", count);
             if (nbt != null && !nbt.isEmpty()) tag.put("nbt", nbt.copy());
@@ -242,7 +244,7 @@ public abstract class QuestReward {
             ResourceLocation itemId = ResourceLocation.tryParse(tag.getString(key));
             if (itemId == null) return null;
 
-            Item item = ForgeRegistries.ITEMS.getValue(itemId);
+            Item item = BuiltInRegistries.ITEM.get(itemId);
             if (item == null || item == Items.AIR) return null;
 
             int count = tag.contains("count") ? tag.getInt("count") : 1;
@@ -336,7 +338,7 @@ public abstract class QuestReward {
         public CompoundTag serializeNBT() {
             CompoundTag tag = new CompoundTag();
             tag.putString("type", "fluid");
-            ResourceLocation id = ForgeRegistries.FLUIDS.getKey(fluid);
+            ResourceLocation id = BuiltInRegistries.FLUID.getKey(fluid);
             tag.putString("fluid_id", id != null ? id.toString() : "minecraft:empty");
             tag.putInt("amount", amountMb);
             if (nbt != null && !nbt.isEmpty()) tag.put("nbt", nbt.copy());
@@ -347,7 +349,7 @@ public abstract class QuestReward {
         public static FluidReward fromNBT(CompoundTag tag) {
             ResourceLocation id = ResourceLocation.tryParse(tag.getString("fluid_id"));
             if (id == null) return null;
-            Fluid fluid = ForgeRegistries.FLUIDS.getValue(id);
+            Fluid fluid = BuiltInRegistries.FLUID.get(id);
             if (fluid == null || fluid == net.minecraft.world.level.material.Fluids.EMPTY) return null;
             int amount = tag.contains("amount") ? tag.getInt("amount") : BUCKET_MB;
             CompoundTag nbt = tag.contains("nbt") ? tag.getCompound("nbt") : null;
@@ -535,7 +537,7 @@ public abstract class QuestReward {
 
             java.util.List<ResourceLocation> taskIds = new ArrayList<>();
             for (QuestTask t : target.getTasks()) taskIds.add(t.getTaskId());
-            player.getCapability(net.phoenixvine.chronicles.capability.QuestCapabilityProvider.PLAYER_QUESTS)
+            QuestCapabilityProvider.of(player)
                     .ifPresent(data -> {
                         data.resetQuestProgress(id, taskIds);
                         if (net.phoenixvine.chronicles.common.tracker.QuestProgressTracker.prereqsSatisfied(target,
@@ -594,7 +596,9 @@ public abstract class QuestReward {
         @Override
         public void grant(ServerPlayer player) {
             if (player == null || lootTableId == null || player.getServer() == null) return;
-            LootTable table = player.getServer().getLootData().getLootTable(lootTableId);
+            LootTable table = player.getServer().reloadableRegistries().getLootTable(
+                    net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.LOOT_TABLE,
+                            lootTableId));
             if (table == null || table == LootTable.EMPTY) return;
 
             LootParams params = new LootParams.Builder(player.serverLevel())
@@ -655,7 +659,7 @@ public abstract class QuestReward {
         @Override
         public void grant(ServerPlayer player) {
             if (player == null || eventId.isBlank()) return;
-            MinecraftForge.EVENT_BUS.post(
+            NeoForge.EVENT_BUS.post(
                     new PhoenixQuestScriptRewardEvent(player, eventId, data.copy()));
         }
 
@@ -976,8 +980,7 @@ public abstract class QuestReward {
         @Override
         public void grant(ServerPlayer player) {
             if (player == null || screenId == null) return;
-            net.phoenixvine.chronicles.network.ChronicleNetwork.CHANNEL.send(
-                    net.minecraftforge.network.PacketDistributor.PLAYER.with(() -> player),
+            net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(player,
                     new net.phoenixvine.chronicles.network.packet.S2COpenExternalScreenPacket(screenId));
         }
 

@@ -27,7 +27,7 @@ class QuestNodeTest {
     }
 
     private static @NotNull QuestNode node(@NotNull String path) {
-        return new QuestNode(new ResourceLocation("phoenix_chronicles", path),
+        return new QuestNode(ResourceLocation.fromNamespaceAndPath("phoenix_chronicles", path),
                 Component.literal(path), Component.literal(""));
     }
 
@@ -235,7 +235,7 @@ class QuestNodeTest {
     void isLinkStubReflectsWhetherALinkTargetIsSet() {
         QuestNode n = node("n");
         assertFalse(n.isLinkStub());
-        n.setLinkTarget(new ResourceLocation("phoenix_chronicles", "target"));
+        n.setLinkTarget(ResourceLocation.fromNamespaceAndPath("phoenix_chronicles", "target"));
         assertTrue(n.isLinkStub());
     }
 }

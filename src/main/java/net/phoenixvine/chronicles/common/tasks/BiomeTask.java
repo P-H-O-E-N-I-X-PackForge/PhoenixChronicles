@@ -48,7 +48,6 @@ public class BiomeTask extends QuestTask {
         return TaskProgressAccess.getOrEmpty(player, getTaskId()).getBoolean("completed");
     }
 
-    @Override
     public CompoundTag serializeNBT() {
         CompoundTag tag = new CompoundTag();
         tag.putString("type", "biome");
@@ -56,7 +55,6 @@ public class BiomeTask extends QuestTask {
         return tag;
     }
 
-    @Override
     public void deserializeNBT(CompoundTag nbt) {
         if (nbt.contains("biome_id")) {
             TaskIdMatcher parsed = TaskIdMatcher.parse(nbt.getString("biome_id"));

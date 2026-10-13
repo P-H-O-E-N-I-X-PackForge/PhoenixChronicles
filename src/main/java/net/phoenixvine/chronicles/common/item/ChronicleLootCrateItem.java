@@ -15,14 +15,13 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.client.extensions.common.IClientItemExtensions;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.neoforge.client.extensions.common.IClientItemExtensions;
 import net.phoenixvine.chronicles.client.render.LootCrateItemRenderer;
 import net.phoenixvine.chronicles.common.model.QuestReward;
 import net.phoenixvine.chronicles.common.model.QuestReward.WeightedReward;
-
-import org.jetbrains.annotations.Nullable;
+import net.phoenixvine.chronicles.common.util.ItemData;
 
 import java.util.List;
 import java.util.Random;
@@ -58,7 +57,7 @@ public class ChronicleLootCrateItem extends Item {
 
     @Override
     public Component getName(ItemStack stack) {
-        CompoundTag tag = stack.getTag();
+        CompoundTag tag = ItemData.getTag(stack);
         String title = (tag != null && tag.contains(TAG_TITLE)) ? tag.getString(TAG_TITLE) : "";
         String suffix = title.isEmpty() ? "" : ": §d" + title;
         return Component.literal("§6Chronicle Crate" + suffix);
@@ -70,7 +69,7 @@ public class ChronicleLootCrateItem extends Item {
         if (level.isClientSide) return InteractionResultHolder.success(stack);
         if (!(player instanceof ServerPlayer sp)) return InteractionResultHolder.pass(stack);
 
-        CompoundTag tag = stack.getTag();
+        CompoundTag tag = ItemData.getTag(stack);
         if (tag == null || !tag.contains(TAG_REWARDS)) {
             sp.sendSystemMessage(Component.literal("§cThis crate has no rewards configured."));
             return InteractionResultHolder.fail(stack);
@@ -114,8 +113,8 @@ public class ChronicleLootCrateItem extends Item {
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> lines, TooltipFlag flag) {
-        CompoundTag tag = stack.getTag();
+    public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> lines, TooltipFlag flag) {
+        CompoundTag tag = ItemData.getTag(stack);
         if (tag == null) return;
         if (tag.contains(TAG_REWARDS)) {
             int count = tag.getList(TAG_REWARDS, Tag.TAG_COMPOUND).size();
@@ -133,7 +132,7 @@ public class ChronicleLootCrateItem extends Item {
 
     public static ItemStack build(String crateTitle, List<WeightedReward> entries, int pickCount) {
         ItemStack stack = new ItemStack(ChronicleItems.CHRONICLE_LOOT_CRATE.get());
-        CompoundTag tag = stack.getOrCreateTag();
+        CompoundTag tag = new CompoundTag();
         if (!crateTitle.isBlank()) tag.putString(TAG_TITLE, crateTitle);
         if (pickCount > 0) tag.putInt(TAG_PICK, pickCount);
         ListTag rewardList = new ListTag();
@@ -143,6 +142,7 @@ public class ChronicleLootCrateItem extends Item {
             rewardList.add(entryTag);
         }
         tag.put(TAG_REWARDS, rewardList);
+        ItemData.setTag(stack, tag);
         return stack;
     }
 }

@@ -3,10 +3,10 @@ package net.phoenixvine.chronicles.network.packet;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.fml.DistExecutor;
-import net.minecraftforge.network.NetworkEvent;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
 import net.phoenixvine.chronicles.common.codec.QuestChroniclesSettings;
 import net.phoenixvine.chronicles.common.model.FullQuestData;
 import net.phoenixvine.chronicles.common.model.QuestNode;
@@ -21,9 +21,18 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Supplier;
 
-public class S2CSyncQuestsPacket {
+public class S2CSyncQuestsPacket implements CustomPacketPayload {
+
+    public static final Type<S2CSyncQuestsPacket> TYPE = new Type<>(
+            ResourceLocation.fromNamespaceAndPath("phoenix_chronicles", "s2_c_sync_quests"));
+    public static final StreamCodec<net.minecraft.network.RegistryFriendlyByteBuf, S2CSyncQuestsPacket> STREAM_CODEC = StreamCodec
+            .ofMember(S2CSyncQuestsPacket::encode, S2CSyncQuestsPacket::new);
+
+    @Override
+    public Type<? extends CustomPacketPayload> type() {
+        return TYPE;
+    }
 
     private final Map<ResourceLocation, QuestSnapshot> snapshotMap;
 
@@ -42,8 +51,8 @@ public class S2CSyncQuestsPacket {
         int size = buf.readInt();
         for (int i = 0; i < size; i++) {
             ResourceLocation id = buf.readResourceLocation();
-            Component title = buf.readComponent();
-            Component description = buf.readComponent();
+            Component title = net.phoenixvine.chronicles.network.NetText.readComponent(buf);
+            Component description = net.phoenixvine.chronicles.network.NetText.readComponent(buf);
             String chapter = buf.readUtf();
             String shapeType = buf.readUtf();
             String iconItemId = buf.readUtf();
@@ -128,10 +137,12 @@ public class S2CSyncQuestsPacket {
         buf.writeInt(snapshotMap.size());
         for (QuestSnapshot snap : snapshotMap.values()) {
             buf.writeResourceLocation(snap.id);
-            buf.writeComponent(snap.fullQuestData != null && snap.fullQuestData.title() != null ?
-                    snap.fullQuestData.title() : Component.empty());
-            buf.writeComponent(snap.fullQuestData != null && snap.fullQuestData.description() != null ?
-                    snap.fullQuestData.description() : Component.empty());
+            net.phoenixvine.chronicles.network.NetText.writeComponent(buf,
+                    snap.fullQuestData != null && snap.fullQuestData.title() != null ?
+                            snap.fullQuestData.title() : Component.empty());
+            net.phoenixvine.chronicles.network.NetText.writeComponent(buf,
+                    snap.fullQuestData != null && snap.fullQuestData.description() != null ?
+                            snap.fullQuestData.description() : Component.empty());
             buf.writeUtf(snap.chapter != null ? snap.chapter : "MAIN");
             buf.writeUtf(snap.shapeType != null ? snap.shapeType : "SQUARE");
             buf.writeUtf(snap.iconItemId != null ? snap.iconItemId : "");
@@ -188,13 +199,11 @@ public class S2CSyncQuestsPacket {
         }
     }
 
-    public void handle(Supplier<NetworkEvent.Context> ctx) {
-        ctx.get().enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT,
-                () -> () -> {
-                    if (net.minecraft.client.Minecraft.getInstance().hasSingleplayerServer()) return;
-                    ClientPayloadProcessor.processQuestTree(snapshotMap);
-                }));
-        ctx.get().setPacketHandled(true);
+    public void handle(IPayloadContext context) {
+        context.enqueueWork(() -> ((Runnable) () -> {
+            if (net.minecraft.client.Minecraft.getInstance().hasSingleplayerServer()) return;
+            ClientPayloadProcessor.processQuestTree(snapshotMap);
+        }));
     }
 
     private static class QuestSnapshot {
@@ -317,7 +326,8 @@ public class S2CSyncQuestsPacket {
                     if (!tag.contains("task_id") && task.getTaskId() != null)
                         tag.putString("task_id", task.getTaskId().toString());
                     if (!tag.contains("description") && task.getDescription() != null)
-                        tag.putString("description", Component.Serializer.toJson(task.getDescription()));
+                        tag.putString("description", Component.Serializer.toJson(task.getDescription(),
+                                net.minecraft.core.RegistryAccess.EMPTY));
                     tag.putBoolean("optional", task.isOptional());
                     tasksNbt.add(tag);
                 }

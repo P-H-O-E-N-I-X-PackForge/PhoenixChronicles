@@ -86,7 +86,7 @@ public class FilterItemTask extends QuestTask {
     public ResourceLocation getDisplayItemId() {
         ItemStack display = filter.getDisplayStack();
         if (display.isEmpty()) return null;
-        ResourceLocation id = net.minecraftforge.registries.ForgeRegistries.ITEMS.getKey(display.getItem());
+        ResourceLocation id = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(display.getItem());
         return id;
     }
 
@@ -113,7 +113,6 @@ public class FilterItemTask extends QuestTask {
         }
     }
 
-    @Override
     public CompoundTag serializeNBT() {
         CompoundTag tag = new CompoundTag();
         tag.putString("type", "filter_item");
@@ -125,7 +124,6 @@ public class FilterItemTask extends QuestTask {
         return tag;
     }
 
-    @Override
     public void deserializeNBT(CompoundTag nbt) {
         this.count = Math.max(1, nbt.getInt("count"));
         this.consume = nbt.getBoolean("consume");

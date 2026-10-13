@@ -7,9 +7,9 @@ import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.registries.ForgeRegistries;
 import net.phoenixvine.chronicles.client.registry.LangSyncScheduler;
 import net.phoenixvine.chronicles.client.render.ChroniclesUIKit;
 import net.phoenixvine.chronicles.client.rich.CodeEditBox;
@@ -498,12 +498,12 @@ public class QuestCreatorScreen extends Screen {
         labels.add(new LabelEntry(cx, y, "§fIcon", C_TEXT_FAINT));
         labels.add(new LabelEntry(sX, y, "§fShape  §f" + cachedShape, C_TEXT_FAINT));
         net.minecraft.world.item.Item iconItem = cachedIconItemId.isBlank() ? null :
-                ForgeRegistries.ITEMS.getValue(ResourceLocation.parse(cachedIconItemId));
+                BuiltInRegistries.ITEM.get(ResourceLocation.parse(cachedIconItemId));
         String iconBtnLabel = (iconItem != null && iconItem != net.minecraft.world.item.Items.AIR) ?
                 "§f" + new net.minecraft.world.item.ItemStack(iconItem).getHoverName().getString() : "§fPick icon…";
         addRenderableWidget(Button.builder(ChroniclesUIKit.lit(iconBtnLabel), b -> {
             if (minecraft != null) minecraft.setScreen(new ItemPickerScreen(this, stack -> {
-                ResourceLocation id = ForgeRegistries.ITEMS.getKey(stack.getItem());
+                ResourceLocation id = BuiltInRegistries.ITEM.getKey(stack.getItem());
                 cachedIconItemId = id != null ? id.toString() : "";
                 rebuildWidgets();
             }));
@@ -1084,7 +1084,7 @@ public class QuestCreatorScreen extends Screen {
         addRenderableWidget(Button.builder(ChroniclesUIKit.lit("§7⊞"), b -> {
             if (minecraft != null) {
                 minecraft.setScreen(new RegistryIdPickerScreen(this, "Pick unlock sound",
-                        net.minecraftforge.registries.ForgeRegistries.SOUND_EVENTS.getKeys(), id -> {
+                        net.minecraft.core.registries.BuiltInRegistries.SOUND_EVENT.keySet(), id -> {
                             cachedUnlockSoundId = id.toString();
                             unlockSoundBox.setValue(cachedUnlockSoundId);
                         }));
@@ -1107,7 +1107,7 @@ public class QuestCreatorScreen extends Screen {
         addRenderableWidget(Button.builder(ChroniclesUIKit.lit("§7⊞"), b -> {
             if (minecraft != null) {
                 minecraft.setScreen(new RegistryIdPickerScreen(this, "Pick complete sound",
-                        net.minecraftforge.registries.ForgeRegistries.SOUND_EVENTS.getKeys(), id -> {
+                        net.minecraft.core.registries.BuiltInRegistries.SOUND_EVENT.keySet(), id -> {
                             cachedCompleteSoundId = id.toString();
                             completeSoundBox.setValue(cachedCompleteSoundId);
                         }));
@@ -1140,7 +1140,7 @@ public class QuestCreatorScreen extends Screen {
         addRenderableWidget(Button.builder(ChroniclesUIKit.lit("§7⊞"), b -> {
             if (minecraft != null) {
                 minecraft.setScreen(new RegistryIdPickerScreen(this, "Pick voice line",
-                        net.minecraftforge.registries.ForgeRegistries.SOUND_EVENTS.getKeys(), id -> {
+                        net.minecraft.core.registries.BuiltInRegistries.SOUND_EVENT.keySet(), id -> {
                             cachedVoiceId = id.toString();
                             voiceBox.setValue(cachedVoiceId);
                         }));
@@ -1171,7 +1171,7 @@ public class QuestCreatorScreen extends Screen {
         addRenderableWidget(Button.builder(ChroniclesUIKit.lit("§7⊞"), b -> {
             if (minecraft != null) {
                 minecraft.setScreen(new RegistryIdPickerScreen(this, "Pick music",
-                        net.minecraftforge.registries.ForgeRegistries.SOUND_EVENTS.getKeys(), id -> {
+                        net.minecraft.core.registries.BuiltInRegistries.SOUND_EVENT.keySet(), id -> {
                             cachedMusicId = id.toString();
                             musicBox.setValue(cachedMusicId);
                         }));
@@ -1230,7 +1230,7 @@ public class QuestCreatorScreen extends Screen {
     private int rawSnbtTop, rawSnbtBottom;
 
     @Override
-    public void renderBackground(@NotNull GuiGraphics g) {}
+    public void renderBackground(@NotNull GuiGraphics g, int mouseX, int mouseY, float partialTick) {}
 
     @Override
     public void render(@NotNull GuiGraphics g, int mx, int my, float partial) {
@@ -1288,8 +1288,8 @@ public class QuestCreatorScreen extends Screen {
             }
             if (!cachedIconItemId.isBlank()) {
                 try {
-                    net.minecraft.world.item.Item prev = ForgeRegistries.ITEMS
-                            .getValue(ResourceLocation.parse(cachedIconItemId));
+                    net.minecraft.world.item.Item prev = BuiltInRegistries.ITEM
+                            .get(ResourceLocation.parse(cachedIconItemId));
                     if (prev != null && prev != net.minecraft.world.item.Items.AIR)
                         g.renderItem(new net.minecraft.world.item.ItemStack(prev), cx + iconColW - 18,
                                 shapeRowY - 1);
@@ -1501,13 +1501,13 @@ public class QuestCreatorScreen extends Screen {
     }
 
     @Override
-    public boolean mouseScrolled(double mx, double my, double delta) {
+    public boolean mouseScrolled(double mx, double my, double scrollX, double delta) {
         if (mx >= cx - SEC_PAD && mx < cx + cw + SEC_PAD && my >= scrollContentTop && my < scrollContentBottom) {
             panelScrollY = Math.max(0, panelScrollY - (int) Math.round(delta * 16));
             rebuildWidgets();
             return true;
         }
-        return super.mouseScrolled(mx, my, delta);
+        return super.mouseScrolled(mx, my, 0.0, delta);
     }
 
     @Override

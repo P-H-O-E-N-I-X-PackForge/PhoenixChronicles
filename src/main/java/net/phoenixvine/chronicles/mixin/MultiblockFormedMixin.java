@@ -1,7 +1,7 @@
 package net.phoenixvine.chronicles.mixin;
 
-import com.gregtechceu.gtceu.api.pattern.MultiblockState;
-import com.gregtechceu.gtceu.api.pattern.MultiblockWorldSavedData;
+import com.gregtechceu.gtceu.api.multiblock.MultiblockWorldSavedData;
+import com.gregtechceu.gtceu.api.multiblock.pattern.PatternState;
 
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -12,7 +12,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public abstract class MultiblockFormedMixin {
 
     @Inject(method = "addMapping", at = @At("HEAD"), remap = false)
-    private void phoenixChronicles$onMultiblockFormed(MultiblockState state, CallbackInfo ci) {
-        GtmHooks.onMultiblockFormed(state.getWorld(), state.controllerPos);
+    private void phoenixChronicles$onMultiblockFormed(PatternState state, CallbackInfo ci) {
+        if (state.getController() == null) return;
+        GtmHooks.onMultiblockFormed(state.getController().getLevel(), state.getControllerPos());
     }
 }

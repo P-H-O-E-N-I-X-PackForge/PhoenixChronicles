@@ -283,14 +283,14 @@ public class EmergencyItemsScreen extends Screen {
     }
 
     @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+    public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double delta) {
         int total = kit().getRewards().size();
         if (total > VISIBLE_ROWS) {
             scroll = Math.max(0, Math.min(total - VISIBLE_ROWS, scroll - (int) Math.signum(delta)));
             init();
             return true;
         }
-        return super.mouseScrolled(mouseX, mouseY, delta);
+        return super.mouseScrolled(mouseX, mouseY, 0.0, delta);
     }
 
     @Override

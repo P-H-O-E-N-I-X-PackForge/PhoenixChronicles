@@ -271,7 +271,7 @@ public class SearchOverlayScreen extends Screen {
     }
 
     @Override
-    public boolean mouseScrolled(double mx, double my, double delta) {
+    public boolean mouseScrolled(double mx, double my, double scrollX, double delta) {
         scrollY = Math.max(0, scrollY - (int) (delta * OVL_ROW_H));
         int max = Math.max(0, results.size() * OVL_ROW_H - OVL_MAX_ROWS * OVL_ROW_H);
         scrollY = Math.min(scrollY, max);

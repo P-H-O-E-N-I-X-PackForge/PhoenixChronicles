@@ -2,17 +2,26 @@ package net.phoenixvine.chronicles.network.packet;
 
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.fml.DistExecutor;
-import net.minecraftforge.network.NetworkEvent;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
 import net.phoenixvine.chronicles.client.util.ClientPooledProgress;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.function.Supplier;
 
-public class S2CSyncPooledProgressPacket {
+public class S2CSyncPooledProgressPacket implements CustomPacketPayload {
+
+    public static final Type<S2CSyncPooledProgressPacket> TYPE = new Type<>(
+            ResourceLocation.fromNamespaceAndPath("phoenix_chronicles", "s2_c_sync_pooled_progress"));
+    public static final StreamCodec<net.minecraft.network.RegistryFriendlyByteBuf, S2CSyncPooledProgressPacket> STREAM_CODEC = StreamCodec
+            .ofMember(S2CSyncPooledProgressPacket::encode, S2CSyncPooledProgressPacket::new);
+
+    @Override
+    public Type<? extends CustomPacketPayload> type() {
+        return TYPE;
+    }
 
     private final Map<ResourceLocation, CompoundTag> progress;
 
@@ -36,12 +45,11 @@ public class S2CSyncPooledProgressPacket {
         }
     }
 
-    public void handle(Supplier<NetworkEvent.Context> ctx) {
-        ctx.get().enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
+    public void handle(IPayloadContext context) {
+        context.enqueueWork(() -> ((Runnable) () -> {
             for (Map.Entry<ResourceLocation, CompoundTag> entry : progress.entrySet()) {
                 ClientPooledProgress.put(entry.getKey(), entry.getValue());
             }
         }));
-        ctx.get().setPacketHandled(true);
     }
 }

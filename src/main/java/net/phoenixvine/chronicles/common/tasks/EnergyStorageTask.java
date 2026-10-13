@@ -11,8 +11,8 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.energy.IEnergyStorage;
+import net.neoforged.neoforge.capabilities.Capabilities;
+import net.neoforged.neoforge.energy.IEnergyStorage;
 import net.phoenixvine.chronicles.capability.TaskProgressAccess;
 import net.phoenixvine.chronicles.common.model.QuestTask;
 import net.phoenixvine.chronicles.integration.curios.CuriosCompat;
@@ -43,7 +43,7 @@ public class EnergyStorageTask extends QuestTask {
 
         long fe = 0L, eu = 0L;
 
-        IEnergyStorage feCap = be.getCapability(ForgeCapabilities.ENERGY).orElse(null);
+        IEnergyStorage feCap = level.getCapability(Capabilities.EnergyStorage.BLOCK, pos, null);
         if (feCap != null) fe = feCap.getEnergyStored();
 
         IEnergyContainer euCap = GTCapabilityHelper.getEnergyContainer(level, pos, null);
@@ -124,25 +124,26 @@ public class EnergyStorageTask extends QuestTask {
         };
     }
 
+    private static int energyStored(ItemStack stack) {
+        IEnergyStorage storage = stack.getCapability(Capabilities.EnergyStorage.ITEM);
+        return storage == null ? 0 : storage.getEnergyStored();
+    }
+
     private long inventoryFE(Player player) {
         long total = 0;
         for (ItemStack stack : player.getInventory().items) {
             if (stack.isEmpty()) continue;
-            total += stack.getCapability(ForgeCapabilities.ENERGY)
-                    .map(IEnergyStorage::getEnergyStored).orElse(0);
+            total += energyStored(stack);
         }
         for (ItemStack stack : CuriosCompat.getEquippedCurios(player)) {
             if (stack.isEmpty()) continue;
-            total += stack.getCapability(ForgeCapabilities.ENERGY)
-                    .map(IEnergyStorage::getEnergyStored).orElse(0);
+            total += energyStored(stack);
         }
         return total;
     }
 
     private long heldFE(Player player) {
-        return player.getMainHandItem()
-                .getCapability(ForgeCapabilities.ENERGY)
-                .map(IEnergyStorage::getEnergyStored).orElse(0);
+        return energyStored(player.getMainHandItem());
     }
 
     private long blockStored(Player player) {
@@ -169,7 +170,6 @@ public class EnergyStorageTask extends QuestTask {
         };
     }
 
-    @Override
     public CompoundTag serializeNBT() {
         CompoundTag tag = new CompoundTag();
         tag.putString("type", "energy_check");
@@ -180,7 +180,6 @@ public class EnergyStorageTask extends QuestTask {
         return tag;
     }
 
-    @Override
     public void deserializeNBT(CompoundTag nbt) {
         this.requiredEnergy = nbt.contains("required_energy") ? nbt.getLong("required_energy") :
                 nbt.contains("required_fe") ? nbt.getLong("required_fe") : nbt.getLong("amount");

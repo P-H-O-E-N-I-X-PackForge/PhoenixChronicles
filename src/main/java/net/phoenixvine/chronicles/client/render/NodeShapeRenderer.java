@@ -107,21 +107,20 @@ public final class NodeShapeRenderer {
         RenderSystem.defaultBlendFunc();
 
         Tesselator tesselator = Tesselator.getInstance();
-        BufferBuilder bb = tesselator.getBuilder();
-        bb.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
+        BufferBuilder bb = tesselator.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
 
         for (FillQuad q : fillQueue) {
             int alpha = (q.color() >>> 24) & 0xFF;
             int r = (q.color() >>> 16) & 0xFF;
             int gg = (q.color() >>> 8) & 0xFF;
             int b = q.color() & 0xFF;
-            bb.vertex(IDENTITY, q.x0(), q.y0(), 0f).color(r, gg, b, alpha).endVertex();
-            bb.vertex(IDENTITY, q.x1(), q.y1(), 0f).color(r, gg, b, alpha).endVertex();
-            bb.vertex(IDENTITY, q.x2(), q.y2(), 0f).color(r, gg, b, alpha).endVertex();
-            bb.vertex(IDENTITY, q.x3(), q.y3(), 0f).color(r, gg, b, alpha).endVertex();
+            bb.addVertex(IDENTITY, q.x0(), q.y0(), 0f).setColor(r, gg, b, alpha);
+            bb.addVertex(IDENTITY, q.x1(), q.y1(), 0f).setColor(r, gg, b, alpha);
+            bb.addVertex(IDENTITY, q.x2(), q.y2(), 0f).setColor(r, gg, b, alpha);
+            bb.addVertex(IDENTITY, q.x3(), q.y3(), 0f).setColor(r, gg, b, alpha);
         }
 
-        BufferUploader.drawWithShader(bb.end());
+        BufferUploader.drawWithShader(bb.buildOrThrow());
         RenderSystem.enableDepthTest();
 
         RenderSystem.enableCull();

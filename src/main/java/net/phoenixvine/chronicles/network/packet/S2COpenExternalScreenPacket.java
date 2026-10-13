@@ -2,16 +2,24 @@ package net.phoenixvine.chronicles.network.packet;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.fml.DistExecutor;
-import net.minecraftforge.network.NetworkEvent;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 import org.jetbrains.annotations.Nullable;
 
-import java.util.function.Supplier;
+public class S2COpenExternalScreenPacket implements CustomPacketPayload {
 
-public class S2COpenExternalScreenPacket {
+    public static final Type<S2COpenExternalScreenPacket> TYPE = new Type<>(
+            ResourceLocation.fromNamespaceAndPath("phoenix_chronicles", "s2_c_open_external_screen"));
+    public static final StreamCodec<net.minecraft.network.RegistryFriendlyByteBuf, S2COpenExternalScreenPacket> STREAM_CODEC = StreamCodec
+            .ofMember(S2COpenExternalScreenPacket::encode, S2COpenExternalScreenPacket::new);
+
+    @Override
+    public Type<? extends CustomPacketPayload> type() {
+        return TYPE;
+    }
 
     @Nullable
     private final ResourceLocation screenId;
@@ -29,13 +37,12 @@ public class S2COpenExternalScreenPacket {
                 screenId != null ? screenId : ResourceLocation.fromNamespaceAndPath("minecraft", "empty"));
     }
 
-    public void handle(Supplier<NetworkEvent.Context> ctx) {
-        ctx.get().enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
+    public void handle(IPayloadContext context) {
+        context.enqueueWork(() -> ((Runnable) () -> {
             if (screenId == null) return;
             net.minecraft.client.gui.screens.Screen screen = net.phoenixvine.chronicles.client.registry.ExternalScreenRegistry
                     .open(screenId, null);
             if (screen != null) Minecraft.getInstance().setScreen(screen);
         }));
-        ctx.get().setPacketHandled(true);
     }
 }

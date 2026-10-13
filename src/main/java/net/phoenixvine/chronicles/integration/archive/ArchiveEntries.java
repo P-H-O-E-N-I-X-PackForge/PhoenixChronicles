@@ -33,7 +33,7 @@ public final class ArchiveEntries {
                 .content(node.getDescription().getString())
                 .unlockedByQuest(node.getId().toString());
         if (node.getIconItem() != null) {
-            ResourceLocation iconId = net.minecraftforge.registries.ForgeRegistries.ITEMS.getKey(node.getIconItem());
+            ResourceLocation iconId = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(node.getIconItem());
             if (iconId != null) b.icon(iconId.toString());
         }
         return b;

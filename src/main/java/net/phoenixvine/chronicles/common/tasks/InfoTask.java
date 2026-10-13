@@ -34,7 +34,6 @@ public class InfoTask extends QuestTask {
         return isCompletedFor(player) ? "Read" : "Unread";
     }
 
-    @Override
     public CompoundTag serializeNBT() {
         CompoundTag tag = new CompoundTag();
         tag.putString("type", "info");
@@ -42,7 +41,6 @@ public class InfoTask extends QuestTask {
         return tag;
     }
 
-    @Override
     public void deserializeNBT(CompoundTag nbt) {
         if (nbt.contains("body")) body = nbt.getString("body");
     }

@@ -1,6 +1,6 @@
 package net.phoenixvine.chronicles.common.tasks;
 
-import net.minecraft.advancements.Advancement;
+import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -37,13 +37,12 @@ public class AdvancementTask extends QuestTask {
         if (advancementId == null || !(player instanceof ServerPlayer serverPlayer)) return;
         if (TaskProgressAccess.getOrEmpty(player, this.getTaskId()).getBoolean("completed")) return;
 
-        Advancement adv = serverPlayer.getServer().getAdvancements().getAdvancement(advancementId);
+        AdvancementHolder adv = serverPlayer.getServer().getAdvancements().get(advancementId);
         if (adv != null && serverPlayer.getAdvancements().getOrStartProgress(adv).isDone()) {
             TaskProgressAccess.with(player, this.getTaskId(), nbt -> nbt.putBoolean("completed", true));
         }
     }
 
-    @Override
     public CompoundTag serializeNBT() {
         CompoundTag tag = new CompoundTag();
         tag.putString("type", "advancement");
@@ -52,7 +51,6 @@ public class AdvancementTask extends QuestTask {
         return tag;
     }
 
-    @Override
     public void deserializeNBT(CompoundTag nbt) {
         if (nbt.contains("advancement_id")) {
             this.advancementId = ResourceLocation.parse(nbt.getString("advancement_id"));

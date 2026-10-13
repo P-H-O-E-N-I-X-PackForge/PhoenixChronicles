@@ -87,7 +87,8 @@ public final class KubeJsTaskTypeLoader {
                     }
                     Component desc;
                     try {
-                        desc = Component.Serializer.fromJson(tag.getString("description"));
+                        desc = Component.Serializer.fromJson(tag.getString("description"),
+                                net.minecraft.core.RegistryAccess.EMPTY);
                     } catch (Exception ex) {
                         desc = Component.literal(label);
                     }

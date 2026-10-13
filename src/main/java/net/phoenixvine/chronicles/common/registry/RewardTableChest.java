@@ -2,8 +2,6 @@ package net.phoenixvine.chronicles.common.registry;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.StringTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
@@ -15,6 +13,7 @@ import net.minecraft.world.phys.HitResult;
 import net.phoenixvine.chronicles.common.model.QuestReward.ItemReward;
 import net.phoenixvine.chronicles.common.model.QuestReward.WeightedReward;
 import net.phoenixvine.chronicles.common.model.RewardTable;
+import net.phoenixvine.chronicles.common.util.ItemData;
 
 import org.jetbrains.annotations.Nullable;
 
@@ -86,7 +85,7 @@ public final class RewardTableChest {
 
     private static ItemStack toStack(ItemReward ir, int weight) {
         ItemStack stack = new ItemStack(ir.getItem(),
-                Math.min(ir.getCount(), Math.max(1, ir.getItem().getMaxStackSize())));
+                Math.min(ir.getCount(), Math.max(1, ir.getItem().getDefaultMaxStackSize())));
 
         CompoundTag tag = ir.getNbt() != null ? ir.getNbt().copy() : new CompoundTag();
         CompoundTag meta = new CompoundTag();
@@ -95,19 +94,16 @@ public final class RewardTableChest {
         if (!ir.isPushToAe2()) meta.putBoolean("no_ae2", true);
         tag.put(META_KEY, meta);
 
-        CompoundTag display = tag.getCompound("display");
-        ListTag lore = display.getList("Lore", Tag.TAG_STRING);
-        lore.add(StringTag.valueOf(weightLoreJson(weight)));
-        display.put("Lore", lore);
-        tag.put("display", display);
+        stack.set(net.minecraft.core.component.DataComponents.LORE, new net.minecraft.world.item.component.ItemLore(
+                List.of(weightLore(weight))));
 
-        stack.setTag(tag);
+        ItemData.setTag(stack, tag);
         return stack;
     }
 
-    private static String weightLoreJson(int weight) {
-        return Component.Serializer.toJson(Component.literal("Reward weight: " + weight)
-                .withStyle(s -> s.withColor(ChatFormatting.GRAY).withItalic(false)));
+    private static Component weightLore(int weight) {
+        return Component.literal("Reward weight: " + weight)
+                .withStyle(s -> s.withColor(ChatFormatting.GRAY).withItalic(false));
     }
 
     public static Result importInto(Path configDir, String id, @Nullable Integer pick, Container container) {
@@ -151,7 +147,7 @@ public final class RewardTableChest {
     }
 
     private static WeightedReward fromStack(ItemStack stack) {
-        CompoundTag tag = stack.hasTag() ? stack.getTag().copy() : null;
+        CompoundTag tag = ItemData.hasTag(stack) ? ItemData.getTag(stack).copy() : null;
 
         int weight = 1;
         int count = stack.getCount();
@@ -162,27 +158,9 @@ public final class RewardTableChest {
             if (meta.contains("count")) count = Math.max(1, meta.getInt("count"));
             if (meta.getBoolean("no_ae2")) pushAe2 = false;
             tag.remove(META_KEY);
-            stripWeightLore(tag, weight);
         }
         if (tag != null && tag.isEmpty()) tag = null;
 
         return new WeightedReward(new ItemReward(stack.getItem(), count, tag, pushAe2), weight);
-    }
-
-    private static void stripWeightLore(CompoundTag tag, int weight) {
-        if (!tag.contains("display", Tag.TAG_COMPOUND)) return;
-        CompoundTag display = tag.getCompound("display");
-        ListTag lore = display.getList("Lore", Tag.TAG_STRING);
-        String ours = weightLoreJson(weight);
-        for (int i = lore.size() - 1; i >= 0; i--) {
-            if (lore.getString(i).equals(ours)) {
-                lore.remove(i);
-                break;
-            }
-        }
-        if (lore.isEmpty()) display.remove("Lore");
-        else display.put("Lore", lore);
-        if (display.isEmpty()) tag.remove("display");
-        else tag.put("display", display);
     }
 }

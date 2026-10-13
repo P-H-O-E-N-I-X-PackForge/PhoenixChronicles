@@ -808,7 +808,7 @@ public class DepLineSettingsScreen extends Screen {
     }
 
     @Override
-    public boolean mouseScrolled(double mx, double my, double delta) {
+    public boolean mouseScrolled(double mx, double my, double scrollX, double delta) {
         scrollY = Math.max(0, Math.min(maxScroll(), (int) (scrollY - delta * 12)));
         return true;
     }

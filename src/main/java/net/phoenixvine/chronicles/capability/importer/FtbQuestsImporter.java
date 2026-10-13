@@ -1386,7 +1386,7 @@ public class FtbQuestsImporter {
             var tag = net.minecraft.tags.ItemTags.create(net.minecraft.resources.ResourceLocation.parse(tagId));
             var iter = net.minecraft.core.registries.BuiltInRegistries.ITEM.getTagOrEmpty(tag).iterator();
             if (iter.hasNext()) {
-                net.minecraft.resources.ResourceLocation id = net.minecraftforge.registries.ForgeRegistries.ITEMS
+                net.minecraft.resources.ResourceLocation id = net.minecraft.core.registries.BuiltInRegistries.ITEM
                         .getKey(iter.next().value());
                 return id != null ? id.toString() : null;
             }

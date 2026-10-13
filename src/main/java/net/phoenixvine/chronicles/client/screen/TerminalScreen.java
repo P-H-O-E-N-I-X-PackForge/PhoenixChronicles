@@ -12,7 +12,6 @@ import net.phoenixvine.chronicles.common.model.QuestNode;
 import net.phoenixvine.chronicles.common.model.QuestState;
 import net.phoenixvine.chronicles.common.model.QuestTask;
 import net.phoenixvine.chronicles.common.registry.QuestTreeRegistry;
-import net.phoenixvine.chronicles.network.ChronicleNetwork;
 import net.phoenixvine.chronicles.network.packet.C2SClaimQuestRewardPacket;
 import net.phoenixvine.chronicles.network.packet.C2SSetQuestStatePacket;
 import net.phoenixvine.wiki.theme.PhoenixTheme;
@@ -389,7 +388,7 @@ public class TerminalScreen extends Screen {
             consoleHistory.add("§cERR: Quest '" + id + "' not found.");
             return;
         }
-        ChronicleNetwork.CHANNEL.sendToServer(new C2SSetQuestStatePacket(id, activate));
+        net.neoforged.neoforge.network.PacketDistributor.sendToServer(new C2SSetQuestStatePacket(id, activate));
         consoleHistory.add("§a[NET] Sent " + (activate ? "activate" : "deactivate") + " request for §f" + id);
     }
 
@@ -413,7 +412,7 @@ public class TerminalScreen extends Screen {
             consoleHistory.add("§cERR: Quest not completed (state: " + state.name() + ").");
             return;
         }
-        ChronicleNetwork.CHANNEL.sendToServer(new C2SClaimQuestRewardPacket(id, -1));
+        net.neoforged.neoforge.network.PacketDistributor.sendToServer(new C2SClaimQuestRewardPacket(id, -1));
         consoleHistory.add("§a[NET] Sent reward claim for §f" + id);
     }
 
@@ -436,7 +435,7 @@ public class TerminalScreen extends Screen {
     private PlayerQuestData getPlayerData() {
         var mc = Minecraft.getInstance();
         if (mc.player == null) return null;
-        return mc.player.getCapability(QuestCapabilityProvider.PLAYER_QUESTS).orElse(null);
+        return QuestCapabilityProvider.of(mc.player).orElse(null);
     }
 
     private static ResourceLocation safeRL(String s) {
@@ -456,7 +455,7 @@ public class TerminalScreen extends Screen {
 
     @Override
     public void render(@NotNull GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
-        this.renderBackground(graphics);
+        this.renderBackground(graphics, mouseX, mouseY, partialTicks);
 
         int termX = 20;
         int termY = 20;

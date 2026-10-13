@@ -1,14 +1,16 @@
 package net.phoenixvine.chronicles.capability;
 
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceLocation;
+import net.neoforged.neoforge.common.util.INBTSerializable;
 import net.phoenixvine.chronicles.common.model.QuestState;
 
 import java.util.*;
 
-public class PlayerQuestData {
+public class PlayerQuestData implements INBTSerializable<CompoundTag> {
 
     private final Map<ResourceLocation, QuestState> questStates = new HashMap<>();
     private final Map<ResourceLocation, CompoundTag> taskProgress = new HashMap<>();
@@ -189,6 +191,16 @@ public class PlayerQuestData {
 
     public boolean isPinned(ResourceLocation questId) {
         return pinnedQuestIds.contains(questId);
+    }
+
+    @Override
+    public CompoundTag serializeNBT(HolderLookup.Provider provider) {
+        return serializeNBT();
+    }
+
+    @Override
+    public void deserializeNBT(HolderLookup.Provider provider, CompoundTag root) {
+        deserializeNBT(root);
     }
 
     public CompoundTag serializeNBT() {

@@ -247,7 +247,7 @@ public class ChapterThemeScreen extends Screen {
         addRenderableWidget(Button.builder(Component.literal("§7Change Icon"),
                 b -> {
                     if (minecraft != null) minecraft.setScreen(new ItemPickerScreen(this, stack -> {
-                        cachedIcon = net.minecraftforge.registries.ForgeRegistries.ITEMS.getKey(stack.getItem())
+                        cachedIcon = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(stack.getItem())
                                 .toString();
                     }));
                 })
@@ -302,7 +302,7 @@ public class ChapterThemeScreen extends Screen {
         addRenderableWidget(Button.builder(ChroniclesUIKit.lit("Browse…"), b -> {
             if (minecraft != null) {
                 minecraft.setScreen(new RegistryIdPickerScreen(this, "Pick unlock sound",
-                        net.minecraftforge.registries.ForgeRegistries.SOUND_EVENTS.getKeys(), id -> {
+                        net.minecraft.core.registries.BuiltInRegistries.SOUND_EVENT.keySet(), id -> {
                             cachedUnlockSoundId = id.toString();
                             unlockSoundBox.setValue(cachedUnlockSoundId);
                         }));
@@ -321,7 +321,7 @@ public class ChapterThemeScreen extends Screen {
         addRenderableWidget(Button.builder(ChroniclesUIKit.lit("Browse…"), b -> {
             if (minecraft != null) {
                 minecraft.setScreen(new RegistryIdPickerScreen(this, "Pick complete sound",
-                        net.minecraftforge.registries.ForgeRegistries.SOUND_EVENTS.getKeys(), id -> {
+                        net.minecraft.core.registries.BuiltInRegistries.SOUND_EVENT.keySet(), id -> {
                             cachedCompleteSoundId = id.toString();
                             completeSoundBox.setValue(cachedCompleteSoundId);
                         }));
@@ -342,7 +342,7 @@ public class ChapterThemeScreen extends Screen {
         addRenderableWidget(Button.builder(ChroniclesUIKit.lit("Browse…"), b -> {
             if (minecraft != null) {
                 minecraft.setScreen(new RegistryIdPickerScreen(this, "Pick chapter music",
-                        net.minecraftforge.registries.ForgeRegistries.SOUND_EVENTS.getKeys(), id -> {
+                        net.minecraft.core.registries.BuiltInRegistries.SOUND_EVENT.keySet(), id -> {
                             cachedMusicId = id.toString();
                             musicBox.setValue(cachedMusicId);
                         }));
@@ -510,8 +510,8 @@ public class ChapterThemeScreen extends Screen {
     private net.minecraft.world.item.Item resolveIconPreview() {
         if (cachedIcon != null && !cachedIcon.isEmpty()) {
             try {
-                net.minecraft.world.item.Item item = net.minecraftforge.registries.ForgeRegistries.ITEMS
-                        .getValue(net.minecraft.resources.ResourceLocation.parse(cachedIcon));
+                net.minecraft.world.item.Item item = net.minecraft.core.registries.BuiltInRegistries.ITEM
+                        .get(net.minecraft.resources.ResourceLocation.parse(cachedIcon));
                 if (item != null && item != net.minecraft.world.item.Items.AIR) return item;
             } catch (Exception ignored) {}
         }
@@ -575,7 +575,7 @@ public class ChapterThemeScreen extends Screen {
     }
 
     @Override
-    public void renderBackground(@NotNull GuiGraphics g) {}
+    public void renderBackground(@NotNull GuiGraphics g, int mouseX, int mouseY, float partialTick) {}
 
     @Override
     public void render(@NotNull GuiGraphics g, int rmx, int rmy, float partial) {
@@ -836,7 +836,7 @@ public class ChapterThemeScreen extends Screen {
     }
 
     @Override
-    public boolean mouseScrolled(double rmx, double rmy, double delta) {
+    public boolean mouseScrolled(double rmx, double rmy, double scrollX, double delta) {
         double mx = rmx / uiScale;
         double my = rmy / uiScale;
         if (advancedOpen && overrides.size() > ADV_VISIBLE_ROWS) {
@@ -851,7 +851,7 @@ public class ChapterThemeScreen extends Screen {
                 return true;
             }
         }
-        return super.mouseScrolled(mx, my, delta);
+        return super.mouseScrolled(mx, my, 0.0, delta);
     }
 
     @Override

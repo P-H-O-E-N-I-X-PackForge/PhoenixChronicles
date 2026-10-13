@@ -96,7 +96,6 @@ public class KillEntityTask extends QuestTask {
         return current + "/" + requiredCount;
     }
 
-    @Override
     public CompoundTag serializeNBT() {
         CompoundTag tag = new CompoundTag();
         tag.putString("type", "kill_entity");
@@ -106,7 +105,6 @@ public class KillEntityTask extends QuestTask {
         return tag;
     }
 
-    @Override
     public void deserializeNBT(CompoundTag nbt) {
         if (nbt.contains("entity_id")) {
             TaskIdMatcher parsed = TaskIdMatcher.parse(nbt.getString("entity_id"));

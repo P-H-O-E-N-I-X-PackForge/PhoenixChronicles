@@ -49,7 +49,6 @@ public class LocationOrTerminalTask extends QuestTask {
         TaskProgressAccess.with(player, this.getTaskId(), nbt -> nbt.putBoolean("completed", false));
     }
 
-    @Override
     public CompoundTag serializeNBT() {
         CompoundTag nbt = new CompoundTag();
         nbt.putString("type", "location_terminal");
@@ -59,7 +58,6 @@ public class LocationOrTerminalTask extends QuestTask {
         return nbt;
     }
 
-    @Override
     public void deserializeNBT(CompoundTag nbt) {
         if (nbt.contains("TargetTerminal")) {
             this.targetTerminalId = ResourceLocation.parse(nbt.getString("TargetTerminal"));

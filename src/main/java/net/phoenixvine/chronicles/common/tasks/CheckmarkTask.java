@@ -22,13 +22,11 @@ public class CheckmarkTask extends QuestTask {
         return TaskProgressAccess.getOrEmpty(player, getTaskId()).getBoolean("completed");
     }
 
-    @Override
     public CompoundTag serializeNBT() {
         CompoundTag tag = new CompoundTag();
         tag.putString("type", "checkmark");
         return tag;
     }
 
-    @Override
     public void deserializeNBT(CompoundTag nbt) {}
 }
