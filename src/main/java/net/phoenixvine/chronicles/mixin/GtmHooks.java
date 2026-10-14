@@ -22,31 +22,37 @@ public final class GtmHooks {
                                         ResourceLocation recipeId) {
         if (!(level instanceof ServerLevel serverLevel) || recipeType == null) return;
 
-        ServerPlayer player = null;
-        if (owner != null) player = serverLevel.getServer().getPlayerList().getPlayer(owner);
-        if (player == null) {
-            Player nearest = serverLevel.getNearestPlayer(machinePos.getX() + 0.5, machinePos.getY() + 0.5,
-                    machinePos.getZ() + 0.5, NEAREST_PLAYER_RANGE, false);
-            if (nearest instanceof ServerPlayer sp) player = sp;
-        }
+        ServerPlayer player = findPlayer(serverLevel, machinePos, owner);
         if (player == null) return;
 
         QuestAPI.fireRecipeCompleted(player, recipeType, recipeId, 1);
     }
 
-    public static void onMultiblockFormed(Level level, BlockPos controllerPos) {
+    public static void onMultiblockFormed(Level level, BlockPos controllerPos, UUID owner) {
         if (!(level instanceof ServerLevel serverLevel) || controllerPos == null) return;
 
         ResourceLocation machineId = ForgeRegistries.BLOCKS.getKey(
                 serverLevel.getBlockState(controllerPos).getBlock());
         if (machineId == null) return;
 
-        Player nearest = serverLevel.getNearestPlayer(controllerPos.getX() + 0.5, controllerPos.getY() + 0.5,
-                controllerPos.getZ() + 0.5, NEAREST_PLAYER_RANGE, false);
-        if (!(nearest instanceof ServerPlayer serverPlayer)) return;
+        ServerPlayer player = findPlayer(serverLevel, controllerPos, owner);
+        if (player == null) return;
+
+        QuestAPI.fireMultiblockFormed(player, machineId, 1);
 
         CompoundTag data = new CompoundTag();
         data.putString("machine_id", machineId.toString());
-        QuestAPI.fireExternalEvent(serverPlayer, "gtceu_multiblock:" + machineId, data);
+        QuestAPI.fireExternalEvent(player, "gtceu_multiblock:" + machineId, data);
+    }
+
+    /** The machine's owner when online, otherwise the nearest player. */
+    private static ServerPlayer findPlayer(ServerLevel level, BlockPos pos, UUID owner) {
+        if (owner != null) {
+            ServerPlayer ownerPlayer = level.getServer().getPlayerList().getPlayer(owner);
+            if (ownerPlayer != null) return ownerPlayer;
+        }
+        Player nearest = level.getNearestPlayer(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
+                NEAREST_PLAYER_RANGE, false);
+        return nearest instanceof ServerPlayer sp ? sp : null;
     }
 }

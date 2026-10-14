@@ -6,8 +6,8 @@
   "compatibilityLevel": "JAVA_17",
   "minVersion": "0.8",
   "mixins": [
-    "MultiblockFormedMixin",
-    "MultiblockFormedMixinGtm8",
+    "MultiblockControllerFormedMixin",
+    "MultiblockControllerFormedMixinGtm8",
     "GTRecipeFinishedMixin",
     "GTRecipeFinishedMixinGtm8"
   ],

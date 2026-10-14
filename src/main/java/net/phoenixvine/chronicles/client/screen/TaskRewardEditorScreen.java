@@ -349,7 +349,7 @@ public class TaskRewardEditorScreen extends Screen {
         boolean needsSecond = taskType.equals("block_interact") || taskType.equals("stat") ||
                 taskType.equals("dimension") || taskType.equals("energy_check") || taskType.equals("recipe");
         boolean needsCount = switch (taskType) {
-            case "kill_entity", "item_check", "craft_item", "experience", "fluid_check", "stat", "tag_item", "energy_check", "external_trigger", "view_machine", "view_scene", "recipe", "block_interact" -> true;
+            case "kill_entity", "item_check", "craft_item", "experience", "fluid_check", "stat", "tag_item", "energy_check", "external_trigger", "gt_multiblock", "view_machine", "view_scene", "recipe", "block_interact" -> true;
             default -> {
                 PhoenixTaskRegistry.TaskEntry re = PhoenixTaskRegistry.get(taskType);
                 yield re != null &&
@@ -394,6 +394,7 @@ public class TaskRewardEditorScreen extends Screen {
                 case "filter_item" -> "§8Item id(s), semicolon-separated: ANY match  (e.g. wire;cable)";
                 case "filter_fluid" -> "§8Fluid id(s), semicolon-separated: ANY match  (e.g. water;lava)";
                 case "external_trigger" -> "§8Trigger id";
+                case "gt_multiblock" -> "§8Controller id  (e.g. gtceu:electric_blast_furnace, or * for any)";
                 case "recipe" -> "§8Recipe type  (e.g. gtceu:macerator, minecraft:smelting)";
                 case "view_machine" -> "§8Machine id  (Phantasia multiblock definition id)";
                 case "view_scene" -> "§8Scene id  (Phantasia scene definition id)";
@@ -423,7 +424,7 @@ public class TaskRewardEditorScreen extends Screen {
                     taskType.equals("tag_item") || taskType.equals("advancement");
             boolean hasStringIdPicker = taskType.equals("view_machine") || taskType.equals("view_scene") ||
                     taskType.equals("view_guide") || taskType.equals("archive_entry") ||
-                    taskType.equals("external_trigger");
+                    taskType.equals("external_trigger") || taskType.equals("gt_multiblock");
             boolean hasRecipeTypePicker = taskType.equals("recipe");
             boolean hasEnergyTypeCycle = taskType.equals("energy_check");
             boolean hasAnyItemPicker = hasItemPicker || hasItemListPicker;
@@ -652,6 +653,7 @@ public class TaskRewardEditorScreen extends Screen {
                 case "stat" -> "§8Target value";
                 case "energy_check" -> "§8FE required";
                 case "external_trigger" -> "§8Times fired";
+                case "gt_multiblock" -> "§8Times formed";
                 case "view_machine", "view_scene" -> "§8Min seconds";
                 default -> {
                     PhoenixTaskRegistry.TaskEntry re = PhoenixTaskRegistry.get(taskType);
@@ -1302,6 +1304,8 @@ public class TaskRewardEditorScreen extends Screen {
                             .map(ResourceLocation::toString).toList() :
                     null;
             case "external_trigger" -> net.phoenixvine.chronicles.QuestAPI.getRegisteredExternalTriggers().keySet();
+            case "gt_multiblock" -> net.phoenixvine.chronicles.integration.gtceu.GTCEuCompat.isAvailable() ?
+                    net.phoenixvine.chronicles.integration.gtceu.GtmMachines.multiblockControllerIds() : null;
             default -> null;
         };
     }
@@ -1508,6 +1512,13 @@ public class TaskRewardEditorScreen extends Screen {
                         count);
                 case "info" -> new InfoTask(taskId, descComp, target);
                 case "external_trigger" -> new ExternalTriggerTask(taskId, descComp, target, count);
+                case "gt_multiblock" -> {
+                    String machine = target.trim();
+                    ResourceLocation machineId = machine.equals(MultiblockFormedTask.ANY) ? null :
+                            ResourceLocation.tryParse(machine);
+                    yield machineId != null || machine.equals(MultiblockFormedTask.ANY) ?
+                            new MultiblockFormedTask(taskId, descComp, machineId, count) : null;
+                }
                 case "view_machine" -> new ViewMachineTask(taskId, descComp, target,
                         (float) count);
                 case "view_scene" -> new ViewSceneTask(taskId, descComp, target,
@@ -1669,6 +1680,9 @@ public class TaskRewardEditorScreen extends Screen {
             pendingTaskTarget = est.getEnergyType().name();
             pendingTaskSecondary = est.getSource().name();
             pendingTaskCount = String.valueOf(est.getRequiredEnergy());
+        } else if (t instanceof MultiblockFormedTask mt) {
+            pendingTaskTarget = mt.getMachineId() != null ? mt.getMachineId().toString() : MultiblockFormedTask.ANY;
+            pendingTaskCount = String.valueOf(mt.getRequired());
         } else if (t instanceof ExternalTriggerTask xt) {
             pendingTaskTarget = xt.getTriggerId();
             pendingTaskCount = String.valueOf(xt.getRequired());
@@ -1735,6 +1749,7 @@ public class TaskRewardEditorScreen extends Screen {
         if (t instanceof ItemRequirementTask) return "item_check";
         if (t instanceof CraftItemTask) return "craft_item";
         if (t instanceof RecipeTask) return "recipe";
+        if (t instanceof MultiblockFormedTask) return "gt_multiblock";
         if (t instanceof ExperienceTask) return "experience";
         if (t instanceof LocationOrTerminalTask) return "location_terminal";
         if (t instanceof AdvancementTask) return "advancement";
@@ -2759,6 +2774,9 @@ public class TaskRewardEditorScreen extends Screen {
             return item != null ? item.getDefaultInstance().getHoverName().getString() + " ×" + t.getRequiredCount() :
                     t.getItemId().toString();
         }
+        if (task instanceof MultiblockFormedTask t)
+            return (t.getMachineId() != null ? t.getMachineId().toString() : "any multiblock") + " ×" +
+                    t.getRequired();
         if (task instanceof RecipeTask t)
             return (t.getRecipeId() != null ? t.getRecipeId().toString() : t.getRecipeType().toString()) + " ×" +
                     t.getRequired();

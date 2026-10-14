@@ -2044,6 +2044,7 @@ public class QuestTasksScreen extends Screen
         if (task instanceof EnergyStorageTask) return "§6⚡";
         if (task instanceof FilterItemTask) return "§e◈";
         if (task instanceof FilterFluidTask) return "§3◈";
+        if (task instanceof MultiblockFormedTask) return "§6⬡";
         if (task instanceof ViewMachineTask) return "§b⬡";
         if (task instanceof ViewSceneTask) return "§b⬢";
         if (task instanceof ViewGuideTask) return "§b📖";
@@ -2123,6 +2124,9 @@ public class QuestTasksScreen extends Screen
         if (task instanceof FilterFluidTask t) {
             return t.getFilter().describe() + ": " + String.format("%,d", t.getAmount()) + " mB" +
                     (t.isConsume() ? "  (consumed)" : "");
+        }
+        if (task instanceof MultiblockFormedTask t) {
+            return "Form: " + (t.getMachineId() != null ? t.getMachineId() : "any multiblock") + " ×" + t.getRequired();
         }
         if (task instanceof ViewMachineTask t) {
             return "Phantasia: " + t.getMachineId();

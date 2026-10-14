@@ -288,6 +288,19 @@ public final class PhoenixTaskRegistry {
                 .field(FieldDef.integer("required", "Count"))
                 .register();
 
+        register("gt_multiblock", tag -> {
+            MultiblockFormedTask t = new MultiblockFormedTask(taskId(tag), desc(tag), null, 1);
+            t.deserializeNBT(tag);
+            return t;
+        }).icon("§6⬡").label("Form GT Multiblock")
+                .tooltip("Form a GregTech multiblock. Counted for the machine's owner, or the nearest player if " +
+                        "nobody owns it.\nTarget: controller block id (e.g. gtceu:electric_blast_furnace), or * for " +
+                        "any multiblock.\nCount: how many times.")
+                .field(FieldDef.text("machine_id", "Controller id (or * for any)", "e.g. gtceu:electric_blast_furnace"))
+                .field(FieldDef.integer("required", "Count"))
+                .requiresMod("gtceu")
+                .register();
+
         register("experience", tag -> {
             ExperienceTask t = new ExperienceTask(taskId(tag), desc(tag), 1);
             t.deserializeNBT(tag);

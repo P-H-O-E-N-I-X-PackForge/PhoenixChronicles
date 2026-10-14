@@ -11,8 +11,8 @@ import java.util.Set;
 
 public class PhoenixChroniclesMixinPlugin implements IMixinConfigPlugin {
 
-    private static final String MULTIBLOCK_MIXIN = "net.phoenixvine.chronicles.mixin.MultiblockFormedMixin";
-    private static final String MULTIBLOCK_MIXIN_GTM8 = "net.phoenixvine.chronicles.mixin.MultiblockFormedMixinGtm8";
+    private static final String MULTIBLOCK_MIXIN = "net.phoenixvine.chronicles.mixin.MultiblockControllerFormedMixin";
+    private static final String MULTIBLOCK_MIXIN_GTM8 = "net.phoenixvine.chronicles.mixin.MultiblockControllerFormedMixinGtm8";
     private static final String RECIPE_FINISHED_MIXIN = "net.phoenixvine.chronicles.mixin.GTRecipeFinishedMixin";
     private static final String RECIPE_FINISHED_MIXIN_GTM8 = "net.phoenixvine.chronicles.mixin.GTRecipeFinishedMixinGtm8";
 
