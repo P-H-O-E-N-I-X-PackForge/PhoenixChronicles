@@ -30,7 +30,7 @@ public final class FluidFilters {
         public boolean test(FluidStack stack) {
             ResourceLocation id = BuiltInRegistries.FLUID.getKey(stack.getFluid());
             if (!fluidId.equals(id)) return false;
-            return NbtMatchUtil.matches(ItemData.getTag(stack), nbt);
+            return nbt == null || nbt.isEmpty() || NbtMatchUtil.matches(ItemData.matchView(stack), nbt);
         }
 
         @Override

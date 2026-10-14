@@ -103,8 +103,6 @@ public class ToastDesignerScreen extends Screen {
         this.cfg = existing != null ? existing.copy() : new QuestToastConfig();
     }
 
-
-
     @Override
     protected void init() {
         uiScale = (width < MIN_W || height < MIN_H) ? Math.min(width / (float) MIN_W, height / (float) MIN_H) : 1f;

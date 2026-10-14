@@ -47,8 +47,7 @@ public class RewardTableSimulatorScreen extends Screen {
     }
 
     @Override
-    public void renderBackground(GuiGraphics context, int mouseX, int mouseY, float delta) {
-    }
+    public void renderBackground(GuiGraphics context, int mouseX, int mouseY, float delta) {}
 
     @Override
     protected void init() {

@@ -46,10 +46,10 @@ public class S2CSyncPooledProgressPacket implements CustomPacketPayload {
     }
 
     public void handle(IPayloadContext context) {
-        context.enqueueWork(() -> ((Runnable) () -> {
+        context.enqueueWork(() -> {
             for (Map.Entry<ResourceLocation, CompoundTag> entry : progress.entrySet()) {
                 ClientPooledProgress.put(entry.getKey(), entry.getValue());
             }
-        }));
+        });
     }
 }

@@ -80,7 +80,7 @@ public class ItemRequirementTask extends QuestTask {
 
     private boolean stackMatches(ItemStack stack) {
         if (stack.isEmpty() || stack.getItem() != item) return false;
-        return NbtMatchUtil.matches(ItemData.getTag(stack), nbtFilter);
+        return nbtFilter == null || nbtFilter.isEmpty() || NbtMatchUtil.matches(ItemData.matchView(stack), nbtFilter);
     }
 
     private Iterable<ItemStack> allSlots(Player player) {

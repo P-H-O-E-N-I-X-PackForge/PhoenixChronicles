@@ -46,8 +46,7 @@ public class ItemLookupResultsScreen extends Screen {
     }
 
     @Override
-    public void renderBackground(GuiGraphics context, int mouseX, int mouseY, float delta) {
-    }
+    public void renderBackground(GuiGraphics context, int mouseX, int mouseY, float delta) {}
 
     private int listTop() {
         return HEADER_H + 6;

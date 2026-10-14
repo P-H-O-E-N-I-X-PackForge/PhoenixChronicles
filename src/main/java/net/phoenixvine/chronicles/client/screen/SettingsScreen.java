@@ -62,8 +62,7 @@ public class SettingsScreen extends Screen {
     }
 
     @Override
-    public void renderBackground(GuiGraphics context, int mouseX, int mouseY, float delta) {
-    }
+    public void renderBackground(GuiGraphics context, int mouseX, int mouseY, float delta) {}
 
     private enum RowType {
         TOGGLE,

@@ -77,8 +77,6 @@ public class QuestCreatorScreen extends Screen {
         }
     }
 
-
-
     private final Set<Section> collapsedSections = new HashSet<>(List.of(
             Section.TASKS_REWARDS, Section.EMERGENCY, Section.VARIANTS, Section.REWARDS_REPEATS, Section.ADVANCED,
             Section.RAW));

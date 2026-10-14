@@ -78,8 +78,7 @@ public class EmergencyClaimScreen extends Screen {
     }
 
     @Override
-    public void renderBackground(GuiGraphics context, int mouseX, int mouseY, float delta) {
-    }
+    public void renderBackground(GuiGraphics context, int mouseX, int mouseY, float delta) {}
 
     private void refreshRows() {
         List<Row> list = new ArrayList<>();

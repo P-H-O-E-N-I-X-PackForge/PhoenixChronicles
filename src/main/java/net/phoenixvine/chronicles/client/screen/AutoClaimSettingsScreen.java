@@ -38,8 +38,7 @@ public class AutoClaimSettingsScreen extends Screen {
     }
 
     @Override
-    public void renderBackground(GuiGraphics context, int mouseX, int mouseY, float delta) {
-    }
+    public void renderBackground(GuiGraphics context, int mouseX, int mouseY, float delta) {}
 
     private void apply(boolean enabled, EnumSet<AutoClaimCategory> categories) {
         PlayerQuestData data = data();

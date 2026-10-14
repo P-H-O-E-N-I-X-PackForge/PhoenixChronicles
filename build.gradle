@@ -179,6 +179,8 @@ dependencies {
     compileOnly "top.theillusivec4.curios:curios-neoforge:${curios_version}"
     compileOnly "dev.ftb.mods:ftb-teams-neoforge:${ftbteams_version}"
     compileOnly "dev.ftb.mods:ftb-library-neoforge:${ftblibrary_version}"
+    compileOnly "net.phoenix.phoenix_archive:phoenix_archive:${phoenix_archive_version}"
+    compileOnly "net.phoenix.core:Phantasia:${phantasia_version}"
     compileOnly "dev.emi:emi-neoforge:${emi_version}+${minecraft_version}"
     compileOnly "mezz.jei:jei-${minecraft_version}-neoforge-api:${jei_version}"
     compileOnly "mezz.jei:jei-${minecraft_version}-common-api:${jei_version}"
@@ -190,6 +192,10 @@ dependencies {
 
     // GregTech in the dev client, so its hooks can be exercised
     localRuntime "curse.maven:phoenixs-chromatic-colors-1483210:8388618"
+    localRuntime "net.phoenix.phoenix_archive:phoenix_archive:${phoenix_archive_version}"
+    localRuntime("net.phoenix.core:Phantasia:${phantasia_version}") { transitive = false }
+    localRuntime "org.appliedenergistics:appliedenergistics2:${ae2_version}"
+    localRuntime "org.appliedenergistics:guideme:${guideme_version}"
     localRuntime "dev.latvian.mods:kubejs-neoforge:${kubejs_version}"
     localRuntime "com.gregtechceu.gtceu:gtceu-${minecraft_version}:${gtm_version}"
     localRuntime "brachy.modularui:modularui-mc${minecraft_version}:${mui_version}"

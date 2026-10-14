@@ -62,8 +62,7 @@ public class QuestTasksScreen extends Screen
     }
 
     @Override
-    public void renderBackground(GuiGraphics context, int mouseX, int mouseY, float delta) {
-    }
+    public void renderBackground(GuiGraphics context, int mouseX, int mouseY, float delta) {}
 
     private boolean clickLinkButton(int x, int y, int w, int h, double mx, double my) {
         if (mx < x || mx >= x + w || my < y || my >= y + h) return false;
@@ -1980,7 +1979,7 @@ public class QuestTasksScreen extends Screen
 
     private ItemStack rewardStack(QuestReward.ItemReward reward) {
         ItemStack stack = new ItemStack(reward.getItem(), reward.getCount());
-        if (reward.getNbt() != null && !reward.getNbt().isEmpty()) ItemData.setTag(stack, reward.getNbt().copy());
+        ItemData.applyReward(stack, reward.getNbt());
         return stack;
     }
 
@@ -2049,6 +2048,7 @@ public class QuestTasksScreen extends Screen
         if (task instanceof EnergyStorageTask) return "§6⚡";
         if (task instanceof FilterItemTask) return "§e◈";
         if (task instanceof FilterFluidTask) return "§3◈";
+        if (task instanceof MultiblockFormedTask) return "§6⬡";
         if (task instanceof ViewMachineTask) return "§b⬡";
         if (task instanceof ViewSceneTask) return "§b⬢";
         if (task instanceof ViewGuideTask) return "§b📖";
@@ -2129,6 +2129,9 @@ public class QuestTasksScreen extends Screen
         if (task instanceof FilterFluidTask t) {
             return t.getFilter().describe() + ": " + String.format("%,d", t.getAmount()) + " mB" +
                     (t.isConsume() ? "  (consumed)" : "");
+        }
+        if (task instanceof MultiblockFormedTask t) {
+            return "Form: " + (t.getMachineId() != null ? t.getMachineId() : "any multiblock") + " ×" + t.getRequired();
         }
         if (task instanceof ViewMachineTask t) {
             return "Phantasia: " + t.getMachineId();

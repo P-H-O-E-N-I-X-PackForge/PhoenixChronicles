@@ -38,11 +38,11 @@ public class S2COpenExternalScreenPacket implements CustomPacketPayload {
     }
 
     public void handle(IPayloadContext context) {
-        context.enqueueWork(() -> ((Runnable) () -> {
+        context.enqueueWork(() -> {
             if (screenId == null) return;
             net.minecraft.client.gui.screens.Screen screen = net.phoenixvine.chronicles.client.registry.ExternalScreenRegistry
                     .open(screenId, null);
             if (screen != null) Minecraft.getInstance().setScreen(screen);
-        }));
+        });
     }
 }

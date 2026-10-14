@@ -100,7 +100,7 @@ public class S2CSyncPlayerProgressPacket implements CustomPacketPayload {
     }
 
     public void handle(IPayloadContext context) {
-        context.enqueueWork(() -> ((Runnable) () -> {
+        context.enqueueWork(() -> {
             Minecraft mc = Minecraft.getInstance();
             if (mc.player == null || progressNbt == null) return;
 
@@ -161,7 +161,7 @@ public class S2CSyncPlayerProgressPacket implements CustomPacketPayload {
                     }
                 }
             });
-        }));
+        });
     }
 
     private static final Map<String, Long> LAST_NOTIFIED = new HashMap<>();

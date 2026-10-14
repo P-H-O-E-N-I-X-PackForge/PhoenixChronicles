@@ -39,8 +39,6 @@ public class QuestbookTitleScreen extends Screen {
         this.cachedIcon = s.getQuestbookIcon();
     }
 
-
-
     @Override
     protected void init() {
         panelLeft = (width - PANEL_W) / 2;

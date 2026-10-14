@@ -52,7 +52,7 @@ public final class QuestRewardDisplay {
             Item item = ir.getItem();
             if (item == null || item == Items.AIR) return null;
             ItemStack stack = new ItemStack(item, ir.getCount());
-            if (ir.getNbt() != null && !ir.getNbt().isEmpty()) ItemData.setTag(stack, ir.getNbt().copy());
+            ItemData.applyReward(stack, ir.getNbt());
             return new Entry(reward, stack, null, 0, null, ae2Note(ir.isPushToAe2()));
         }
 

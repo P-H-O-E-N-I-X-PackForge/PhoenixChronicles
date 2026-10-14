@@ -11,6 +11,7 @@ import net.phoenixvine.chronicles.common.model.QuestState;
 import net.phoenixvine.chronicles.common.model.QuestTask;
 import net.phoenixvine.chronicles.common.registry.QuestTreeRegistry;
 import net.phoenixvine.chronicles.common.tasks.ExternalTriggerTask;
+import net.phoenixvine.chronicles.common.tasks.MultiblockFormedTask;
 import net.phoenixvine.chronicles.common.tasks.RecipeTask;
 import net.phoenixvine.chronicles.common.tracker.QuestProgressTracker;
 
@@ -145,6 +146,34 @@ public final class QuestAPI {
                             player.getGameProfile().getName(), recipeType, recipeId, recipeTask.getTaskId(),
                             recipeTask.getRecipeId());
                     recipeTask.onRecipeCompleted(player, times);
+                    changed = true;
+                }
+                if (changed) {
+                    QuestProgressTracker.checkAndTryComplete(player, node);
+                    changedAny = true;
+                }
+            }
+            if (changedAny && player instanceof net.minecraft.server.level.ServerPlayer sp) {
+                QuestProgressTracker.sendProgressSync(sp);
+            }
+        });
+    }
+
+    public static void fireMultiblockFormed(@Nullable Player player, @Nullable ResourceLocation machineId, int times) {
+        if (player == null || machineId == null || player.level().isClientSide() || player.getServer() == null) return;
+
+        QuestCapabilityProvider.of(player).ifPresent(questData -> {
+            boolean changedAny = false;
+            for (QuestNode node : QuestTreeRegistry.getAllQuests().values()) {
+                if (node.isFlagDisabled(player.getServer())) continue;
+                QuestState state = questData.getQuestState(node.getId(), QuestState.LOCKED);
+                if (state != QuestState.ACTIVE && state != QuestState.UNLOCKED) continue;
+
+                boolean changed = false;
+                for (Object task : node.getEffectiveTasks(player.getServer(), player)) {
+                    if (!(task instanceof MultiblockFormedTask multiTask) || multiTask.isCompletedFor(player)) continue;
+                    if (!multiTask.matches(machineId)) continue;
+                    multiTask.onFormed(player, times);
                     changed = true;
                 }
                 if (changed) {

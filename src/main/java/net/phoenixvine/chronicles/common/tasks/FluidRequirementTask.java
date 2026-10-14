@@ -80,7 +80,7 @@ public class FluidRequirementTask extends QuestTask {
         if (fs.isEmpty()) return false;
         ResourceLocation candidateId = BuiltInRegistries.FLUID.getKey(fs.getFluid());
         if (candidateId == null || !candidateId.equals(fluidId)) return false;
-        return NbtMatchUtil.matches(ItemData.getTag(fs), nbtFilter);
+        return nbtFilter == null || nbtFilter.isEmpty() || NbtMatchUtil.matches(ItemData.matchView(fs), nbtFilter);
     }
 
     private boolean checksAe2Storage() {

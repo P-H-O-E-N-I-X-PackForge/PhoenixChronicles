@@ -25,7 +25,6 @@ public class NewChapterChoiceScreen extends Screen {
         this.parent = parent;
     }
 
-
     @Override
     protected void init() {
         panelLeft = (width - PANEL_W) / 2;

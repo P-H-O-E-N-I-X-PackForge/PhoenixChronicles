@@ -76,8 +76,7 @@ public class ChapterDependencyScreen extends Screen {
     }
 
     @Override
-    public void renderBackground(GuiGraphics context, int mouseX, int mouseY, float delta) {
-    }
+    public void renderBackground(GuiGraphics context, int mouseX, int mouseY, float delta) {}
 
     private int visibleRows() {
         return Math.max(1, (PANEL_H - HEADER_H - INFO_H - FOOTER_H) / ROW_H);

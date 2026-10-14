@@ -30,7 +30,7 @@ public final class ItemFilters {
         @Override
         public boolean test(ItemStack stack) {
             if (stack.getItem() != item) return false;
-            return NbtMatchUtil.matches(ItemData.getTag(stack), nbt);
+            return nbt == null || nbt.isEmpty() || NbtMatchUtil.matches(ItemData.matchView(stack), nbt);
         }
 
         @Override

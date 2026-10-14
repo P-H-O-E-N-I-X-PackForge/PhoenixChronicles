@@ -103,8 +103,6 @@ public class CategoryThemeScreen extends Screen {
         }
     }
 
-
-
     private int advancedContentH() {
         if (!advancedOpen) return 0;
         int visibleRows = Math.min(overrides.size(), ADV_VISIBLE_ROWS);

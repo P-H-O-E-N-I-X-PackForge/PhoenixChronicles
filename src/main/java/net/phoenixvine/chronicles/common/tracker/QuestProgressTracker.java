@@ -18,7 +18,6 @@ import net.phoenixvine.chronicles.common.model.QuestState;
 import net.phoenixvine.chronicles.common.model.QuestTask;
 import net.phoenixvine.chronicles.common.registry.QuestTreeRegistry;
 import net.phoenixvine.chronicles.common.tasks.*;
-import net.phoenixvine.chronicles.common.util.ItemData;
 import net.phoenixvine.chronicles.network.packet.S2CSyncPlayerProgressPacket;
 
 import org.jetbrains.annotations.Nullable;
@@ -121,7 +120,7 @@ public class QuestProgressTracker {
     private static int fingerprintStack(net.minecraft.world.item.ItemStack s) {
         if (s.isEmpty()) return 0;
         int h = s.getItem().hashCode() * 31 + s.getCount();
-        return ItemData.getTag(s) != null ? h * 31 + ItemData.getTag(s).hashCode() : h;
+        return s.getComponentsPatch().isEmpty() ? h : h * 31 + s.getComponentsPatch().hashCode();
     }
 
     private static boolean skipInventoryScan(QuestTask task, Player player, boolean invChanged) {

@@ -68,7 +68,6 @@ public class LangEditorScreen extends Screen {
     private String statusMsg = "";
     private int statusTimer = 0;
 
-
     private final List<AbstractWidget> rowBoxes = new ArrayList<>();
 
     private final List<Button> jumpButtons = new ArrayList<>();

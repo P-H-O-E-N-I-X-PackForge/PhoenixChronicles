@@ -87,17 +87,16 @@ public final class RewardTableChest {
         ItemStack stack = new ItemStack(ir.getItem(),
                 Math.min(ir.getCount(), Math.max(1, ir.getItem().getDefaultMaxStackSize())));
 
-        CompoundTag tag = ir.getNbt() != null ? ir.getNbt().copy() : new CompoundTag();
+        ItemData.applyReward(stack, ir.getNbt());
         CompoundTag meta = new CompoundTag();
         meta.putInt("weight", weight);
         if (ir.getCount() != stack.getCount()) meta.putInt("count", ir.getCount());
         if (!ir.isPushToAe2()) meta.putBoolean("no_ae2", true);
-        tag.put(META_KEY, meta);
+        ItemData.edit(stack, tag -> tag.put(META_KEY, meta));
 
         stack.set(net.minecraft.core.component.DataComponents.LORE, new net.minecraft.world.item.component.ItemLore(
                 List.of(weightLore(weight))));
 
-        ItemData.setTag(stack, tag);
         return stack;
     }
 
@@ -147,19 +146,22 @@ public final class RewardTableChest {
     }
 
     private static WeightedReward fromStack(ItemStack stack) {
-        CompoundTag tag = ItemData.hasTag(stack) ? ItemData.getTag(stack).copy() : null;
+        CompoundTag custom = ItemData.getTag(stack);
 
         int weight = 1;
         int count = stack.getCount();
         boolean pushAe2 = true;
-        if (tag != null && tag.contains(META_KEY, Tag.TAG_COMPOUND)) {
-            CompoundTag meta = tag.getCompound(META_KEY);
+        ItemStack bare = stack.copy();
+        if (custom != null && custom.contains(META_KEY, Tag.TAG_COMPOUND)) {
+            CompoundTag meta = custom.getCompound(META_KEY);
             if (meta.contains("weight")) weight = Math.max(1, meta.getInt("weight"));
             if (meta.contains("count")) count = Math.max(1, meta.getInt("count"));
             if (meta.getBoolean("no_ae2")) pushAe2 = false;
-            tag.remove(META_KEY);
+            custom.remove(META_KEY);
+            ItemData.setTag(bare, custom);
         }
-        if (tag != null && tag.isEmpty()) tag = null;
+        bare.remove(net.minecraft.core.component.DataComponents.LORE);
+        CompoundTag tag = ItemData.capture(bare);
 
         return new WeightedReward(new ItemReward(stack.getItem(), count, tag, pushAe2), weight);
     }

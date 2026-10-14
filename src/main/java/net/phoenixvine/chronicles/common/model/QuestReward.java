@@ -121,7 +121,7 @@ public abstract class QuestReward {
 
         if (pushToAe2 && QuestEngineConfig.isAe2PushRewardsEnabled() && AE2Compat.isAvailable()) {
             ItemStack template = new ItemStack(item, 1);
-            if (nbt != null && !nbt.isEmpty()) ItemData.setTag(template, nbt.copy());
+            ItemData.applyReward(template, nbt);
             remaining = (int) Math.min(Integer.MAX_VALUE, AE2Compat.insert(player, template, count));
             if (remaining <= 0) return;
         }
@@ -134,9 +134,7 @@ public abstract class QuestReward {
         while (remaining > 0) {
             int batch = Math.min(remaining, maxStack);
             ItemStack stack = new ItemStack(item, batch);
-            if (nbt != null && !nbt.isEmpty()) {
-                ItemData.setTag(stack, nbt.copy());
-            }
+            ItemData.applyReward(stack, nbt);
             if (!player.addItem(stack)) {
                 player.drop(stack, false);
             }

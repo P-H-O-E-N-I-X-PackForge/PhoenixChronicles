@@ -43,8 +43,7 @@ public class ClaimRewardsScreen extends Screen {
     }
 
     @Override
-    public void renderBackground(GuiGraphics context, int mouseX, int mouseY, float delta) {
-    }
+    public void renderBackground(GuiGraphics context, int mouseX, int mouseY, float delta) {}
 
     @Override
     protected void init() {
@@ -214,7 +213,7 @@ public class ClaimRewardsScreen extends Screen {
         g.fill(x, y, x + ICON_SZ, y + ICON_SZ, 0xFF0F0F18);
         if (reward instanceof QuestReward.ItemReward ir) {
             ItemStack stack = new ItemStack(ir.getItem(), ir.getCount());
-            if (ir.getNbt() != null && !ir.getNbt().isEmpty()) ItemData.setTag(stack, ir.getNbt().copy());
+            ItemData.applyReward(stack, ir.getNbt());
             g.renderItem(stack, x, y);
         } else if (reward instanceof QuestReward.ChoiceBoxReward box) {
             String glyph = box.getMode() == QuestReward.ChoiceBoxReward.Mode.LOOTBOX ? "🎲" : "🎁";

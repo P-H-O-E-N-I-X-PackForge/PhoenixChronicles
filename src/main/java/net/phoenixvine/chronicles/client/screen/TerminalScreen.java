@@ -58,8 +58,7 @@ public class TerminalScreen extends Screen {
     }
 
     @Override
-    public void renderBackground(GuiGraphics context, int mouseX, int mouseY, float delta) {
-    }
+    public void renderBackground(GuiGraphics context, int mouseX, int mouseY, float delta) {}
 
     @Override
     public boolean charTyped(char codePoint, int modifiers) {

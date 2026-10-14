@@ -124,8 +124,6 @@ public class ChapterThemeScreen extends Screen {
         for (ChapterConfig.CanvasOverride ov : cfg.getCanvasOverrides()) overrides.add(ov.copy());
     }
 
-
-
     private int calculateContentHeight() {
         int h = 28;
         for (int rh : ROW_H_TABLE) h += rh;

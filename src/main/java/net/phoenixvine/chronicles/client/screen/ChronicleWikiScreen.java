@@ -28,8 +28,7 @@ public class ChronicleWikiScreen extends WikiScreen {
     }
 
     @Override
-    public void renderBackground(GuiGraphics context, int mouseX, int mouseY, float delta) {
-    }
+    public void renderBackground(GuiGraphics context, int mouseX, int mouseY, float delta) {}
 
     private static String resolveLiveStats(String markdown) {
         Map<String, List<QuestNode>> byChapter = new LinkedHashMap<>();

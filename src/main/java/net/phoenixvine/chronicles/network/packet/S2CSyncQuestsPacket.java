@@ -200,10 +200,10 @@ public class S2CSyncQuestsPacket implements CustomPacketPayload {
     }
 
     public void handle(IPayloadContext context) {
-        context.enqueueWork(() -> ((Runnable) () -> {
+        context.enqueueWork(() -> {
             if (net.minecraft.client.Minecraft.getInstance().hasSingleplayerServer()) return;
             ClientPayloadProcessor.processQuestTree(snapshotMap);
-        }));
+        });
     }
 
     private static class QuestSnapshot {

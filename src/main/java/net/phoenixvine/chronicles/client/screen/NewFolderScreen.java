@@ -43,8 +43,6 @@ public class NewFolderScreen extends Screen {
         this.name = currentLabel == null ? "" : currentLabel;
     }
 
-
-
     @Override
     protected void init() {
         panelLeft = (width - PANEL_W) / 2;
