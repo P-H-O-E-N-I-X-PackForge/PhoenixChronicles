@@ -45,7 +45,6 @@ public final class GtmHooks {
         QuestAPI.fireExternalEvent(player, "gtceu_multiblock:" + machineId, data);
     }
 
-    /** The machine's owner when online, otherwise the nearest player. */
     private static ServerPlayer findPlayer(ServerLevel level, BlockPos pos, UUID owner) {
         if (owner != null) {
             ServerPlayer ownerPlayer = level.getServer().getPlayerList().getPlayer(owner);

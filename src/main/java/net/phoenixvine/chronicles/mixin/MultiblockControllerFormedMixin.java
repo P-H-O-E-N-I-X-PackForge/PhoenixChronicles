@@ -11,7 +11,6 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-/** Fires only when the controller goes from unformed to formed, not when it is merely placed. */
 @Mixin(value = MultiblockControllerMachine.class, remap = false)
 public abstract class MultiblockControllerFormedMixin {
 

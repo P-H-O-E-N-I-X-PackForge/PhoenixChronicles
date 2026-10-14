@@ -66,16 +66,11 @@ public final class ItemData {
         if (stack.has(DataComponents.CUSTOM_DATA)) edit(stack, tag -> tag.remove(key));
     }
 
-    // ---- reward tags -------------------------------------------------------------------------------------------
-    // A reward's stored "nbt" is either a full component patch under COMPONENTS_KEY (current format), or a bare 1.20.1
-    // NBT tag (old quest files) which is run through the vanilla data fixer when applied.
-
     private static final org.slf4j.Logger LOGGER = LogUtils.getLogger();
     private static final String COMPONENTS_KEY = "components";
-    /** Data version of 1.20.1, the last version that stored item data as a bare NBT tag. */
+    
     private static final int LEGACY_DATA_VERSION = 3465;
 
-    /** The stack's whole component patch as a reward tag, or null when the stack has no extra data. */
     @Nullable
     public static CompoundTag capture(ItemStack stack) {
         if (stack.isEmpty() || registries() == null) return getTag(stack);
@@ -86,10 +81,6 @@ public final class ItemData {
         return out;
     }
 
-    /**
-     * What an NBT filter is matched against: the stack's {@code custom_data} contents at the root, plus every
-     * component under {@code components} (for example {@code {components:{"minecraft:enchantments":{levels:{...}}}}}).
-     */
     @Nullable
     public static CompoundTag matchView(ItemStack stack) {
         return matchView(getTag(stack), stack.getComponentsPatch());
@@ -120,7 +111,6 @@ public final class ItemData {
         return tag instanceof CompoundTag compound && !compound.isEmpty() ? compound : null;
     }
 
-    /** Applies a reward tag (current or legacy format) to the stack. */
     public static void applyReward(ItemStack stack, @Nullable CompoundTag tag) {
         if (tag == null || tag.isEmpty() || stack.isEmpty()) return;
         HolderLookup.Provider registries = registries();
@@ -156,7 +146,6 @@ public final class ItemData {
         }
     }
 
-    /** Registry access for the side we are on, or null when no world or server is available yet. */
     @Nullable
     private static HolderLookup.Provider registries() {
         MinecraftServer server = ServerLifecycleHooks.getCurrentServer();

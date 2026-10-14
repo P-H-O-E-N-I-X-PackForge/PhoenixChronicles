@@ -6,12 +6,9 @@ import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.tags.ItemTags;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -20,12 +17,17 @@ import net.phoenixvine.chronicles.client.registry.LangSyncScheduler;
 import net.phoenixvine.chronicles.client.render.ChroniclesThemeRenderer;
 import net.phoenixvine.chronicles.client.render.ChroniclesUIKit;
 import net.phoenixvine.chronicles.client.rich.CodeEditBox;
+import net.phoenixvine.chronicles.client.screen.rewardform.RewardFormTypes;
+import net.phoenixvine.chronicles.client.screen.rewardform.RewardFormValues;
+import net.phoenixvine.chronicles.client.screen.taskform.TaskFormType;
+import net.phoenixvine.chronicles.client.screen.taskform.TaskFormType.SecondPicker;
+import net.phoenixvine.chronicles.client.screen.taskform.TaskFormType.TargetPicker;
+import net.phoenixvine.chronicles.client.screen.taskform.TaskFormTypes;
+import net.phoenixvine.chronicles.client.screen.taskform.TaskFormValues;
 import net.phoenixvine.chronicles.client.screen.utils.UndoRedoManager;
 import net.phoenixvine.chronicles.common.codec.QuestFileSaver;
-import net.phoenixvine.chronicles.common.filter.FluidFilters;
 import net.phoenixvine.chronicles.common.filter.IFluidFilter;
 import net.phoenixvine.chronicles.common.filter.IItemFilter;
-import net.phoenixvine.chronicles.common.filter.ItemFilters;
 import net.phoenixvine.chronicles.common.item.FluidFilterTokenItem;
 import net.phoenixvine.chronicles.common.item.ItemFilterTokenItem;
 import net.phoenixvine.chronicles.common.model.QuestNode;
@@ -171,26 +173,6 @@ public class TaskRewardEditorScreen extends Screen {
 
     private final UndoRedoManager undoRedo = new UndoRedoManager(msg -> {});
 
-    private static final String[] REWARD_TYPES = { "item", "xp", "command", "loot_table", "script_event",
-            "choice_box", "fluid", "open_screen", "quest_action", "external" };
-
-    private static String rewardTypeLabel(String type) {
-        return switch (type) {
-            case "item" -> "Item";
-            case "xp" -> "XP";
-            case "command" -> "Command";
-            case "loot_table" -> "Loot Table";
-            case "script_event" -> "Script Event";
-            case "reward_table" -> "Reward Table";
-            case "choice_box" -> "Choice Box";
-            case "fluid" -> "Fluid";
-            case "open_screen" -> "Open Screen";
-            case "quest_action" -> "Quest Action";
-            case "external" -> "External";
-            default -> type;
-        };
-    }
-
     private EditBox rewardEventDataBox;
     private final Map<String, String> externalFieldValues = new LinkedHashMap<>();
     private PhoenixRewardRegistry.Entry externalEntryAtBuild;
@@ -229,8 +211,7 @@ public class TaskRewardEditorScreen extends Screen {
     }
 
     private String[] rewardTypes() {
-        if (!emergencyMode) return REWARD_TYPES;
-        return java.util.Arrays.stream(REWARD_TYPES).filter(t -> !t.equals("choice_box")).toArray(String[]::new);
+        return RewardFormTypes.listedIds(emergencyMode);
     }
 
     @Override
@@ -335,42 +316,13 @@ public class TaskRewardEditorScreen extends Screen {
                 .tooltip(Tooltip.create(ChroniclesUIKit.lit(typeTooltip))).build());
         fy += FIELD_H + FIELD_GAP;
 
-        boolean isInfo = taskType.equals("info");
-        boolean needsTarget = switch (taskType) {
-            case "experience", "dimension", "checkmark" -> false;
-            default -> {
-                PhoenixTaskRegistry.TaskEntry re = PhoenixTaskRegistry.get(taskType);
-                if (re != null && !re.fields().isEmpty())
-                    yield re.fields().stream()
-                            .anyMatch(f -> f.type() != PhoenixTaskRegistry.FieldDef.FieldType.INTEGER &&
-                                    f.type() != PhoenixTaskRegistry.FieldDef.FieldType.BOOLEAN);
-                yield true;
-            }
-        };
-        boolean needsSecond = taskType.equals("block_interact") || taskType.equals("stat") ||
-                taskType.equals("dimension") || taskType.equals("energy_check") || taskType.equals("recipe");
-        boolean needsCount = switch (taskType) {
-            case "kill_entity", "item_check", "craft_item", "experience", "fluid_check", "stat", "tag_item", "energy_check", "external_trigger", "gt_multiblock", "view_machine", "view_scene", "recipe", "block_interact" -> true;
-            default -> {
-                PhoenixTaskRegistry.TaskEntry re = PhoenixTaskRegistry.get(taskType);
-                yield re != null &&
-                        re.fields().stream().anyMatch(f -> f.type() == PhoenixTaskRegistry.FieldDef.FieldType.INTEGER);
-            }
-        };
-        boolean showConsume = switch (taskType) {
-            case "kill_entity", "item_check", "craft_item", "fluid_check", "location_terminal", "stat", "block_interact", "filter_item", "filter_fluid" -> true;
-            default -> false;
-        };
-
-        boolean showSticky = switch (taskType) {
-            case "item_check", "tag_item", "fluid_check", "energy_check", "filter_item", "filter_fluid" -> true;
-            default -> false;
-        };
-
-        boolean showAe2Toggle = AE2Compat.isAvailable() && switch (taskType) {
-            case "item_check", "fluid_check", "filter_item", "filter_fluid" -> true;
-            default -> false;
-        };
+        TaskFormType form = TaskFormTypes.get(taskType);
+        boolean needsTarget = form.needsTarget();
+        boolean needsSecond = form.needsSecond();
+        boolean needsCount = form.needsCount();
+        boolean showConsume = form.showConsume();
+        boolean showSticky = form.showSticky();
+        boolean showAe2Toggle = AE2Compat.isAvailable() && form.showAe2();
 
         taskDescBox = new CodeEditBox(font, tx, fy, colW, FIELD_H, Component.empty());
         setHintFitted(taskDescBox, "§8Task label shown to player");
@@ -380,60 +332,24 @@ public class TaskRewardEditorScreen extends Screen {
         fy += FIELD_H + FIELD_GAP;
 
         if (needsTarget) {
-            String hint = isInfo ? "§8Body text shown to the player" : switch (taskType) {
-                case "kill_entity" -> "§8Entity id, list, or #tag  (e.g. minecraft:zombie, #minecraft:skeletons)";
-                case "item_check", "craft_item" -> "§8Item id  (e.g. minecraft:iron_ingot)";
-                case "location_terminal" -> "§8Terminal id";
-                case "advancement" -> "§8Advancement id";
-                case "block_interact" -> "§8Block id";
-                case "fluid_check" -> "§8Fluid id";
-                case "stat" -> "§8Stat id  (e.g. minecraft:jump)";
-                case "biome" -> "§8Biome id, list, or #tag  (e.g. minecraft:plains, #minecraft:is_forest)";
-                case "structure" -> "§8Structure id, list, or #tag  (e.g. minecraft:village_plains, #minecraft:village)";
-                case "tag_item" -> "§8Item tag  (e.g. c:ores/iron)";
-                case "energy_check" -> "§8FE / EU / ANY";
-                case "filter_item" -> "§8Item id(s), semicolon-separated: ANY match  (e.g. wire;cable)";
-                case "filter_fluid" -> "§8Fluid id(s), semicolon-separated: ANY match  (e.g. water;lava)";
-                case "external_trigger" -> "§8Trigger id";
-                case "gt_multiblock" -> "§8Controller id  (e.g. gtceu:electric_blast_furnace, or * for any)";
-                case "recipe" -> "§8Recipe type  (e.g. gtceu:macerator, minecraft:smelting)";
-                case "view_machine" -> "§8Machine id  (Phantasia multiblock definition id)";
-                case "view_scene" -> "§8Scene id  (Phantasia scene definition id)";
-                case "view_guide" -> "§8Guide id  (Phantasia guide definition id)";
-                case "archive_entry" -> "§8Archive entry id  (e.g. phoenix_archive:log_001)";
-                default -> {
-                    PhoenixTaskRegistry.TaskEntry re = PhoenixTaskRegistry.get(taskType);
-                    if (re != null) {
-                        for (PhoenixTaskRegistry.FieldDef f : re.fields()) {
-                            if (f.type() != PhoenixTaskRegistry.FieldDef.FieldType.INTEGER &&
-                                    f.type() != PhoenixTaskRegistry.FieldDef.FieldType.BOOLEAN)
-                                yield "§8" + f.label() + (f.hint() != null ? "  (" + f.hint() + ")" : "");
-                        }
-                    }
-                    yield "§8Target id";
-                }
-            };
-            boolean hasItemPicker = taskType.equals("item_check") || taskType.equals("craft_item");
-
-            boolean hasItemListPicker = taskType.equals("filter_item");
-            boolean hasFluidPicker = taskType.equals("fluid_check");
-            boolean hasFluidListPicker = taskType.equals("filter_fluid");
-            boolean hasBlockPicker = taskType.equals("block_break") || taskType.equals("block_interact");
-            boolean hasEntityPicker = taskType.equals("kill_entity");
-            boolean hasRegistryIdPicker = taskType.equals("enchantment") || taskType.equals("stat") ||
-                    taskType.equals("biome") || taskType.equals("structure") ||
-                    taskType.equals("tag_item") || taskType.equals("advancement");
-            boolean hasStringIdPicker = taskType.equals("view_machine") || taskType.equals("view_scene") ||
-                    taskType.equals("view_guide") || taskType.equals("archive_entry") ||
-                    taskType.equals("external_trigger") || taskType.equals("gt_multiblock");
-            boolean hasRecipeTypePicker = taskType.equals("recipe");
-            boolean hasEnergyTypeCycle = taskType.equals("energy_check");
+            String hint = form.targetHint();
+            TargetPicker picker = form.targetPicker();
+            boolean hasItemPicker = picker == TargetPicker.ITEM;
+            boolean hasItemListPicker = picker == TargetPicker.ITEM_LIST;
+            boolean hasFluidPicker = picker == TargetPicker.FLUID;
+            boolean hasFluidListPicker = picker == TargetPicker.FLUID_LIST;
+            boolean hasBlockPicker = picker == TargetPicker.BLOCK;
+            boolean hasEntityPicker = picker == TargetPicker.ENTITY;
+            boolean hasRegistryIdPicker = picker == TargetPicker.REGISTRY;
+            boolean hasStringIdPicker = picker == TargetPicker.STRING;
+            boolean hasRecipeTypePicker = picker == TargetPicker.RECIPE_TYPE;
+            boolean hasEnergyTypeCycle = picker == TargetPicker.ENERGY_TYPE;
             boolean hasAnyItemPicker = hasItemPicker || hasItemListPicker;
             boolean hasAnyFluidPicker = hasFluidPicker || hasFluidListPicker;
             int tw = (hasAnyItemPicker || hasAnyFluidPicker || hasBlockPicker || hasEntityPicker ||
                     hasRegistryIdPicker || hasStringIdPicker || hasEnergyTypeCycle || hasRecipeTypePicker) ? colW - 36 :
                             colW;
-            int tmaxLen = isInfo ? 512 : 160;
+            int tmaxLen = form.maxTargetLength();
             taskTargetBox = new EditBox(font, tx, fy, tw, FIELD_H, Component.empty());
             setHintFitted(taskTargetBox, hint);
             taskTargetBox.setMaxLength(tmaxLen);
@@ -502,7 +418,7 @@ public class TaskRewardEditorScreen extends Screen {
                 }).bounds(tx + tw, fy, 16, FIELD_H).build());
             } else if (hasRegistryIdPicker) {
                 addRenderableWidget(Button.builder(ChroniclesUIKit.lit("§7⊞"), b -> {
-                    java.util.Collection<ResourceLocation> ids = registryIdsFor(taskType);
+                    java.util.Collection<ResourceLocation> ids = form.registryIds();
                     if (minecraft != null && ids != null) {
                         minecraft.setScreen(new RegistryIdPickerScreen(this, "Pick " + taskType, ids, id -> {
                             if (taskTargetBox != null) taskTargetBox.setValue(id.toString());
@@ -532,7 +448,7 @@ public class TaskRewardEditorScreen extends Screen {
                         .build());
             } else if (hasStringIdPicker) {
                 addRenderableWidget(Button.builder(ChroniclesUIKit.lit("§7⊞"), b -> {
-                    java.util.Collection<String> ids = stringIdsFor(taskType);
+                    java.util.Collection<String> ids = form.stringIds();
                     if (minecraft != null && ids != null) {
                         minecraft.setScreen(new StringIdPickerScreen(this, "Pick " + taskType, ids, id -> {
                             if (taskTargetBox != null) taskTargetBox.setValue(id);
@@ -557,7 +473,7 @@ public class TaskRewardEditorScreen extends Screen {
         }
 
         taskNbtBox = null;
-        if (taskType.equals("item_check")) {
+        if (form.hasNbtBox()) {
             taskNbtBox = new EditBox(font, tx, fy, colW, FIELD_H, Component.empty());
             setHintFitted(taskNbtBox, "§8NBT filter (optional)");
             taskNbtBox.setMaxLength(512);
@@ -570,22 +486,17 @@ public class TaskRewardEditorScreen extends Screen {
         }
 
         if (needsSecond) {
-            String hint2 = switch (taskType) {
-                case "block_interact" -> "§8PLACE or RIGHT_CLICK";
-                case "dimension" -> "§8Dimension id  (e.g. minecraft:the_nether)";
-                case "energy_check" -> "§8INVENTORY / HELD / BLOCK";
-                case "recipe" -> "§8Specific recipe id  (optional, any recipe of the type if empty)";
-                default -> "§8Secondary value";
-            };
-            boolean hasDimensionPicker = taskType.equals("dimension");
-            boolean hasSourceCycle = taskType.equals("energy_check");
-            boolean hasRecipePicker = taskType.equals("recipe");
+            String hint2 = form.secondHint();
+            SecondPicker secondPicker = form.secondPicker();
+            boolean hasDimensionPicker = secondPicker == SecondPicker.DIMENSION;
+            boolean hasSourceCycle = secondPicker == SecondPicker.ENERGY_SOURCE;
+            boolean hasRecipePicker = secondPicker == SecondPicker.RECIPE;
             int secondW = (hasDimensionPicker || hasSourceCycle || hasRecipePicker) ? colW - 18 : colW;
             taskSecondaryBox = new EditBox(font, tx, fy, secondW, FIELD_H, Component.empty());
             setHintFitted(taskSecondaryBox, hint2);
             taskSecondaryBox.setMaxLength(128);
             taskSecondaryBox.setValue(secondVal);
-            if (taskType.equals("block_interact")) {
+            if (secondPicker == SecondPicker.MODE_TOGGLE) {
 
                 String curMode = secondVal.trim().equalsIgnoreCase("RIGHT_CLICK") ? "RIGHT_CLICK" : "PLACE";
                 taskSecondaryBox.setValue(curMode);
@@ -649,21 +560,7 @@ public class TaskRewardEditorScreen extends Screen {
         int flexX = tx;
         int flexAvail = colW;
         if (needsCount) {
-            String countHint = switch (taskType) {
-                case "experience" -> "§8XP level";
-                case "fluid_check" -> "§8mB amount";
-                case "stat" -> "§8Target value";
-                case "energy_check" -> "§8FE required";
-                case "external_trigger" -> "§8Times fired";
-                case "gt_multiblock" -> "§8Times formed";
-                case "view_machine", "view_scene" -> "§8Min seconds";
-                default -> {
-                    PhoenixTaskRegistry.TaskEntry re = PhoenixTaskRegistry.get(taskType);
-                    if (re != null) for (PhoenixTaskRegistry.FieldDef f : re.fields())
-                        if (f.type() == PhoenixTaskRegistry.FieldDef.FieldType.INTEGER) yield "§8" + f.label();
-                    yield "§8Count";
-                }
-            };
+            String countHint = form.countHint();
             taskCountBox = new EditBox(font, tx, rowY, 52, FIELD_H, Component.empty());
             setHintFitted(taskCountBox, countHint);
             taskCountBox.setMaxLength(8);
@@ -745,24 +642,9 @@ public class TaskRewardEditorScreen extends Screen {
         int rx = splitX;
         int rfy = formTop + 8;
 
-        String rewardTypeTooltip = switch (rewardType) {
-            case "item" -> "Give the player one or more items";
-            case "fluid" -> "Give the player a fluid (delivered to their linked AE2 network; buckets otherwise)";
-            case "xp" -> "Award experience levels";
-            case "command" -> "Run a server command. Placeholders: {p}/%player%, {uuid}, {x} {y} {z}, {dim}";
-            case "loot_table" -> "Roll a loot table and give all resulting items";
-            case "quest_action" -> "Complete or reset another quest for the player (never the quest being claimed)";
-            case "script_event" -> "Fire a Forge event for KubeJS or Java handlers";
-            case "reward_table" -> "Reference a named reward table (config/phoenix_chronicles/reward_tables/)";
-            case "choice_box" -> "A single slot the player resolves themselves - Menu mode lets them " +
-                    "pick one of the options below, Lootbox mode grants a random one instantly";
-            case "open_screen" -> "Opens a registered external screen for the player when they claim this reward";
-            case "external" -> "A reward type another mod or script registered (PhoenixRewardRegistry); " +
-                    "its handler receives the player and the data below";
-            default -> "Choose a reward type";
-        };
+        String rewardTypeTooltip = RewardFormTypes.get(rewardType).tooltip();
         addRenderableWidget(Button.builder(
-                ChroniclesUIKit.lit("§8Type: §7" + rewardTypeLabel(rewardType) + " §8▾"),
+                ChroniclesUIKit.lit("§8Type: §7" + RewardFormTypes.get(rewardType).label() + " §8▾"),
                 b -> {
                     rewardTypeDropOpen = !rewardTypeDropOpen;
                     taskTypeDropOpen = false;
@@ -1259,58 +1141,6 @@ public class TaskRewardEditorScreen extends Screen {
         applyPickedItemFilter(minecraft.player.getOffhandItem());
     }
 
-    @Nullable
-    private java.util.Collection<ResourceLocation> registryIdsFor(String taskType) {
-        return switch (taskType) {
-            case "enchantment" -> registryKeysOrNull(net.minecraft.core.registries.Registries.ENCHANTMENT);
-            case "tag_item" -> net.minecraft.core.registries.BuiltInRegistries.ITEM.getTagNames()
-                    .map(net.minecraft.tags.TagKey::location).toList();
-            case "stat" -> net.minecraft.core.registries.BuiltInRegistries.CUSTOM_STAT.keySet();
-            case "advancement" -> {
-                if (minecraft == null || minecraft.player == null || minecraft.player.connection == null) yield null;
-                yield minecraft.player.connection.getAdvancements().getTree().nodes().stream()
-                        .map(node -> node.holder().id()).toList();
-            }
-            case "biome" -> registryKeysOrNull(net.minecraft.core.registries.Registries.BIOME);
-            case "structure" -> registryKeysOrNull(net.minecraft.core.registries.Registries.STRUCTURE);
-            default -> null;
-        };
-    }
-
-    @Nullable
-    private <T> java.util.Collection<ResourceLocation> registryKeysOrNull(
-                                                                          net.minecraft.resources.ResourceKey<? extends net.minecraft.core.Registry<T>> key) {
-        if (minecraft == null) return null;
-        if (minecraft.level != null) {
-            var reg = minecraft.level.registryAccess().registry(key);
-            if (reg.isPresent()) return reg.get().keySet();
-        }
-        if (minecraft.getSingleplayerServer() != null) {
-            var reg = minecraft.getSingleplayerServer().registryAccess().registry(key);
-            if (reg.isPresent()) return reg.get().keySet();
-        }
-        return null;
-    }
-
-    @Nullable
-    private java.util.Collection<String> stringIdsFor(String taskType) {
-        return switch (taskType) {
-            case "view_machine" -> net.phoenixvine.chronicles.integration.phantasia.PhantasiaCompat.isAvailable() ?
-                    net.phoenixvine.chronicles.integration.phantasia.PhantasiaCompat.allMachineIds() : null;
-            case "view_scene" -> net.phoenixvine.chronicles.integration.phantasia.PhantasiaCompat.isAvailable() ?
-                    net.phoenixvine.chronicles.integration.phantasia.PhantasiaCompat.allSceneIds() : null;
-            case "view_guide" -> net.phoenixvine.chronicles.integration.phantasia.PhantasiaCompat.isAvailable() ?
-                    net.phoenixvine.chronicles.integration.phantasia.PhantasiaCompat.allGuideIds() : null;
-            case "archive_entry" -> net.phoenixvine.chronicles.integration.archive.ArchiveLoreCompat.isAvailable() ?
-                    net.phoenixvine.chronicles.integration.archive.ArchiveLoreCompat.allEntryIds() :
-                    null;
-            case "external_trigger" -> net.phoenixvine.chronicles.QuestAPI.getRegisteredExternalTriggers().keySet();
-            case "gt_multiblock" -> net.phoenixvine.chronicles.integration.gtceu.GTCEuCompat.isAvailable() ?
-                    net.phoenixvine.chronicles.integration.gtm.GtmMachines.multiblockControllerIds() : null;
-            default -> null;
-        };
-    }
-
     private void applyHeldFluidFilter() {
         if (minecraft == null || minecraft.player == null) return;
         ItemStack held = minecraft.player.getMainHandItem();
@@ -1397,166 +1227,34 @@ public class TaskRewardEditorScreen extends Screen {
             } catch (Exception ignored) {}
         }
 
-        boolean needsTarget = !taskType.equals("experience") && !taskType.equals("dimension") &&
-                !taskType.equals("checkmark") && !taskType.equals("timer");
-        if (desc.isEmpty() || (needsTarget && !taskType.equals("info") && target.isEmpty())) return;
+        TaskFormType form = TaskFormTypes.get(taskType);
+        if (desc.isEmpty() || (form.needsTarget() && !form.targetOptional() && target.isEmpty())) return;
 
         ResourceLocation taskId = (editingTaskIndex >= 0 && editingTaskIndex < tasks.size()) ?
                 tasks.get(editingTaskIndex).getTaskId() :
                 ResourceLocation.fromNamespaceAndPath("phoenix_chronicles", "task_" + taskType + "_" +
                         java.util.UUID.randomUUID().toString().replace("-", ""));
-        Component descComp = ChroniclesUIKit.lit(desc);
+        TaskFormValues values = new TaskFormValues();
+        values.taskId = taskId;
+        values.description = ChroniclesUIKit.lit(desc);
+        values.target = target;
+        values.second = second;
+        values.nbt = taskNbtBox != null ? taskNbtBox.getValue().trim() : "";
+        values.count = count;
+        values.consume = taskConsume;
+        values.sticky = taskSticky;
+        values.checkAe2 = taskCheckAe2Storage;
+        values.itemFilter = pendingPickedItemFilter;
+        values.fluidFilter = pendingPickedFluidFilter;
         QuestTask task = null;
         try {
-            task = switch (taskType) {
-                case "kill_entity" -> {
-                    var m = net.phoenixvine.chronicles.common.tasks.TaskIdMatcher.parse(target);
-                    yield m.isEmpty() ? null : new KillEntityTask(taskId, descComp, m.spec(), count, taskConsume);
-                }
-                case "item_check" -> {
-                    Item item = BuiltInRegistries.ITEM.get(ResourceLocation.parse(target));
-                    if (item == null) yield null;
-                    ItemRequirementTask irt = new ItemRequirementTask(taskId, descComp, item, count, taskConsume);
-                    String nbtStr = taskNbtBox != null ? taskNbtBox.getValue().trim() : "";
-                    if (!nbtStr.isEmpty()) {
-                        try {
-                            irt.setNbtFilter(net.minecraft.nbt.TagParser.parseTag(nbtStr));
-                        } catch (Exception e) {}
-                    }
-                    irt.setCheckAe2Storage(taskCheckAe2Storage);
-                    yield irt;
-                }
-                case "craft_item" -> new CraftItemTask(taskId, descComp, ResourceLocation.parse(target), count);
-                case "recipe" -> {
-                    ResourceLocation recipeTypeId = ResourceLocation.tryParse(target);
-                    ResourceLocation recipeId = second.isEmpty() ? null : ResourceLocation.tryParse(second);
-                    yield recipeTypeId != null ? new RecipeTask(taskId, descComp, recipeTypeId, recipeId, count) :
-                            null;
-                }
-                case "experience" -> new ExperienceTask(taskId, descComp, count);
-                case "location_terminal" -> new LocationOrTerminalTask(taskId, descComp, ResourceLocation.parse(target),
-                        taskConsume);
-                case "advancement" -> new AdvancementTask(taskId, descComp, ResourceLocation.parse(target));
-                case "filter_item" -> {
-                    IItemFilter filter = pendingPickedItemFilter;
-                    if (filter == null) {
-                        List<IItemFilter> alts = new ArrayList<>();
-                        for (String part : target.split(";")) {
-                            String id = part.trim();
-                            if (id.isEmpty()) continue;
-                            Item item = BuiltInRegistries.ITEM.get(ResourceLocation.parse(id));
-                            if (item != null && item != Items.AIR) alts.add(ItemFilters.exact(item));
-                        }
-                        if (alts.isEmpty()) yield null;
-                        filter = alts.size() == 1 ? alts.get(0) : ItemFilters.anyOf(alts.toArray(new IItemFilter[0]));
-                    }
-                    FilterItemTask fit = new FilterItemTask(taskId, descComp, filter, count, taskConsume);
-                    fit.setCheckAe2Storage(taskCheckAe2Storage);
-                    yield fit;
-                }
-                case "filter_fluid" -> {
-                    IFluidFilter filter = pendingPickedFluidFilter;
-                    if (filter == null) {
-                        List<IFluidFilter> alts = new ArrayList<>();
-                        for (String part : target.split(";")) {
-                            String id = part.trim();
-                            if (id.isEmpty()) continue;
-                            var fluid = BuiltInRegistries.FLUID.get(ResourceLocation.parse(id));
-                            if (fluid != null && fluid != net.minecraft.world.level.material.Fluids.EMPTY)
-                                alts.add(FluidFilters
-                                        .exact(ResourceLocation.parse(id)));
-                        }
-                        if (alts.isEmpty()) yield null;
-                        filter = alts.size() == 1 ? alts.get(0) :
-                                FluidFilters
-                                        .anyOf(alts.toArray(new IFluidFilter[0]));
-                    }
-                    FilterFluidTask fft = new FilterFluidTask(taskId, descComp, filter, count, taskConsume);
-                    fft.setCheckAe2Storage(taskCheckAe2Storage);
-                    yield fft;
-                }
-                case "block_interact" -> {
-                    var block = BuiltInRegistries.BLOCK.get(ResourceLocation.parse(target));
-                    String mode = second.isEmpty() ? "PLACE" : second.toUpperCase();
-                    yield block != null ? new BlockInteractTask(taskId, descComp, block, mode, count) : null;
-                }
-                case "block_break" -> {
-                    var block = BuiltInRegistries.BLOCK.get(ResourceLocation.parse(target));
-                    yield block != null ? new BlockBreakTask(taskId, descComp, block, count) : null;
-                }
-                case "enchantment" -> new EnchantmentTask(taskId, descComp, ResourceLocation.parse(target), count);
-                case "fluid_check" -> {
-                    FluidRequirementTask frt = new FluidRequirementTask(taskId, descComp,
-                            ResourceLocation.parse(target),
-                            count, taskConsume);
-                    frt.setCheckAe2Storage(taskCheckAe2Storage);
-                    yield frt;
-                }
-                case "stat" -> new StatTrackerTask(taskId, descComp, ResourceLocation.parse(target), count,
-                        taskConsume);
-                case "dimension" -> {
-                    String dim = second.isEmpty() ? "minecraft:overworld" : second;
-                    var m = net.phoenixvine.chronicles.common.tasks.TaskIdMatcher.parse(dim, false);
-                    yield m.isEmpty() ? null : new DimensionTask(taskId, descComp, m.spec());
-                }
-                case "biome" -> {
-                    var m = net.phoenixvine.chronicles.common.tasks.TaskIdMatcher.parse(target);
-                    yield m.isEmpty() ? null : new BiomeTask(taskId, descComp, m.spec());
-                }
-                case "structure" -> {
-                    var m = net.phoenixvine.chronicles.common.tasks.TaskIdMatcher.parse(target);
-                    yield m.isEmpty() ? null : new StructureTask(taskId, descComp, m.spec());
-                }
-                case "checkmark" -> new CheckmarkTask(taskId, descComp);
-                case "timer" -> new TimerTask(taskId, descComp, count);
-                case "tag_item" -> new TagItemTask(taskId, descComp, ItemTags.create(ResourceLocation.parse(target)),
-                        count);
-                case "info" -> new InfoTask(taskId, descComp, target);
-                case "external_trigger" -> new ExternalTriggerTask(taskId, descComp, target, count);
-                case "gt_multiblock" -> {
-                    String machine = target.trim();
-                    ResourceLocation machineId = machine.equals(MultiblockFormedTask.ANY) ? null :
-                            ResourceLocation.tryParse(machine);
-                    yield machineId != null || machine.equals(MultiblockFormedTask.ANY) ?
-                            new MultiblockFormedTask(taskId, descComp, machineId, count) : null;
-                }
-                case "view_machine" -> new ViewMachineTask(taskId, descComp, target,
-                        (float) count);
-                case "view_scene" -> new ViewSceneTask(taskId, descComp, target,
-                        (float) count);
-                case "view_guide" -> new ViewGuideTask(taskId, descComp, target);
-                case "archive_entry" -> new ArchiveEntryTask(taskId, descComp, target);
-                case "energy_check" -> {
-                    var eType = EnergyStorageTask.EnergyType.FE;
-                    if (!target.isBlank()) {
-                        try {
-                            eType = EnergyStorageTask.EnergyType.valueOf(target.trim().toUpperCase());
-                        } catch (Exception ignored2) {}
-                    }
-                    var eSrc = EnergyStorageTask.Source.INVENTORY;
-                    if (!second.isBlank()) {
-                        try {
-                            eSrc = EnergyStorageTask.Source.valueOf(second.trim().toUpperCase());
-                        } catch (Exception ignored2) {}
-                    }
-                    yield new EnergyStorageTask(taskId, descComp, count, eType, eSrc);
-                }
-                default -> {
-                    PhoenixTaskRegistry.TaskEntry re = PhoenixTaskRegistry.get(taskType);
-                    if (re != null) {
-                        ExternalTriggerTask ext = new ExternalTriggerTask(taskId, descComp, target, count);
-                        ext.setKjsTypeId(taskType);
-                        yield ext;
-                    }
-                    yield null;
-                }
-            };
+            task = form.create(values);
         } catch (Exception ignored) {}
 
         if (task != null) {
             task.setOptional(taskOptional);
             task.setHiddenParts(taskHiddenParts);
-            applyStickyIfSupported(task, taskSticky);
+            form.applySticky(task, taskSticky);
             QuestTask finalTask = task;
             pushUndo(() -> {
                 if (editingTaskIndex >= 0 && editingTaskIndex < tasks.size()) {
@@ -1588,192 +1286,28 @@ public class TaskRewardEditorScreen extends Screen {
         pendingPickedFluidFilter = null;
         QuestTask t = tasks.get(idx);
         editingTaskIndex = idx;
-        taskType = taskTypeIdFor(t);
+        taskType = TaskFormTypes.idFor(t);
         taskOptional = t.isOptional();
         taskHiddenParts = t.getHiddenParts();
-        taskConsume = true;
-        taskSticky = true;
-        taskCheckAe2Storage = AE2Compat.isAvailable();
-        if (t instanceof ItemRequirementTask x) taskSticky = x.isSticky();
-        else if (t instanceof TagItemTask x) taskSticky = x.isSticky();
-        else if (t instanceof FilterItemTask x) taskSticky = x.isSticky();
-        else if (t instanceof FluidRequirementTask x) taskSticky = x.isSticky();
-        else if (t instanceof FilterFluidTask x) taskSticky = x.isSticky();
-        else if (t instanceof EnergyStorageTask x) taskSticky = x.isSticky();
-        if (t instanceof ItemRequirementTask x) taskCheckAe2Storage = x.isCheckAe2Storage();
-        else if (t instanceof FluidRequirementTask x) taskCheckAe2Storage = x.isCheckAe2Storage();
-        else if (t instanceof FilterItemTask x) taskCheckAe2Storage = x.isCheckAe2Storage();
-        else if (t instanceof FilterFluidTask x) taskCheckAe2Storage = x.isCheckAe2Storage();
-        pendingTaskDesc = t.getDescriptionRaw().getString();
-        pendingTaskTarget = "";
-        pendingTaskSecondary = "";
-        pendingTaskCount = "1";
-        pendingTaskNbt = "";
 
-        if (t instanceof KillEntityTask kt) {
-            pendingTaskTarget = kt.getSpec();
-            pendingTaskCount = String.valueOf(kt.getRequiredCount());
-            taskConsume = kt.shouldConsume();
-        } else if (t instanceof ItemRequirementTask it) {
-            ResourceLocation id = it.getItem() != null ? BuiltInRegistries.ITEM.getKey(it.getItem()) : null;
-            pendingTaskTarget = id != null ? id.toString() : "";
-            pendingTaskCount = String.valueOf(it.getRequiredCount());
-            taskConsume = it.shouldConsume();
-            pendingTaskNbt = it.getNbtFilter() != null ? it.getNbtFilter().toString() : "";
-        } else if (t instanceof CraftItemTask ct) {
-            pendingTaskTarget = ct.getItemId().toString();
-            pendingTaskCount = String.valueOf(ct.getRequiredCount());
-        } else if (t instanceof RecipeTask rt) {
-            pendingTaskTarget = rt.getRecipeType().toString();
-            pendingTaskSecondary = rt.getRecipeId() != null ? rt.getRecipeId().toString() : "";
-            pendingTaskCount = String.valueOf(rt.getRequired());
-        } else if (t instanceof ExperienceTask et) {
-            pendingTaskCount = String.valueOf(et.getRequiredLevel());
-        } else if (t instanceof LocationOrTerminalTask lt) {
-            pendingTaskTarget = lt.getTargetTerminalId().toString();
-            taskConsume = lt.shouldConsume();
-        } else if (t instanceof AdvancementTask at) {
-            pendingTaskTarget = at.getAdvancementId().toString();
-        } else if (t instanceof BlockInteractTask bit) {
-            ResourceLocation id = BuiltInRegistries.BLOCK.getKey(bit.getTargetBlock());
-            pendingTaskTarget = id != null ? id.toString() : "";
-            pendingTaskSecondary = bit.getMode();
-            pendingTaskCount = String.valueOf(bit.getRequired());
-        } else if (t instanceof BlockBreakTask bbt) {
-            ResourceLocation id = BuiltInRegistries.BLOCK.getKey(bbt.getTargetBlock());
-            pendingTaskTarget = id != null ? id.toString() : "";
-            pendingTaskCount = String.valueOf(bbt.getRequired());
-        } else if (t instanceof EnchantmentTask ent) {
-            pendingTaskTarget = ent.getEnchantmentId().toString();
-            pendingTaskCount = String.valueOf(ent.getRequiredLevel());
-        } else if (t instanceof FluidRequirementTask ft) {
-            pendingTaskTarget = ft.getFluidId().toString();
-            pendingTaskCount = String.valueOf(ft.getRequiredAmount());
-            taskConsume = ft.shouldConsume();
-        } else if (t instanceof StatTrackerTask st) {
-            pendingTaskTarget = st.getStatId().toString();
-            pendingTaskCount = String.valueOf(st.getTargetValue());
-            taskConsume = st.shouldConsume();
-        } else if (t instanceof DimensionTask dt) {
-            pendingTaskSecondary = dt.getSpec();
-        } else if (t instanceof BiomeTask biot) {
-            pendingTaskTarget = biot.getSpec();
-        } else if (t instanceof StructureTask strt) {
-            pendingTaskTarget = strt.getSpec();
-        } else if (t instanceof TagItemTask tit) {
-            pendingTaskTarget = tit.getTag().location().toString();
-            pendingTaskCount = String.valueOf(tit.getRequired());
-        } else if (t instanceof InfoTask ift) {
-            pendingTaskTarget = ift.getBody();
-        } else if (t instanceof TimerTask timt) {
-            pendingTaskCount = String.valueOf(timt.getDurationSeconds());
-        } else if (t instanceof ViewMachineTask vmt) {
-            pendingTaskTarget = vmt.getMachineId();
-            pendingTaskCount = String.valueOf((int) vmt.getMinSeconds());
-        } else if (t instanceof ViewSceneTask vst) {
-            pendingTaskTarget = vst.getSceneId();
-            pendingTaskCount = String.valueOf((int) vst.getMinSeconds());
-        } else if (t instanceof ViewGuideTask vgt) {
-            pendingTaskTarget = vgt.getGuideId();
-        } else if (t instanceof ArchiveEntryTask aet) {
-            pendingTaskTarget = aet.getArchiveEntryId();
-        } else if (t instanceof EnergyStorageTask est) {
-            pendingTaskTarget = est.getEnergyType().name();
-            pendingTaskSecondary = est.getSource().name();
-            pendingTaskCount = String.valueOf(est.getRequiredEnergy());
-        } else if (t instanceof MultiblockFormedTask mt) {
-            pendingTaskTarget = mt.getMachineId() != null ? mt.getMachineId().toString() : MultiblockFormedTask.ANY;
-            pendingTaskCount = String.valueOf(mt.getRequired());
-        } else if (t instanceof ExternalTriggerTask xt) {
-            pendingTaskTarget = xt.getTriggerId();
-            pendingTaskCount = String.valueOf(xt.getRequired());
-        } else if (t instanceof FilterItemTask fit) {
-            pendingTaskTarget = describeItemFilterAsIdList(fit.getFilter());
-            pendingTaskCount = String.valueOf(fit.getCount());
-            taskConsume = fit.isConsume();
-        } else if (t instanceof FilterFluidTask fft) {
-            pendingTaskTarget = describeFluidFilterAsIdList(fft.getFilter());
-            pendingTaskCount = String.valueOf(fft.getAmount());
-            taskConsume = fft.isConsume();
-        }
+        TaskFormValues values = new TaskFormValues();
+        values.consume = true;
+        values.sticky = true;
+        values.checkAe2 = AE2Compat.isAvailable();
+        TaskFormTypes.get(taskType).load(t, values);
+        taskConsume = values.consume;
+        taskSticky = values.sticky;
+        taskCheckAe2Storage = values.checkAe2;
+        pendingTaskDesc = t.getDescriptionRaw().getString();
+        pendingTaskTarget = values.target;
+        pendingTaskSecondary = values.second;
+        pendingTaskCount = String.valueOf(values.count);
+        pendingTaskNbt = values.nbt;
 
         forcePendingTaskValues = true;
         taskTypeDropOpen = false;
         rewardTypeDropOpen = false;
         rebuildWidgets();
-    }
-
-    private static String describeItemFilterAsIdList(IItemFilter f) {
-        if (f instanceof ItemFilters.ExactItem ex) {
-            ResourceLocation id = BuiltInRegistries.ITEM.getKey(ex.item());
-            return id != null ? id.toString() : "";
-        }
-        if (f instanceof ItemFilters.AnyOf any) {
-            List<String> ids = new ArrayList<>();
-            for (IItemFilter child : any.children()) {
-                String s = describeItemFilterAsIdList(child);
-                if (!s.isEmpty()) ids.add(s);
-            }
-            return String.join(";", ids);
-        }
-        return f.describe();
-    }
-
-    private static String describeFluidFilterAsIdList(IFluidFilter f) {
-        if (f instanceof FluidFilters.ExactFluid ex) {
-            return ex.fluidId().toString();
-        }
-        if (f instanceof FluidFilters.AnyOf any) {
-            List<String> ids = new ArrayList<>();
-            for (var child : any.children()) {
-                String s = describeFluidFilterAsIdList(child);
-                if (!s.isEmpty()) ids.add(s);
-            }
-            return String.join(";", ids);
-        }
-        return f.describe();
-    }
-
-    private static void applyStickyIfSupported(QuestTask t, boolean sticky) {
-        if (t instanceof ItemRequirementTask x) x.setSticky(sticky);
-        else if (t instanceof TagItemTask x) x.setSticky(sticky);
-        else if (t instanceof FilterItemTask x) x.setSticky(sticky);
-        else if (t instanceof FluidRequirementTask x) x.setSticky(sticky);
-        else if (t instanceof FilterFluidTask x) x.setSticky(sticky);
-        else if (t instanceof EnergyStorageTask x) x.setSticky(sticky);
-    }
-
-    private static String taskTypeIdFor(QuestTask t) {
-        if (t instanceof ExternalTriggerTask ext)
-            return ext.getKjsTypeId() != null ? ext.getKjsTypeId() : "external_trigger";
-        if (t instanceof KillEntityTask) return "kill_entity";
-        if (t instanceof ItemRequirementTask) return "item_check";
-        if (t instanceof CraftItemTask) return "craft_item";
-        if (t instanceof RecipeTask) return "recipe";
-        if (t instanceof MultiblockFormedTask) return "gt_multiblock";
-        if (t instanceof ExperienceTask) return "experience";
-        if (t instanceof LocationOrTerminalTask) return "location_terminal";
-        if (t instanceof AdvancementTask) return "advancement";
-        if (t instanceof BlockInteractTask) return "block_interact";
-        if (t instanceof BlockBreakTask) return "block_break";
-        if (t instanceof EnchantmentTask) return "enchantment";
-        if (t instanceof FluidRequirementTask) return "fluid_check";
-        if (t instanceof StatTrackerTask) return "stat";
-        if (t instanceof DimensionTask) return "dimension";
-        if (t instanceof BiomeTask) return "biome";
-        if (t instanceof StructureTask) return "structure";
-        if (t instanceof CheckmarkTask) return "checkmark";
-        if (t instanceof TimerTask) return "timer";
-        if (t instanceof TagItemTask) return "tag_item";
-        if (t instanceof InfoTask) return "info";
-        if (t instanceof ViewMachineTask) return "view_machine";
-        if (t instanceof ViewSceneTask) return "view_scene";
-        if (t instanceof ViewGuideTask) return "view_guide";
-        if (t instanceof ArchiveEntryTask) return "archive_entry";
-        if (t instanceof EnergyStorageTask) return "energy_check";
-        if (t instanceof FilterItemTask) return "filter_item";
-        if (t instanceof FilterFluidTask) return "filter_fluid";
-        return "checkmark";
     }
 
     private void cancelTaskEdit() {
@@ -1795,82 +1329,18 @@ public class TaskRewardEditorScreen extends Screen {
             count = Math.max(1, Integer.parseInt(countS));
         } catch (NumberFormatException ignored) {}
 
-        QuestReward reward = switch (rewardType) {
-            case "item" -> rewardPickedItem != null ?
-                    new QuestReward.ItemReward(rewardPickedItem.getItem(), count, ItemData.capture(rewardPickedItem),
-                            rewardPushAe2) :
-                    null;
-            case "fluid" -> {
-                String fid = rewardCommandBox != null ? rewardCommandBox.getValue().trim() : "";
-                ResourceLocation frl = fid.isEmpty() ? null : ResourceLocation.tryParse(fid);
-                net.minecraft.world.level.material.Fluid fl = frl != null ? BuiltInRegistries.FLUID.get(frl) : null;
-                yield (fl == null || fl == net.minecraft.world.level.material.Fluids.EMPTY) ? null :
-                        new QuestReward.FluidReward(fl, count, null, rewardPushAe2);
-            }
-            case "xp" -> new QuestReward.XPReward(count);
-            case "command" -> {
-                String cmd = rewardCommandBox != null ? rewardCommandBox.getValue().trim() : "";
-                yield cmd.isEmpty() ? null : new QuestReward.CommandReward(cmd, rewardPermLevel);
-            }
-            case "loot_table" -> {
-                String lt = rewardCommandBox != null ? rewardCommandBox.getValue().trim() : "";
-                yield lt.isEmpty() ? null : new QuestReward.LootTableReward(ResourceLocation.parse(lt));
-            }
-            case "quest_action" -> {
-                String qid = rewardCommandBox != null ? rewardCommandBox.getValue().trim() : "";
-                yield qid.isEmpty() ? null : new QuestReward.QuestActionReward(qid, rewardQuestAction);
-            }
-            case "reward_table" -> {
-                String tid = rewardCommandBox != null ? rewardCommandBox.getValue().trim() : "";
-                yield tid.isEmpty() ? null : new QuestReward.RewardTableReward(tid);
-            }
-            case "script_event" -> {
-                String eid = rewardCommandBox != null ? rewardCommandBox.getValue().trim() : "";
-                if (eid.isEmpty()) yield null;
-                net.minecraft.nbt.CompoundTag data = new net.minecraft.nbt.CompoundTag();
-                if (rewardEventDataBox != null && !rewardEventDataBox.getValue().isBlank()) {
-                    try {
-                        data = net.minecraft.nbt.TagParser.parseTag(rewardEventDataBox.getValue().trim());
-                    } catch (Exception ignored) {}
-                }
-                yield new QuestReward.ScriptEventReward(eid, data);
-            }
-            case "external" -> {
-                String tid = rewardCommandBox != null ? rewardCommandBox.getValue().trim() : "";
-                if (tid.isEmpty()) yield null;
-                PhoenixRewardRegistry.Entry entry = PhoenixRewardRegistry.get(tid);
-                net.minecraft.nbt.CompoundTag data = new net.minecraft.nbt.CompoundTag();
-                if (entry != null && !entry.fields().isEmpty()) {
-                    for (PhoenixTaskRegistry.FieldDef field : entry.fields()) {
-                        String value = externalFieldValues.getOrDefault(field.id(), "").trim();
-                        if (value.isEmpty()) continue;
-                        switch (field.type()) {
-                            case INTEGER -> {
-                                try {
-                                    data.putInt(field.id(), Integer.parseInt(value));
-                                } catch (NumberFormatException ignored) {}
-                            }
-                            case BOOLEAN -> data.putBoolean(field.id(), Boolean.parseBoolean(value));
-                            default -> data.putString(field.id(), value);
-                        }
-                    }
-                } else if (rewardEventDataBox != null && !rewardEventDataBox.getValue().isBlank()) {
-                    try {
-                        data = net.minecraft.nbt.TagParser.parseTag(rewardEventDataBox.getValue().trim());
-                    } catch (Exception ignored) {}
-                }
-                yield new QuestReward.ExternalReward(tid, data);
-            }
-            case "choice_box" -> boxOptions.isEmpty() ? null :
-                    new QuestReward.ChoiceBoxReward(new ArrayList<>(boxOptions), boxMode);
-            case "open_screen" -> {
-                String sid = rewardCommandBox != null ? rewardCommandBox.getValue().trim() : "";
-                if (sid.isEmpty()) yield null;
-                ResourceLocation srl = ResourceLocation.tryParse(sid);
-                yield srl == null ? null : new QuestReward.OpenScreenReward(srl);
-            }
-            default -> null;
-        };
+        RewardFormValues values = new RewardFormValues();
+        values.count = count;
+        values.text = rewardCommandBox != null ? rewardCommandBox.getValue().trim() : "";
+        values.eventData = rewardEventDataBox != null ? rewardEventDataBox.getValue() : "";
+        values.item = rewardPickedItem;
+        values.pushAe2 = rewardPushAe2;
+        values.permLevel = rewardPermLevel;
+        values.questAction = rewardQuestAction;
+        values.boxMode = boxMode;
+        values.boxOptions = boxOptions;
+        values.externalFields = externalFieldValues;
+        QuestReward reward = RewardFormTypes.get(rewardType).create(values);
 
         if (reward != null) {
             reward.setHiddenParts(rewardHiddenParts);
@@ -1917,60 +1387,21 @@ public class TaskRewardEditorScreen extends Screen {
         editingBoxOptionIndex = -1;
         boxOptionPickedItem = null;
 
-        if (r instanceof QuestReward.FluidReward fr) {
-            rewardType = "fluid";
-            rewardPushAe2 = fr.isPushToAe2();
-            ResourceLocation fid = BuiltInRegistries.FLUID.getKey(fr.getFluid());
-            pendingRewardCommand = fid != null ? fid.toString() : "";
-            pendingRewardCount = String.valueOf(fr.getAmountMb());
-        } else if (r instanceof QuestReward.ItemReward ir) {
-            rewardType = "item";
-            rewardPushAe2 = ir.isPushToAe2();
-            rewardPickedItem = new ItemStack(ir.getItem(), ir.getCount());
-            ItemData.applyReward(rewardPickedItem, ir.getNbt());
-            pendingRewardCount = String.valueOf(ir.getCount());
-        } else if (r instanceof QuestReward.XPReward xr) {
-            rewardType = "xp";
-            pendingRewardCount = String.valueOf(xr.getLevels());
-        } else if (r instanceof QuestReward.CommandReward cr) {
-            rewardType = "command";
-            pendingRewardCommand = cr.getCommand();
-            rewardPermLevel = cr.getPermissionLevel();
-        } else if (r instanceof QuestReward.LootTableReward lr) {
-            rewardType = "loot_table";
-            pendingRewardCommand = lr.getLootTableId().toString();
-        } else if (r instanceof QuestReward.QuestActionReward qar) {
-            rewardType = "quest_action";
-            pendingRewardCommand = qar.getQuestId();
-            rewardQuestAction = qar.getAction();
-        } else if (r instanceof QuestReward.RewardTableReward rtr) {
-            rewardType = "reward_table";
-            pendingRewardCommand = rtr.getTableId();
-        } else if (r instanceof QuestReward.ScriptEventReward ser) {
-            rewardType = "script_event";
-            pendingRewardCommand = ser.getEventId();
-            pendingRewardEventData = ser.getData() != null && !ser.getData().isEmpty() ? ser.getData().toString() : "";
-        } else if (r instanceof QuestReward.ChoiceBoxReward box) {
-            rewardType = "choice_box";
-            boxMode = box.getMode();
-            boxOptions.addAll(box.getOptions());
-        } else if (r instanceof QuestReward.ExternalReward er) {
-            rewardType = "external";
-            pendingRewardCommand = er.getTypeId();
-            for (String key : er.getData().getAllKeys()) {
-                net.minecraft.nbt.Tag value = er.getData().get(key);
-                externalFieldValues.put(key, value instanceof net.minecraft.nbt.NumericTag number ?
-                        (value instanceof net.minecraft.nbt.ByteTag ? String.valueOf(number.getAsByte() != 0) :
-                                String.valueOf(number.getAsNumber())) :
-                        value.getAsString());
-            }
-            pendingRewardEventData = er.getData().isEmpty() ? "" : er.getData().toString();
-        } else if (r instanceof QuestReward.OpenScreenReward osr) {
-            rewardType = "open_screen";
-            pendingRewardCommand = osr.getScreenId() != null ? osr.getScreenId().toString() : "";
-        } else {
-            return;
-        }
+        String typeId = RewardFormTypes.idFor(r);
+        if (typeId == null) return;
+        RewardFormValues values = new RewardFormValues();
+        RewardFormTypes.get(typeId).load(r, values);
+        rewardType = typeId;
+        rewardPickedItem = values.item;
+        rewardPushAe2 = values.pushAe2;
+        rewardPermLevel = values.permLevel;
+        rewardQuestAction = values.questAction;
+        pendingRewardCount = String.valueOf(values.count);
+        pendingRewardCommand = values.text;
+        pendingRewardEventData = values.eventData;
+        externalFieldValues.putAll(values.externalFields);
+        boxMode = values.boxMode;
+        boxOptions.addAll(values.boxOptions);
 
         editingRewardIndex = idx;
         forcePendingRewardValues = true;
@@ -2401,7 +1832,8 @@ public class TaskRewardEditorScreen extends Screen {
                 int dropRowY = dy + i * rowH;
                 boolean hov = mx >= splitX && mx < splitX + colW && my >= dropRowY && my < dropRowY + rowH;
                 if (hov) g.fill(splitX + 1, dropRowY, splitX + colW - 1, dropRowY + rowH, 0xFF1E1E2A);
-                ChroniclesUIKit.drawString(g, font, "§7" + rewardTypeLabel(rewardTypes()[i]), splitX + 5, dropRowY + 3,
+                ChroniclesUIKit.drawString(g, font, "§7" + RewardFormTypes.get(rewardTypes()[i]).label(), splitX + 5,
+                        dropRowY + 3,
                         hov ? C_TEXT : C_TEXT_DIM, false);
             }
         }
@@ -2767,27 +2199,7 @@ public class TaskRewardEditorScreen extends Screen {
 
     @Nullable
     private String getTaskDetailString(QuestTask task) {
-        if (task instanceof ItemRequirementTask t)
-            return t.getItem() != null ?
-                    t.getItem().getDefaultInstance().getHoverName().getString() + " ×" + t.getRequiredCount() : null;
-        if (task instanceof CraftItemTask t) {
-            Item item = BuiltInRegistries.ITEM.get(t.getItemId());
-            return item != null ? item.getDefaultInstance().getHoverName().getString() + " ×" + t.getRequiredCount() :
-                    t.getItemId().toString();
-        }
-        if (task instanceof MultiblockFormedTask t)
-            return (t.getMachineId() != null ? t.getMachineId().toString() : "any multiblock") + " ×" +
-                    t.getRequired();
-        if (task instanceof RecipeTask t)
-            return (t.getRecipeId() != null ? t.getRecipeId().toString() : t.getRecipeType().toString()) + " ×" +
-                    t.getRequired();
-        if (task instanceof KillEntityTask t)
-            return t.getMatcher().displayName() + " ×" + t.getRequiredCount();
-        if (task instanceof FluidRequirementTask t)
-            return t.getFluidId().getPath().replace('_', ' ') + "  " + t.getRequiredAmount() + " mB";
-        if (task instanceof ExperienceTask t) return "Level " + t.getRequiredLevel();
-        if (task instanceof TagItemTask t) return "#" + t.getTag().location().getPath() + " ×" + t.getRequired();
-        return null;
+        return TaskFormTypes.detail(task);
     }
 
     private String[] wordWrap(String text, int maxW) {

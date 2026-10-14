@@ -106,8 +106,6 @@ public class S2CSyncPlayerProgressPacket implements CustomPacketPayload {
 
             net.phoenixvine.chronicles.client.util.ClientEmergencyState.update(progressNbt);
 
-            // The context player is typed as a plain Player; naming the client-only LocalPlayer here would make the
-            // class fail to verify on a dedicated server.
             QuestCapabilityProvider.of(context.player()).ifPresent(data -> {
                 if (initialSync) {
                     data.deserializeNBT(progressNbt);
