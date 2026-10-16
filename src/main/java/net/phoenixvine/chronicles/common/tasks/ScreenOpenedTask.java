@@ -9,8 +9,23 @@ import net.phoenixvine.chronicles.common.model.QuestTask;
 
 public class ScreenOpenedTask extends QuestTask {
 
+    private String screenId = "";
+
     public ScreenOpenedTask(ResourceLocation taskId, Component description) {
         super(taskId, description);
+    }
+
+    public ScreenOpenedTask(ResourceLocation taskId, Component description, String screenId) {
+        super(taskId, description);
+        this.screenId = screenId == null ? "" : screenId.trim();
+    }
+
+    public String getScreenId() {
+        return screenId;
+    }
+
+    public boolean matchesScreen(String openedScreenId) {
+        return screenId.isEmpty() || screenId.equals(openedScreenId);
     }
 
     public static void complete(Player player, ResourceLocation taskId) {
@@ -26,9 +41,12 @@ public class ScreenOpenedTask extends QuestTask {
     public CompoundTag serializeNBT() {
         CompoundTag tag = new CompoundTag();
         tag.putString("type", "screen_opened");
+        if (!screenId.isEmpty()) tag.putString("screen_id", screenId);
         return tag;
     }
 
     @Override
-    public void deserializeNBT(CompoundTag nbt) {}
+    public void deserializeNBT(CompoundTag nbt) {
+        if (nbt.contains("screen_id")) screenId = nbt.getString("screen_id");
+    }
 }

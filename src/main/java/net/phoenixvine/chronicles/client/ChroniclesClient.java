@@ -33,6 +33,10 @@ public class ChroniclesClient {
             FrameProfiler.setEnabled(true);
         }
 
+        if (QuestChroniclesSettings.get().isAutoRegisterScreens()) {
+            event.enqueueWork(net.phoenixvine.chronicles.client.registry.ScreenAutoRegistrar::registerAll);
+        }
+
         DependencyLineStyleRegistry.registerBuiltins();
         QuestBackgroundRegistry.registerBuiltins();
 

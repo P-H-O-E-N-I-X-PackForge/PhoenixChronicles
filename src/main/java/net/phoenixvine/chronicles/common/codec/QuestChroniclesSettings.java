@@ -102,6 +102,8 @@ public class QuestChroniclesSettings {
 
     private boolean devModeDisabled = true;
 
+    private boolean autoRegisterScreens = false;
+
     private String lastChapter = "";
 
     private HUDPosition toastPosition;
@@ -412,6 +414,14 @@ public class QuestChroniclesSettings {
 
     public void setDevModeDisabled(boolean disabled) {
         this.devModeDisabled = disabled;
+    }
+
+    public boolean isAutoRegisterScreens() {
+        return autoRegisterScreens;
+    }
+
+    public void setAutoRegisterScreens(boolean enabled) {
+        this.autoRegisterScreens = enabled;
     }
 
     public String getLastChapter() {

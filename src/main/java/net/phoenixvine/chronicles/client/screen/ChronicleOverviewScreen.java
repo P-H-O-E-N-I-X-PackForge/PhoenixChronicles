@@ -798,7 +798,8 @@ public class ChronicleOverviewScreen extends Screen
                 if (external != null) {
                     for (QuestTask task : target.getEffectiveTasks(minecraft.getSingleplayerServer(),
                             minecraft.player)) {
-                        if (task instanceof ScreenOpenedTask &&
+                        if (task instanceof ScreenOpenedTask screenTask &&
+                                screenTask.matchesScreen(externalScreenIdStr) &&
                                 minecraft.player != null && !task.isCompletedFor(minecraft.player)) {
                             ChronicleNetwork.CHANNEL.sendToServer(
                                     new C2SScreenOpenedTaskPacket(

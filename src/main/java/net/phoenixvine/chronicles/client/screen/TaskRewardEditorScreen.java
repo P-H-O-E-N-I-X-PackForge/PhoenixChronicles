@@ -1308,6 +1308,26 @@ public class TaskRewardEditorScreen extends Screen {
         rebuildWidgets();
     }
 
+    private void resetTaskFieldsForTypeChange() {
+        pendingTaskDesc = taskDescBox != null ? taskDescBox.getValue() : "";
+        pendingTaskTarget = pendingTaskSecondary = pendingTaskCount = pendingTaskNbt = "";
+        forcePendingTaskValues = true;
+    }
+
+    private void resetRewardFieldsForTypeChange() {
+        rewardPickedItem = null;
+        rewardPushAe2 = true;
+        rewardPermLevel = QuestReward.CommandReward.DEFAULT_PERMISSION_LEVEL;
+        rewardQuestAction = QuestReward.QuestActionReward.Action.COMPLETE;
+        pendingRewardCount = pendingRewardCommand = pendingRewardEventData = "";
+        externalFieldValues.clear();
+        boxOptions.clear();
+        boxMode = QuestReward.ChoiceBoxReward.Mode.MENU;
+        editingBoxOptionIndex = -1;
+        boxOptionPickedItem = null;
+        forcePendingRewardValues = true;
+    }
+
     private void cancelTaskEdit() {
         editingTaskIndex = -1;
         taskOptional = false;
@@ -1842,8 +1862,8 @@ public class TaskRewardEditorScreen extends Screen {
 
     @Override
     public boolean keyPressed(int key, int scan, int mods) {
-        boolean ctrl = (mods & 2) != 0;
-        boolean shift = (mods & 1) != 0;
+        boolean ctrl = hasControlDown();
+        boolean shift = hasShiftDown();
         if (ctrl && key == 90 && !shift) {
             undoLastChange();
             return true;
@@ -1877,8 +1897,11 @@ public class TaskRewardEditorScreen extends Screen {
             QuestTask pasted = deserializeTask(copiedTaskNBT.copy());
             if (pasted != null) {
                 pasted = retaskId(pasted, "task_paste_" + java.util.UUID.randomUUID().toString().replace("-", ""));
-                tasks.add(pasted);
-                taskListScroll = Integer.MAX_VALUE;
+                QuestTask pastedTask = pasted;
+                pushUndo(() -> {
+                    tasks.add(pastedTask);
+                    taskListScroll = Integer.MAX_VALUE;
+                });
             }
             return true;
         }
@@ -1940,7 +1963,9 @@ public class TaskRewardEditorScreen extends Screen {
                         int ry2 = dy - taskTypeDropScroll + i * FIELD_H;
                         if (ry2 + FIELD_H <= dy || ry2 >= dy + dropH) continue;
                         if (mx >= MARGIN && mx < MARGIN + colW && my >= ry2 && my < ry2 + FIELD_H) {
-                            taskType = edTypes.get(i).typeId();
+                            String chosenType = edTypes.get(i).typeId();
+                            if (!chosenType.equals(taskType)) resetTaskFieldsForTypeChange();
+                            taskType = chosenType;
                             pendingPickedItemFilter = null;
                             pendingPickedFluidFilter = null;
                             taskTypeDropOpen = false;
@@ -1958,7 +1983,9 @@ public class TaskRewardEditorScreen extends Screen {
                 for (int i = 0; i < rewardTypes().length; i++) {
                     int ry2 = dy + i * FIELD_H;
                     if (mx >= splitX && mx < splitX + colW && my >= ry2 && my < ry2 + FIELD_H) {
-                        rewardType = rewardTypes()[i];
+                        String chosenType = rewardTypes()[i];
+                        if (!chosenType.equals(rewardType)) resetRewardFieldsForTypeChange();
+                        rewardType = chosenType;
                         rewardTypeDropOpen = false;
                         rebuildWidgets();
                         return true;

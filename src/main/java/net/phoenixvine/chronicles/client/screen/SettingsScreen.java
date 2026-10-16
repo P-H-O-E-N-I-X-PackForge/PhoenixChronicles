@@ -297,6 +297,11 @@ public class SettingsScreen extends Screen {
                     .tip("Slowly rotates embedded Phantasia multiblock/scene previews\n(quest nodes, toasts) instead of holding them still."));
             case DEV -> {
 
+                rows.add(Row.toggle("§fAuto-Register Screens", settings::isAutoRegisterScreens, on -> {
+                    settings.setAutoRegisterScreens(on);
+                    settings.save();
+                }).tip("Lists every screen from Minecraft and your mods in the screen id pickers.\nTakes effect after restarting the game."));
+
                 rows.add(Row.toggle("§fDev Mode Enabled", () -> !settings.isDevModeDisabled(), on -> {
                     settings.setDevModeDisabled(!on);
                     if (on) {

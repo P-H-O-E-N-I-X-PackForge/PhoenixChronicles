@@ -518,6 +518,15 @@ public final class TaskFormTypes {
                 .load((t, v) -> v.target = t.getGuideId())
                 .build());
 
+        add(TaskFormType.of("screen_opened", ScreenOpenedTask.class)
+                .target("§8Screen id  (empty = any screen set on this quest)")
+                .targetOptional()
+                .targetPicker(TargetPicker.REGISTRY)
+                .registryIds(net.phoenixvine.chronicles.client.registry.ExternalScreenRegistry::registeredIds)
+                .create(v -> new ScreenOpenedTask(v.taskId, v.description, v.target))
+                .load((t, v) -> v.target = t.getScreenId())
+                .build());
+
         add(TaskFormType.of("archive_entry", ArchiveEntryTask.class)
                 .target("§8Archive entry id  (e.g. phoenix_archive:log_001)")
                 .targetPicker(TargetPicker.STRING)
