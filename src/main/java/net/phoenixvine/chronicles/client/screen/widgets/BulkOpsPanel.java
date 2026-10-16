@@ -125,206 +125,244 @@ public class BulkOpsPanel {
         if (btn != 0 || !ctx.isDevMode() || editorState.multiSelection.size() < 2) return false;
 
         int bx = cl + 4, by = ChronicleOverviewScreen.HEADER_H + 4;
-        int bh = PANEL_H;
         int slotW = 14, startX = bx + 6, slotY = by + 24;
-        int actXForGate = startX + SHAPE_IDS.length * (slotW + 2) + 8;
-        int sizeSlotYForGate = slotY + ROW_H;
-
-        boolean inPanel = (int) mx >= bx && (int) mx <= bx + PANEL_W && (int) my >= by && (int) my <= by + bh;
-        boolean inDropdown = false;
-        if (moveCatOpen) {
-            List<String> moveCats = ctx.buildChapterList();
-            moveCats.remove("ALL");
-            int subY = sizeSlotYForGate + ROW_H, subW = 90, subH = moveCats.size() * 11 + 4;
-            inDropdown = (int) mx >= actXForGate && (int) mx <= actXForGate + subW && (int) my >= subY &&
-                    (int) my <= subY + subH;
-        }
-        if (!inPanel && !inDropdown) return false;
-        for (int i = 0; i < SHAPE_IDS.length; i++) {
-            int sx = startX + i * (slotW + 2);
-            if ((int) mx >= sx && (int) mx < sx + slotW && (int) my >= slotY && (int) my < slotY + 12) {
-                String newShape = SHAPE_IDS[i];
-                if ("CUSTOM".equals(newShape)) {
-                    List<ResourceLocation> targets = new ArrayList<>(editorState.multiSelection);
-                    Minecraft mc = Minecraft.getInstance();
-                    if (mc != null) mc.setScreen(new TextureBrowserScreen(state.thisScreen(), rl -> {
-                        Map<QuestNode, String> oldShapes = new LinkedHashMap<>();
-                        Map<QuestNode, String> oldTextures = new LinkedHashMap<>();
-                        for (ResourceLocation id : targets) {
-                            QuestNode n = QuestTreeRegistry.getQuest(id);
-                            if (n != null) {
-                                oldShapes.put(n, n.getShapeType());
-                                oldTextures.put(n, n.getShapeTexture());
-                                n.setShapeType("CUSTOM");
-                                n.setShapeTexture(rl);
-                                state.saveNodeShapeToDisk(n, "CUSTOM");
-                                state.saveNodeShapeTextureToDisk(n);
-                            }
-                        }
-                        ctx.setFeedback("Shape → CUSTOM for %d quests", targets.size());
-                        state.rebuild();
-                        ctx.pushUndo("Undo: " + oldShapes.size() + " quest shapes reverted", () -> {
-                            for (Map.Entry<QuestNode, String> e : oldShapes.entrySet()) {
-                                QuestNode n = e.getKey();
-                                n.setShapeType(e.getValue());
-                                n.setShapeTexture(oldTextures.get(n));
-                                state.saveNodeShapeToDisk(n, e.getValue());
-                                state.saveNodeShapeTextureToDisk(n);
-                            }
-                            state.rebuild();
-                        }, () -> {
-                            for (QuestNode n : oldShapes.keySet()) {
-                                n.setShapeType("CUSTOM");
-                                n.setShapeTexture(rl);
-                                state.saveNodeShapeToDisk(n, "CUSTOM");
-                                state.saveNodeShapeTextureToDisk(n);
-                            }
-                            state.rebuild();
-                        });
-                    }));
-                    return true;
-                }
-                Map<QuestNode, String> oldShapes = new LinkedHashMap<>();
-                for (ResourceLocation id : editorState.multiSelection) {
-                    QuestNode n = QuestTreeRegistry.getQuest(id);
-                    if (n != null) {
-                        oldShapes.put(n, n.getShapeType());
-                        n.setShapeType(newShape);
-
-                        state.saveNodeShapeToDisk(n, newShape);
-                    }
-                }
-                ctx.setFeedback("Shape → %s for %d quests", newShape, editorState.multiSelection.size());
-                state.rebuild();
-                ctx.pushUndo("Undo: " + oldShapes.size() + " quest shapes reverted", () -> {
-                    for (Map.Entry<QuestNode, String> e : oldShapes.entrySet()) {
-                        e.getKey().setShapeType(e.getValue());
-                        state.saveNodeShapeToDisk(e.getKey(), e.getValue());
-                    }
-                    state.rebuild();
-                }, () -> {
-                    for (QuestNode n : oldShapes.keySet()) {
-                        n.setShapeType(newShape);
-                        state.saveNodeShapeToDisk(n, newShape);
-                    }
-                    state.rebuild();
-                });
-                return true;
-            }
-        }
         int actX = startX + SHAPE_IDS.length * (slotW + 2) + 8;
+        int sizeSlotY = slotY + ROW_H;
+
+        if (!isInsidePanelOrDropdown(mx, my, bx, by, actX, sizeSlotY)) return false;
+
+        if (clickShapeSlot(mx, my, startX, slotY)) return true;
 
         if ((int) mx >= actX && (int) mx < actX + 58 && (int) my >= slotY && (int) my < slotY + 12) {
             moveCatOpen = !moveCatOpen;
             return true;
         }
 
-        int sizeSlotW = 50, sizeStartX = bx + 6, sizeSlotY = slotY + ROW_H;
+        if (clickSizeSlot(mx, my, bx + 6, sizeSlotY)) return true;
+        if (moveCatOpen && clickMoveChapterRow(mx, my, actX, sizeSlotY)) return true;
+
+        int delX = actX + 62;
+        if ((int) mx >= delX && (int) mx < delX + 44 && (int) my >= slotY && (int) my < slotY + 12) {
+            deleteSelectedQuests();
+        }
+        return true;
+    }
+
+    private boolean isInsidePanelOrDropdown(double mx, double my, int bx, int by, int dropdownX, int sizeSlotY) {
+        boolean inPanel = (int) mx >= bx && (int) mx <= bx + PANEL_W && (int) my >= by && (int) my <= by + PANEL_H;
+        if (inPanel) return true;
+        if (!moveCatOpen) return false;
+        List<String> moveCats = ctx.buildChapterList();
+        moveCats.remove("ALL");
+        int subY = sizeSlotY + ROW_H, subW = 90, subH = moveCats.size() * 11 + 4;
+        return (int) mx >= dropdownX && (int) mx <= dropdownX + subW && (int) my >= subY &&
+                (int) my <= subY + subH;
+    }
+
+    private boolean clickShapeSlot(double mx, double my, int startX, int slotY) {
+        int slotW = 14;
+        for (int i = 0; i < SHAPE_IDS.length; i++) {
+            int sx = startX + i * (slotW + 2);
+            if ((int) mx >= sx && (int) mx < sx + slotW && (int) my >= slotY && (int) my < slotY + 12) {
+                String newShape = SHAPE_IDS[i];
+                if ("CUSTOM".equals(newShape)) openCustomShapePicker();
+                else applyShapeToSelection(newShape);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void openCustomShapePicker() {
+        List<ResourceLocation> targets = new ArrayList<>(editorState.multiSelection);
+        Minecraft mc = Minecraft.getInstance();
+        if (mc != null) mc.setScreen(new TextureBrowserScreen(state.thisScreen(), rl -> applyCustomShape(targets, rl)));
+    }
+
+    private void applyCustomShape(List<ResourceLocation> targets, String texture) {
+        Map<QuestNode, String> oldShapes = new LinkedHashMap<>();
+        Map<QuestNode, String> oldTextures = new LinkedHashMap<>();
+        for (ResourceLocation id : targets) {
+            QuestNode n = QuestTreeRegistry.getQuest(id);
+            if (n != null) {
+                oldShapes.put(n, n.getShapeType());
+                oldTextures.put(n, n.getShapeTexture());
+                n.setShapeType("CUSTOM");
+                n.setShapeTexture(texture);
+                state.saveNodeShapeToDisk(n, "CUSTOM");
+                state.saveNodeShapeTextureToDisk(n);
+            }
+        }
+        ctx.setFeedback("Shape → CUSTOM for %d quests", targets.size());
+        state.rebuild();
+        ctx.pushUndo("Undo: " + oldShapes.size() + " quest shapes reverted", () -> {
+            for (Map.Entry<QuestNode, String> e : oldShapes.entrySet()) {
+                QuestNode n = e.getKey();
+                n.setShapeType(e.getValue());
+                n.setShapeTexture(oldTextures.get(n));
+                state.saveNodeShapeToDisk(n, e.getValue());
+                state.saveNodeShapeTextureToDisk(n);
+            }
+            state.rebuild();
+        }, () -> {
+            for (QuestNode n : oldShapes.keySet()) {
+                n.setShapeType("CUSTOM");
+                n.setShapeTexture(texture);
+                state.saveNodeShapeToDisk(n, "CUSTOM");
+                state.saveNodeShapeTextureToDisk(n);
+            }
+            state.rebuild();
+        });
+    }
+
+    private void applyShapeToSelection(String newShape) {
+        Map<QuestNode, String> oldShapes = new LinkedHashMap<>();
+        for (ResourceLocation id : editorState.multiSelection) {
+            QuestNode n = QuestTreeRegistry.getQuest(id);
+            if (n != null) {
+                oldShapes.put(n, n.getShapeType());
+                n.setShapeType(newShape);
+
+                state.saveNodeShapeToDisk(n, newShape);
+            }
+        }
+        ctx.setFeedback("Shape → %s for %d quests", newShape, editorState.multiSelection.size());
+        state.rebuild();
+        ctx.pushUndo("Undo: " + oldShapes.size() + " quest shapes reverted", () -> {
+            for (Map.Entry<QuestNode, String> e : oldShapes.entrySet()) {
+                e.getKey().setShapeType(e.getValue());
+                state.saveNodeShapeToDisk(e.getKey(), e.getValue());
+            }
+            state.rebuild();
+        }, () -> {
+            for (QuestNode n : oldShapes.keySet()) {
+                n.setShapeType(newShape);
+                state.saveNodeShapeToDisk(n, newShape);
+            }
+            state.rebuild();
+        });
+    }
+
+    private boolean clickSizeSlot(double mx, double my, int sizeStartX, int sizeSlotY) {
+        int sizeSlotW = 50;
         QuestNode.NodeSize[] sizeVals = QuestNode.NodeSize.values();
         for (int i = 0; i < SIZE_LABELS.length; i++) {
             int sx = sizeStartX + i * (sizeSlotW + 2);
             if ((int) mx >= sx && (int) mx < sx + sizeSlotW && (int) my >= sizeSlotY && (int) my < sizeSlotY + 12) {
-                QuestNode.NodeSize newSize = sizeVals[i];
-                Map<QuestNode, QuestNode.NodeSize> oldSizes = new LinkedHashMap<>();
-                for (ResourceLocation id : editorState.multiSelection) {
-                    QuestNode n = QuestTreeRegistry.getQuest(id);
-                    if (n != null) {
-                        oldSizes.put(n, n.getNodeSize());
-                        n.setNodeSize(newSize);
-                        QuestFileSaver.saveOneQuestToDisk(n);
-                    }
-                }
-                ctx.setFeedback("Size → %s for %d quests", SIZE_LABELS[i], editorState.multiSelection.size());
-                state.rebuild();
-                ctx.pushUndo("Undo: " + oldSizes.size() + " quest sizes reverted", () -> {
-                    for (Map.Entry<QuestNode, QuestNode.NodeSize> e : oldSizes.entrySet()) {
-                        e.getKey().setNodeSize(e.getValue());
-                        QuestFileSaver.saveOneQuestToDisk(e.getKey());
-                    }
-                    state.rebuild();
-                }, () -> {
-                    for (QuestNode n : oldSizes.keySet()) {
-                        n.setNodeSize(newSize);
-                        QuestFileSaver.saveOneQuestToDisk(n);
-                    }
-                    state.rebuild();
-                });
+                applySizeToSelection(sizeVals[i], SIZE_LABELS[i]);
                 return true;
             }
         }
+        return false;
+    }
 
-        if (moveCatOpen) {
-            List<String> moveCats = ctx.buildChapterList();
-            moveCats.remove("ALL");
-            int subX = actX, subY = sizeSlotY + ROW_H, subRH = 11;
-            for (int ci = 0; ci < moveCats.size(); ci++) {
-                int ry = subY + 2 + ci * subRH;
-                if ((int) mx >= subX + 2 && (int) mx < subX + 90 - 2 && (int) my >= ry && (int) my < ry + subRH) {
-                    String newCat = moveCats.get(ci);
-                    Map<QuestNode, String> oldChapters = new LinkedHashMap<>();
-                    for (ResourceLocation sid : new ArrayList<>(editorState.multiSelection)) {
-                        QuestNode sn = QuestTreeRegistry.getQuest(sid);
-                        if (sn != null) {
-                            oldChapters.put(sn, sn.getChapter());
-                            sn.setChapter(newCat);
+    private record SizeSnapshot(QuestNode.NodeSize preset, int overridePx) {}
 
-                            state.saveNodeChapterToDisk(sn, newCat);
-                        }
-                    }
-                    moveCatOpen = false;
-                    ctx.setFeedback("Moved %d quests to %s", editorState.multiSelection.size(), ctx.friendly(newCat));
-                    ctx.pushUndo("Undo: " + oldChapters.size() + " quests moved back", () -> {
-                        for (Map.Entry<QuestNode, String> e : oldChapters.entrySet()) {
-                            e.getKey().setChapter(e.getValue());
-                            state.saveNodeChapterToDisk(e.getKey(), e.getValue());
-                        }
-                        state.rebuild();
-                    }, () -> {
-                        for (QuestNode n : oldChapters.keySet()) {
-                            n.setChapter(newCat);
-                            state.saveNodeChapterToDisk(n, newCat);
-                        }
-                        state.rebuild();
-                    });
-                    state.rebuild();
-                    return true;
-                }
-            }
+    private static SizeSnapshot sizeOf(QuestNode n) {
+        return new SizeSnapshot(n.getNodeSize(), n.getSizeOverridePx());
+    }
+
+    private static void applySize(QuestNode n, SizeSnapshot size) {
+        n.setNodeSize(size.preset());
+        if (size.overridePx() > 0) n.setSizeOverridePx(size.overridePx());
+        QuestFileSaver.saveOneQuestToDisk(n, false);
+    }
+
+    private void applySizeToSelection(QuestNode.NodeSize newSize, String label) {
+        Map<QuestNode, SizeSnapshot> oldSizes = new LinkedHashMap<>();
+        Map<QuestNode, SizeSnapshot> newSizes = new LinkedHashMap<>();
+        for (ResourceLocation id : editorState.multiSelection) {
+            QuestNode n = QuestTreeRegistry.getQuest(id);
+            if (n == null) continue;
+            oldSizes.put(n, sizeOf(n));
+            n.setNodeSize(newSize);
+            n.setSizeOverridePx(n.getNodePixelSize());
+            newSizes.put(n, sizeOf(n));
+            QuestFileSaver.saveOneQuestToDisk(n, false);
         }
-
-        int delX = actX + 62;
-        if ((int) mx >= delX && (int) mx < delX + 44 && (int) my >= slotY && (int) my < slotY + 12) {
-            int count = editorState.multiSelection.size();
-            Map<QuestNode, String> savedContent = new LinkedHashMap<>();
-            Map<QuestNode, Path> savedPaths = new LinkedHashMap<>();
-            for (ResourceLocation id : new ArrayList<>(editorState.multiSelection)) {
-                QuestNode n = QuestTreeRegistry.getQuest(id);
-                if (n != null) {
-                    savedContent.put(n, QuestFileSaver.readRawSnbt(n));
-                    savedPaths.put(n, QuestFileSaver.getQuestSnbtPath(n));
-                    QuestTreeRegistry.removeQuest(id);
-
-                    state.deleteQuestFiles(n);
-                }
-            }
-            editorState.multiSelection.clear();
+        ctx.setFeedback("Size → %s for %d quests", label, editorState.multiSelection.size());
+        state.rebuild();
+        ctx.pushUndo("Undo: " + oldSizes.size() + " quest sizes reverted", () -> {
+            oldSizes.forEach(BulkOpsPanel::applySize);
             state.rebuild();
-            ctx.setFeedback("Deleted %d quests", count);
-            ctx.pushUndo("Undo: " + savedContent.size() + " quests restored", () -> {
-                for (Map.Entry<QuestNode, String> e : savedContent.entrySet()) {
-                    QuestFileSaver.restoreRawSnbt(e.getKey(), e.getValue());
-                    QuestFileLoader.loadOneFromDisk(savedPaths.get(e.getKey()));
-                }
-                state.rebuild();
-            }, () -> {
-                for (QuestNode n : savedContent.keySet()) {
-                    QuestTreeRegistry.removeQuest(n.getId());
-                    state.deleteQuestFiles(n);
-                }
-                state.rebuild();
-            });
-            return true;
+        }, () -> {
+            newSizes.forEach(BulkOpsPanel::applySize);
+            state.rebuild();
+        });
+    }
+
+    private boolean clickMoveChapterRow(double mx, double my, int subX, int sizeSlotY) {
+        List<String> moveCats = ctx.buildChapterList();
+        moveCats.remove("ALL");
+        int subY = sizeSlotY + ROW_H, subRH = 11;
+        for (int ci = 0; ci < moveCats.size(); ci++) {
+            int ry = subY + 2 + ci * subRH;
+            if ((int) mx >= subX + 2 && (int) mx < subX + 90 - 2 && (int) my >= ry && (int) my < ry + subRH) {
+                moveSelectionToChapter(moveCats.get(ci));
+                return true;
+            }
         }
-        return true;
+        return false;
+    }
+
+    private void moveSelectionToChapter(String newCat) {
+        Map<QuestNode, String> oldChapters = new LinkedHashMap<>();
+        for (ResourceLocation sid : new ArrayList<>(editorState.multiSelection)) {
+            QuestNode sn = QuestTreeRegistry.getQuest(sid);
+            if (sn != null) {
+                oldChapters.put(sn, sn.getChapter());
+                sn.setChapter(newCat);
+
+                state.saveNodeChapterToDisk(sn, newCat);
+            }
+        }
+        moveCatOpen = false;
+        ctx.setFeedback("Moved %d quests to %s", editorState.multiSelection.size(), ctx.friendly(newCat));
+        ctx.pushUndo("Undo: " + oldChapters.size() + " quests moved back", () -> {
+            for (Map.Entry<QuestNode, String> e : oldChapters.entrySet()) {
+                e.getKey().setChapter(e.getValue());
+                state.saveNodeChapterToDisk(e.getKey(), e.getValue());
+            }
+            state.rebuild();
+        }, () -> {
+            for (QuestNode n : oldChapters.keySet()) {
+                n.setChapter(newCat);
+                state.saveNodeChapterToDisk(n, newCat);
+            }
+            state.rebuild();
+        });
+        state.rebuild();
+    }
+
+    private void deleteSelectedQuests() {
+        int count = editorState.multiSelection.size();
+        Map<QuestNode, String> savedContent = new LinkedHashMap<>();
+        Map<QuestNode, Path> savedPaths = new LinkedHashMap<>();
+        for (ResourceLocation id : new ArrayList<>(editorState.multiSelection)) {
+            QuestNode n = QuestTreeRegistry.getQuest(id);
+            if (n != null) {
+                savedContent.put(n, QuestFileSaver.readRawSnbt(n));
+                savedPaths.put(n, QuestFileSaver.getQuestSnbtPath(n));
+                QuestTreeRegistry.removeQuest(id);
+
+                state.deleteQuestFiles(n);
+            }
+        }
+        editorState.multiSelection.clear();
+        state.rebuild();
+        ctx.setFeedback("Deleted %d quests", count);
+        ctx.pushUndo("Undo: " + savedContent.size() + " quests restored", () -> {
+            for (Map.Entry<QuestNode, String> e : savedContent.entrySet()) {
+                QuestFileSaver.restoreRawSnbt(e.getKey(), e.getValue());
+                QuestFileLoader.loadOneFromDisk(savedPaths.get(e.getKey()));
+            }
+            state.rebuild();
+        }, () -> {
+            for (QuestNode n : savedContent.keySet()) {
+                QuestTreeRegistry.removeQuest(n.getId());
+                state.deleteQuestFiles(n);
+            }
+            state.rebuild();
+        });
     }
 }

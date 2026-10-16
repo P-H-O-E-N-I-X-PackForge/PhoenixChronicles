@@ -68,7 +68,7 @@ public class RewardSuiteGameTests {
             sword.set(DataComponents.CUSTOM_NAME, text("Reward Blade"));
 
             for (ItemStack source : List.of(book, sword)) {
-                
+
                 QuestReward.ItemReward captured = new QuestReward.ItemReward(source.getItem(), 1,
                         ItemData.capture(source), false);
                 QuestReward reloaded = QuestReward.deserializeNBT(captured.serializeWithMeta());
@@ -92,7 +92,7 @@ public class RewardSuiteGameTests {
     @GameTest(template = TEMPLATE)
     public static void itemRewardUpgradesLegacyNbt(@NotNull GameTestHelper helper) {
         run(helper, (h, p) -> {
-            
+
             CompoundTag legacy = new CompoundTag();
             ListTag stored = new ListTag();
             CompoundTag entry = new CompoundTag();

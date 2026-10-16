@@ -68,10 +68,6 @@ public final class TaskIdMatcher {
         return tags;
     }
 
-    public List<String> invalidEntries() {
-        return invalid;
-    }
-
     @Nullable
     public ResourceLocation firstId() {
         return ids.isEmpty() ? null : ids.get(0);

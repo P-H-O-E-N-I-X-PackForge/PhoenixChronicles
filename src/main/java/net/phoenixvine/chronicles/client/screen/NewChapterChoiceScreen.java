@@ -36,7 +36,7 @@ public class NewChapterChoiceScreen extends Screen {
         addRenderableWidget(
                 Button.builder(Component.translatable("phoenix_chronicles.screen.new_chapter_choice.new_chapter"),
                         b -> {
-                            parent.openNewChapterForm();
+                            parent.sidebar.openNewChapterForm();
                         }).bounds(fx, btnY, fw, 18).build());
 
         addRenderableWidget(

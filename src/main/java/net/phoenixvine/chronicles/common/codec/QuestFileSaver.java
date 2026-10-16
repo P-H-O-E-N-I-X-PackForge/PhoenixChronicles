@@ -464,13 +464,6 @@ public class QuestFileSaver {
         patchNodeTag(node, tag -> tag.putString("shape", shape));
     }
 
-    public static void updateNodeLabelPosition(QuestNode node, String labelPosition) {
-        patchNodeTag(node, tag -> {
-            if ("BOTTOM".equals(labelPosition)) tag.remove("label_position");
-            else tag.putString("label_position", labelPosition);
-        });
-    }
-
     public static void updateNodeShapeTexture(QuestNode node) {
         patchNodeTag(node, tag -> {
             String texture = node.getShapeTexture();
@@ -658,16 +651,6 @@ public class QuestFileSaver {
 
     public static Path getQuestMarkdownPath(QuestNode node) {
         return getQuestChapterFolder(node).resolve(node.getId().getPath() + ".md");
-    }
-
-    public static void updateNodeHideDepLine(QuestNode node) {
-        patchNodeTag(node, tag -> {
-            if (node.isHideDepLine()) {
-                tag.putBoolean("hide_dep_line", true);
-            } else {
-                tag.remove("hide_dep_line");
-            }
-        });
     }
 
     public static void saveNodeToDisk(QuestNode node) {

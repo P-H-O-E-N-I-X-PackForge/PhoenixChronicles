@@ -43,8 +43,12 @@ public class DependencyLineRenderer {
     private final List<int[]> lineCache = new ArrayList<>();
     private final List<ResourceLocation[]> lineCacheNodes = new ArrayList<>();
     private final List<LineGeometry> lineGeometryCache = new ArrayList<>();
-    private final List<ArrowInstance> arrowQueue = new ArrayList<>();
-    private final List<RibbonQuad> ribbonQueue = new ArrayList<>();
+    private float[] arrowData = new float[5 * 256];
+    private int[] arrowColors = new int[256];
+    private int arrowCount = 0;
+    private float[] ribbonData = new float[8 * 1024];
+    private int[] ribbonColors = new int[1024];
+    private int ribbonCount = 0;
 
     private boolean lineCtxOpen = false;
     private int lineCtxX, lineCtxY;
@@ -314,6 +318,8 @@ public class DependencyLineRenderer {
         final long arrowPeriodMs;
 
         final float[] arcT;
+
+        float[] staticArrows;
 
         LineGeometry(float[] quads, int segmentCount, int color,
                      boolean isSolid, int dashPeriod, int dashOn, long effectiveSpeedDiv,
@@ -818,9 +824,12 @@ public class DependencyLineRenderer {
 
         if (geo.showArrow && geo.arrowCount > 0) {
 
-            float phase = animated ? (animTick % geo.arrowPeriodMs) / (float) geo.arrowPeriodMs : 0f;
-
             int arrowColor = animated ? geo.arrowColor : dimArrowColor(geo.arrowColor);
+            if (!animated) {
+                emitStaticArrows(geo, arrowColor);
+                return;
+            }
+            float phase = (animTick % geo.arrowPeriodMs) / (float) geo.arrowPeriodMs;
             for (int i = 0; i < geo.arrowCount; i++) {
 
                 float f = 0.02f + ((phase + (float) i / geo.arrowCount) % 1f) * 0.96f;
@@ -843,6 +852,39 @@ public class DependencyLineRenderer {
                 drawArrowSprite(g, px, py, dx, dy, geo.arrowSize, arrowColor);
             }
         }
+    }
+
+    private void emitStaticArrows(LineGeometry geo, int arrowColor) {
+        if (geo.staticArrows == null) geo.staticArrows = computeStaticArrows(geo);
+        float[] cached = geo.staticArrows;
+        for (int i = 0; i < cached.length; i += 4) {
+            drawArrowSprite(null, cached[i], cached[i + 1], cached[i + 2], cached[i + 3], geo.arrowSize, arrowColor);
+        }
+    }
+
+    private static float[] computeStaticArrows(LineGeometry geo) {
+        float[] out = new float[geo.arrowCount * 4];
+        int written = 0;
+        for (int i = 0; i < geo.arrowCount; i++) {
+            float f = 0.02f + ((float) i / geo.arrowCount % 1f) * 0.96f;
+            float t = lookupArcT(geo.arcT, f);
+            float mt = 1f - t;
+            float px = mt * mt * mt * geo.xa + 3 * mt * mt * t * geo.cp1x + 3 * mt * t * t * geo.cp2x +
+                    t * t * t * geo.xb;
+            float py = mt * mt * mt * geo.ya + 3 * mt * mt * t * geo.cp1y + 3 * mt * t * t * geo.cp2y +
+                    t * t * t * geo.yb;
+            float dx = 3 * mt * mt * (geo.cp1x - geo.xa) + 6 * mt * t * (geo.cp2x - geo.cp1x) +
+                    3 * t * t * (geo.xb - geo.cp2x);
+            float dy = 3 * mt * mt * (geo.cp1y - geo.ya) + 6 * mt * t * (geo.cp2y - geo.cp1y) +
+                    3 * t * t * (geo.yb - geo.cp2y);
+            float dLen = (float) Math.sqrt(dx * dx + dy * dy);
+            if (dLen < 0.0001f) continue;
+            out[written++] = px;
+            out[written++] = py;
+            out[written++] = dx / dLen;
+            out[written++] = dy / dLen;
+        }
+        return java.util.Arrays.copyOf(out, written);
     }
 
     public void render(GuiGraphics g, long animTick, ResourceLocation hoveredNodeId,
@@ -1550,23 +1592,37 @@ public class DependencyLineRenderer {
         g.fill(bx - 2, by - 2, bx + 3, by + 3, 0x44FFCC44);
     }
 
-    private record ArrowInstance(float tipX, float tipY, float dirX, float dirY, float halfSize, int color) {
-
-    }
-
     private void drawArrowSprite(GuiGraphics g, float tipX, float tipY, float dirX, float dirY,
                                  float halfSize, int color) {
-        arrowQueue.add(new ArrowInstance(tipX, tipY, dirX, dirY, halfSize, color));
-    }
-
-    private record RibbonQuad(float x0, float y0, float x1, float y1, float x2, float y2, float x3, float y3,
-                              int color) {
-
+        if (arrowCount == arrowColors.length) {
+            arrowColors = java.util.Arrays.copyOf(arrowColors, arrowCount * 2);
+            arrowData = java.util.Arrays.copyOf(arrowData, arrowCount * 2 * 5);
+        }
+        int b = arrowCount * 5;
+        arrowData[b] = tipX;
+        arrowData[b + 1] = tipY;
+        arrowData[b + 2] = dirX;
+        arrowData[b + 3] = dirY;
+        arrowData[b + 4] = halfSize;
+        arrowColors[arrowCount++] = color;
     }
 
     private void queueRibbonQuad(float x0, float y0, float x1, float y1,
                                  float x2, float y2, float x3, float y3, int color) {
-        ribbonQueue.add(new RibbonQuad(x0, y0, x1, y1, x2, y2, x3, y3, color));
+        if (ribbonCount == ribbonColors.length) {
+            ribbonColors = java.util.Arrays.copyOf(ribbonColors, ribbonCount * 2);
+            ribbonData = java.util.Arrays.copyOf(ribbonData, ribbonCount * 2 * 8);
+        }
+        int b = ribbonCount * 8;
+        ribbonData[b] = x0;
+        ribbonData[b + 1] = y0;
+        ribbonData[b + 2] = x1;
+        ribbonData[b + 3] = y1;
+        ribbonData[b + 4] = x2;
+        ribbonData[b + 5] = y2;
+        ribbonData[b + 6] = x3;
+        ribbonData[b + 7] = y3;
+        ribbonColors[ribbonCount++] = color;
     }
 
     private void queueRoundCap(float cx, float cy, float radius, int color) {
@@ -1582,8 +1638,8 @@ public class DependencyLineRenderer {
     }
 
     private void flushRibbonQueue(GuiGraphics g) {
-        FrameProfiler.setCounter("ribbonQuadsQueued", ribbonQueue.size());
-        if (ribbonQueue.isEmpty()) return;
+        FrameProfiler.setCounter("ribbonQuadsQueued", ribbonCount);
+        if (ribbonCount == 0) return;
         org.joml.Matrix4f mat = g.pose().last().pose();
 
         g.flush();
@@ -1599,24 +1655,26 @@ public class DependencyLineRenderer {
         com.mojang.blaze3d.vertex.BufferBuilder bb = tesselator.begin(com.mojang.blaze3d.vertex.VertexFormat.Mode.QUADS,
                 com.mojang.blaze3d.vertex.DefaultVertexFormat.POSITION_COLOR);
 
-        for (RibbonQuad q : ribbonQueue) {
-            int alpha = (q.color >>> 24) & 0xFF;
-            int r = (q.color >>> 16) & 0xFF;
-            int gg = (q.color >>> 8) & 0xFF;
-            int b = q.color & 0xFF;
-            bb.addVertex(mat, q.x0, q.y0, 0f).setColor(r, gg, b, alpha);
-            bb.addVertex(mat, q.x1, q.y1, 0f).setColor(r, gg, b, alpha);
-            bb.addVertex(mat, q.x2, q.y2, 0f).setColor(r, gg, b, alpha);
-            bb.addVertex(mat, q.x3, q.y3, 0f).setColor(r, gg, b, alpha);
+        for (int i = 0; i < ribbonCount; i++) {
+            int color = ribbonColors[i];
+            int alpha = (color >>> 24) & 0xFF;
+            int r = (color >>> 16) & 0xFF;
+            int gg = (color >>> 8) & 0xFF;
+            int b = color & 0xFF;
+            int d = i * 8;
+            bb.addVertex(mat, ribbonData[d], ribbonData[d + 1], 0f).setColor(r, gg, b, alpha);
+            bb.addVertex(mat, ribbonData[d + 2], ribbonData[d + 3], 0f).setColor(r, gg, b, alpha);
+            bb.addVertex(mat, ribbonData[d + 4], ribbonData[d + 5], 0f).setColor(r, gg, b, alpha);
+            bb.addVertex(mat, ribbonData[d + 6], ribbonData[d + 7], 0f).setColor(r, gg, b, alpha);
         }
 
         com.mojang.blaze3d.vertex.BufferUploader.drawWithShader(bb.buildOrThrow());
-        ribbonQueue.clear();
+        ribbonCount = 0;
     }
 
     private void flushArrowQueue(GuiGraphics g) {
-        FrameProfiler.setCounter("arrowsQueued", arrowQueue.size());
-        if (arrowQueue.isEmpty()) return;
+        FrameProfiler.setCounter("arrowsQueued", arrowCount);
+        if (arrowCount == 0) return;
         org.joml.Matrix4f mat = g.pose().last().pose();
 
         g.flush();
@@ -1632,21 +1690,24 @@ public class DependencyLineRenderer {
         com.mojang.blaze3d.vertex.BufferBuilder bb = tesselator.begin(com.mojang.blaze3d.vertex.VertexFormat.Mode.QUADS,
                 com.mojang.blaze3d.vertex.DefaultVertexFormat.POSITION_TEX_COLOR);
 
-        for (ArrowInstance a : arrowQueue) {
-            int alpha = (a.color >>> 24) & 0xFF;
-            int r = (a.color >>> 16) & 0xFF;
-            int gg = (a.color >>> 8) & 0xFF;
-            int b = a.color & 0xFF;
+        for (int i = 0; i < arrowCount; i++) {
+            int color = arrowColors[i];
+            int alpha = (color >>> 24) & 0xFF;
+            int r = (color >>> 16) & 0xFF;
+            int gg = (color >>> 8) & 0xFF;
+            int b = color & 0xFF;
 
-            float fx = a.dirX, fy = a.dirY;
-            float rx = -a.dirY, ry = a.dirX;
-            float half = a.halfSize;
+            int d = i * 5;
+            float tipX = arrowData[d], tipY = arrowData[d + 1];
+            float fx = arrowData[d + 2], fy = arrowData[d + 3];
+            float rx = -fy, ry = fx;
+            float half = arrowData[d + 4];
 
             float halfLen = half;
             float halfWid = half * (45f / 75f);
 
-            float cx = a.tipX - fx * halfLen;
-            float cy = a.tipY - fy * halfLen;
+            float cx = tipX - fx * halfLen;
+            float cy = tipY - fy * halfLen;
 
             float tlX = cx - rx * halfWid + fx * halfLen, tlY = cy - ry * halfWid + fy * halfLen;
             float trX = cx + rx * halfWid + fx * halfLen, trY = cy + ry * halfWid + fy * halfLen;
@@ -1660,6 +1721,6 @@ public class DependencyLineRenderer {
         }
 
         com.mojang.blaze3d.vertex.BufferUploader.drawWithShader(bb.buildOrThrow());
-        arrowQueue.clear();
+        arrowCount = 0;
     }
 }

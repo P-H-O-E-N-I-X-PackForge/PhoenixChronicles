@@ -13,6 +13,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.material.Fluids;
 import net.phoenixvine.chronicles.QuestAPI;
+import net.phoenixvine.chronicles.client.registry.ExternalScreenRegistry;
 import net.phoenixvine.chronicles.client.screen.taskform.TaskFormType.SecondPicker;
 import net.phoenixvine.chronicles.client.screen.taskform.TaskFormType.TargetPicker;
 import net.phoenixvine.chronicles.common.filter.FluidFilters;
@@ -58,19 +59,21 @@ public final class TaskFormTypes {
     @Nullable
     public static String detail(QuestTask task) {
         TaskFormType type = BY_ID.get(idFor(task));
-        return type == null ? null : type.detail(task);
+        return type == null ? null : detail(type, task);
     }
 
     public static void applySticky(QuestTask task, boolean sticky) {
-        TaskFormType type = BY_ID.get(idFor(task));
-        if (type != null) type.applySticky(task, sticky);
+        if (BY_ID.containsKey(idFor(task))) setSticky(task, sticky);
     }
 
     private static TaskFormType generic(String typeId) {
         PhoenixTaskRegistry.TaskEntry entry = PhoenixTaskRegistry.get(typeId);
-        var builder = TaskFormType.of(typeId, ExternalTriggerTask.class);
+        TaskFormType form = new TaskFormType(typeId, ExternalTriggerTask.class);
+        form.generic = true;
         if (entry == null) {
-            return builder.target("§8Target id").load((t, v) -> v.target = t.getTriggerId()).build();
+            form.target("§8Target id", TargetPicker.NONE);
+            form.canCreate = false;
+            return form;
         }
 
         String targetLabel = null;
@@ -83,24 +86,15 @@ public final class TaskFormTypes {
             }
         }
         if (entry.fields().isEmpty() || targetLabel != null)
-            builder.target(targetLabel != null ? targetLabel : "§8Target id");
-        if (countLabel != null) builder.count("§8" + countLabel);
-        return builder
-                .create(v -> {
-                    ExternalTriggerTask ext = new ExternalTriggerTask(v.taskId, v.description, v.target,
-                            v.intCount());
-                    ext.setKjsTypeId(typeId);
-                    return ext;
-                })
-                .load((t, v) -> {
-                    v.target = t.getTriggerId();
-                    v.count = t.getRequired();
-                })
-                .build();
+            form.target(targetLabel != null ? targetLabel : "§8Target id", TargetPicker.NONE);
+        if (countLabel != null) form.count("§8" + countLabel);
+        return form;
     }
 
-    private static void add(TaskFormType type) {
-        BY_ID.put(type.id(), type);
+    private static TaskFormType define(String id, Class<? extends QuestTask> taskClass) {
+        TaskFormType type = new TaskFormType(id, taskClass);
+        BY_ID.put(id, type);
+        return type;
     }
 
     @Nullable
@@ -189,409 +183,495 @@ public final class TaskFormTypes {
         return alts.size() == 1 ? alts.get(0) : FluidFilters.anyOf(alts.toArray(new IFluidFilter[0]));
     }
 
+    @Nullable
+    static Collection<ResourceLocation> registryIds(TaskFormType type) {
+        return switch (type.id()) {
+            case "advancement" -> advancementIds();
+            case "screen_opened" -> ExternalScreenRegistry.registeredIds();
+            case "enchantment" -> registryKeys(Registries.ENCHANTMENT);
+            case "stat" -> BuiltInRegistries.CUSTOM_STAT.keySet();
+            case "biome" -> registryKeys(Registries.BIOME);
+            case "structure" -> registryKeys(Registries.STRUCTURE);
+            case "tag_item" -> BuiltInRegistries.ITEM.getTagNames().map(TagKey::location).toList();
+            default -> null;
+        };
+    }
+
+    @Nullable
+    static Collection<String> stringIds(TaskFormType type) {
+        return switch (type.id()) {
+            case "gt_multiblock" -> GTCEuCompat.isAvailable() ? GtmMachines.multiblockControllerIds() : null;
+            case "external_trigger" -> QuestAPI.getRegisteredExternalTriggers().keySet();
+            case "view_machine" -> PhantasiaCompat.isAvailable() ? PhantasiaCompat.allMachineIds() : null;
+            case "view_scene" -> PhantasiaCompat.isAvailable() ? PhantasiaCompat.allSceneIds() : null;
+            case "view_guide" -> PhantasiaCompat.isAvailable() ? PhantasiaCompat.allGuideIds() : null;
+            case "archive_entry" -> ArchiveLoreCompat.isAvailable() ? ArchiveLoreCompat.allEntryIds() : null;
+            default -> null;
+        };
+    }
+
+    private static boolean isSticky(QuestTask task) {
+        if (task instanceof ItemRequirementTask t) return t.isSticky();
+        if (task instanceof FluidRequirementTask t) return t.isSticky();
+        if (task instanceof TagItemTask t) return t.isSticky();
+        if (task instanceof EnergyStorageTask t) return t.isSticky();
+        if (task instanceof FilterItemTask t) return t.isSticky();
+        if (task instanceof FilterFluidTask t) return t.isSticky();
+        return true;
+    }
+
+    static void setSticky(QuestTask task, boolean sticky) {
+        if (task instanceof ItemRequirementTask t) t.setSticky(sticky);
+        else if (task instanceof FluidRequirementTask t) t.setSticky(sticky);
+        else if (task instanceof TagItemTask t) t.setSticky(sticky);
+        else if (task instanceof EnergyStorageTask t) t.setSticky(sticky);
+        else if (task instanceof FilterItemTask t) t.setSticky(sticky);
+        else if (task instanceof FilterFluidTask t) t.setSticky(sticky);
+    }
+
+    private static boolean isCheckAe2(QuestTask task) {
+        if (task instanceof ItemRequirementTask t) return t.isCheckAe2Storage();
+        if (task instanceof FluidRequirementTask t) return t.isCheckAe2Storage();
+        if (task instanceof FilterItemTask t) return t.isCheckAe2Storage();
+        if (task instanceof FilterFluidTask t) return t.isCheckAe2Storage();
+        return false;
+    }
+
+    @Nullable
+    static QuestTask create(TaskFormType type, TaskFormValues v) throws Exception {
+        if (type.generic) return type.canCreate ? createGeneric(type, v) : null;
+        return switch (type.id()) {
+            case "kill_entity" -> {
+                var m = TaskIdMatcher.parse(v.target);
+                yield m.isEmpty() ? null : new KillEntityTask(v.taskId, v.description, m.spec(), v.intCount(),
+                        v.consume);
+            }
+            case "item_check" -> createItemCheck(v);
+            case "craft_item" -> new CraftItemTask(v.taskId, v.description, ResourceLocation.parse(v.target),
+                    v.intCount());
+            case "recipe" -> {
+                ResourceLocation recipeType = ResourceLocation.tryParse(v.target);
+                ResourceLocation recipe = v.second.isEmpty() ? null : ResourceLocation.tryParse(v.second);
+                yield recipeType != null ?
+                        new RecipeTask(v.taskId, v.description, recipeType, recipe, v.intCount()) : null;
+            }
+            case "gt_multiblock" -> {
+                String machine = v.target.trim();
+                boolean any = machine.equals(MultiblockFormedTask.ANY);
+                ResourceLocation id = any ? null : ResourceLocation.tryParse(machine);
+                yield id != null || any ? new MultiblockFormedTask(v.taskId, v.description, id, v.intCount()) :
+                        null;
+            }
+            case "experience" -> new ExperienceTask(v.taskId, v.description, v.intCount());
+            case "location_terminal" -> new LocationOrTerminalTask(v.taskId, v.description,
+                    ResourceLocation.parse(v.target), v.consume);
+            case "advancement" -> new AdvancementTask(v.taskId, v.description, ResourceLocation.parse(v.target));
+            case "block_interact" -> {
+                var block = BuiltInRegistries.BLOCK.get(ResourceLocation.parse(v.target));
+                String mode = v.second.isEmpty() ? "PLACE" : v.second.toUpperCase();
+                yield block != null ? new BlockInteractTask(v.taskId, v.description, block, mode, v.intCount()) :
+                        null;
+            }
+            case "block_break" -> {
+                var block = BuiltInRegistries.BLOCK.get(ResourceLocation.parse(v.target));
+                yield block != null ? new BlockBreakTask(v.taskId, v.description, block, v.intCount()) : null;
+            }
+            case "enchantment" -> new EnchantmentTask(v.taskId, v.description, ResourceLocation.parse(v.target),
+                    v.intCount());
+            case "fluid_check" -> {
+                FluidRequirementTask task = new FluidRequirementTask(v.taskId, v.description,
+                        ResourceLocation.parse(v.target), v.intCount(), v.consume);
+                task.setCheckAe2Storage(v.checkAe2);
+                yield task;
+            }
+            case "stat" -> new StatTrackerTask(v.taskId, v.description, ResourceLocation.parse(v.target),
+                    v.intCount(), v.consume);
+            case "dimension" -> {
+                String dim = v.second.isEmpty() ? "minecraft:overworld" : v.second;
+                var m = TaskIdMatcher.parse(dim, false);
+                yield m.isEmpty() ? null : new DimensionTask(v.taskId, v.description, m.spec());
+            }
+            case "biome" -> {
+                var m = TaskIdMatcher.parse(v.target);
+                yield m.isEmpty() ? null : new BiomeTask(v.taskId, v.description, m.spec());
+            }
+            case "structure" -> {
+                var m = TaskIdMatcher.parse(v.target);
+                yield m.isEmpty() ? null : new StructureTask(v.taskId, v.description, m.spec());
+            }
+            case "checkmark" -> new CheckmarkTask(v.taskId, v.description);
+            case "timer" -> new TimerTask(v.taskId, v.description, v.intCount());
+            case "tag_item" -> new TagItemTask(v.taskId, v.description,
+                    ItemTags.create(ResourceLocation.parse(v.target)),
+                    v.intCount());
+            case "info" -> new InfoTask(v.taskId, v.description, v.target);
+            case "external_trigger" -> new ExternalTriggerTask(v.taskId, v.description, v.target, v.intCount());
+            case "view_machine" -> new ViewMachineTask(v.taskId, v.description, v.target, (float) v.intCount());
+            case "view_scene" -> new ViewSceneTask(v.taskId, v.description, v.target, (float) v.intCount());
+            case "view_guide" -> new ViewGuideTask(v.taskId, v.description, v.target);
+            case "archive_entry" -> new ArchiveEntryTask(v.taskId, v.description, v.target);
+            case "screen_opened" -> new ScreenOpenedTask(v.taskId, v.description, v.target);
+            case "energy_check" -> createEnergy(v);
+            case "filter_item" -> createFilterItem(v);
+            case "filter_fluid" -> createFilterFluid(v);
+            default -> null;
+        };
+    }
+
+    private static QuestTask createGeneric(TaskFormType type, TaskFormValues v) {
+        ExternalTriggerTask ext = new ExternalTriggerTask(v.taskId, v.description, v.target, v.intCount());
+        ext.setKjsTypeId(type.id());
+        return ext;
+    }
+
+    @Nullable
+    private static QuestTask createItemCheck(TaskFormValues v) {
+        Item item = BuiltInRegistries.ITEM.get(ResourceLocation.parse(v.target));
+        if (item == null) return null;
+        ItemRequirementTask task = new ItemRequirementTask(v.taskId, v.description, item, v.intCount(), v.consume);
+        String nbtText = v.nbt.trim();
+        if (!nbtText.isEmpty()) {
+            try {
+                task.setNbtFilter(TagParser.parseTag(nbtText));
+            } catch (Exception ignored) {}
+        }
+        task.setCheckAe2Storage(v.checkAe2);
+        return task;
+    }
+
+    private static QuestTask createEnergy(TaskFormValues v) {
+        var type = EnergyStorageTask.EnergyType.FE;
+        if (!v.target.isBlank()) {
+            try {
+                type = EnergyStorageTask.EnergyType.valueOf(v.target.trim().toUpperCase());
+            } catch (Exception ignored) {}
+        }
+        var source = EnergyStorageTask.Source.INVENTORY;
+        if (!v.second.isBlank()) {
+            try {
+                source = EnergyStorageTask.Source.valueOf(v.second.trim().toUpperCase());
+            } catch (Exception ignored) {}
+        }
+        return new EnergyStorageTask(v.taskId, v.description, v.intCount(), type, source);
+    }
+
+    @Nullable
+    private static QuestTask createFilterItem(TaskFormValues v) {
+        IItemFilter filter = v.itemFilter != null ? v.itemFilter : parseItemFilter(v.target);
+        if (filter == null) return null;
+        FilterItemTask task = new FilterItemTask(v.taskId, v.description, filter, v.intCount(), v.consume);
+        task.setCheckAe2Storage(v.checkAe2);
+        return task;
+    }
+
+    @Nullable
+    private static QuestTask createFilterFluid(TaskFormValues v) {
+        IFluidFilter filter = v.fluidFilter != null ? v.fluidFilter : parseFluidFilter(v.target);
+        if (filter == null) return null;
+        FilterFluidTask task = new FilterFluidTask(v.taskId, v.description, filter, v.intCount(), v.consume);
+        task.setCheckAe2Storage(v.checkAe2);
+        return task;
+    }
+
+    static void load(TaskFormType type, QuestTask task, TaskFormValues v) {
+        if (type.showSticky) v.sticky = isSticky(task);
+        if (type.showAe2) v.checkAe2 = isCheckAe2(task);
+
+        if (type.generic) {
+            ExternalTriggerTask ext = (ExternalTriggerTask) task;
+            v.target = ext.getTriggerId();
+            if (type.canCreate) v.count = ext.getRequired();
+            return;
+        }
+
+        switch (type.id()) {
+            case "kill_entity" -> {
+                KillEntityTask t = (KillEntityTask) task;
+                v.target = t.getSpec();
+                v.count = t.getRequiredCount();
+                v.consume = t.shouldConsume();
+            }
+            case "item_check" -> {
+                ItemRequirementTask t = (ItemRequirementTask) task;
+                ResourceLocation id = t.getItem() != null ? BuiltInRegistries.ITEM.getKey(t.getItem()) : null;
+                v.target = id != null ? id.toString() : "";
+                v.count = t.getRequiredCount();
+                v.consume = t.shouldConsume();
+                v.nbt = t.getNbtFilter() != null ? t.getNbtFilter().toString() : "";
+            }
+            case "craft_item" -> {
+                CraftItemTask t = (CraftItemTask) task;
+                v.target = t.getItemId().toString();
+                v.count = t.getRequiredCount();
+            }
+            case "recipe" -> {
+                RecipeTask t = (RecipeTask) task;
+                v.target = t.getRecipeType().toString();
+                v.second = t.getRecipeId() != null ? t.getRecipeId().toString() : "";
+                v.count = t.getRequired();
+            }
+            case "gt_multiblock" -> {
+                MultiblockFormedTask t = (MultiblockFormedTask) task;
+                v.target = t.getMachineId() != null ? t.getMachineId().toString() : MultiblockFormedTask.ANY;
+                v.count = t.getRequired();
+            }
+            case "experience" -> v.count = ((ExperienceTask) task).getRequiredLevel();
+            case "location_terminal" -> {
+                LocationOrTerminalTask t = (LocationOrTerminalTask) task;
+                v.target = t.getTargetTerminalId().toString();
+                v.consume = t.shouldConsume();
+            }
+            case "advancement" -> v.target = ((AdvancementTask) task).getAdvancementId().toString();
+            case "block_interact" -> {
+                BlockInteractTask t = (BlockInteractTask) task;
+                v.target = blockId(t.getTargetBlock());
+                v.second = t.getMode();
+                v.count = t.getRequired();
+            }
+            case "block_break" -> {
+                BlockBreakTask t = (BlockBreakTask) task;
+                v.target = blockId(t.getTargetBlock());
+                v.count = t.getRequired();
+            }
+            case "enchantment" -> {
+                EnchantmentTask t = (EnchantmentTask) task;
+                v.target = t.getEnchantmentId().toString();
+                v.count = t.getRequiredLevel();
+            }
+            case "fluid_check" -> {
+                FluidRequirementTask t = (FluidRequirementTask) task;
+                v.target = t.getFluidId().toString();
+                v.count = t.getRequiredAmount();
+                v.consume = t.shouldConsume();
+            }
+            case "stat" -> {
+                StatTrackerTask t = (StatTrackerTask) task;
+                v.target = t.getStatId().toString();
+                v.count = t.getTargetValue();
+                v.consume = t.shouldConsume();
+            }
+            case "dimension" -> v.second = ((DimensionTask) task).getSpec();
+            case "biome" -> v.target = ((BiomeTask) task).getSpec();
+            case "structure" -> v.target = ((StructureTask) task).getSpec();
+            case "timer" -> v.count = ((TimerTask) task).getDurationSeconds();
+            case "tag_item" -> {
+                TagItemTask t = (TagItemTask) task;
+                v.target = t.getTag().location().toString();
+                v.count = t.getRequired();
+            }
+            case "info" -> v.target = ((InfoTask) task).getBody();
+            case "external_trigger" -> {
+                ExternalTriggerTask t = (ExternalTriggerTask) task;
+                v.target = t.getTriggerId();
+                v.count = t.getRequired();
+            }
+            case "view_machine" -> {
+                ViewMachineTask t = (ViewMachineTask) task;
+                v.target = t.getMachineId();
+                v.count = (int) t.getMinSeconds();
+            }
+            case "view_scene" -> {
+                ViewSceneTask t = (ViewSceneTask) task;
+                v.target = t.getSceneId();
+                v.count = (int) t.getMinSeconds();
+            }
+            case "view_guide" -> v.target = ((ViewGuideTask) task).getGuideId();
+            case "archive_entry" -> v.target = ((ArchiveEntryTask) task).getArchiveEntryId();
+            case "screen_opened" -> v.target = ((ScreenOpenedTask) task).getScreenId();
+            case "energy_check" -> {
+                EnergyStorageTask t = (EnergyStorageTask) task;
+                v.target = t.getEnergyType().name();
+                v.second = t.getSource().name();
+                v.count = t.getRequiredEnergy();
+            }
+            case "filter_item" -> {
+                FilterItemTask t = (FilterItemTask) task;
+                v.target = itemFilterAsIdList(t.getFilter());
+                v.count = t.getCount();
+                v.consume = t.isConsume();
+            }
+            case "filter_fluid" -> {
+                FilterFluidTask t = (FilterFluidTask) task;
+                v.target = fluidFilterAsIdList(t.getFilter());
+                v.count = t.getAmount();
+                v.consume = t.isConsume();
+            }
+            default -> {}
+        }
+    }
+
+    @Nullable
+    static String detail(TaskFormType type, QuestTask task) {
+        return switch (type.id()) {
+            case "kill_entity" -> {
+                KillEntityTask t = (KillEntityTask) task;
+                yield t.getMatcher().displayName() + " ×" + t.getRequiredCount();
+            }
+            case "item_check" -> {
+                ItemRequirementTask t = (ItemRequirementTask) task;
+                yield t.getItem() != null ? itemName(t.getItem()) + " ×" + t.getRequiredCount() : null;
+            }
+            case "craft_item" -> {
+                CraftItemTask t = (CraftItemTask) task;
+                Item item = BuiltInRegistries.ITEM.get(t.getItemId());
+                yield item != null ? itemName(item) + " ×" + t.getRequiredCount() : t.getItemId().toString();
+            }
+            case "recipe" -> {
+                RecipeTask t = (RecipeTask) task;
+                yield (t.getRecipeId() != null ? t.getRecipeId().toString() : t.getRecipeType().toString()) +
+                        " ×" + t.getRequired();
+            }
+            case "gt_multiblock" -> {
+                MultiblockFormedTask t = (MultiblockFormedTask) task;
+                yield (t.getMachineId() != null ? t.getMachineId().toString() : "any multiblock") + " ×" +
+                        t.getRequired();
+            }
+            case "experience" -> "Level " + ((ExperienceTask) task).getRequiredLevel();
+            case "fluid_check" -> {
+                FluidRequirementTask t = (FluidRequirementTask) task;
+                yield t.getFluidId().getPath().replace('_', ' ') + "  " + t.getRequiredAmount() + " mB";
+            }
+            case "tag_item" -> {
+                TagItemTask t = (TagItemTask) task;
+                yield "#" + t.getTag().location().getPath() + " ×" + t.getRequired();
+            }
+            default -> null;
+        };
+    }
+
     static {
-        add(TaskFormType.of("kill_entity", KillEntityTask.class)
-                .target("§8Entity id, list, or #tag  (e.g. minecraft:zombie, #minecraft:skeletons)")
-                .targetPicker(TargetPicker.ENTITY)
-                .count("§8Count")
-                .consume()
-                .create(v -> {
-                    var m = TaskIdMatcher.parse(v.target);
-                    return m.isEmpty() ? null : new KillEntityTask(v.taskId, v.description, m.spec(), v.intCount(),
-                            v.consume);
-                })
-                .load((t, v) -> {
-                    v.target = t.getSpec();
-                    v.count = t.getRequiredCount();
-                    v.consume = t.shouldConsume();
-                })
-                .detail(t -> t.getMatcher().displayName() + " ×" + t.getRequiredCount())
-                .build());
+        TaskFormType killEntity = define("kill_entity", KillEntityTask.class);
+        killEntity.target("§8Entity id, list, or #tag  (e.g. minecraft:zombie, #minecraft:skeletons)",
+                TargetPicker.ENTITY);
+        killEntity.count("§8Count");
+        killEntity.showConsume = true;
 
-        add(TaskFormType.of("item_check", ItemRequirementTask.class)
-                .target("§8Item id  (e.g. minecraft:iron_ingot)")
-                .targetPicker(TargetPicker.ITEM)
-                .count("§8Count")
-                .nbtBox()
-                .consume()
-                .sticky(ItemRequirementTask::isSticky, ItemRequirementTask::setSticky)
-                .ae2(ItemRequirementTask::isCheckAe2Storage)
-                .create(v -> {
-                    Item item = BuiltInRegistries.ITEM.get(ResourceLocation.parse(v.target));
-                    if (item == null) return null;
-                    ItemRequirementTask task = new ItemRequirementTask(v.taskId, v.description, item, v.intCount(),
-                            v.consume);
-                    String nbtText = v.nbt.trim();
-                    if (!nbtText.isEmpty()) {
-                        try {
-                            task.setNbtFilter(TagParser.parseTag(nbtText));
-                        } catch (Exception ignored) {}
-                    }
-                    task.setCheckAe2Storage(v.checkAe2);
-                    return task;
-                })
-                .load((t, v) -> {
-                    ResourceLocation id = t.getItem() != null ? BuiltInRegistries.ITEM.getKey(t.getItem()) : null;
-                    v.target = id != null ? id.toString() : "";
-                    v.count = t.getRequiredCount();
-                    v.consume = t.shouldConsume();
-                    v.nbt = t.getNbtFilter() != null ? t.getNbtFilter().toString() : "";
-                })
-                .detail(t -> t.getItem() != null ? itemName(t.getItem()) + " ×" + t.getRequiredCount() : null)
-                .build());
+        TaskFormType itemCheck = define("item_check", ItemRequirementTask.class);
+        itemCheck.target("§8Item id  (e.g. minecraft:iron_ingot)", TargetPicker.ITEM);
+        itemCheck.count("§8Count");
+        itemCheck.nbtBox = true;
+        itemCheck.showConsume = true;
+        itemCheck.showSticky = true;
+        itemCheck.showAe2 = true;
 
-        add(TaskFormType.of("craft_item", CraftItemTask.class)
-                .target("§8Item id  (e.g. minecraft:iron_ingot)")
-                .targetPicker(TargetPicker.ITEM)
-                .count("§8Count")
-                .consume()
-                .create(v -> new CraftItemTask(v.taskId, v.description, ResourceLocation.parse(v.target),
-                        v.intCount()))
-                .load((t, v) -> {
-                    v.target = t.getItemId().toString();
-                    v.count = t.getRequiredCount();
-                })
-                .detail(t -> {
-                    Item item = BuiltInRegistries.ITEM.get(t.getItemId());
-                    return item != null ? itemName(item) + " ×" + t.getRequiredCount() : t.getItemId().toString();
-                })
-                .build());
+        TaskFormType craftItem = define("craft_item", CraftItemTask.class);
+        craftItem.target("§8Item id  (e.g. minecraft:iron_ingot)", TargetPicker.ITEM);
+        craftItem.count("§8Count");
+        craftItem.showConsume = true;
 
-        add(TaskFormType.of("recipe", RecipeTask.class)
-                .target("§8Recipe type  (e.g. gtceu:macerator, minecraft:smelting)")
-                .targetPicker(TargetPicker.RECIPE_TYPE)
-                .second("§8Specific recipe id  (optional, any recipe of the type if empty)", SecondPicker.RECIPE)
-                .count("§8Count")
-                .create(v -> {
-                    ResourceLocation type = ResourceLocation.tryParse(v.target);
-                    ResourceLocation recipe = v.second.isEmpty() ? null : ResourceLocation.tryParse(v.second);
-                    return type != null ? new RecipeTask(v.taskId, v.description, type, recipe, v.intCount()) : null;
-                })
-                .load((t, v) -> {
-                    v.target = t.getRecipeType().toString();
-                    v.second = t.getRecipeId() != null ? t.getRecipeId().toString() : "";
-                    v.count = t.getRequired();
-                })
-                .detail(t -> (t.getRecipeId() != null ? t.getRecipeId().toString() : t.getRecipeType().toString()) +
-                        " ×" + t.getRequired())
-                .build());
+        TaskFormType recipe = define("recipe", RecipeTask.class);
+        recipe.target("§8Recipe type  (e.g. gtceu:macerator, minecraft:smelting)", TargetPicker.RECIPE_TYPE);
+        recipe.second("§8Specific recipe id  (optional, any recipe of the type if empty)", SecondPicker.RECIPE);
+        recipe.count("§8Count");
 
-        add(TaskFormType.of("gt_multiblock", MultiblockFormedTask.class)
-                .target("§8Controller id  (e.g. gtceu:electric_blast_furnace, or * for any)")
-                .targetPicker(TargetPicker.STRING)
-                .stringIds(() -> GTCEuCompat.isAvailable() ? GtmMachines.multiblockControllerIds() : null)
-                .count("§8Times formed")
-                .create(v -> {
-                    String machine = v.target.trim();
-                    boolean any = machine.equals(MultiblockFormedTask.ANY);
-                    ResourceLocation id = any ? null : ResourceLocation.tryParse(machine);
-                    return id != null || any ? new MultiblockFormedTask(v.taskId, v.description, id, v.intCount()) :
-                            null;
-                })
-                .load((t, v) -> {
-                    v.target = t.getMachineId() != null ? t.getMachineId().toString() : MultiblockFormedTask.ANY;
-                    v.count = t.getRequired();
-                })
-                .detail(t -> (t.getMachineId() != null ? t.getMachineId().toString() : "any multiblock") + " ×" +
-                        t.getRequired())
-                .build());
+        TaskFormType multiblock = define("gt_multiblock", MultiblockFormedTask.class);
+        multiblock.target("§8Controller id  (e.g. gtceu:electric_blast_furnace, or * for any)", TargetPicker.STRING);
+        multiblock.count("§8Times formed");
 
-        add(TaskFormType.of("experience", ExperienceTask.class)
-                .count("§8XP level")
-                .create(v -> new ExperienceTask(v.taskId, v.description, v.intCount()))
-                .load((t, v) -> v.count = t.getRequiredLevel())
-                .detail(t -> "Level " + t.getRequiredLevel())
-                .build());
+        TaskFormType experience = define("experience", ExperienceTask.class);
+        experience.count("§8XP level");
 
-        add(TaskFormType.of("location_terminal", LocationOrTerminalTask.class)
-                .target("§8Terminal id")
-                .consume()
-                .create(v -> new LocationOrTerminalTask(v.taskId, v.description, ResourceLocation.parse(v.target),
-                        v.consume))
-                .load((t, v) -> {
-                    v.target = t.getTargetTerminalId().toString();
-                    v.consume = t.shouldConsume();
-                })
-                .build());
+        TaskFormType locationTerminal = define("location_terminal", LocationOrTerminalTask.class);
+        locationTerminal.target("§8Terminal id", TargetPicker.NONE);
+        locationTerminal.showConsume = true;
 
-        add(TaskFormType.of("advancement", AdvancementTask.class)
-                .target("§8Advancement id")
-                .targetPicker(TargetPicker.REGISTRY)
-                .registryIds(TaskFormTypes::advancementIds)
-                .create(v -> new AdvancementTask(v.taskId, v.description, ResourceLocation.parse(v.target)))
-                .load((t, v) -> v.target = t.getAdvancementId().toString())
-                .build());
+        TaskFormType advancement = define("advancement", AdvancementTask.class);
+        advancement.target("§8Advancement id", TargetPicker.REGISTRY);
 
-        add(TaskFormType.of("block_interact", BlockInteractTask.class)
-                .target("§8Block id")
-                .targetPicker(TargetPicker.BLOCK)
-                .second("§8PLACE or RIGHT_CLICK", SecondPicker.MODE_TOGGLE)
-                .count("§8Count")
-                .consume()
-                .create(v -> {
-                    var block = BuiltInRegistries.BLOCK.get(ResourceLocation.parse(v.target));
-                    String mode = v.second.isEmpty() ? "PLACE" : v.second.toUpperCase();
-                    return block != null ? new BlockInteractTask(v.taskId, v.description, block, mode, v.intCount()) :
-                            null;
-                })
-                .load((t, v) -> {
-                    v.target = blockId(t.getTargetBlock());
-                    v.second = t.getMode();
-                    v.count = t.getRequired();
-                })
-                .build());
+        TaskFormType blockInteract = define("block_interact", BlockInteractTask.class);
+        blockInteract.target("§8Block id", TargetPicker.BLOCK);
+        blockInteract.second("§8PLACE or RIGHT_CLICK", SecondPicker.MODE_TOGGLE);
+        blockInteract.count("§8Count");
+        blockInteract.showConsume = true;
 
-        add(TaskFormType.of("block_break", BlockBreakTask.class)
-                .target("§8Block ID")
-                .targetPicker(TargetPicker.BLOCK)
-                .count("§8Count")
-                .create(v -> {
-                    var block = BuiltInRegistries.BLOCK.get(ResourceLocation.parse(v.target));
-                    return block != null ? new BlockBreakTask(v.taskId, v.description, block, v.intCount()) : null;
-                })
-                .load((t, v) -> {
-                    v.target = blockId(t.getTargetBlock());
-                    v.count = t.getRequired();
-                })
-                .build());
+        TaskFormType blockBreak = define("block_break", BlockBreakTask.class);
+        blockBreak.target("§8Block ID", TargetPicker.BLOCK);
+        blockBreak.count("§8Count");
 
-        add(TaskFormType.of("enchantment", EnchantmentTask.class)
-                .target("§8Enchantment ID")
-                .targetPicker(TargetPicker.REGISTRY)
-                .registryIds(() -> registryKeys(Registries.ENCHANTMENT))
-                .count("§8Min Level")
-                .create(v -> new EnchantmentTask(v.taskId, v.description, ResourceLocation.parse(v.target),
-                        v.intCount()))
-                .load((t, v) -> {
-                    v.target = t.getEnchantmentId().toString();
-                    v.count = t.getRequiredLevel();
-                })
-                .build());
+        TaskFormType enchantment = define("enchantment", EnchantmentTask.class);
+        enchantment.target("§8Enchantment ID", TargetPicker.REGISTRY);
+        enchantment.count("§8Min Level");
 
-        add(TaskFormType.of("fluid_check", FluidRequirementTask.class)
-                .target("§8Fluid id")
-                .targetPicker(TargetPicker.FLUID)
-                .count("§8mB amount")
-                .consume()
-                .sticky(FluidRequirementTask::isSticky, FluidRequirementTask::setSticky)
-                .ae2(FluidRequirementTask::isCheckAe2Storage)
-                .create(v -> {
-                    FluidRequirementTask task = new FluidRequirementTask(v.taskId, v.description,
-                            ResourceLocation.parse(v.target), v.intCount(), v.consume);
-                    task.setCheckAe2Storage(v.checkAe2);
-                    return task;
-                })
-                .load((t, v) -> {
-                    v.target = t.getFluidId().toString();
-                    v.count = t.getRequiredAmount();
-                    v.consume = t.shouldConsume();
-                })
-                .detail(t -> t.getFluidId().getPath().replace('_', ' ') + "  " + t.getRequiredAmount() + " mB")
-                .build());
+        TaskFormType fluidCheck = define("fluid_check", FluidRequirementTask.class);
+        fluidCheck.target("§8Fluid id", TargetPicker.FLUID);
+        fluidCheck.count("§8mB amount");
+        fluidCheck.showConsume = true;
+        fluidCheck.showSticky = true;
+        fluidCheck.showAe2 = true;
 
-        add(TaskFormType.of("stat", StatTrackerTask.class)
-                .target("§8Stat id  (e.g. minecraft:jump)")
-                .targetPicker(TargetPicker.REGISTRY)
-                .registryIds(() -> BuiltInRegistries.CUSTOM_STAT.keySet())
-                .second("§8Secondary value", SecondPicker.NONE)
-                .count("§8Target value")
-                .consume()
-                .create(v -> new StatTrackerTask(v.taskId, v.description, ResourceLocation.parse(v.target),
-                        v.intCount(), v.consume))
-                .load((t, v) -> {
-                    v.target = t.getStatId().toString();
-                    v.count = t.getTargetValue();
-                    v.consume = t.shouldConsume();
-                })
-                .build());
+        TaskFormType stat = define("stat", StatTrackerTask.class);
+        stat.target("§8Stat id  (e.g. minecraft:jump)", TargetPicker.REGISTRY);
+        stat.second("§8Secondary value", SecondPicker.NONE);
+        stat.count("§8Target value");
+        stat.showConsume = true;
 
-        add(TaskFormType.of("dimension", DimensionTask.class)
-                .second("§8Dimension id  (e.g. minecraft:the_nether)", SecondPicker.DIMENSION)
-                .create(v -> {
-                    String dim = v.second.isEmpty() ? "minecraft:overworld" : v.second;
-                    var m = TaskIdMatcher.parse(dim, false);
-                    return m.isEmpty() ? null : new DimensionTask(v.taskId, v.description, m.spec());
-                })
-                .load((t, v) -> v.second = t.getSpec())
-                .build());
+        TaskFormType dimension = define("dimension", DimensionTask.class);
+        dimension.second("§8Dimension id  (e.g. minecraft:the_nether)", SecondPicker.DIMENSION);
 
-        add(TaskFormType.of("biome", BiomeTask.class)
-                .target("§8Biome id, list, or #tag  (e.g. minecraft:plains, #minecraft:is_forest)")
-                .targetPicker(TargetPicker.REGISTRY)
-                .registryIds(() -> registryKeys(Registries.BIOME))
-                .create(v -> {
-                    var m = TaskIdMatcher.parse(v.target);
-                    return m.isEmpty() ? null : new BiomeTask(v.taskId, v.description, m.spec());
-                })
-                .load((t, v) -> v.target = t.getSpec())
-                .build());
+        TaskFormType biome = define("biome", BiomeTask.class);
+        biome.target("§8Biome id, list, or #tag  (e.g. minecraft:plains, #minecraft:is_forest)",
+                TargetPicker.REGISTRY);
 
-        add(TaskFormType.of("structure", StructureTask.class)
-                .target("§8Structure id, list, or #tag  (e.g. minecraft:village_plains, #minecraft:village)")
-                .targetPicker(TargetPicker.REGISTRY)
-                .registryIds(() -> registryKeys(Registries.STRUCTURE))
-                .create(v -> {
-                    var m = TaskIdMatcher.parse(v.target);
-                    return m.isEmpty() ? null : new StructureTask(v.taskId, v.description, m.spec());
-                })
-                .load((t, v) -> v.target = t.getSpec())
-                .build());
+        TaskFormType structure = define("structure", StructureTask.class);
+        structure.target("§8Structure id, list, or #tag  (e.g. minecraft:village_plains, #minecraft:village)",
+                TargetPicker.REGISTRY);
 
-        add(TaskFormType.of("checkmark", CheckmarkTask.class)
-                .create(v -> new CheckmarkTask(v.taskId, v.description))
-                .build());
+        define("checkmark", CheckmarkTask.class);
 
-        add(TaskFormType.of("timer", TimerTask.class)
-                .count("§8Duration (seconds)")
-                .create(v -> new TimerTask(v.taskId, v.description, v.intCount()))
-                .load((t, v) -> v.count = t.getDurationSeconds())
-                .build());
+        TaskFormType timer = define("timer", TimerTask.class);
+        timer.count("§8Duration (seconds)");
 
-        add(TaskFormType.of("tag_item", TagItemTask.class)
-                .target("§8Item tag  (e.g. c:ores/iron)")
-                .targetPicker(TargetPicker.REGISTRY)
-                .registryIds(() -> BuiltInRegistries.ITEM.getTagNames().map(TagKey::location).toList())
-                .count("§8Count")
-                .sticky(TagItemTask::isSticky, TagItemTask::setSticky)
-                .create(v -> new TagItemTask(v.taskId, v.description, ItemTags.create(ResourceLocation.parse(v.target)),
-                        v.intCount()))
-                .load((t, v) -> {
-                    v.target = t.getTag().location().toString();
-                    v.count = t.getRequired();
-                })
-                .detail(t -> "#" + t.getTag().location().getPath() + " ×" + t.getRequired())
-                .build());
+        TaskFormType tagItem = define("tag_item", TagItemTask.class);
+        tagItem.target("§8Item tag  (e.g. c:ores/iron)", TargetPicker.REGISTRY);
+        tagItem.count("§8Count");
+        tagItem.showSticky = true;
 
-        add(TaskFormType.of("info", InfoTask.class)
-                .target("§8Body text shown to the player")
-                .targetOptional()
-                .maxTargetLength(512)
-                .create(v -> new InfoTask(v.taskId, v.description, v.target))
-                .load((t, v) -> v.target = t.getBody())
-                .build());
+        TaskFormType info = define("info", InfoTask.class);
+        info.target("§8Body text shown to the player", TargetPicker.NONE);
+        info.targetOptional = true;
+        info.maxTargetLength = 512;
 
-        add(TaskFormType.of("external_trigger", ExternalTriggerTask.class)
-                .target("§8Trigger id")
-                .targetPicker(TargetPicker.STRING)
-                .stringIds(() -> QuestAPI.getRegisteredExternalTriggers().keySet())
-                .count("§8Times fired")
-                .create(v -> new ExternalTriggerTask(v.taskId, v.description, v.target, v.intCount()))
-                .load((t, v) -> {
-                    v.target = t.getTriggerId();
-                    v.count = t.getRequired();
-                })
-                .build());
+        TaskFormType externalTrigger = define("external_trigger", ExternalTriggerTask.class);
+        externalTrigger.target("§8Trigger id", TargetPicker.STRING);
+        externalTrigger.count("§8Times fired");
 
-        add(TaskFormType.of("view_machine", ViewMachineTask.class)
-                .target("§8Machine id  (Phantasia multiblock definition id)")
-                .targetPicker(TargetPicker.STRING)
-                .stringIds(() -> PhantasiaCompat.isAvailable() ? PhantasiaCompat.allMachineIds() : null)
-                .count("§8Min seconds")
-                .create(v -> new ViewMachineTask(v.taskId, v.description, v.target, (float) v.intCount()))
-                .load((t, v) -> {
-                    v.target = t.getMachineId();
-                    v.count = (int) t.getMinSeconds();
-                })
-                .build());
+        TaskFormType viewMachine = define("view_machine", ViewMachineTask.class);
+        viewMachine.target("§8Machine id  (Phantasia multiblock definition id)", TargetPicker.STRING);
+        viewMachine.count("§8Min seconds");
 
-        add(TaskFormType.of("view_scene", ViewSceneTask.class)
-                .target("§8Scene id  (Phantasia scene definition id)")
-                .targetPicker(TargetPicker.STRING)
-                .stringIds(() -> PhantasiaCompat.isAvailable() ? PhantasiaCompat.allSceneIds() : null)
-                .count("§8Min seconds")
-                .create(v -> new ViewSceneTask(v.taskId, v.description, v.target, (float) v.intCount()))
-                .load((t, v) -> {
-                    v.target = t.getSceneId();
-                    v.count = (int) t.getMinSeconds();
-                })
-                .build());
+        TaskFormType viewScene = define("view_scene", ViewSceneTask.class);
+        viewScene.target("§8Scene id  (Phantasia scene definition id)", TargetPicker.STRING);
+        viewScene.count("§8Min seconds");
 
-        add(TaskFormType.of("view_guide", ViewGuideTask.class)
-                .target("§8Guide id  (Phantasia guide definition id)")
-                .targetPicker(TargetPicker.STRING)
-                .stringIds(() -> PhantasiaCompat.isAvailable() ? PhantasiaCompat.allGuideIds() : null)
-                .create(v -> new ViewGuideTask(v.taskId, v.description, v.target))
-                .load((t, v) -> v.target = t.getGuideId())
-                .build());
+        TaskFormType viewGuide = define("view_guide", ViewGuideTask.class);
+        viewGuide.target("§8Guide id  (Phantasia guide definition id)", TargetPicker.STRING);
 
-        add(TaskFormType.of("archive_entry", ArchiveEntryTask.class)
-                .target("§8Archive entry id  (e.g. phoenix_archive:log_001)")
-                .targetPicker(TargetPicker.STRING)
-                .stringIds(() -> ArchiveLoreCompat.isAvailable() ? ArchiveLoreCompat.allEntryIds() : null)
-                .create(v -> new ArchiveEntryTask(v.taskId, v.description, v.target))
-                .load((t, v) -> v.target = t.getArchiveEntryId())
-                .build());
+        TaskFormType archiveEntry = define("archive_entry", ArchiveEntryTask.class);
+        archiveEntry.target("§8Archive entry id  (e.g. phoenix_archive:log_001)", TargetPicker.STRING);
 
-        add(TaskFormType.of("energy_check", EnergyStorageTask.class)
-                .target("§8FE / EU / ANY")
-                .targetPicker(TargetPicker.ENERGY_TYPE)
-                .second("§8INVENTORY / HELD / BLOCK", SecondPicker.ENERGY_SOURCE)
-                .count("§8FE required")
-                .sticky(EnergyStorageTask::isSticky, EnergyStorageTask::setSticky)
-                .create(v -> {
-                    var type = EnergyStorageTask.EnergyType.FE;
-                    if (!v.target.isBlank()) {
-                        try {
-                            type = EnergyStorageTask.EnergyType.valueOf(v.target.trim().toUpperCase());
-                        } catch (Exception ignored) {}
-                    }
-                    var source = EnergyStorageTask.Source.INVENTORY;
-                    if (!v.second.isBlank()) {
-                        try {
-                            source = EnergyStorageTask.Source.valueOf(v.second.trim().toUpperCase());
-                        } catch (Exception ignored) {}
-                    }
-                    return new EnergyStorageTask(v.taskId, v.description, v.intCount(), type, source);
-                })
-                .load((t, v) -> {
-                    v.target = t.getEnergyType().name();
-                    v.second = t.getSource().name();
-                    v.count = t.getRequiredEnergy();
-                })
-                .build());
+        TaskFormType screenOpened = define("screen_opened", ScreenOpenedTask.class);
+        screenOpened.target("§8Screen id  (empty = any screen set on this quest)", TargetPicker.REGISTRY);
+        screenOpened.targetOptional = true;
 
-        add(TaskFormType.of("filter_item", FilterItemTask.class)
-                .target("§8Item id(s), semicolon-separated: ANY match  (e.g. wire;cable)")
-                .targetPicker(TargetPicker.ITEM_LIST)
-                .count("§8Count")
-                .consume()
-                .sticky(FilterItemTask::isSticky, FilterItemTask::setSticky)
-                .ae2(FilterItemTask::isCheckAe2Storage)
-                .create(v -> {
-                    IItemFilter filter = v.itemFilter != null ? v.itemFilter : parseItemFilter(v.target);
-                    if (filter == null) return null;
-                    FilterItemTask task = new FilterItemTask(v.taskId, v.description, filter, v.intCount(),
-                            v.consume);
-                    task.setCheckAe2Storage(v.checkAe2);
-                    return task;
-                })
-                .load((t, v) -> {
-                    v.target = itemFilterAsIdList(t.getFilter());
-                    v.count = t.getCount();
-                    v.consume = t.isConsume();
-                })
-                .build());
+        TaskFormType energy = define("energy_check", EnergyStorageTask.class);
+        energy.target("§8FE / EU / ANY", TargetPicker.ENERGY_TYPE);
+        energy.second("§8INVENTORY / HELD / BLOCK", SecondPicker.ENERGY_SOURCE);
+        energy.count("§8FE required");
+        energy.showSticky = true;
 
-        add(TaskFormType.of("filter_fluid", FilterFluidTask.class)
-                .target("§8Fluid id(s), semicolon-separated: ANY match  (e.g. water;lava)")
-                .targetPicker(TargetPicker.FLUID_LIST)
-                .count("§8Amount (mB)")
-                .consume()
-                .sticky(FilterFluidTask::isSticky, FilterFluidTask::setSticky)
-                .ae2(FilterFluidTask::isCheckAe2Storage)
-                .create(v -> {
-                    IFluidFilter filter = v.fluidFilter != null ? v.fluidFilter : parseFluidFilter(v.target);
-                    if (filter == null) return null;
-                    FilterFluidTask task = new FilterFluidTask(v.taskId, v.description, filter, v.intCount(),
-                            v.consume);
-                    task.setCheckAe2Storage(v.checkAe2);
-                    return task;
-                })
-                .load((t, v) -> {
-                    v.target = fluidFilterAsIdList(t.getFilter());
-                    v.count = t.getAmount();
-                    v.consume = t.isConsume();
-                })
-                .build());
+        TaskFormType filterItem = define("filter_item", FilterItemTask.class);
+        filterItem.target("§8Item id(s), semicolon-separated: ANY match  (e.g. wire;cable)", TargetPicker.ITEM_LIST);
+        filterItem.count("§8Count");
+        filterItem.showConsume = true;
+        filterItem.showSticky = true;
+        filterItem.showAe2 = true;
+
+        TaskFormType filterFluid = define("filter_fluid", FilterFluidTask.class);
+        filterFluid.target("§8Fluid id(s), semicolon-separated: ANY match  (e.g. water;lava)",
+                TargetPicker.FLUID_LIST);
+        filterFluid.count("§8Amount (mB)");
+        filterFluid.showConsume = true;
+        filterFluid.showSticky = true;
+        filterFluid.showAe2 = true;
     }
 }

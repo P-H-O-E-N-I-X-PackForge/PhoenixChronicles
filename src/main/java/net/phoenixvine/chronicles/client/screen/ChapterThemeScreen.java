@@ -215,17 +215,12 @@ public class ChapterThemeScreen extends Screen {
         }
     }
 
+    private static final int BROWSE_W = 48;
+    private static final int BROWSE_GAP = 4;
+
     @Override
     protected void init() {
-        panelH = calculateContentHeight();
-
-        uiScale = Math.min(1f, Math.min((width - 8f) / PANEL_W, (height - 8f) / panelH));
-        vw = Math.round(width / uiScale);
-        vh = Math.round(height / uiScale);
-
-        panelLeft = Mth.clamp((vw - PANEL_W) / 2, 4, Math.max(4, vw - PANEL_W - 4));
-        panelTop = Mth.clamp((vh - panelH) / 2, 4, Math.max(4, vh - panelH - 4));
-
+        computePanelLayout();
         int fx = panelLeft + MARGIN;
         int fw = PANEL_W - MARGIN * 2;
 
@@ -234,6 +229,36 @@ public class ChapterThemeScreen extends Screen {
         overrideShaderBoxes.clear();
         overrideStyleButtonY.clear();
 
+        addNameBox(fx, fw);
+        addIconButton(fx, fw);
+        addNameColorBox(fx, fw);
+        addCategoryAndParentButtons(fx, fw);
+        addSidebarShaderRow(fx, fw);
+        addUnlockSoundRow(fx, fw);
+        addCompleteSoundRow(fx, fw);
+        addMusicRow(fx, fw);
+        addParallaxBox(fx);
+
+        int y = advancedToggleY() + SEC_HEADER_H;
+        y = addBackgroundOverrides(fx, fw, y);
+        y += 8;
+        y = addEmergencyItemsButton(fx, fw, y);
+        y = addDeleteChapterButton(fx, fw, y);
+        addSaveAndCancelButtons(fx, fw, y);
+    }
+
+    private void computePanelLayout() {
+        panelH = calculateContentHeight();
+
+        uiScale = Math.min(1f, Math.min((width - 8f) / PANEL_W, (height - 8f) / panelH));
+        vw = Math.round(width / uiScale);
+        vh = Math.round(height / uiScale);
+
+        panelLeft = Mth.clamp((vw - PANEL_W) / 2, 4, Math.max(4, vw - PANEL_W - 4));
+        panelTop = Mth.clamp((vh - panelH) / 2, 4, Math.max(4, vh - panelH - 4));
+    }
+
+    private void addNameBox(int fx, int fw) {
         nameBox = new CodeEditBox(font, fx, rowTop(ROW_NAME) + 11, fw, FIELD_H, Component.empty());
         nameBox.setMaxLength(64);
         nameBox.setValue(cachedDisplayName);
@@ -242,7 +267,9 @@ public class ChapterThemeScreen extends Screen {
                 "Leave empty to use the default name shown above (\"" + defaultFriendlyName() + "\").\n" +
                         "Use & for color/formatting codes, e.g. &6&lGolden Chapter.")));
         addRenderableWidget(nameBox);
+    }
 
+    private void addIconButton(int fx, int fw) {
         int iconPreviewW = FIELD_H + 4;
         addRenderableWidget(Button.builder(Component.literal("§7Change Icon"),
                 b -> {
@@ -252,14 +279,18 @@ public class ChapterThemeScreen extends Screen {
                     }));
                 })
                 .bounds(fx + iconPreviewW + 4, rowTop(ROW_ICON), fw - iconPreviewW - 4, FIELD_H).build());
+    }
 
+    private void addNameColorBox(int fx, int fw) {
         nameColorBox = new EditBox(font, fx, rowTop(ROW_NAME_COLOR) + 11, fw, FIELD_H, Component.empty());
         nameColorBox.setMaxLength(7);
         nameColorBox.setTooltip(Tooltip.create(Component.literal("#RRGGBB  (empty = use canvas accent color)")));
         nameColorBox.setValue(cachedNameColor != 0 ? ChroniclesUIKit.formatHexColor(cachedNameColor) : "");
         nameColorBox.setResponder(v -> cachedNameColor = ChroniclesUIKit.parseHexColor(v, 0));
         addRenderableWidget(nameColorBox);
+    }
 
+    private void addCategoryAndParentButtons(int fx, int fw) {
         addRenderableWidget(Button.builder(
                 Component.literal("§8Category: §7" + categoryLabel(cachedCategoryId) + " §8▾"),
                 b -> categoryDropOpen = !categoryDropOpen).bounds(fx, rowTop(ROW_CATEGORY), fw, FIELD_H).build());
@@ -270,11 +301,11 @@ public class ChapterThemeScreen extends Screen {
         addRenderableWidget(Button.builder(
                 Component.literal("§8Parent Chapter: §7" + parentLabel + " §8▾"),
                 b -> parentDropOpen = !parentDropOpen).bounds(fx, rowTop(ROW_PARENT), fw, FIELD_H).build());
+    }
 
-        int browseW = 48;
-        int browseGap = 4;
+    private void addSidebarShaderRow(int fx, int fw) {
         int sidebarShaderRowY = rowTop(ROW_SIDEBAR_SHADER);
-        sidebarShaderBox = new EditBox(font, fx, sidebarShaderRowY + 11, fw - browseW - browseGap, FIELD_H,
+        sidebarShaderBox = new EditBox(font, fx, sidebarShaderRowY + 11, fw - BROWSE_W - BROWSE_GAP, FIELD_H,
                 Component.empty());
         sidebarShaderBox.setMaxLength(64);
         sidebarShaderBox.setTooltip(Tooltip.create(Component.literal("shader id  (empty = none)")));
@@ -288,10 +319,12 @@ public class ChapterThemeScreen extends Screen {
                     clearWidgets();
                     init();
                 }));
-        }).bounds(fx + fw - browseW, sidebarShaderRowY + 11, browseW, FIELD_H).build());
+        }).bounds(fx + fw - BROWSE_W, sidebarShaderRowY + 11, BROWSE_W, FIELD_H).build());
+    }
 
+    private void addUnlockSoundRow(int fx, int fw) {
         int unlockSoundRowY = rowTop(ROW_UNLOCK_SOUND);
-        unlockSoundBox = new EditBox(font, fx, unlockSoundRowY + 11, fw - browseW - browseGap, FIELD_H,
+        unlockSoundBox = new EditBox(font, fx, unlockSoundRowY + 11, fw - BROWSE_W - BROWSE_GAP, FIELD_H,
                 Component.empty());
         unlockSoundBox.setMaxLength(128);
         unlockSoundBox
@@ -307,10 +340,12 @@ public class ChapterThemeScreen extends Screen {
                             unlockSoundBox.setValue(cachedUnlockSoundId);
                         }));
             }
-        }).bounds(fx + fw - browseW, unlockSoundRowY + 11, browseW, FIELD_H).build());
+        }).bounds(fx + fw - BROWSE_W, unlockSoundRowY + 11, BROWSE_W, FIELD_H).build());
+    }
 
+    private void addCompleteSoundRow(int fx, int fw) {
         int completeSoundRowY = rowTop(ROW_COMPLETE_SOUND);
-        completeSoundBox = new EditBox(font, fx, completeSoundRowY + 11, fw - browseW - browseGap, FIELD_H,
+        completeSoundBox = new EditBox(font, fx, completeSoundRowY + 11, fw - BROWSE_W - BROWSE_GAP, FIELD_H,
                 Component.empty());
         completeSoundBox.setMaxLength(128);
         completeSoundBox
@@ -326,19 +361,21 @@ public class ChapterThemeScreen extends Screen {
                             completeSoundBox.setValue(cachedCompleteSoundId);
                         }));
             }
-        }).bounds(fx + fw - browseW, completeSoundRowY + 11, browseW, FIELD_H).build());
+        }).bounds(fx + fw - BROWSE_W, completeSoundRowY + 11, BROWSE_W, FIELD_H).build());
+    }
 
+    private void addMusicRow(int fx, int fw) {
         int musicRowY = rowTop(ROW_MUSIC);
         int musicNumW = 30;
         int musicNumGap = 2;
         EditBox musicBox = new EditBox(font, fx, musicRowY + 11,
-                fw - browseW - browseGap - (musicNumW + musicNumGap) * 2, FIELD_H, Component.empty());
+                fw - BROWSE_W - BROWSE_GAP - (musicNumW + musicNumGap) * 2, FIELD_H, Component.empty());
         musicBox.setMaxLength(128);
         musicBox.setTooltip(Tooltip.create(ChroniclesUIKit.lit("music sound event id  (empty = none)")));
         musicBox.setValue(cachedMusicId);
         musicBox.setResponder(v -> cachedMusicId = v.trim());
         addRenderableWidget(musicBox);
-        int musicBrowseX = fx + fw - browseW - (musicNumW + musicNumGap) * 2;
+        int musicBrowseX = fx + fw - BROWSE_W - (musicNumW + musicNumGap) * 2;
         addRenderableWidget(Button.builder(ChroniclesUIKit.lit("Browse…"), b -> {
             if (minecraft != null) {
                 minecraft.setScreen(new RegistryIdPickerScreen(this, "Pick chapter music",
@@ -347,7 +384,7 @@ public class ChapterThemeScreen extends Screen {
                             musicBox.setValue(cachedMusicId);
                         }));
             }
-        }).bounds(musicBrowseX, musicRowY + 11, browseW, FIELD_H).build());
+        }).bounds(musicBrowseX, musicRowY + 11, BROWSE_W, FIELD_H).build());
         EditBox musicVolBox = new EditBox(font, fx + fw - (musicNumW + musicNumGap) * 2 + musicNumGap + 2,
                 musicRowY + 11, musicNumW, FIELD_H, Component.empty());
         musicVolBox.setMaxLength(3);
@@ -362,7 +399,9 @@ public class ChapterThemeScreen extends Screen {
         musicFadeBox.setResponder(v -> cachedMusicFadeSec = v.trim());
         musicFadeBox.setTooltip(Tooltip.create(ChroniclesUIKit.lit("Fade in / out time in seconds")));
         addRenderableWidget(musicFadeBox);
+    }
 
+    private void addParallaxBox(int fx) {
         int parallaxRowY = rowTop(ROW_PARALLAX);
         EditBox parallaxBox = new EditBox(font, fx, parallaxRowY + 11, 60, FIELD_H, Component.empty());
         parallaxBox.setMaxLength(3);
@@ -373,9 +412,9 @@ public class ChapterThemeScreen extends Screen {
                         "e.g. 30 makes it drift slowly behind the quests.\nThe texture tiles, so a seamless " +
                         "image looks best.")));
         addRenderableWidget(parallaxBox);
+    }
 
-        int currentY = advancedToggleY() + SEC_HEADER_H;
-
+    private int addBackgroundOverrides(int fx, int fw, int currentY) {
         if (advancedOpen) {
             currentY += ADV_TOGGLE_GAP;
             int removeW = 14;
@@ -441,9 +480,10 @@ public class ChapterThemeScreen extends Screen {
         } else {
             openOverrideStyleDropdown = -1;
         }
+        return currentY;
+    }
 
-        currentY += 8;
-
+    private int addEmergencyItemsButton(int fx, int fw, int currentY) {
         int emergencyCount = net.phoenixvine.chronicles.common.registry.ChapterEmergencyItems.get(chapter)
                 .getRewards().size();
         addRenderableWidget(Button.builder(
@@ -457,7 +497,10 @@ public class ChapterThemeScreen extends Screen {
                                 "Players claim them from the \u26a0 button in the header while one of these quests is active.")))
                 .build());
         currentY += 18 + 6;
+        return currentY;
+    }
 
+    private int addDeleteChapterButton(int fx, int fw, int currentY) {
         if (parent instanceof ChronicleOverviewScreen cos) {
             int questCount = cos.chapterQuestCount(chapter);
             String label;
@@ -471,7 +514,7 @@ public class ChapterThemeScreen extends Screen {
             addRenderableWidget(Button.builder(Component.literal(label),
                     b -> {
                         if (questCount == 0 || deleteConfirmArmed) {
-                            cos.deleteChapter(chapter);
+                            cos.chapters.deleteChapter(chapter);
                             if (minecraft != null) minecraft.setScreen(parent);
                         } else {
                             deleteConfirmArmed = true;
@@ -481,7 +524,10 @@ public class ChapterThemeScreen extends Screen {
                     }).bounds(fx, currentY, fw, 18).build());
             currentY += 18 + 6;
         }
+        return currentY;
+    }
 
+    private void addSaveAndCancelButtons(int fx, int fw, int currentY) {
         int half = (fw - 6) / 2;
         addRenderableWidget(Button.builder(Component.literal("§aSave"), b -> save())
                 .bounds(fx, currentY, half, 18).build());

@@ -4,6 +4,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.resources.ResourceLocation;
 import net.phoenixvine.chronicles.client.screen.*;
+import net.phoenixvine.chronicles.client.screen.ChronicleOverviewScreen;
 import net.phoenixvine.chronicles.client.screen.widgets.SidebarPanel;
 import net.phoenixvine.chronicles.client.util.ChapterConfig;
 import net.phoenixvine.chronicles.common.codec.QuestFileLoader;
@@ -30,13 +31,13 @@ import java.util.Map;
 public class ChapterActions {
 
     private final ScreenContext ctx;
-    private final ChapterActionsState state;
+    private final ChronicleOverviewScreen state;
     private final GraphEditorState editorState;
 
     private @Nullable String armedDeleteCategoryId = null;
     private @Nullable String armedDeleteChapterId = null;
 
-    public ChapterActions(ScreenContext ctx, ChapterActionsState state, GraphEditorState editorState) {
+    public ChapterActions(ScreenContext ctx, ChronicleOverviewScreen state, GraphEditorState editorState) {
         this.ctx = ctx;
         this.state = state;
         this.editorState = editorState;

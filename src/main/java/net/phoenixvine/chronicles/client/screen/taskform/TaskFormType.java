@@ -6,10 +6,6 @@ import net.phoenixvine.chronicles.common.model.QuestTask;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
-import java.util.function.BiConsumer;
-import java.util.function.Function;
-import java.util.function.Predicate;
-import java.util.function.Supplier;
 
 public final class TaskFormType {
 
@@ -35,63 +31,50 @@ public final class TaskFormType {
         MODE_TOGGLE
     }
 
-    @FunctionalInterface
-    public interface Factory {
+    final String id;
+    final Class<? extends QuestTask> taskClass;
 
-        @Nullable
-        QuestTask create(TaskFormValues v) throws Exception;
+    boolean needsTarget = false;
+    boolean targetOptional = false;
+    String targetHint = "§8Target id";
+    int maxTargetLength = 160;
+    TargetPicker targetPicker = TargetPicker.NONE;
+
+    boolean needsSecond = false;
+    String secondHint = "§8Secondary value";
+    SecondPicker secondPicker = SecondPicker.NONE;
+
+    boolean needsCount = false;
+    String countHint = "§8Count";
+
+    boolean nbtBox = false;
+    boolean showConsume = false;
+    boolean showSticky = false;
+    boolean showAe2 = false;
+
+    boolean generic = false;
+    boolean canCreate = true;
+
+    TaskFormType(String id, Class<? extends QuestTask> taskClass) {
+        this.id = id;
+        this.taskClass = taskClass;
     }
 
-    private final String id;
-    private final Class<? extends QuestTask> taskClass;
-    private final boolean needsTarget;
-    private final boolean targetOptional;
-    private final String targetHint;
-    private final int maxTargetLength;
-    private final TargetPicker targetPicker;
-    private final boolean needsSecond;
-    private final String secondHint;
-    private final SecondPicker secondPicker;
-    private final boolean needsCount;
-    private final String countHint;
-    private final boolean nbtBox;
-    private final boolean showConsume;
-    private final boolean showSticky;
-    private final boolean showAe2;
-    private final Supplier<Collection<ResourceLocation>> registryIds;
-    private final Supplier<Collection<String>> stringIds;
-    private final Factory factory;
-    private final BiConsumer<QuestTask, TaskFormValues> loader;
-    private final Function<QuestTask, String> detail;
-    private final Predicate<QuestTask> stickyGetter;
-    private final BiConsumer<QuestTask, Boolean> stickySetter;
-    private final Predicate<QuestTask> ae2Getter;
+    void target(String hint, TargetPicker picker) {
+        this.needsTarget = true;
+        this.targetHint = hint;
+        this.targetPicker = picker;
+    }
 
-    private TaskFormType(Builder<?> b) {
-        this.id = b.id;
-        this.taskClass = b.taskClass;
-        this.needsTarget = b.needsTarget;
-        this.targetOptional = b.targetOptional;
-        this.targetHint = b.targetHint;
-        this.maxTargetLength = b.maxTargetLength;
-        this.targetPicker = b.targetPicker;
-        this.needsSecond = b.needsSecond;
-        this.secondHint = b.secondHint;
-        this.secondPicker = b.secondPicker;
-        this.needsCount = b.needsCount;
-        this.countHint = b.countHint;
-        this.nbtBox = b.nbtBox;
-        this.showConsume = b.showConsume;
-        this.showSticky = b.stickyGetter != null;
-        this.showAe2 = b.ae2Getter != null;
-        this.registryIds = b.registryIds;
-        this.stringIds = b.stringIds;
-        this.factory = b.factory;
-        this.loader = b.loader;
-        this.detail = b.detail;
-        this.stickyGetter = b.stickyGetter;
-        this.stickySetter = b.stickySetter;
-        this.ae2Getter = b.ae2Getter;
+    void second(String hint, SecondPicker picker) {
+        this.needsSecond = true;
+        this.secondHint = hint;
+        this.secondPicker = picker;
+    }
+
+    void count(String hint) {
+        this.needsCount = true;
+        this.countHint = hint;
     }
 
     public String id() {
@@ -160,150 +143,29 @@ public final class TaskFormType {
 
     @Nullable
     public Collection<ResourceLocation> registryIds() {
-        return registryIds == null ? null : registryIds.get();
+        return TaskFormTypes.registryIds(this);
     }
 
     @Nullable
     public Collection<String> stringIds() {
-        return stringIds == null ? null : stringIds.get();
+        return TaskFormTypes.stringIds(this);
     }
 
     @Nullable
     public QuestTask create(TaskFormValues v) throws Exception {
-        return factory == null ? null : factory.create(v);
+        return TaskFormTypes.create(this, v);
     }
 
     public void load(QuestTask task, TaskFormValues v) {
-        if (stickyGetter != null) v.sticky = stickyGetter.test(task);
-        if (ae2Getter != null) v.checkAe2 = ae2Getter.test(task);
-        if (loader != null) loader.accept(task, v);
+        TaskFormTypes.load(this, task, v);
     }
 
     public void applySticky(QuestTask task, boolean sticky) {
-        if (stickySetter != null) stickySetter.accept(task, sticky);
+        TaskFormTypes.setSticky(task, sticky);
     }
 
     @Nullable
     public String detail(QuestTask task) {
-        return detail == null ? null : detail.apply(task);
-    }
-
-    public static <T extends QuestTask> Builder<T> of(String id, Class<T> taskClass) {
-        return new Builder<>(id, taskClass);
-    }
-
-    public static final class Builder<T extends QuestTask> {
-
-        private final String id;
-        private final Class<T> taskClass;
-        private boolean needsTarget = false;
-        private boolean targetOptional = false;
-        private String targetHint = "§8Target id";
-        private int maxTargetLength = 160;
-        private TargetPicker targetPicker = TargetPicker.NONE;
-        private boolean needsSecond = false;
-        private String secondHint = "§8Secondary value";
-        private SecondPicker secondPicker = SecondPicker.NONE;
-        private boolean needsCount = false;
-        private String countHint = "§8Count";
-        private boolean nbtBox = false;
-        private boolean showConsume = false;
-        private Supplier<Collection<ResourceLocation>> registryIds;
-        private Supplier<Collection<String>> stringIds;
-        private Factory factory;
-        private BiConsumer<QuestTask, TaskFormValues> loader;
-        private Function<QuestTask, String> detail;
-        private Predicate<QuestTask> stickyGetter;
-        private BiConsumer<QuestTask, Boolean> stickySetter;
-        private Predicate<QuestTask> ae2Getter;
-
-        private Builder(String id, Class<T> taskClass) {
-            this.id = id;
-            this.taskClass = taskClass;
-        }
-
-        public Builder<T> target(String hint) {
-            this.needsTarget = true;
-            this.targetHint = hint;
-            return this;
-        }
-
-        public Builder<T> targetOptional() {
-            this.targetOptional = true;
-            return this;
-        }
-
-        public Builder<T> maxTargetLength(int max) {
-            this.maxTargetLength = max;
-            return this;
-        }
-
-        public Builder<T> targetPicker(TargetPicker picker) {
-            this.targetPicker = picker;
-            return this;
-        }
-
-        public Builder<T> registryIds(Supplier<Collection<ResourceLocation>> ids) {
-            this.registryIds = ids;
-            return this;
-        }
-
-        public Builder<T> stringIds(Supplier<Collection<String>> ids) {
-            this.stringIds = ids;
-            return this;
-        }
-
-        public Builder<T> second(String hint, SecondPicker picker) {
-            this.needsSecond = true;
-            this.secondHint = hint;
-            this.secondPicker = picker;
-            return this;
-        }
-
-        public Builder<T> count(String hint) {
-            this.needsCount = true;
-            this.countHint = hint;
-            return this;
-        }
-
-        public Builder<T> nbtBox() {
-            this.nbtBox = true;
-            return this;
-        }
-
-        public Builder<T> consume() {
-            this.showConsume = true;
-            return this;
-        }
-
-        public Builder<T> sticky(Predicate<T> getter, BiConsumer<T, Boolean> setter) {
-            this.stickyGetter = task -> getter.test(taskClass.cast(task));
-            this.stickySetter = (task, value) -> setter.accept(taskClass.cast(task), value);
-            return this;
-        }
-
-        public Builder<T> ae2(Predicate<T> getter) {
-            this.ae2Getter = task -> getter.test(taskClass.cast(task));
-            return this;
-        }
-
-        public Builder<T> create(Factory factory) {
-            this.factory = factory;
-            return this;
-        }
-
-        public Builder<T> load(BiConsumer<T, TaskFormValues> loader) {
-            this.loader = (task, v) -> loader.accept(taskClass.cast(task), v);
-            return this;
-        }
-
-        public Builder<T> detail(Function<T, String> detail) {
-            this.detail = task -> detail.apply(taskClass.cast(task));
-            return this;
-        }
-
-        public TaskFormType build() {
-            return new TaskFormType(this);
-        }
+        return TaskFormTypes.detail(this, task);
     }
 }

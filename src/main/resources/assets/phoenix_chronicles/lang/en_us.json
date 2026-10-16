@@ -103,8 +103,6 @@
   "phoenix_chronicles.ui.item_lookup_no_quest": "§7No quest requires %s§7.",
   "phoenix_chronicles.screen.quest_tasks.title": "Quest Details",
   "phoenix_chronicles.screen.item_lookup.title": "Item Lookup",
-  "phoenix_chronicles.screen.terminal.title": "PHOENIX SYSTEM TERMINAL",
-  "phoenix_chronicles.screen.terminal.disconnect": "§c[ DISCONNECT ]",
   "phoenix_chronicles.jei.category.quests": "Quests",
   "phoenix_chronicles.jei.click_to_open": "§7Click to open in Quest Book"
 }

@@ -68,7 +68,7 @@ public final class ItemData {
 
     private static final org.slf4j.Logger LOGGER = LogUtils.getLogger();
     private static final String COMPONENTS_KEY = "components";
-    
+
     private static final int LEGACY_DATA_VERSION = 3465;
 
     @Nullable

@@ -234,7 +234,13 @@ public final class PhoenixTaskRegistry {
     public static void registerBuiltins() {
         if (builtinsRegistered) return;
         builtinsRegistered = true;
+        registerPlayerActionTasks();
+        registerWorldAndStatusTasks();
+        registerStorageAndFilterTasks();
+        registerViewAndIntegrationTasks();
+    }
 
+    private static void registerPlayerActionTasks() {
         register("kill_entity", tag -> {
             KillEntityTask t = new KillEntityTask(taskId(tag), desc(tag),
                     net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("minecraft", "pig"), 1, false);
@@ -242,9 +248,6 @@ public final class PhoenixTaskRegistry {
             return t;
         }).icon("§c☠").label("Kill Entity")
                 .tooltip("Kill a number of a specific mob type.\nTarget: entity registry id (e.g. minecraft:zombie)")
-                .field(FieldDef.entityId("entity_id", "Entity ID"))
-                .field(FieldDef.integer("required", "Count"))
-                .field(FieldDef.bool("consume", "Consume"))
                 .register();
 
         register("item_check", tag -> {
@@ -256,10 +259,6 @@ public final class PhoenixTaskRegistry {
                 .tooltip(
                         "Have a specific item in your inventory.\nTarget: item registry id. Consume: remove items on complete.\n" +
                                 "If AE2 is installed, also counts items stored in your linked ME network (toggle: check_ae2_storage).")
-                .field(FieldDef.itemId("item_id", "Item ID"))
-                .field(FieldDef.integer("count", "Count"))
-                .field(FieldDef.bool("consume", "Consume"))
-                .field(FieldDef.bool("check_ae2_storage", "Check AE2 Storage"))
                 .register();
 
         register("craft_item", tag -> {
@@ -269,8 +268,6 @@ public final class PhoenixTaskRegistry {
             return t;
         }).icon("§6⚒").label("Craft Item")
                 .tooltip("Craft a specific item the required number of times.\nTarget: item registry id.")
-                .field(FieldDef.itemId("item_id", "Item ID"))
-                .field(FieldDef.integer("count", "Count"))
                 .register();
 
         register("recipe", tag -> {
@@ -283,9 +280,6 @@ public final class PhoenixTaskRegistry {
                         "specific recipe.\nTarget: recipe type id (e.g. gtceu:macerator).\n" +
                         "Secondary: a specific recipe id (optional).\nCount: how many runs. Counted for the machine's " +
                         "owner, or the nearest player.")
-                .field(FieldDef.text("recipe_type", "Recipe type", "e.g. gtceu:macerator"))
-                .field(FieldDef.text("recipe_id", "Recipe id (optional)"))
-                .field(FieldDef.integer("required", "Count"))
                 .register();
 
         register("gt_multiblock", tag -> {
@@ -296,8 +290,6 @@ public final class PhoenixTaskRegistry {
                 .tooltip("Form a GregTech multiblock. Counted for the machine's owner, or the nearest player if " +
                         "nobody owns it.\nTarget: controller block id (e.g. gtceu:electric_blast_furnace), or * for " +
                         "any multiblock.\nCount: how many times.")
-                .field(FieldDef.text("machine_id", "Controller id (or * for any)", "e.g. gtceu:electric_blast_furnace"))
-                .field(FieldDef.integer("required", "Count"))
                 .requiresMod("gtceu")
                 .register();
 
@@ -307,7 +299,6 @@ public final class PhoenixTaskRegistry {
             return t;
         }).icon("§a✦").label("XP Level")
                 .tooltip("Reach a minimum XP level.\nNo target needed. Just set the required level.")
-                .field(FieldDef.integer("required_level", "Level"))
                 .register();
 
         register("location_terminal", tag -> {
@@ -317,8 +308,6 @@ public final class PhoenixTaskRegistry {
             return t;
         }).icon("§b◎").label("Terminal / Location")
                 .tooltip("Interact with a specific terminal block or location.\nTarget: terminal registry id.")
-                .field(FieldDef.text("terminal_id", "Terminal ID"))
-                .field(FieldDef.bool("consume", "Consume"))
                 .register();
 
         register("advancement", tag -> {
@@ -329,7 +318,6 @@ public final class PhoenixTaskRegistry {
         }).icon("§d★").label("Advancement")
                 .tooltip(
                         "Earn a specific Minecraft advancement.\nTarget: advancement id (e.g. minecraft:story/mine_diamond)")
-                .field(FieldDef.text("advancement_id", "Advancement ID"))
                 .register();
 
         register("block_interact", tag -> {
@@ -340,12 +328,10 @@ public final class PhoenixTaskRegistry {
         }).icon("§7□").label("Block Interact")
                 .tooltip(
                         "Place or right-click a specific block, optionally several times.\nTarget: block id. Secondary: PLACE or RIGHT_CLICK. Count: how many times.")
-                .field(FieldDef.text("block_id", "Block ID"))
-                .field(FieldDef.text("mode", "Mode", "PLACE or RIGHT_CLICK"))
-                .field(FieldDef.integer("required", "Count"))
-                .field(FieldDef.bool("consume", "Consume"))
                 .register();
+    }
 
+    private static void registerWorldAndStatusTasks() {
         register("fluid_check", tag -> {
             FluidRequirementTask t = new FluidRequirementTask(taskId(tag), desc(tag),
                     net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("minecraft", "water"), 1000, false);
@@ -354,10 +340,6 @@ public final class PhoenixTaskRegistry {
         }).icon("§3≋").label("Fluid Check")
                 .tooltip("Have a fluid amount in a tank.\nTarget: fluid id. Count: amount in mB.\n" +
                         "If AE2 is installed, also counts fluid stored in your linked ME network (toggle: check_ae2_storage).")
-                .field(FieldDef.fluidId("fluid_id", "Fluid ID"))
-                .field(FieldDef.integer("amount", "Amount (mB)"))
-                .field(FieldDef.bool("consume", "Consume"))
-                .field(FieldDef.bool("check_ae2_storage", "Check AE2 Storage"))
                 .register();
 
         register("stat", tag -> {
@@ -368,9 +350,6 @@ public final class PhoenixTaskRegistry {
         }).icon("§9≡").label("Stat Tracker")
                 .tooltip(
                         "Reach a value on a Minecraft statistic.\nTarget: stat id (e.g. minecraft:jump). Count: target value.")
-                .field(FieldDef.text("stat_id", "Stat ID"))
-                .field(FieldDef.integer("required", "Target Value"))
-                .field(FieldDef.bool("consume", "Consume"))
                 .register();
 
         register("dimension", tag -> {
@@ -382,7 +361,6 @@ public final class PhoenixTaskRegistry {
             return t;
         }).icon("§5⊕").label("Visit Dimension")
                 .tooltip("Travel to a specific dimension.\nSecondary: dimension id (e.g. minecraft:the_nether)")
-                .field(FieldDef.text("dimension_id", "Dimension ID"))
                 .register();
 
         register("biome", tag -> {
@@ -392,7 +370,6 @@ public final class PhoenixTaskRegistry {
             return t;
         }).icon("§2⛰").label("Visit Biome")
                 .tooltip("Stand inside a specific biome.\nTarget: biome registry id (e.g. minecraft:jungle)")
-                .field(FieldDef.text("biome_id", "Biome ID"))
                 .register();
 
         register("structure", tag -> {
@@ -402,7 +379,6 @@ public final class PhoenixTaskRegistry {
             return t;
         }).icon("§6⌂").label("Visit Structure")
                 .tooltip("Enter a specific structure.\nTarget: structure registry id (e.g. minecraft:village)")
-                .field(FieldDef.text("structure_id", "Structure ID"))
                 .register();
 
         register("checkmark", tag -> {
@@ -423,8 +399,6 @@ public final class PhoenixTaskRegistry {
         }).icon("§e◈").label("Tag Item")
                 .tooltip(
                         "Have items matching an item tag in inventory.\nTarget: item tag (e.g. c:ores/iron). Count: required amount.")
-                .field(FieldDef.text("tag", "Item Tag"))
-                .field(FieldDef.integer("required", "Count"))
                 .register();
 
         register("info", tag -> {
@@ -434,7 +408,6 @@ public final class PhoenixTaskRegistry {
         }).icon("§7§l!").label("Info / Text")
                 .tooltip(
                         "A read-only information panel the player must acknowledge.\nNo target: body text is shown to the player.")
-                .field(FieldDef.text("body", "Body Text"))
                 .register();
 
         register("timer", tag -> {
@@ -446,7 +419,6 @@ public final class PhoenixTaskRegistry {
                 .tooltip(
                         "Completes automatically once the configured duration has elapsed since the quest became " +
                                 "active for the player.\nNo target needed: set Duration (seconds).")
-                .field(FieldDef.integer("duration_seconds", "Duration (seconds)"))
                 .register();
 
         register("energy_check", tag -> {
@@ -457,11 +429,10 @@ public final class PhoenixTaskRegistry {
         }).icon("§6⚡").label("Energy Storage")
                 .tooltip(
                         "Check stored energy (FE or GTM EU) in inventory items OR a right-clicked block.\nCount: amount required.\nTarget: FE / EU / ANY  (energy type).\nSecondary: INVENTORY / HELD / BLOCK  (source).")
-                .field(FieldDef.text("energy_type", "Energy Type", "FE / EU / ANY"))
-                .field(FieldDef.text("source", "Source", "INVENTORY / HELD / BLOCK"))
-                .field(FieldDef.integer("required", "Amount (FE)"))
                 .register();
+    }
 
+    private static void registerStorageAndFilterTasks() {
         register("ae2_item_storage", tag -> {
             ItemRequirementTask t = new ItemRequirementTask(taskId(tag), desc(tag),
                     net.minecraft.world.item.Items.DIRT, 1, false);
@@ -489,10 +460,6 @@ public final class PhoenixTaskRegistry {
                         "Consume: remove matching items on completion.\n" +
                         "Example: any_of [ {tag: forge:ingots/copper}, {tag: forge:ingots/gold} ]\n" +
                         "If AE2 is installed, also counts matching items stored in your linked ME network (toggle: check_ae2_storage).")
-                .field(FieldDef.itemFilter("filter", "Item Filter"))
-                .field(FieldDef.integer("count", "Count"))
-                .field(FieldDef.bool("consume", "Consume"))
-                .field(FieldDef.bool("check_ae2_storage", "Check AE2 Storage"))
                 .register();
 
         register("filter_fluid", tag -> {
@@ -509,10 +476,6 @@ public final class PhoenixTaskRegistry {
                         "Supports fluid tags (e.g. forge:milk, minecraft:water).\n" +
                         "Amount in mB. Consume: drain fluid on completion.\n" +
                         "If AE2 is installed, also counts matching fluid stored in your linked ME network (toggle: check_ae2_storage).")
-                .field(FieldDef.fluidFilter("filter", "Fluid Filter"))
-                .field(FieldDef.integer("amount", "Amount (mB)"))
-                .field(FieldDef.bool("consume", "Consume"))
-                .field(FieldDef.bool("check_ae2_storage", "Check AE2 Storage"))
                 .register();
 
         register("block_break", tag -> {
@@ -523,8 +486,6 @@ public final class PhoenixTaskRegistry {
         }).icon("§7✕").label("Break Block")
                 .tooltip(
                         "Break a specific block a required number of times.\nTarget: block registry id (e.g. minecraft:stone). Count: how many times.")
-                .field(FieldDef.text("block_id", "Block ID"))
-                .field(FieldDef.integer("required", "Count"))
                 .register();
 
         register("enchantment", tag -> {
@@ -535,10 +496,10 @@ public final class PhoenixTaskRegistry {
         }).icon("§b✦").label("Enchantment")
                 .tooltip(
                         "Complete when the player has a specific enchantment at >= the required level on any equipped item.\nenchantment_id: registry id (e.g. minecraft:sharpness). required_level: minimum enchantment level.")
-                .field(FieldDef.text("enchantment_id", "Enchantment ID", "e.g. minecraft:sharpness"))
-                .field(FieldDef.integer("required_level", "Min Level"))
                 .register();
+    }
 
+    private static void registerViewAndIntegrationTasks() {
         register("view_machine", tag -> {
             ViewMachineTask t = new ViewMachineTask(taskId(tag), desc(tag), "", 3.0f);
             t.deserializeNBT(tag);
@@ -546,8 +507,6 @@ public final class PhoenixTaskRegistry {
         }).icon("§b⬡").label("View Machine (Phantasia)")
                 .tooltip(
                         "Completes when the player views a Phantasia build guide for a specific machine for at least the required time.\nTarget: machine id (Phantasia multiblock definition id).")
-                .field(FieldDef.text("machine_id", "Machine ID"))
-                .field(FieldDef.integer("min_seconds", "Min Seconds"))
                 .requiresMod("phantasia")
                 .register();
 
@@ -558,8 +517,6 @@ public final class PhoenixTaskRegistry {
         }).icon("§b⬢").label("View Scene (Phantasia)")
                 .tooltip(
                         "Completes when the player views a multi-machine Phantasia scene for at least the required time.\nTarget: scene id (Phantasia scene definition id).")
-                .field(FieldDef.text("scene_id", "Scene ID"))
-                .field(FieldDef.integer("min_seconds", "Min Seconds"))
                 .requiresMod("phantasia")
                 .register();
 
@@ -570,7 +527,6 @@ public final class PhoenixTaskRegistry {
         }).icon("§b📖").label("View Guide (Phantasia)")
                 .tooltip(
                         "Completes when the player opens a Phantasia build/lore guide.\nTarget: guide id (Phantasia guide definition id). No minimum time - Phantasia doesn't report when guides close.")
-                .field(FieldDef.text("guide_id", "Guide ID"))
                 .requiresMod("phantasia")
                 .register();
 
@@ -582,7 +538,6 @@ public final class PhoenixTaskRegistry {
         }).icon("§b📖").label("View Archive Entry")
                 .tooltip(
                         "Completes when the player views a Phoenix Archive lore entry.\nTarget: entry id (e.g. phoenix_archive:log_001) - the id shown/set in Archive's own editor. No minimum time.")
-                .field(FieldDef.text("archive_entry_id", "Archive Entry ID"))
                 .requiresMod("phoenix_archive")
                 .register();
 
@@ -593,8 +548,6 @@ public final class PhoenixTaskRegistry {
         }).icon("§d⚡").label("External Trigger")
                 .tooltip(
                         "Completes when an external mod/script fires QuestAPI.fireExternalEvent() with the matching trigger ID.\nTarget: trigger id (e.g. mymod:sun_eaten).\nCount: how many times the event must fire.")
-                .field(FieldDef.text("trigger_id", "Trigger ID", "e.g. mymod:sun_eaten"))
-                .field(FieldDef.integer("required", "Count (times fired)"))
                 .register();
 
         register("conflux_research", tag -> {

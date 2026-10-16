@@ -272,173 +272,202 @@ public class PictureContextMenu implements TogglePanel {
     private boolean handleClick(int mx, int my) {
         if (target == null) return false;
         BackgroundPictureConfig.Picture pic = target;
-        int x = this.x, y = this.y;
 
-        if (resizeOpen) {
-            ResourceLocation nativeLoc = texture();
-            int[] nativeSz = nativeLoc != null ? CustomTextureCache.nativeSize(nativeLoc) : null;
-            int subX = x + CTX_W + 2;
-            int sy = y + 2 + CTX_ROW;
-            if (nativeSz != null) {
-                if (mx >= subX && mx <= subX + CTX_W && my >= sy && my <= sy + CTX_ROW) {
-                    applyResize(pic, nativeSz[0], nativeSz[1]);
-                    return true;
-                }
-                sy += CTX_ROW;
+        if (resizeOpen && handleResizeSubmenuClick(mx, my, pic)) return true;
+        if (opacityOpen && handleOpacitySubmenuClick(mx, my, pic)) return true;
+        if (tintOpen && handleTintSubmenuClick(mx, my, pic)) return true;
+        if (parallaxOpen && handleParallaxSubmenuClick(mx, my, pic)) return true;
+        if (rotateOpen && handleRotateSubmenuClick(mx, my, pic)) return true;
+        if (moveCatOpen && handleMoveChapterSubmenuClick(mx, my, pic)) return true;
+
+        return handleMainMenuClick(mx, my, pic);
+    }
+
+    private boolean handleResizeSubmenuClick(int mx, int my, BackgroundPictureConfig.Picture pic) {
+        int x = this.x, y = this.y;
+        ResourceLocation nativeLoc = texture();
+        int[] nativeSz = nativeLoc != null ? CustomTextureCache.nativeSize(nativeLoc) : null;
+        int subX = x + CTX_W + 2;
+        int sy = y + 2 + CTX_ROW;
+        if (nativeSz != null) {
+            if (mx >= subX && mx <= subX + CTX_W && my >= sy && my <= sy + CTX_ROW) {
+                applyResize(pic, nativeSz[0], nativeSz[1]);
+                return true;
             }
-            for (int i = 0; i < RESIZE_PRESETS.length; i++) {
-                int ry = sy + i * CTX_ROW;
-                if (mx >= subX && mx <= subX + CTX_W && my >= ry && my <= ry + CTX_ROW) {
-                    int size = RESIZE_PRESETS[i];
-                    applyResize(pic, size, size);
-                    return true;
-                }
-            }
-            if (mx < x || mx > x + CTX_W + 2 + CTX_W || my < y || my > y + MENU_H) {
-                close();
+            sy += CTX_ROW;
+        }
+        for (int i = 0; i < RESIZE_PRESETS.length; i++) {
+            int ry = sy + i * CTX_ROW;
+            if (mx >= subX && mx <= subX + CTX_W && my >= ry && my <= ry + CTX_ROW) {
+                int size = RESIZE_PRESETS[i];
+                applyResize(pic, size, size);
                 return true;
             }
         }
-        if (opacityOpen) {
-            int subX = x + CTX_W + 2;
-            int sy = y + 2 + CTX_ROW * 3;
-            for (int pct : OPACITY_PRESETS) {
-                if (mx >= subX && mx <= subX + CTX_W && my >= sy && my <= sy + CTX_ROW) {
-                    final float oldOpacity = pic.opacity;
-                    final float newOpacity = pct / 100f;
-                    ctx.pushUndo("Undo: picture opacity reverted", () -> {
-                        pic.opacity = oldOpacity;
-                        BackgroundPictureConfig.save();
-                    }, () -> {
-                        pic.opacity = newOpacity;
-                        BackgroundPictureConfig.save();
-                    });
-                    pic.opacity = pct / 100f;
+        if (mx < x || mx > x + CTX_W + 2 + CTX_W || my < y || my > y + MENU_H) {
+            close();
+            return true;
+        }
+        return false;
+    }
+
+    private boolean handleOpacitySubmenuClick(int mx, int my, BackgroundPictureConfig.Picture pic) {
+        int x = this.x, y = this.y;
+        int subX = x + CTX_W + 2;
+        int sy = y + 2 + CTX_ROW * 3;
+        for (int pct : OPACITY_PRESETS) {
+            if (mx >= subX && mx <= subX + CTX_W && my >= sy && my <= sy + CTX_ROW) {
+                final float oldOpacity = pic.opacity;
+                final float newOpacity = pct / 100f;
+                ctx.pushUndo("Undo: picture opacity reverted", () -> {
+                    pic.opacity = oldOpacity;
                     BackgroundPictureConfig.save();
-                    ctx.setFeedbackDone("Picture opacity set to %d%%", pct);
-                    close();
-                    return true;
-                }
-                sy += CTX_ROW;
-            }
-            if (mx < x || mx > x + CTX_W + 2 + CTX_W || my < y || my > y + MENU_H) {
+                }, () -> {
+                    pic.opacity = newOpacity;
+                    BackgroundPictureConfig.save();
+                });
+                pic.opacity = pct / 100f;
+                BackgroundPictureConfig.save();
+                ctx.setFeedbackDone("Picture opacity set to %d%%", pct);
                 close();
                 return true;
             }
+            sy += CTX_ROW;
         }
-        if (tintOpen) {
-            int subX = x + CTX_W + 2, subY = y + 2 + CTX_ROW * 4;
-            int sy = subY;
-            for (int i = 0; i < TINT_PRESETS.length; i++) {
-                if (mx >= subX && mx <= subX + CTX_W && my >= sy && my <= sy + CTX_ROW) {
-                    final int oldColor = pic.color;
-                    final int newColor = TINT_PRESETS[i];
-                    ctx.pushUndo("Undo: picture tint reverted", () -> {
-                        pic.color = oldColor;
-                        BackgroundPictureConfig.save();
-                    }, () -> {
-                        pic.color = newColor;
-                        BackgroundPictureConfig.save();
-                    });
+        if (mx < x || mx > x + CTX_W + 2 + CTX_W || my < y || my > y + MENU_H) {
+            close();
+            return true;
+        }
+        return false;
+    }
+
+    private boolean handleTintSubmenuClick(int mx, int my, BackgroundPictureConfig.Picture pic) {
+        int x = this.x, y = this.y;
+        int subX = x + CTX_W + 2, subY = y + 2 + CTX_ROW * 4;
+        int sy = subY;
+        for (int i = 0; i < TINT_PRESETS.length; i++) {
+            if (mx >= subX && mx <= subX + CTX_W && my >= sy && my <= sy + CTX_ROW) {
+                final int oldColor = pic.color;
+                final int newColor = TINT_PRESETS[i];
+                ctx.pushUndo("Undo: picture tint reverted", () -> {
+                    pic.color = oldColor;
+                    BackgroundPictureConfig.save();
+                }, () -> {
                     pic.color = newColor;
                     BackgroundPictureConfig.save();
-                    ctx.setFeedbackDone("Picture tint set to %s", TINT_NAMES[i]);
-                    close();
-                    return true;
-                }
-                sy += CTX_ROW;
-            }
-            if (mx < x || mx > x + CTX_W + 2 + CTX_W || my < y || my > y + MENU_H) {
+                });
+                pic.color = newColor;
+                BackgroundPictureConfig.save();
+                ctx.setFeedbackDone("Picture tint set to %s", TINT_NAMES[i]);
                 close();
                 return true;
             }
+            sy += CTX_ROW;
         }
-        if (parallaxOpen) {
-            int subX = x + CTX_W + 2;
-            int sy = y + 2 + CTX_ROW * 6 + 2;
-            for (int i = 0; i < PARALLAX_VALUES.length; i++) {
-                if (mx >= subX && mx <= subX + CTX_W && my >= sy && my <= sy + CTX_ROW) {
-                    final float oldParallax = pic.parallax;
-                    final float newParallax = PARALLAX_VALUES[i];
+        if (mx < x || mx > x + CTX_W + 2 + CTX_W || my < y || my > y + MENU_H) {
+            close();
+            return true;
+        }
+        return false;
+    }
+
+    private boolean handleParallaxSubmenuClick(int mx, int my, BackgroundPictureConfig.Picture pic) {
+        int x = this.x, y = this.y;
+        int subX = x + CTX_W + 2;
+        int sy = y + 2 + CTX_ROW * 6 + 2;
+        for (int i = 0; i < PARALLAX_VALUES.length; i++) {
+            if (mx >= subX && mx <= subX + CTX_W && my >= sy && my <= sy + CTX_ROW) {
+                final float oldParallax = pic.parallax;
+                final float newParallax = PARALLAX_VALUES[i];
+                pic.parallax = newParallax;
+                ctx.pushUndo("Undo: picture parallax reverted", () -> {
+                    pic.parallax = oldParallax;
+                    BackgroundPictureConfig.save();
+                }, () -> {
                     pic.parallax = newParallax;
-                    ctx.pushUndo("Undo: picture parallax reverted", () -> {
-                        pic.parallax = oldParallax;
-                        BackgroundPictureConfig.save();
-                    }, () -> {
-                        pic.parallax = newParallax;
-                        BackgroundPictureConfig.save();
-                    });
                     BackgroundPictureConfig.save();
-                    ctx.setFeedbackDone("Picture parallax set to %s", String.valueOf(newParallax));
-                    close();
-                    return true;
-                }
-                sy += CTX_ROW;
-            }
-            if (mx < x || mx > x + CTX_W + 2 + CTX_W || my < y || my > y + MENU_H) {
+                });
+                BackgroundPictureConfig.save();
+                ctx.setFeedbackDone("Picture parallax set to %s", String.valueOf(newParallax));
                 close();
                 return true;
             }
+            sy += CTX_ROW;
         }
-        if (rotateOpen) {
-            int subX = x + CTX_W + 2;
-            int sy = y + 2 + CTX_ROW * 5 + 2;
-            for (int i = 0; i < ROTATE_DELTAS.length; i++) {
-                if (mx >= subX && mx <= subX + CTX_W && my >= sy && my <= sy + CTX_ROW) {
-                    final float oldRotation = pic.rotation;
-                    float delta = ROTATE_DELTAS[i];
-                    if (Float.isNaN(delta)) pic.rotation = 0f;
-                    else pic.rotateBy(delta);
-                    final float newRotation = pic.rotation;
-                    ctx.pushUndo("Undo: picture rotation reverted", () -> {
-                        pic.rotation = oldRotation;
-                        BackgroundPictureConfig.save();
-                    }, () -> {
-                        pic.rotation = newRotation;
-                        BackgroundPictureConfig.save();
-                    });
+        if (mx < x || mx > x + CTX_W + 2 + CTX_W || my < y || my > y + MENU_H) {
+            close();
+            return true;
+        }
+        return false;
+    }
+
+    private boolean handleRotateSubmenuClick(int mx, int my, BackgroundPictureConfig.Picture pic) {
+        int x = this.x, y = this.y;
+        int subX = x + CTX_W + 2;
+        int sy = y + 2 + CTX_ROW * 5 + 2;
+        for (int i = 0; i < ROTATE_DELTAS.length; i++) {
+            if (mx >= subX && mx <= subX + CTX_W && my >= sy && my <= sy + CTX_ROW) {
+                final float oldRotation = pic.rotation;
+                float delta = ROTATE_DELTAS[i];
+                if (Float.isNaN(delta)) pic.rotation = 0f;
+                else pic.rotateBy(delta);
+                final float newRotation = pic.rotation;
+                ctx.pushUndo("Undo: picture rotation reverted", () -> {
+                    pic.rotation = oldRotation;
                     BackgroundPictureConfig.save();
-                    ctx.setFeedbackDone("Picture rotated to %d°", Math.round(newRotation));
-                    close();
-                    return true;
-                }
-                sy += CTX_ROW;
-            }
-            if (mx < x || mx > x + CTX_W + 2 + CTX_W || my < y || my > y + MENU_H) {
+                }, () -> {
+                    pic.rotation = newRotation;
+                    BackgroundPictureConfig.save();
+                });
+                BackgroundPictureConfig.save();
+                ctx.setFeedbackDone("Picture rotated to %d°", Math.round(newRotation));
                 close();
                 return true;
             }
+            sy += CTX_ROW;
         }
-        if (moveCatOpen) {
-            List<String> cats = ctx.buildChapterList();
-            cats.remove("ALL");
-            cats.remove(ctx.selectedChapter());
-            int subX = x + CTX_W + 2, subY = y + 2 + CTX_ROW * 7;
-            int sy = subY + 2;
-            for (String cat : cats) {
-                if (mx >= subX && mx <= subX + CTX_W && my >= sy && my <= sy + CTX_ROW) {
-                    final String oldCat = ctx.selectedChapter();
-                    final String newCat = cat;
-                    ctx.pushUndo("Undo: picture moved back to %s".formatted(ctx.friendly(oldCat)), () -> {
-                        BackgroundPictureConfig.remove(newCat, pic);
-                        BackgroundPictureConfig.add(oldCat, pic);
-                    }, () -> {
-                        BackgroundPictureConfig.remove(oldCat, pic);
-                        BackgroundPictureConfig.add(newCat, pic);
-                    });
+        if (mx < x || mx > x + CTX_W + 2 + CTX_W || my < y || my > y + MENU_H) {
+            close();
+            return true;
+        }
+        return false;
+    }
+
+    private boolean handleMoveChapterSubmenuClick(int mx, int my, BackgroundPictureConfig.Picture pic) {
+        int x = this.x, y = this.y;
+        List<String> cats = ctx.buildChapterList();
+        cats.remove("ALL");
+        cats.remove(ctx.selectedChapter());
+        int subX = x + CTX_W + 2, subY = y + 2 + CTX_ROW * 7;
+        int sy = subY + 2;
+        for (String cat : cats) {
+            if (mx >= subX && mx <= subX + CTX_W && my >= sy && my <= sy + CTX_ROW) {
+                final String oldCat = ctx.selectedChapter();
+                final String newCat = cat;
+                ctx.pushUndo("Undo: picture moved back to %s".formatted(ctx.friendly(oldCat)), () -> {
+                    BackgroundPictureConfig.remove(newCat, pic);
+                    BackgroundPictureConfig.add(oldCat, pic);
+                }, () -> {
                     BackgroundPictureConfig.remove(oldCat, pic);
                     BackgroundPictureConfig.add(newCat, pic);
-                    ctx.setFeedbackDone("Picture moved to %s", ctx.friendly(newCat));
-                    close();
-                    return true;
-                }
-                sy += CTX_ROW;
-            }
-            if (mx < x || mx > x + CTX_W + 2 + CTX_W || my < y || my > y + MENU_H) {
+                });
+                BackgroundPictureConfig.remove(oldCat, pic);
+                BackgroundPictureConfig.add(newCat, pic);
+                ctx.setFeedbackDone("Picture moved to %s", ctx.friendly(newCat));
                 close();
                 return true;
             }
+            sy += CTX_ROW;
         }
+        if (mx < x || mx > x + CTX_W + 2 + CTX_W || my < y || my > y + MENU_H) {
+            close();
+            return true;
+        }
+        return false;
+    }
+
+    private boolean handleMainMenuClick(int mx, int my, BackgroundPictureConfig.Picture pic) {
+        int x = this.x, y = this.y;
 
         int rowY0 = y + 2;
         int rowY1 = rowY0 + CTX_ROW;

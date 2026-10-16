@@ -295,7 +295,7 @@ public class TaskSuiteGameTests {
                     new StatTrackerTask(id("t"), text("jumps"), ResourceLocation.withDefaultNamespace("jump"), 5,
                             false));
             assertStaysOpen(h, p, quest, "no jumps yet");
-            
+
             p.getStats().increment(p, Stats.CUSTOM.get(Stats.JUMP), 5);
             assertCompletes(h, p, quest, "5 jumps should complete the quest");
         });
@@ -553,7 +553,7 @@ public class TaskSuiteGameTests {
                 h.assertTrue(loaded.serializeNBT().equals(task.serializeNBT()),
                         name + " changed on the round trip: " + task.serializeNBT() + " -> " + loaded.serializeNBT());
             }
-            
+
             ItemRequirementTask reloaded = (ItemRequirementTask) PhoenixTaskRegistry.deserialize(withId(item));
             h.assertTrue(reloaded.getNbtFilter() != null && reloaded.getNbtFilter().equals(item.getNbtFilter()),
                     "the item task's NBT filter should survive");

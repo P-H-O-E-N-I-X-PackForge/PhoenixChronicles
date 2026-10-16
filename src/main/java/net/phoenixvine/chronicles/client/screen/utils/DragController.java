@@ -16,7 +16,7 @@ import java.util.Map;
 public class DragController {
 
     private final ScreenContext ctx;
-    private final DragControllerState state;
+    private final ChronicleOverviewScreen state;
     private final GraphEditorState editorState;
 
     private int lastMoveOrigX = 0, lastMoveOrigY = 0;
@@ -26,7 +26,7 @@ public class DragController {
     private @Nullable QuestNode dragUndoSingleNode;
     private int dragUndoSinglePreX, dragUndoSinglePreY;
 
-    public DragController(ScreenContext ctx, DragControllerState state, GraphEditorState editorState) {
+    public DragController(ScreenContext ctx, ChronicleOverviewScreen state, GraphEditorState editorState) {
         this.ctx = ctx;
         this.state = state;
         this.editorState = editorState;

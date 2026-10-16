@@ -11,7 +11,6 @@ import net.phoenixvine.chronicles.client.profiler.FrameProfiler;
 import net.phoenixvine.chronicles.client.registry.SeenQuestTracker;
 import net.phoenixvine.chronicles.client.screen.ChronicleOverviewScreen;
 import net.phoenixvine.chronicles.client.screen.utils.GraphEditorState;
-import net.phoenixvine.chronicles.client.screen.utils.NodeRendererState;
 import net.phoenixvine.chronicles.client.screen.utils.ScreenContext;
 import net.phoenixvine.chronicles.client.screen.widgets.BulkOpsPanel;
 import net.phoenixvine.chronicles.client.util.AnimatedTexture;
@@ -30,10 +29,10 @@ import java.util.Map;
 public class NodeRenderer {
 
     private final ScreenContext ctx;
-    private final NodeRendererState state;
+    private final ChronicleOverviewScreen state;
     private final GraphEditorState editorState;
 
-    public NodeRenderer(ScreenContext ctx, NodeRendererState state, GraphEditorState editorState) {
+    public NodeRenderer(ScreenContext ctx, ChronicleOverviewScreen state, GraphEditorState editorState) {
         this.ctx = ctx;
         this.state = state;
         this.editorState = editorState;

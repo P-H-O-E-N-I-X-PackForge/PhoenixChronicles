@@ -24,8 +24,6 @@ public class ExperienceTask extends QuestTask {
         return player.experienceLevel >= requiredLevel;
     }
 
-    public void checkPlayerLevel(Player player) {}
-
     public CompoundTag serializeNBT() {
         CompoundTag nbt = new CompoundTag();
         nbt.putString("type", "experience");

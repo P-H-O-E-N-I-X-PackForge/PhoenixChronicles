@@ -2,8 +2,6 @@ package net.phoenixvine.chronicles.client.render;
 
 import net.minecraft.resources.ResourceLocation;
 import net.phoenixvine.chronicles.client.screen.ChronicleOverviewScreen;
-import net.phoenixvine.chronicles.client.screen.utils.DragControllerState;
-import net.phoenixvine.chronicles.client.screen.utils.GraphLayoutState;
 import net.phoenixvine.chronicles.client.screen.utils.ScreenContext;
 import net.phoenixvine.chronicles.common.codec.QuestFileSaver;
 import net.phoenixvine.chronicles.common.model.QuestNode;
@@ -15,10 +13,11 @@ import java.util.*;
 public class GraphLayoutEngine {
 
     private final ScreenContext ctx;
-    private final DragControllerState dragState;
-    private final GraphLayoutState layoutState;
+    private final ChronicleOverviewScreen dragState;
+    private final ChronicleOverviewScreen layoutState;
 
-    public GraphLayoutEngine(ScreenContext ctx, DragControllerState dragState, GraphLayoutState layoutState) {
+    public GraphLayoutEngine(ScreenContext ctx, ChronicleOverviewScreen dragState,
+                             ChronicleOverviewScreen layoutState) {
         this.ctx = ctx;
         this.dragState = dragState;
         this.layoutState = layoutState;
@@ -60,12 +59,14 @@ public class GraphLayoutEngine {
     }
 
     private static final int MIN_NODE_FLOOR_PX = 12;
+    private static final float NORMAL_NODE_PX = 40f;
 
     public int scaledNodeSize(QuestNode node) {
         float pixelSize = node.getNodePixelSize();
         if (node.getSizeOverridePx() <= 0) pixelSize *= NodeShapeRenderer.visualSizeScale(node.getShapeType());
         float zoom = ctx.rawZoom();
-        return Math.max(MIN_NODE_FLOOR_PX, Math.round(pixelSize * zoom));
+        int floorPx = Math.max(MIN_NODE_FLOOR_PX / 4, Math.round(MIN_NODE_FLOOR_PX * pixelSize / NORMAL_NODE_PX));
+        return Math.max(floorPx, Math.round(pixelSize * zoom));
     }
 
     public int scaledNodeSize() {

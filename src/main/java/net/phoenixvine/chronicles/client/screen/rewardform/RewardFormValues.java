@@ -22,7 +22,7 @@ public final class RewardFormValues {
     public QuestReward.QuestActionReward.Action questAction = QuestReward.QuestActionReward.Action.COMPLETE;
     public QuestReward.ChoiceBoxReward.Mode boxMode = QuestReward.ChoiceBoxReward.Mode.MENU;
     public List<QuestReward> boxOptions = new ArrayList<>();
-    
+
     public Map<String, String> externalFields = new LinkedHashMap<>();
 
     public int intCount() {

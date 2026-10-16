@@ -4,36 +4,23 @@ import net.phoenixvine.chronicles.common.model.QuestReward;
 
 import org.jetbrains.annotations.Nullable;
 
-import java.util.function.BiConsumer;
-
-public final class RewardFormType<T extends QuestReward> {
-
-    @FunctionalInterface
-    public interface Factory {
-
-        @Nullable
-        QuestReward create(RewardFormValues v);
-    }
+public final class RewardFormType {
 
     private final String id;
     private final String label;
     private final String tooltip;
     private final boolean listed;
     private final boolean allowedInEmergencyKit;
-    private final Class<T> rewardClass;
-    private final Factory factory;
-    private final BiConsumer<T, RewardFormValues> loader;
+    private final Class<? extends QuestReward> rewardClass;
 
     RewardFormType(String id, String label, String tooltip, boolean listed, boolean allowedInEmergencyKit,
-                   Class<T> rewardClass, Factory factory, BiConsumer<T, RewardFormValues> loader) {
+                   Class<? extends QuestReward> rewardClass) {
         this.id = id;
         this.label = label;
         this.tooltip = tooltip;
         this.listed = listed;
         this.allowedInEmergencyKit = allowedInEmergencyKit;
         this.rewardClass = rewardClass;
-        this.factory = factory;
-        this.loader = loader;
     }
 
     public String id() {
@@ -62,10 +49,10 @@ public final class RewardFormType<T extends QuestReward> {
 
     @Nullable
     public QuestReward create(RewardFormValues v) {
-        return factory.create(v);
+        return RewardFormTypes.create(id, v);
     }
 
     public void load(QuestReward reward, RewardFormValues v) {
-        loader.accept(rewardClass.cast(reward), v);
+        RewardFormTypes.load(id, reward, v);
     }
 }

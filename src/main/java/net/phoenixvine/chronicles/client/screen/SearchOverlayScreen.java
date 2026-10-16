@@ -357,7 +357,7 @@ public class SearchOverlayScreen extends Screen {
                 continue;
             }
 
-            String hay = parent.buildSearchHaystack(n);
+            String hay = parent.chapters.buildSearchHaystack(n);
             boolean allMatch = true;
             for (String w : words) {
                 if (!w.startsWith("@") && !hay.contains(w)) {
@@ -388,7 +388,7 @@ public class SearchOverlayScreen extends Screen {
             String d = n.getDescription().getString();
             return d.length() > 72 ? d.substring(0, 70) + "…" : d;
         }
-        String hay = parent.searchCache.computeIfAbsent(n.getId(), id -> parent.buildSearchHaystack(n));
+        String hay = parent.searchCache.computeIfAbsent(n.getId(), id -> parent.chapters.buildSearchHaystack(n));
         for (String w : words) {
             if (w.startsWith("@")) continue;
             int idx = hay.indexOf(w);

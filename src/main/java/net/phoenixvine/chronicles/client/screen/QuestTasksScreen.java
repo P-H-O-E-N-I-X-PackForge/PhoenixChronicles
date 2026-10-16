@@ -4,7 +4,6 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -12,18 +11,11 @@ import net.phoenixvine.chronicles.capability.PlayerQuestData;
 import net.phoenixvine.chronicles.client.event.ChronicleKeyBindings;
 import net.phoenixvine.chronicles.client.registry.LangSyncScheduler;
 import net.phoenixvine.chronicles.client.render.ChroniclesUIKit;
-import net.phoenixvine.chronicles.client.render.EmiReturnScreenFix;
 import net.phoenixvine.chronicles.common.codec.QuestChroniclesSettings;
-import net.phoenixvine.chronicles.common.codec.QuestFileSaver;
-import net.phoenixvine.chronicles.common.condition.ConditionEvaluator;
-import net.phoenixvine.chronicles.common.condition.ThresholdCondition;
-import net.phoenixvine.chronicles.common.flag.PhoenixQuestFlags;
 import net.phoenixvine.chronicles.common.model.*;
 import net.phoenixvine.chronicles.common.registry.QuestTreeRegistry;
 import net.phoenixvine.chronicles.common.tasks.*;
-import net.phoenixvine.chronicles.common.util.ItemData;
 import net.phoenixvine.chronicles.network.packet.C2SAcknowledgeInfoTasksPacket;
-import net.phoenixvine.chronicles.network.packet.C2SClaimQuestRewardPacket;
 import net.phoenixvine.chronicles.network.packet.C2SResolveChoiceBoxPacket;
 import net.phoenixvine.wiki.theme.PhoenixTheme;
 
@@ -33,6 +25,16 @@ import java.util.List;
 public class QuestTasksScreen extends Screen
                               implements net.phoenixvine.chronicles.client.audio.ChroniclesAudio.AudioSource {
 
+    final TasksFullscreenView fullscreen = new TasksFullscreenView(this);
+
+    final TasksCompactView compact = new TasksCompactView(this);
+
+    final TaskPopups popups = new TaskPopups(this);
+
+    final TaskDescriptions descriptions = new TaskDescriptions(this);
+
+    final TaskPresentation present = new TaskPresentation(this);
+
     private boolean voiceAutoStarted = false;
 
     @Override
@@ -41,165 +43,96 @@ public class QuestTasksScreen extends Screen
                 net.phoenixvine.chronicles.client.util.ChapterConfig.musicFor(node.getChapter());
     }
 
-    private boolean voiceShown() {
+    boolean voiceShown() {
         return node.getAudio().hasVoice();
     }
 
-    private int voiceOffset() {
+    int voiceOffset() {
         return emergencyShown() ? 26 : 0;
     }
 
-    private int linkOffset() {
+    int linkOffset() {
         return voiceOffset() + (voiceShown() ? 26 : 0);
-    }
-
-    private void drawLinkButton(GuiGraphics g, int x, int y, int w, int h, int mx, int my) {
-        boolean hov = mx >= x && mx < x + w && my >= y && my < y + h;
-        g.fill(x, y, x + w, y + h, hov ? 0xFF1E2A3A : 0xFF141C28);
-        g.fill(x, y, x + w, y + 1, 0xFF3A6A9A);
-        ChroniclesUIKit.drawCenteredString(g, font, "§b🔗", x + w / 2, y + (h - 8) / 2, C_TEXT);
-        if (hov) hoveredHeaderTooltip = "Copy a link to this quest to share in chat";
     }
 
     @Override
     public void renderBackground(GuiGraphics context, int mouseX, int mouseY, float delta) {}
 
-    private boolean clickLinkButton(int x, int y, int w, int h, double mx, double my) {
-        if (mx < x || mx >= x + w || my < y || my >= y + h) return false;
-        net.phoenixvine.chronicles.client.util.QuestChatLinks.copyToClipboard(node);
-        return true;
-    }
-
-    private void drawVoiceButton(GuiGraphics g, int x, int y, int w, int h, int mx, int my) {
-        if (!voiceShown()) return;
-        boolean playing = net.phoenixvine.chronicles.client.audio.ChroniclesAudio.isVoicePlaying();
-        boolean hov = mx >= x && mx < x + w && my >= y && my < y + h;
-        g.fill(x, y, x + w, y + h, playing ? 0xFF1A3A2A : hov ? 0xFF1E2A3A : 0xFF141C28);
-        g.fill(x, y, x + w, y + 1, playing ? C_DONE : 0xFF3A6A9A);
-        ChroniclesUIKit.drawCenteredString(g, font, playing ? "§a■" : "§b♪", x + w / 2, y + (h - 8) / 2, C_TEXT);
-        if (hov) hoveredHeaderTooltip = playing ? "Stop narration" : "Play narration";
-    }
-
-    private boolean clickVoiceButton(int x, int y, int w, int h, double mx, double my) {
-        if (!voiceShown() || mx < x || mx >= x + w || my < y || my >= y + h) return false;
-        net.phoenixvine.chronicles.client.audio.ChroniclesAudio.toggleVoice(node.getAudio().voiceId());
-        return true;
-    }
-
-    private int C_BG = 0xFF0B0B0F;
-    private int C_PANEL = 0xFF14141A;
-    private int C_HEADER = 0xFF0C0C10;
-    private int C_BORDER = 0xFF353548;
-    private int C_DONE = 0xFF44CC88;
-    private int C_ACTIVE = 0xFFFFBB33;
+    int C_BG = 0xFF0B0B0F;
+    int C_PANEL = 0xFF14141A;
+    int C_HEADER = 0xFF0C0C10;
+    int C_BORDER = 0xFF353548;
+    int C_DONE = 0xFF44CC88;
+    int C_ACTIVE = 0xFFFFBB33;
     private int C_LOCKED = 0xFF606070;
-    private int C_TEXT = 0xFFD8D8E4;
-    private int C_TEXT_DIM = 0xFF7A7A8A;
-    private int C_TEXT_FAINT = 0xFF404050;
+    int C_TEXT = 0xFFD8D8E4;
+    int C_TEXT_DIM = 0xFF7A7A8A;
+    int C_TEXT_FAINT = 0xFF404050;
 
-    private static final int C_SLOT_BG = 0xFF0E0E14;
-    private static final int C_SLOT_HI = 0xFF5A4200;
+    static final int C_SLOT_BG = 0xFF0E0E14;
+    static final int C_SLOT_HI = 0xFF5A4200;
 
-    private static final int HEADER_H_BASE = 38;
-    private static final int SUBTITLE_LINE_H = 10;
-    private static final int SUBTITLE_MAX_LINES = 3;
-    private static final int ICON_SZ = 18;
+    static final int HEADER_H_BASE = 38;
+    static final int SUBTITLE_LINE_H = 10;
+    static final int SUBTITLE_MAX_LINES = 3;
+    static final int ICON_SZ = 18;
     private static final int ICON_STRIP_H = ICON_SZ + 8;
-    private static final int STRIP_GAP = 3;
-    private static final int FOOTER_H = 22;
-    private static final int MARGIN = 6;
-    private static final int REWARD_W = 185;
+    static final int STRIP_GAP = 3;
+    static final int FOOTER_H = 22;
+    static final int MARGIN = 6;
+    static final int REWARD_W = 185;
     private static final int TASK_ICON_SZ = 24;
 
-    private static final int CARD_MAX_WIDTH = 310;
+    static final int CARD_MAX_WIDTH = 310;
 
-    private static final float MAX_CARD_WIDTH_FRACTION = 0.82f;
-    private static final float MAX_CARD_HEIGHT_FRACTION = 0.82f;
+    static final float MAX_CARD_WIDTH_FRACTION = 0.82f;
+    static final float MAX_CARD_HEIGHT_FRACTION = 0.82f;
 
-    private static final float CARD_FRACTION_FLOOR = 0.55f;
-    private static final float CARD_WIDTH_FULL_AT = 520f;
-    private static final float CARD_HEIGHT_FULL_AT = 330f;
+    static final float CARD_FRACTION_FLOOR = 0.55f;
+    static final float CARD_WIDTH_FULL_AT = 520f;
+    static final float CARD_HEIGHT_FULL_AT = 330f;
 
-    private int cardW() {
-        float fraction = Math.max(CARD_FRACTION_FLOOR, Math.min(MAX_CARD_WIDTH_FRACTION, width / CARD_WIDTH_FULL_AT));
-        int fractionCap = Math.round(width * fraction);
-        return Math.min(CARD_MAX_WIDTH, Math.max(120, Math.min(width - 24, fractionCap)));
-    }
-
-    private int maxCardH() {
-        float fraction = Math.max(CARD_FRACTION_FLOOR,
-                Math.min(MAX_CARD_HEIGHT_FRACTION, height / CARD_HEIGHT_FULL_AT));
-        return Math.max(60, Math.round(height * fraction));
-    }
-
-    private java.util.List<String> wrapSubtitle(String subtitle, int maxW) {
-        if (subtitle == null || subtitle.isBlank()) return java.util.List.of();
-        java.util.List<String> lines = net.phoenixvine.chronicles.client.util.EffectText.wrap(font,
-                net.phoenixvine.chronicles.client.render.ChroniclesThemePalette.adapt(subtitle), Math.max(20, maxW));
-        return lines.size() > SUBTITLE_MAX_LINES ? lines.subList(0, SUBTITLE_MAX_LINES) : lines;
-    }
-
-    private int headerTitleMaxW() {
-        int pinX = width - 20;
-        int editX = pinX - 18;
-        int fsX = editX - 20;
-        int usesX = fsX - 20;
-        return usesX - 32;
-    }
-
-    private int headerH() {
-        int lines = wrapSubtitle(node.getSubtitle(), headerTitleMaxW()).size();
-        return lines <= 1 ? HEADER_H_BASE : HEADER_H_BASE + (lines - 1) * SUBTITLE_LINE_H;
-    }
-
-    private static final int CARD_PAD = 6;
+    static final int CARD_PAD = 6;
     private static final int CARD_TASK_ROW_H = 22;
     private static final int CARD_MAX_TASKS = 6;
 
-    private static final int CARD_MAX_DESC = 24;
+    static final int CARD_MAX_DESC = 24;
 
-    private final Screen parent;
+    final Screen parent;
 
     Screen getParentScreen() {
         return parent;
     }
 
-    private final QuestNode node;
+    final QuestNode node;
 
-    private FullQuestData content;
-    private final PlayerQuestData playerData;
-    private final Player player;
+    FullQuestData content;
+    final PlayerQuestData playerData;
+    final Player player;
 
-    private int descScrollY = 0;
-    private java.util.List<net.phoenixvine.wiki.client.rich.RichSpan.Region> richRegions = java.util.List.of();
-    private java.util.List<net.phoenixvine.wiki.client.rich.RichBlock> descBlocks = java.util.List.of();
-    private final java.util.Set<String> descExpandedKeys = new java.util.HashSet<>();
+    int descScrollY = 0;
+    java.util.List<net.phoenixvine.wiki.client.rich.RichSpan.Region> richRegions = java.util.List.of();
 
-    private static final java.util.regex.Pattern DESC_PAGE_BREAK = java.util.regex.Pattern
+    static final java.util.regex.Pattern DESC_PAGE_BREAK = java.util.regex.Pattern
             .compile("(?m)^[ \\t]*-{3,}[ \\t]*$");
-    private int descPage = 0;
-    private int richSpansPage = -1;
+    int descPage = 0;
 
-    private String descBlocksSourceText = null;
-    private int descPagerX, descPagerY, descPagerW, descPagerH, descPagerPageCount;
+    int descPagerX, descPagerY, descPagerW, descPagerH, descPagerPageCount;
 
-    private String liveDescOverride = null;
     private long openTimeMs = -1;
     private static final long OPEN_FADE_MS = 100;
-    private InspTab inspectorTab = InspTab.TASKS;
-    private int inspectorScrollY = 0;
-    private int inspectorContentH = 0;
-    private boolean isFullscreen = false;
+    int inspectorScrollY = 0;
+    boolean isFullscreen = false;
 
-    private Object phantasiaPreview;
-    private int previewX, previewY, previewW, previewH;
+    Object phantasiaPreview;
+    int previewX, previewY, previewW, previewH;
 
-    private boolean draggingInspDivider = false;
-    private boolean draggingRewardDivider = false;
-    private int dividerDragStartMx = 0;
-    private int dividerDragStartInspW = 0;
-    private int dividerDragStartRewardW = 0;
-    private static final int DIVIDER_HIT_PAD = 2;
+    boolean draggingInspDivider = false;
+    boolean draggingRewardDivider = false;
+    int dividerDragStartMx = 0;
+    int dividerDragStartInspW = 0;
+    int dividerDragStartRewardW = 0;
+    static final int DIVIDER_HIT_PAD = 2;
 
     public QuestTasksScreen(Screen parent, QuestNode node, FullQuestData content, PlayerQuestData playerData) {
         this(parent, node, content, playerData, false);
@@ -262,15 +195,15 @@ public class QuestTasksScreen extends Screen
         com.mojang.blaze3d.systems.RenderSystem.disableScissor();
         hoveredHeaderTooltip = null;
 
-        refreshEffectiveContent();
+        descriptions.refreshEffectiveContent();
 
         if (isFullscreen) {
-            renderFullscreen(g, mx, my, partial);
+            fullscreen.renderFullscreen(g, mx, my, partial);
         } else {
-            renderCompact(g, mx, my, partial);
+            compact.renderCompact(g, mx, my, partial);
         }
 
-        if (openChoiceBox != null) renderChoiceBoxPopup(g, mx, my);
+        if (popups.openChoiceBox != null) popups.renderChoiceBoxPopup(g, mx, my);
 
         if (openTimeMs > 0) {
             long elapsed = System.currentTimeMillis() - openTimeMs;
@@ -319,1351 +252,51 @@ public class QuestTasksScreen extends Screen
         }
     }
 
-    private static final int TASK_LIST_ROW_H = 24;
+    static final int TASK_LIST_ROW_H = 24;
 
     private static final int REWARD_MINI_SZ = 14;
 
-    private static final int PREVIEW_H_COMPACT = 46;
+    static final int PREVIEW_H_COMPACT = 46;
 
-    private int previewBlockH() {
-        return phantasiaPreview != null ? PREVIEW_H_COMPACT + 1 : 0;
-    }
+    boolean isEditMode = false;
+    int descBoxX, descBoxY, descBoxW, descBoxH;
 
-    private int compactHeaderH() {
-        int lines = wrapSubtitle(node.getSubtitle(), cardW() - 12).size();
-        return lines == 0 ? 20 : 20 + lines * SUBTITLE_LINE_H;
-    }
+    int compactDescScrollLine = 0;
+    int compactDescTotalLines = 0;
+    int compactDescFittedLines = 0;
 
-    private java.util.List<net.minecraft.util.FormattedCharSequence> buildAllDescLines(
-                                                                                       List<QuestTask> tasks,
-                                                                                       java.util.List<net.minecraft.util.FormattedCharSequence> questDescLines) {
-        java.util.List<net.minecraft.util.FormattedCharSequence> all = new java.util.ArrayList<>();
-        for (QuestTask task : tasks) {
-            if (task instanceof InfoTask info) {
-                String body = info.getBody();
-                if (body != null && !body.isBlank()) {
-                    all.addAll(splitRespectingNewlines(font, body, cardW() - CARD_PAD * 2));
-                }
-            }
-        }
-        if (!all.isEmpty() && !questDescLines.isEmpty()) {
+    int fsDescMaxScrollY = 0;
 
-            all.add(net.minecraft.util.FormattedCharSequence.EMPTY);
-        }
-        all.addAll(questDescLines);
-        return all;
-    }
+    int openChoiceBoxRewardIndex = -1;
+    final List<int[]> choiceBoxRowRects = new ArrayList<>();
 
-    private java.util.List<net.minecraft.util.FormattedCharSequence> splitRespectingNewlines(net.minecraft.client.gui.Font font,
-                                                                                             String text, int maxW) {
-        java.util.List<net.minecraft.util.FormattedCharSequence> out = new java.util.ArrayList<>();
-        for (String line : text.split("\n", -1)) {
-            if (line.isEmpty()) {
-                out.add(net.minecraft.util.FormattedCharSequence.EMPTY);
-            } else {
-                out.addAll(font.split(ChroniclesUIKit.lit(line), maxW));
-            }
-        }
-        return out;
-    }
+    String hoveredHeaderTooltip = null;
 
-    private QuestTask hoveredTask = null;
-    private QuestReward hoveredReward = null;
-    private int hoveredRewardIndex = -1;
-    private int hoveredSlotX, hoveredSlotY;
-
-    private boolean isEditMode = false;
-    private boolean hoveredDescBox = false;
-    private int descBoxX, descBoxY, descBoxW, descBoxH;
-
-    private int compactDescScrollLine = 0;
-    private int compactDescTotalLines = 0;
-    private int compactDescFittedLines = 0;
-
-    private boolean hoveredFsDescBox = false;
-    private int fsDescBoxX, fsDescBoxY, fsDescBoxW, fsDescBoxH;
-    private int fsDescMaxScrollY = 0;
-
-    private boolean usesPopupOpen = false;
-    private final List<int[]> usesPopupRowRects = new ArrayList<>();
-    private final List<QuestNode> usesPopupRowTargets = new ArrayList<>();
-
-    private QuestReward.ChoiceBoxReward openChoiceBox = null;
-    private int openChoiceBoxRewardIndex = -1;
-    private final List<int[]> choiceBoxRowRects = new ArrayList<>();
-
-    private final List<int[]> prereqRowRects = new ArrayList<>();
-    private final List<QuestNode> prereqRowTargets = new ArrayList<>();
-
-    private QuestTask hoveredTaskFs = null;
-    private QuestReward hoveredRewardFs = null;
-    private int hoveredRewardFsIndex = -1;
-    private int hoveredFsX, hoveredFsY;
-
-    private int[] addTaskBoxRect = null;
-    private int[] addRewardBoxRect = null;
-
-    private QuestTask hoveredStripTask = null;
-    private QuestReward hoveredStripReward = null;
-    private int hoveredStripRewardIdx = -1;
-    private int hoveredStripX, hoveredStripY;
-
-    private String hoveredHeaderTooltip = null;
-
-    private void renderCompact(GuiGraphics g, int mx, int my, float partial) {
-        hoveredTask = null;
-        hoveredReward = null;
-        hoveredRewardIndex = -1;
-
-        if (parent instanceof ChronicleOverviewScreen overview) {
-            overview.renderForChildScreen(g);
-        } else if (parent != null) {
-            parent.render(g, -9999, -9999, partial);
-            g.flush();
-            com.mojang.blaze3d.systems.RenderSystem.disableScissor();
-        } else {
-            g.fill(0, 0, width, height, C_BG);
-        }
-
-        g.flush();
-
-        g.pose().pushPose();
-        g.pose().translate(0f, 0f, 300f);
-        g.flush();
-        g.fill(0, 0, width, height, 0x88000000);
-
-        List<QuestTask> tasks = content.effectiveTasks();
-        List<QuestReward> rewards = content.effectiveRewards();
-
-        int compactDescPageCount = splitDescPages(currentDisplayDescriptionText()).size();
-        String descText = currentDescriptionPageText(currentDisplayDescriptionText());
-
-        if (richSpansPage != descPage || !descText.equals(descBlocksSourceText)) {
-            descBlocks = descText.isEmpty() ? java.util.List.of() :
-                    net.phoenixvine.chronicles.client.rich.ChroniclesMarkdown.parse(descText);
-            richSpansPage = descPage;
-            descBlocksSourceText = descText;
-        }
-        java.util.List<net.phoenixvine.wiki.client.rich.RichBlock> resolvedDescBlocks = resolveConditionals(
-                descBlocks);
-
-        float compactTextScale = QuestChroniclesSettings.get()
-                .getTextScaleMultiplier();
-        int compactLineH = Math.max(1, Math.round(10 * compactTextScale));
-
-        int questDescLineCount = resolvedDescBlocks.isEmpty() ? 0 :
-                (net.phoenixvine.wiki.client.rich.WikiRichTextRenderer.measureBlocksHeight(
-                        font, resolvedDescBlocks, cardW() - CARD_PAD * 2, compactTextScale, descExpandedKeys) +
-                        compactLineH - 1) / compactLineH;
-
-        java.util.List<net.minecraft.util.FormattedCharSequence> questDescLines = java.util.Collections
-                .nCopies(questDescLineCount, net.minecraft.util.FormattedCharSequence.EMPTY);
-        java.util.List<net.minecraft.util.FormattedCharSequence> descLines = buildAllDescLines(tasks, questDescLines);
-
-        java.util.List<String> compactSubtitleLines = wrapSubtitle(node.getSubtitle(),
-                cardW() - 12);
-        int compactHeaderH = compactHeaderH();
-
-        int fixedH = compactHeaderH + 1 + compactStripH() + 2 + 1 + 18 + previewBlockH();
-        int rawDesc = Math.min(descLines.size(), CARD_MAX_DESC);
-        int fittedDesc = Math.max(0, Math.min(rawDesc, ((maxCardH() - compactHeaderH) - fixedH - 9) / compactLineH));
-
-        int descH = fittedDesc > 0 ? 4 + fittedDesc * compactLineH + 6 : (isEditMode ? 24 : 0);
-
-        int pagerStripH = compactDescPageCount > 1 ? 17 : 0;
-        int cardH = fixedH + descH + (descH > 0 ? 1 : 0) + pagerStripH + (pagerStripH > 0 ? 1 : 0);
-        cardH = Math.min(cardH, maxCardH());
-
-        int cardX = (width - cardW()) / 2;
-        int cardY = Math.max(10, (height - cardH) / 2);
-
-        g.fill(cardX + 3, cardY + 3, cardX + cardW() + 3, cardY + cardH + 3, 0x66000000);
-        g.fill(cardX, cardY, cardX + cardW(), cardY + cardH, C_BG);
-        drawBorder(g, cardX, cardY, cardW(), cardH);
-
-        g.enableScissor(cardX, cardY, cardX + cardW(), cardY + cardH);
-
-        int cy = cardY;
-
-        g.fill(cardX, cy, cardX + cardW(), cy + compactHeaderH, C_HEADER);
-        String title = (node.isOptional() ? "§d[Optional] §f" : "") + content.title().getString();
-        if (net.phoenixvine.chronicles.client.util.EffectText.width(font, title) > cardW() - 50)
-            title = net.phoenixvine.chronicles.client.util.EffectText.cut(font, title, cardW() - 50 - font.width("…")) +
-                    "…";
-        ChroniclesUIKit.drawString(g, font, "§f" + title, cardX + CARD_PAD, cy + 6, C_TEXT, false);
-
-        for (int i = 0; i < compactSubtitleLines.size(); i++) {
-            ChroniclesUIKit.drawString(g, font, compactSubtitleLines.get(i), cardX + CARD_PAD,
-                    cy + 18 + i * SUBTITLE_LINE_H,
-                    C_TEXT_DIM, false);
-        }
-
-        boolean fsHov = mx >= cardX + cardW() - 18 && mx < cardX + cardW() - 4 && my >= cy + 3 && my < cy + 17;
-        if (fsHov) {
-            g.fill(cardX + cardW() - 18, cy + 3, cardX + cardW() - 4, cy + 17, 0x33FFFFFF);
-            hoveredHeaderTooltip = "Expand to fullscreen";
-        }
-        ChroniclesUIKit.drawCenteredString(g, font, fsHov ? "§b[+]" : "§8[+]", cardX + cardW() - 11, cy + 6,
-                fsHov ? C_ACTIVE : C_TEXT_FAINT);
-
-        boolean closeHov = mx >= cardX + cardW() - 34 && mx < cardX + cardW() - 20 && my >= cy + 3 && my < cy + 17;
-        if (closeHov) {
-            g.fill(cardX + cardW() - 34, cy + 3, cardX + cardW() - 20, cy + 17, 0x33FFFFFF);
-            hoveredHeaderTooltip = "Close";
-        }
-        ChroniclesUIKit.drawCenteredString(g, font, closeHov ? "§c✕" : "§8✕", cardX + cardW() - 27, cy + 6,
-                closeHov ? 0xFFFF6666 : C_TEXT_FAINT);
-
-        boolean compactPinned = playerData != null && playerData.isPinned(node.getId());
-        boolean pinHovCompact = mx >= cardX + cardW() - 50 && mx < cardX + cardW() - 36 && my >= cy + 3 &&
-                my < cy + 17;
-        if (pinHovCompact) {
-            g.fill(cardX + cardW() - 50, cy + 3, cardX + cardW() - 36, cy + 17, 0x33FFFFFF);
-            hoveredHeaderTooltip = compactPinned ? "Unpin quest" : "Pin quest";
-        }
-        ChroniclesUIKit.drawCenteredString(g, font, compactPinned ? "§d📌" : "§8📌", cardX + cardW() - 43, cy + 6,
-                compactPinned ? 0xFFAA44FF : C_TEXT_FAINT);
-
-        cy += compactHeaderH;
-        g.fill(cardX, cy, cardX + cardW(), cy + 1, C_BORDER);
-        cy += 1;
-
-        renderIconStrip(g, cardX, cy, mx, my, tasks, rewards);
-        cy += compactStripH();
-
-        cy += 2;
-        g.fill(cardX, cy, cardX + cardW(), cy + 1, C_BORDER);
-        cy += 1;
-
-        if (phantasiaPreview != null) {
-            int pvSz = PREVIEW_H_COMPACT;
-            int pvX = cardX + CARD_PAD;
-            int pvY = cy + 1;
-            g.fill(pvX, pvY, pvX + pvSz, pvY + pvSz - 2, 0xFF0A0A10);
-            drawBorder(g, pvX, pvY, pvSz, pvSz - 2);
-            previewX = pvX + 1;
-            previewY = pvY + 1;
-            previewW = pvSz - 2;
-            previewH = pvSz - 4;
-            net.phoenixvine.chronicles.integration.phantasia.PhantasiaCompat.tickPreview(phantasiaPreview);
-            net.phoenixvine.chronicles.integration.phantasia.PhantasiaCompat.renderPreview(phantasiaPreview, g,
-                    previewX, previewY, previewW, previewH, partial);
-            cy += PREVIEW_H_COMPACT;
-            g.fill(cardX, cy, cardX + cardW(), cy + 1, C_BORDER);
-            cy += 1;
-        }
-
-        hoveredDescBox = false;
-        if (descH > 0) {
-            descBoxX = cardX;
-            descBoxY = cy;
-            descBoxW = cardW();
-            descBoxH = descH;
-            hoveredDescBox = isEditMode && mx >= descBoxX && mx < descBoxX + descBoxW && my >= descBoxY &&
-                    my < descBoxY + descBoxH;
-
-            if (isEditMode) {
-                g.fill(cardX + 2, cy + 1, cardX + cardW() - 2, cy + descH - 1,
-                        hoveredDescBox ? 0xFF1C1C26 : 0xFF15151C);
-                int dashColor = hoveredDescBox ? C_ACTIVE : C_TEXT_FAINT;
-                for (int dx = cardX + 2; dx < cardX + cardW() - 2; dx += 4) {
-                    g.fill(dx, cy + 1, dx + 2, cy + 2, dashColor);
-                    g.fill(dx, cy + descH - 2, dx + 2, cy + descH - 1, dashColor);
-                }
-            }
-
-            compactDescTotalLines = descLines.size();
-            compactDescFittedLines = fittedDesc;
-            int maxScrollLine = Math.max(0, compactDescTotalLines - compactDescFittedLines);
-            compactDescScrollLine = Math.max(0, Math.min(compactDescScrollLine, maxScrollLine));
-
-            int dy = cy + 4;
-            if (fittedDesc == 0 && isEditMode) {
-                ChroniclesUIKit.drawString(g, font, "§8Click to add a description", cardX + CARD_PAD, dy, C_TEXT_FAINT,
-                        false);
-            }
-
-            g.enableScissor(cardX, cy + 1, cardX + cardW(), cy + descH - 1);
-
-            richRegions = net.phoenixvine.wiki.client.rich.WikiRichTextRenderer.renderBlocks(
-                    g, font, resolvedDescBlocks,
-                    cardX + CARD_PAD, cy + 4, cardW() - CARD_PAD * 2,
-
-                    compactDescScrollLine * Math.round(10 * compactTextScale),
-                    cy + 1, cy + descH - 1,
-
-                    compactTextScale, C_ACTIVE, descExpandedKeys);
-
-            if (descLines.size() > questDescLines.size()) {
-                for (int i = questDescLines.size(); i < descLines.size(); i++) {
-                    int renderY = cy + 4 + (i * 10) - (compactDescScrollLine * 10);
-                    if (renderY >= cy + 4 && renderY + 10 <= cy + descH - 4) {
-                        ChroniclesUIKit.drawString(g, font, descLines.get(i), cardX + CARD_PAD, renderY, C_TEXT_DIM,
-                                false);
-                    }
-                }
-            }
-
-            g.disableScissor();
-
-            if (maxScrollLine > 0) {
-                String hint = compactDescScrollLine < maxScrollLine ? "§7▼ scroll for more" : "§7▲ scroll up";
-                ChroniclesUIKit.drawString(g, font, hint, cardX + cardW() - font.width(hint) - CARD_PAD - 2,
-                        cy + descH - 11,
-                        C_TEXT_FAINT, false);
-            } else if (isEditMode) {
-                String hint = "§7✎ edit";
-                ChroniclesUIKit.drawString(g, font, hint, cardX + cardW() - font.width(hint) - CARD_PAD - 2,
-                        cy + descH - 11,
-                        hoveredDescBox ? C_ACTIVE : C_TEXT_FAINT, false);
-            }
-            cy += descH;
-            g.fill(cardX, cy, cardX + cardW(), cy + 1, C_BORDER);
-            cy += 1;
-
-            if (pagerStripH > 0) {
-                renderDescPager(g, cardX, cy, cardW(), pagerStripH, mx, my, compactDescPageCount);
-                cy += pagerStripH;
-                g.fill(cardX, cy, cardX + cardW(), cy + 1, C_BORDER);
-                cy += 1;
-            }
-        }
-
-        renderCompactFooter(g, cardX, cy, cardW(), 18, mx, my);
-
-        g.disableScissor();
-
-        if (hoveredTask != null) {
-            g.pose().translate(0f, 0f, 200f);
-            g.renderComponentTooltip(font, buildTaskTooltip(hoveredTask), mx, my);
-        } else if (hoveredReward != null) {
-            g.pose().translate(0f, 0f, 200f);
-            g.renderComponentTooltip(font, buildRewardTooltip(hoveredReward), mx, my);
-        }
-
-        g.pose().popPose();
-    }
-
-    private void renderIconStrip(GuiGraphics g, int cardX, int cy, int mx, int my, List<QuestTask> tasks,
-                                 List<QuestReward> rewards) {
-        int sz = ICON_SZ;
-        int gap = STRIP_GAP;
-        int left = cardX + CARD_PAD + 2;
-        int right = cardX + cardW() - CARD_PAD;
-        StripLayout layout = stripLayout(right - left, tasks.size(), rewards.size());
-
-        for (int ti = 0; ti < tasks.size(); ti++) {
-            QuestTask task = tasks.get(ti);
-            int ix = stripTaskX(layout, left, ti);
-            int iy = cy + 4 + stripTaskRow(layout, ti) * (sz + gap);
-            boolean done = isTaskDone(task);
-            boolean hov = mx >= ix && mx < ix + sz && my >= iy && my < iy + sz;
-            int border = done ? C_DONE : (task.isOptional() ? C_TEXT_FAINT : C_ACTIVE);
-            int bg = done ? 0xFF0A1A0E : 0xFF0F0F18;
-            if (hov) {
-                hoveredTask = task;
-                hoveredSlotX = ix;
-                hoveredSlotY = iy;
-            }
-            drawIconSlot(g, ix, iy, sz, bg, border, hov);
-            ItemStack icon = getTaskIcon(task);
-            int off = (sz - 16) / 2;
-            if (!icon.isEmpty()) {
-                g.renderItem(icon, ix + off, iy + off);
-                g.renderItemDecorations(font, icon, ix + off, iy + off);
-                if (done) g.fill(ix, iy, ix + sz, iy + sz, 0x5500CC55);
-            } else {
-                ChroniclesUIKit.drawCenteredString(g, font, done ? "§a✔" : "§c✗", ix + sz / 2, iy + sz / 2 - 4,
-                        0xFFFFFFFF);
-            }
-            if (done) {
-                g.fill(ix + sz - 7, iy + sz - 8, ix + sz, iy + sz, 0xFF0A2210);
-                ChroniclesUIKit.drawString(g, font, "§a✔", ix + sz - 7, iy + sz - 8, 0xFFFFFFFF, false);
-            }
-        }
-
-        boolean claimed = rewardsClaimed();
-        for (int ri = 0; ri < rewards.size(); ri++) {
-            int rix = layout.single() ? right - sz - ri * (sz + gap) : left + (ri % layout.perRow()) * (sz + gap);
-            int iy = cy + 4 + stripRewardRow(layout, ri) * (sz + gap);
-            QuestReward reward = rewards.get(ri);
-            QuestReward display = displayRewardFor(ri, reward);
-            boolean picked = isSlotPicked(ri, claimed);
-            boolean hov = mx >= rix && mx < rix + sz && my >= iy && my < iy + sz;
-            int border = picked ? C_DONE : C_TEXT_FAINT;
-            int bg = picked ? 0xFF1A140A : 0xFF0F0F18;
-            if (hov) {
-                hoveredReward = reward;
-                hoveredRewardIndex = ri;
-                hoveredSlotX = rix;
-                hoveredSlotY = iy;
-            }
-            drawIconSlot(g, rix, iy, sz, bg, border, hov);
-            int off = (sz - 16) / 2;
-            ItemStack shownStack = display instanceof QuestReward.ItemReward ir0 ? shownRewardStack(ir0) :
-                    ItemStack.EMPTY;
-            if (!shownStack.isEmpty()) {
-                g.renderItem(shownStack, rix + off, iy + off);
-                g.renderItemDecorations(font, shownStack, rix + off, iy + off);
-                if (picked) g.fill(rix, iy, rix + sz, iy + sz, 0x55CC8800);
-            } else {
-                ChroniclesUIKit.drawCenteredString(g, font, "§7" + rewardGlyph(display), rix + sz / 2, iy + sz / 2 - 4,
-                        C_TEXT_DIM);
-                if (picked) g.fill(rix, iy, rix + sz, iy + sz, 0x55CC8800);
-            }
-            if (picked) {
-                g.fill(rix + sz - 7, iy + sz - 8, rix + sz, iy + sz, 0xFF1A1000);
-                ChroniclesUIKit.drawString(g, font, "§6✔", rix + sz - 7, iy + sz - 8, 0xFFFFFFFF, false);
-            }
-        }
-    }
-
-    private void renderCompactTaskRow(GuiGraphics g, int x, int y, int w, QuestTask task, int mx, int my) {
-        boolean done = isTaskDone(task);
-        String progress = taskProgressString(task);
-        boolean hov = mx >= x && mx < x + w && my >= y && my < y + TASK_LIST_ROW_H - 6;
-        if (hov) {
-            hoveredTask = task;
-            hoveredSlotX = x;
-            hoveredSlotY = y;
-        }
-
-        if (hov) g.fill(x, y, x + w, y + TASK_LIST_ROW_H - 6, 0x18FFFFFF);
-
-        int accent = done ? C_DONE : (task.isOptional() ? C_TEXT_FAINT : C_ACTIVE);
-        g.fill(x, y + 1, x + 2, y + TASK_LIST_ROW_H - 7, accent);
-
-        String mark = done ? "§a✔" : (task.isOptional() ? "§8○" : "§c✗");
-        ChroniclesUIKit.drawString(g, font, mark, x + 4, y + 3, 0xFFFFFFFF, false);
-
-        int textX = x + 16;
-        ItemStack icon = getTaskIcon(task);
-        if (!icon.isEmpty()) {
-            g.renderItem(icon, textX, y);
-            g.renderItemDecorations(font, icon, textX, y);
-            textX += 18;
-        } else {
-            ChroniclesUIKit.drawString(g, font, getTaskGlyph(task), textX, y + 3, 0xFFFFFFFF, false);
-            textX += 10;
-        }
-
-        String desc = task.getDescription().getString();
-        String detail = getTaskDetail(task);
-
-        boolean descIsId = desc.isEmpty() || desc.matches("[a-z0-9_]+");
-        String primary = (descIsId && detail != null) ? detail : desc;
-
-        float rowTs = QuestChroniclesSettings.get().getTextScaleMultiplier();
-
-        String prog = done ? "§a✔" : (progress != null ? "§8" + progress : "");
-        int progW = prog.isEmpty() ? 0 : Math.round(font.width(prog) * rowTs) + 2;
-        int labelW = w - (textX - x) - progW - 2;
-
-        float labelAvailPreScale = labelW / rowTs;
-        if (font.width(primary) > labelAvailPreScale)
-            primary = font.plainSubstrByWidth(primary, (int) labelAvailPreScale - font.width("…")) + "…";
-        ChroniclesUIKit.drawScaledString(g, font, (done ? "§7" : "§f") + primary, textX, y + 3,
-                done ? C_TEXT_DIM : C_TEXT, rowTs);
-        if (!prog.isEmpty()) {
-            ChroniclesUIKit.drawScaledString(g, font, prog, x + w - progW, y + 3, C_TEXT_FAINT, rowTs);
-        }
-
-        float pct = done ? 1f : parseProgress(progress);
-        int barY = y + 14;
-        g.fill(x, barY, x + w, barY + 3, 0xFF1A1A22);
-        if (pct > 0) g.fill(x, barY, x + (int) (w * pct), barY + 3, done ? C_DONE : C_ACTIVE);
-    }
-
-    private long emergencyArmedUntilMs = 0;
-
-    private boolean emergencyShown() {
+    boolean emergencyShown() {
         if (playerData == null) return false;
         return playerData.getQuestState(node.getId(), QuestState.LOCKED) == QuestState.ACTIVE &&
                 net.phoenixvine.chronicles.client.util.ClientEmergencyState.hasEmergencyItems(node.getId());
     }
 
-    private boolean emergencyUsedUp() {
+    boolean emergencyUsedUp() {
         return playerData != null && playerData.hasUsedEmergency(node.getId()) &&
                 !net.phoenixvine.chronicles.client.util.ClientEmergencyState.isRepeatable(node.getId());
     }
 
-    private long emergencyCooldownRemainingMs() {
-        if (playerData == null || !playerData.hasUsedEmergency(node.getId())) return 0;
-        if (!net.phoenixvine.chronicles.client.util.ClientEmergencyState.isRepeatable(node.getId())) return 0;
-        long ends = playerData.getEmergencyUsedAt(node.getId()) +
-                net.phoenixvine.chronicles.client.util.ClientEmergencyState.getCooldownSeconds(node.getId()) * 1000L;
-        return Math.max(0, ends - net.phoenixvine.chronicles.client.util.ClientEmergencyState.serverNow());
-    }
+    record StripLayout(boolean single, int perRow, int taskRows, int rows) {}
 
-    private void drawEmergencyButton(GuiGraphics g, int x, int y, int w, int h, int mx, int my) {
-        if (!emergencyShown()) return;
-        boolean used = emergencyUsedUp();
-        long cooldownMs = emergencyCooldownRemainingMs();
-        boolean blocked = used || cooldownMs > 0;
-        boolean armed = System.currentTimeMillis() < emergencyArmedUntilMs;
-        boolean hov = mx >= x && mx < x + w && my >= y && my < y + h;
-        int fill = blocked ? 0xFF1A1A1A : armed ? 0xFF4A3A1A : hov ? 0xFF3A3220 : 0xFF2A2418;
-        g.fill(x, y, x + w, y + h, fill);
-        g.fill(x, y, x + w, y + 1, blocked ? 0xFF333333 : 0xFFB08A2E);
-        String glyph = cooldownMs > 0 ?
-                "§7" + net.phoenixvine.chronicles.client.util.ClientEmergencyState.compactDuration(cooldownMs) :
-                blocked ? "§8⚠" : armed ? "§e⚠?" : "§6⚠";
-        ChroniclesUIKit.drawCenteredString(g, font, glyph, x + w / 2, y + (h - 8) / 2, C_TEXT);
-        if (hov) {
-            hoveredHeaderTooltip = used ? "Emergency items already used" :
-                    cooldownMs > 0 ? "Emergency items available again in " +
-                            net.phoenixvine.chronicles.common.tracker.QuestProgressTracker.formatDuration(cooldownMs) :
-                            armed ? "Click again to confirm" :
-                                    net.phoenixvine.chronicles.client.util.ClientEmergencyState
-                                            .isRepeatable(node.getId()) ?
-                                                    "Lost a required item? Get fallback items" :
-                                                    "Lost a required item? Get fallback items (one use)";
-        }
-    }
-
-    private boolean clickEmergencyButton(int x, int y, int w, int h, double mx, double my) {
-        if (!emergencyShown() || mx < x || mx >= x + w || my < y || my >= y + h) return false;
-        if (emergencyUsedUp() || emergencyCooldownRemainingMs() > 0) return true;
-        long now = System.currentTimeMillis();
-        boolean repeatable = net.phoenixvine.chronicles.client.util.ClientEmergencyState.isRepeatable(node.getId());
-        if (!repeatable && now >= emergencyArmedUntilMs) {
-            emergencyArmedUntilMs = now + 3000;
-            return true;
-        }
-        emergencyArmedUntilMs = 0;
-        net.neoforged.neoforge.network.PacketDistributor.sendToServer(
-                new net.phoenixvine.chronicles.network.packet.C2SRequestEmergencyItemsPacket(node.getId()));
-        return true;
-    }
-
-    private void renderCompactFooter(GuiGraphics g, int cardX, int cy, int cardW, int h, int mx, int my) {
-        drawEmergencyButton(g, cardX + 4, cy + 1, 22, h - 2, mx, my);
-        drawVoiceButton(g, cardX + 4 + voiceOffset(), cy + 1, 22, h - 2, mx, my);
-        drawLinkButton(g, cardX + 4 + linkOffset(), cy + 1, 22, h - 2, mx, my);
-        QuestState state = playerData != null ? playerData.getQuestState(node.getId(), QuestState.LOCKED) :
-                QuestState.LOCKED;
-        boolean canClaim = state == QuestState.COMPLETED && !rewardsClaimed() && !content.effectiveRewards().isEmpty();
-
-        if (canClaim) {
-            int btnW = 120;
-            int btnX = cardX + (cardW - btnW) / 2;
-            int btnY = cy + 1;
-            boolean hov = mx >= btnX && mx < btnX + btnW && my >= btnY && my < btnY + h - 2;
-            g.fill(btnX, btnY, btnX + btnW, btnY + h - 2, hov ? 0xFF2A4A2A : 0xFF1A2A1A);
-            g.fill(btnX, btnY, btnX + btnW, btnY + 1, hov ? C_DONE : 0xFF333333);
-            ChroniclesUIKit.drawCenteredString(g, font, "§a✓ Claim Rewards", btnX + btnW / 2, btnY + 4,
-                    hov ? C_DONE : C_TEXT);
-        } else if (rewardsClaimed()) {
-            ChroniclesUIKit.drawCenteredString(g, font, "§8Rewards Claimed", cardX + cardW / 2, cy + 5, C_TEXT_FAINT);
-        } else {
-            ChroniclesUIKit.drawCenteredString(g, font, "§8Complete Tasks to Claim", cardX + cardW / 2, cy + 5,
-                    C_TEXT_FAINT);
-        }
-    }
-
-    private void renderFullscreen(GuiGraphics g, int mx, int my, float partial) {
-        hoveredTaskFs = null;
-        hoveredRewardFs = null;
-
-        com.mojang.blaze3d.systems.RenderSystem.disableScissor();
-        g.fill(0, 0, width, height, 0xFF000000);
-        renderHeader(g, mx, my);
-        renderRequirementsBar(g, mx, my);
-
-        int[] pw = fullscreenPanelWidths();
-        int inspW = pw[0];
-        int rewardW = pw[1];
-        int contentTop = headerH() + reqBarH() + MARGIN;
-        int contentRight = width - inspW - rewardW - MARGIN * 3;
-        int contentH = height - contentTop - FOOTER_H - MARGIN;
-
-        g.fill(MARGIN, contentTop, contentRight, contentTop + contentH, C_PANEL);
-        drawBorder(g, MARGIN, contentTop, contentRight - MARGIN, contentH);
-        renderContent(g, MARGIN + 6, contentTop + 6, contentRight - MARGIN - 12, contentH - 12, mx, my, partial);
-
-        int inspX = contentRight + MARGIN;
-        renderInspector(g, inspX, contentTop, inspW, contentH, mx, my);
-
-        int rewardX = inspX + inspW + MARGIN;
-        renderRewardsPanel(g, rewardX, contentTop, rewardW, contentH, mx, my);
-
-        renderPanelDividers(g, contentRight, inspX + inspW, contentTop, contentH, mx, my);
-
-        renderFooter(g, mx, my);
-
-        g.pose().pushPose();
-        g.pose().translate(0f, 0f, 400f);
-        if (hoveredStripTask != null) {
-            g.renderComponentTooltip(font, buildTaskTooltip(hoveredStripTask), mx, my);
-        } else if (hoveredStripReward != null) {
-            g.renderComponentTooltip(font, buildRewardTooltip(hoveredStripReward), mx, my);
-        } else if (hoveredTaskFs != null) {
-            g.renderComponentTooltip(font, buildTaskTooltip(hoveredTaskFs), mx, my);
-        } else if (hoveredRewardFs != null) {
-            g.renderComponentTooltip(font, buildRewardTooltip(hoveredRewardFs), mx, my);
-        }
-        g.pose().popPose();
-    }
-
-    private void renderHeader(GuiGraphics g, int mx, int my) {
-        int headerH = headerH();
-        g.fill(0, 0, width, headerH, C_HEADER);
-        g.fill(0, headerH - 1, width, headerH, C_BORDER);
-
-        boolean backHov = mx >= 4 && mx < 20 && my >= 6 && my < 22;
-        if (backHov) {
-            g.fill(4, 6, 20, 22, 0x22FFFFFF);
-            hoveredHeaderTooltip = "Close";
-        }
-        ChroniclesUIKit.drawCenteredString(g, font, "§7←", 12, 10, C_TEXT_DIM);
-
-        boolean pinned = playerData != null && playerData.isPinned(node.getId());
-        int pinX = width - 20;
-
-        int editX = pinX - (isEditMode ? 18 : 0);
-        int fsX = editX - 20;
-        int usesX = fsX - 20;
-        int titleMaxW = headerTitleMaxW();
-
-        float headerTextScale = QuestChroniclesSettings.get().getTextScaleMultiplier();
-
-        float titleAvailPreScale = titleMaxW / headerTextScale;
-        String titleStr = (node.isOptional() ? "§d[Optional] §f" : "") + content.title().getString();
-        if (net.phoenixvine.chronicles.client.util.EffectText.width(font, titleStr) > titleAvailPreScale)
-            titleStr = net.phoenixvine.chronicles.client.util.EffectText.cut(font, titleStr,
-                    (int) titleAvailPreScale - font.width("…")) + "…";
-        ChroniclesUIKit.drawScaledString(g, font, "§f" + titleStr, 28, 10, C_TEXT, headerTextScale);
-
-        java.util.List<String> subtitleLines = wrapSubtitle(node.getSubtitle(),
-                titleMaxW);
-        for (int i = 0; i < subtitleLines.size(); i++) {
-            ChroniclesUIKit.drawString(g, font, subtitleLines.get(i), 28, 24 + i * SUBTITLE_LINE_H, C_TEXT_DIM, false);
-        }
-
-        boolean usesHasAny = !node.getPrerequisites().isEmpty() || !node.getChildren().isEmpty();
-        boolean usesHov = usesHasAny && mx >= usesX && mx < usesX + 16 && my >= 6 && my < 22;
-        if (usesHov || usesPopupOpen) g.fill(usesX, 6, usesX + 16, 22, 0x22FFFFFF);
-        if (usesHov) hoveredHeaderTooltip = "Show prerequisites/unlocks";
-
-        ChroniclesUIKit.drawCenteredString(g, font, "§b≡", usesX + 8, 10,
-                !usesHasAny ? C_TEXT_FAINT : (usesHov || usesPopupOpen) ? 0xFF55CCFF : C_TEXT_DIM);
-
-        boolean fsToggleHov = mx >= fsX && mx < fsX + 16 && my >= 6 && my < 22;
-        if (fsToggleHov) {
-            g.fill(fsX, 6, fsX + 16, 22, 0x22FFFFFF);
-            hoveredHeaderTooltip = "Shrink to compact view";
-        }
-        ChroniclesUIKit.drawCenteredString(g, font, "§d[-]", fsX + 8, 10, 0xFFAA44FF);
-
-        if (isEditMode) {
-            boolean editHov = mx >= editX && mx < editX + 14 && my >= 6 && my < 22;
-            if (editHov) {
-                g.fill(editX, 6, editX + 14, 22, 0x22FFFFFF);
-                hoveredHeaderTooltip = "Edit quest";
-            }
-            ChroniclesUIKit.drawCenteredString(g, font, editHov ? "§e✎" : "§8✎", editX + 7, 10,
-                    editHov ? 0xFFFFDD44 : C_TEXT_FAINT);
-        }
-
-        boolean pinHov = mx >= pinX && mx < width - 4 && my >= 6 && my < 22;
-        if (pinHov) {
-            g.fill(pinX, 6, width - 4, 22, 0x22FFFFFF);
-            hoveredHeaderTooltip = pinned ? "Unpin quest" : "Pin quest";
-        }
-        ChroniclesUIKit.drawCenteredString(g, font, pinned ? "§d📌" : "§8📌", width - 12, 10,
-                pinned ? 0xFFAA44FF : C_TEXT_FAINT);
-
-        if (usesPopupOpen) renderUsesPopup(g, usesX, mx, my);
-    }
-
-    private void renderUsesPopup(GuiGraphics g, int anchorX, int mx, int my) {
-        usesPopupRowRects.clear();
-        usesPopupRowTargets.clear();
-
-        List<QuestNode> requires = node.getPrerequisites();
-        List<QuestNode> unlocks = node.getChildren();
-
-        int rowH = 12;
-        int headerH = 12;
-        int padW = 6, padTop = 4, padBot = 6;
-        int innerW = 160;
-        int contentRows = requires.size() + unlocks.size();
-        int sectionHeaders = (requires.isEmpty() ? 0 : 1) + (unlocks.isEmpty() ? 0 : 1);
-        int popupH = padTop + sectionHeaders * headerH + contentRows * rowH + padBot;
-        if (contentRows == 0) popupH = padTop + 14 + padBot;
-
-        int popupX = Math.max(4, Math.min(anchorX + 16 - innerW, width - innerW - 4));
-        int popupY = headerH() + 2;
-
-        g.pose().pushPose();
-        g.pose().translate(0f, 0f, 250f);
-        g.fill(popupX, popupY, popupX + innerW, popupY + popupH, 0xF00A0A0E);
-        drawBorder(g, popupX, popupY, innerW, popupH);
-
-        int ry = popupY + padTop;
-        if (contentRows == 0) {
-            ChroniclesUIKit.drawString(g, font, "§8(no connections)", popupX + padW, ry + 2, C_TEXT_FAINT, false);
-        } else {
-            ry = renderUsesPopupSection(g, popupX, ry, innerW, padW, rowH, "§8Requires:", requires, mx, my);
-            ry = renderUsesPopupSection(g, popupX, ry, innerW, padW, rowH, "§8Unlocks:", unlocks, mx, my);
-        }
-        g.pose().popPose();
-    }
-
-    private int renderUsesPopupSection(GuiGraphics g, int popupX, int ry, int innerW, int padW, int rowH,
-                                       String header, List<QuestNode> list, int mx, int my) {
-        if (list.isEmpty()) return ry;
-        ChroniclesUIKit.drawString(g, font, header, popupX + padW, ry + 2, C_TEXT_FAINT, false);
-        ry += rowH;
-        for (QuestNode target : list) {
-            boolean hov = mx >= popupX && mx < popupX + innerW && my >= ry && my < ry + rowH;
-            if (hov) g.fill(popupX + 2, ry, popupX + innerW - 2, ry + rowH, 0x22FFFFFF);
-            QuestState state = playerData != null ? playerData.getQuestState(target.getId(), QuestState.LOCKED) :
-                    QuestState.LOCKED;
-            String title = target.getTitle().getString();
-            int maxW = innerW - padW * 2 - 10;
-            if (net.phoenixvine.chronicles.client.util.EffectText.width(font, title) > maxW)
-                title = net.phoenixvine.chronicles.client.util.EffectText.cut(font, title,
-                        Math.max(0, maxW - font.width("…"))) + "…";
-            ChroniclesUIKit.drawString(g, font,
-                    (state == QuestState.COMPLETED ? "§a●" : "§8○") + " " + (hov ? "§f" : "§7") + title,
-                    popupX + padW + 8, ry + 2, hov ? C_TEXT : C_TEXT_DIM, false);
-            usesPopupRowRects.add(new int[] { popupX, ry, innerW, rowH });
-            usesPopupRowTargets.add(target);
-            ry += rowH;
-        }
-        return ry;
-    }
-
-    private void openChoiceBox(QuestReward.ChoiceBoxReward box, int rewardIndex) {
-        openChoiceBox = box;
-        openChoiceBoxRewardIndex = rewardIndex;
-    }
-
-    private void renderChoiceBoxPopup(GuiGraphics g, int mx, int my) {
-        choiceBoxRowRects.clear();
-        List<QuestReward> options = openChoiceBox.getOptions();
-
-        int rowH = 20, padW = 8, padTop = 24, padBot = 8;
-        int innerW = 200;
-        int popupH = padTop + options.size() * rowH + padBot;
-        int popupX = (width - innerW) / 2;
-        int popupY = (height - popupH) / 2;
-
-        g.pose().pushPose();
-        g.pose().translate(0f, 0f, 400f);
-        g.fill(0, 0, width, height, 0x99000000);
-        g.fill(popupX, popupY, popupX + innerW, popupY + popupH, 0xF00A0A0E);
-        drawBorder(g, popupX, popupY, innerW, popupH);
-        ChroniclesUIKit.drawCenteredString(g, font, "§6Choose your reward", popupX + innerW / 2, popupY + 8, C_TEXT);
-
-        int ry = popupY + padTop;
-        for (QuestReward option : options) {
-            boolean hov = mx >= popupX + padW && mx < popupX + innerW - padW && my >= ry && my < ry + rowH;
-            if (hov) g.fill(popupX + padW, ry, popupX + innerW - padW, ry + rowH, 0x22FFFFFF);
-
-            int iconX = popupX + padW + 2;
-            if (option instanceof QuestReward.ItemReward ir) {
-                ItemStack stack = rewardStack(ir);
-                g.renderItem(stack, iconX, ry + 2);
-                g.renderItemDecorations(font, stack, iconX, ry + 2);
-            } else {
-                ChroniclesUIKit.drawCenteredString(g, font, "§7?", iconX + 8, ry + 6, C_TEXT_DIM);
-            }
-
-            String label = option.getSummary().getString();
-            int labelMaxW = innerW - padW * 2 - 22;
-            if (font.width(label) > labelMaxW)
-                label = font.plainSubstrByWidth(label, labelMaxW - font.width("…")) + "…";
-            ChroniclesUIKit.drawString(g, font, (hov ? "§f" : "§7") + label, iconX + 20, ry + 6,
-                    hov ? C_TEXT : C_TEXT_DIM, false);
-
-            choiceBoxRowRects.add(new int[] { popupX + padW, ry, innerW - padW * 2, rowH });
-            ry += rowH;
-        }
-
-        g.pose().popPose();
-    }
-
-    private record StripLayout(boolean single, int perRow, int taskRows, int rows) {}
-
-    private static StripLayout stripLayout(int innerW, int taskCount, int rewardCount) {
-        int step = ICON_SZ + STRIP_GAP;
-        int perRow = Math.max(1, (innerW + STRIP_GAP) / step);
-        int groupGap = taskCount > 0 && rewardCount > 0 ? 1 : 0;
-        if (taskCount + rewardCount + groupGap <= perRow) return new StripLayout(true, perRow, 1, 1);
-
-        int taskRows = (taskCount + perRow - 1) / perRow;
-        int rewardRows = (rewardCount + perRow - 1) / perRow;
-        return new StripLayout(false, perRow, taskRows, Math.max(1, taskRows + rewardRows));
-    }
-
-    private static int stripHeight(StripLayout l) {
-        return l.rows() * ICON_SZ + (l.rows() - 1) * STRIP_GAP + 8;
-    }
-
-    private static int stripTaskX(StripLayout l, int left, int i) {
-        return left + (l.single() ? i : i % l.perRow()) * (ICON_SZ + STRIP_GAP);
-    }
-
-    private static int stripTaskRow(StripLayout l, int i) {
-        return l.single() ? 0 : i / l.perRow();
-    }
-
-    private static int stripRewardRow(StripLayout l, int i) {
-        return l.single() ? 0 : l.taskRows() + i / l.perRow();
-    }
-
-    private int compactStripH() {
-        int innerW = cardW() - CARD_PAD * 2 - 2;
-        return stripHeight(stripLayout(innerW, content.effectiveTasks().size(), content.effectiveRewards().size()));
-    }
-
-    private int reqBarH() {
-        List<QuestTask> tasks = content.effectiveTasks();
-        List<QuestReward> rewards = content.effectiveRewards();
-        if (tasks.isEmpty() && rewards.isEmpty()) return 1;
-        return stripHeight(stripLayout(width - MARGIN * 2 - 4, tasks.size(), rewards.size()));
-    }
-
-    private void renderRequirementsBar(GuiGraphics g, int mx, int my) {
-        hoveredStripTask = null;
-        hoveredStripReward = null;
-        hoveredStripRewardIdx = -1;
-
-        int barH = reqBarH();
-        int headerH = headerH();
-        g.fill(0, headerH, width, headerH + barH, C_PANEL);
-        g.fill(0, headerH, width, headerH + 1, C_BORDER);
-        g.fill(0, headerH + barH - 1, width, headerH + barH, C_BORDER);
-        if (barH <= 1) return;
-
-        int sz = ICON_SZ;
-        int gap = STRIP_GAP;
-        int stripLeft = MARGIN + 2;
-        int stripRight = width - MARGIN - 2;
-
-        List<QuestTask> tasks = content.effectiveTasks();
-        List<QuestReward> rewards = content.effectiveRewards();
-        StripLayout layout = stripLayout(stripRight - stripLeft, tasks.size(), rewards.size());
-
-        for (int ti = 0; ti < tasks.size(); ti++) {
-            QuestTask task = tasks.get(ti);
-            int iconX = stripTaskX(layout, stripLeft, ti);
-            int iconY = headerH + 4 + stripTaskRow(layout, ti) * (sz + gap);
-            boolean done = isTaskDone(task);
-            boolean hov = mx >= iconX && mx < iconX + sz && my >= iconY && my < iconY + sz;
-            int border = done ? C_DONE : (task.isOptional() ? C_TEXT_FAINT : C_ACTIVE);
-            int bg = done ? 0xFF0A1A0E : 0xFF0F0F18;
-
-            if (hov) {
-                hoveredStripTask = task;
-                hoveredStripX = iconX;
-                hoveredStripY = iconY;
-            }
-
-            drawIconSlot(g, iconX, iconY, sz, bg, border, hov);
-
-            ItemStack icon = getTaskIcon(task);
-            int off = (sz - 16) / 2;
-            if (!icon.isEmpty()) {
-                g.renderItem(icon, iconX + off, iconY + off);
-
-                g.renderItemDecorations(font, icon, iconX + off, iconY + off);
-                if (done) g.fill(iconX, iconY, iconX + sz, iconY + sz, 0x5500CC55);
-            } else {
-                ChroniclesUIKit.drawCenteredString(g, font, done ? "§a✔" : "§c✗", iconX + sz / 2, iconY + sz / 2 - 4,
-                        0xFFFFFFFF);
-            }
-
-            if (done) {
-                g.fill(iconX + sz - 7, iconY + sz - 8, iconX + sz, iconY + sz, 0xFF0A2210);
-                ChroniclesUIKit.drawString(g, font, "§a✔", iconX + sz - 7, iconY + sz - 8, 0xFFFFFFFF, false);
-            }
-        }
-
-        boolean claimed = rewardsClaimed();
-        for (int ri = 0; ri < rewards.size(); ri++) {
-            int rIconX = layout.single() ?
-                    stripRight - rewards.size() * sz - Math.max(0, rewards.size() - 1) * gap + ri * (sz + gap) :
-                    stripLeft + (ri % layout.perRow()) * (sz + gap);
-            int iconY = headerH + 4 + stripRewardRow(layout, ri) * (sz + gap);
-            QuestReward reward = rewards.get(ri);
-            QuestReward display = displayRewardFor(ri, reward);
-            boolean picked = isSlotPicked(ri, claimed);
-            boolean hov = mx >= rIconX && mx < rIconX + sz && my >= iconY && my < iconY + sz;
-            int border = picked ? C_DONE : C_TEXT_FAINT;
-            int bg = picked ? 0xFF1A140A : 0xFF0F0F18;
-
-            if (hov) {
-                hoveredStripReward = reward;
-                hoveredStripRewardIdx = ri;
-                hoveredStripX = rIconX;
-                hoveredStripY = iconY;
-            }
-
-            drawIconSlot(g, rIconX, iconY, sz, bg, border, hov);
-
-            int off = (sz - 16) / 2;
-            ItemStack shownStack = display instanceof QuestReward.ItemReward ir0 ? shownRewardStack(ir0) :
-                    ItemStack.EMPTY;
-            if (!shownStack.isEmpty()) {
-                g.renderItem(shownStack, rIconX + off, iconY + off);
-                g.renderItemDecorations(font, shownStack, rIconX + off, iconY + off);
-                if (picked) g.fill(rIconX, iconY, rIconX + sz, iconY + sz, 0x55CC8800);
-            } else {
-                ChroniclesUIKit.drawCenteredString(g, font, "§7" + rewardGlyph(display), rIconX + sz / 2,
-                        iconY + sz / 2 - 4,
-                        C_TEXT_DIM);
-                if (picked) g.fill(rIconX, iconY, rIconX + sz, iconY + sz, 0x55CC8800);
-            }
-
-            if (picked) {
-                g.fill(rIconX + sz - 7, iconY + sz - 8, rIconX + sz, iconY + sz, 0xFF1A1000);
-                ChroniclesUIKit.drawString(g, font, "§6✔", rIconX + sz - 7, iconY + sz - 8, 0xFFFFFFFF, false);
-            }
-        }
-    }
-
-    private void drawIconSlot(GuiGraphics g, int x, int y, int sz, int bg, int border, boolean hov) {
-        g.fill(x, y, x + sz, y + sz, bg);
-        if (hov) g.fill(x, y, x + sz, y + sz, 0x22FFFFFF);
-        g.fill(x, y, x + sz, y + 1, border);
-        g.fill(x, y + sz - 1, x + sz, y + sz, border);
-        g.fill(x, y, x + 1, y + sz, border);
-        g.fill(x + sz - 1, y, x + sz, y + sz, border);
-    }
-
-    private int renderAddBox(GuiGraphics g, int x, int y, int w, String label, int mx, int my) {
-        int boxH = 16;
-        boolean hov = mx >= x && mx < x + w && my >= y && my < y + boxH;
-        int border = hov ? C_ACTIVE : C_BORDER;
-        g.fill(x, y, x + w, y + 1, border);
-        g.fill(x, y + boxH - 1, x + w, y + boxH, border);
-        g.fill(x, y, x + 1, y + boxH, border);
-        g.fill(x + w - 1, y, x + w, y + boxH, border);
-        if (hov) g.fill(x + 1, y + 1, x + w - 1, y + boxH - 1, 0x14FFFFFF);
-        ChroniclesUIKit.drawCenteredString(g, font, (hov ? "§f" : "§8") + label, x + w / 2, y + 4,
-                hov ? C_TEXT : C_TEXT_FAINT);
-        return boxH;
-    }
-
-    private void renderContent(GuiGraphics g, int x, int y, int w, int h, int mx, int my, float partial) {
-        prereqRowRects.clear();
-        prereqRowTargets.clear();
-        addTaskBoxRect = null;
-        addRewardBoxRect = null;
-
-        fsDescBoxX = x - 6;
-        fsDescBoxY = y - 6;
-        fsDescBoxW = w + 12;
-        fsDescBoxH = h + 12;
-        hoveredFsDescBox = isEditMode && mx >= fsDescBoxX && mx < fsDescBoxX + fsDescBoxW && my >= fsDescBoxY &&
-                my < fsDescBoxY + fsDescBoxH;
-        if (isEditMode) {
-            int dashColor = hoveredFsDescBox ? C_ACTIVE : C_TEXT_FAINT;
-            for (int dx = fsDescBoxX; dx < fsDescBoxX + fsDescBoxW; dx += 4) {
-                g.fill(dx, fsDescBoxY, dx + 2, fsDescBoxY + 1, dashColor);
-                g.fill(dx, fsDescBoxY + fsDescBoxH - 1, dx + 2, fsDescBoxY + fsDescBoxH, dashColor);
-            }
-            String hint = "§7✎ click to edit";
-            ChroniclesUIKit.drawString(g, font, hint, fsDescBoxX + fsDescBoxW - font.width(hint) - 2, fsDescBoxY - 9,
-                    hoveredFsDescBox ? C_ACTIVE : C_TEXT_FAINT, false);
-        }
-
-        String descRawFull = currentDisplayDescriptionText();
-        java.util.List<String> descPages = splitDescPages(descRawFull);
-        String descRaw = currentDescriptionPageText(descRawFull);
-
-        int pagerH = descPages.size() > 1 ? 17 : 0;
-        int textBottom = y + h - pagerH;
-
-        g.enableScissor(x - 8, y - 8, x + w + 8, textBottom + 8);
-
-        if (richSpansPage != descPage || !descRaw.equals(descBlocksSourceText)) {
-            descBlocks = descRaw.isEmpty() ? java.util.List.of() :
-                    net.phoenixvine.chronicles.client.rich.ChroniclesMarkdown.parse(descRaw);
-            richSpansPage = descPage;
-            descBlocksSourceText = descRaw;
-        }
-
-        java.util.List<net.phoenixvine.wiki.client.rich.RichBlock> resolvedDescBlocks = resolveConditionals(
-                descBlocks);
-        if (isEditMode && descRaw.isEmpty() && descBlocks.isEmpty()) {
-            ChroniclesUIKit.drawString(g, font, "§8Click to add a description", x, y, C_TEXT_FAINT, false);
-        }
-
-        float textScale = QuestChroniclesSettings.get().getTextScaleMultiplier();
-
-        int descContentH = net.phoenixvine.wiki.client.rich.WikiRichTextRenderer.measureBlocksHeight(font,
-                resolvedDescBlocks, w, textScale, descExpandedKeys);
-        fsDescMaxScrollY = Math.max(0, descContentH - (textBottom - y));
-        if (descScrollY > fsDescMaxScrollY) descScrollY = fsDescMaxScrollY;
-
-        richRegions = net.phoenixvine.wiki.client.rich.WikiRichTextRenderer.renderBlocks(
-                g, font, resolvedDescBlocks, x, y, w, descScrollY, y, textBottom, textScale, C_ACTIVE,
-                descExpandedKeys);
-
-        int ly = y + descContentH - descScrollY;
-
-        if (phantasiaPreview != null) {
-            if (ly > y) ly += 8;
-            int pvSz = 64;
-            if (ly + pvSz >= y - 10 && ly < textBottom) {
-                g.fill(x, ly, x + pvSz, ly + pvSz, 0xFF0A0A10);
-                drawBorder(g, x, ly, pvSz, pvSz);
-                previewX = x + 1;
-                previewY = ly + 1;
-                previewW = pvSz - 2;
-                previewH = pvSz - 2;
-                net.phoenixvine.chronicles.integration.phantasia.PhantasiaCompat.tickPreview(phantasiaPreview);
-                net.phoenixvine.chronicles.integration.phantasia.PhantasiaCompat.renderPreview(phantasiaPreview, g,
-                        previewX, previewY, previewW, previewH, partial);
-            }
-            ly += pvSz + 8;
-        }
-
-        g.disableScissor();
-
-        if (pagerH > 0) renderDescPager(g, x, textBottom, w, pagerH, mx, my, descPages.size());
-    }
-
-    private java.util.List<net.phoenixvine.wiki.client.rich.RichBlock> resolveConditionals(
-                                                                                           java.util.List<net.phoenixvine.wiki.client.rich.RichBlock> blocks) {
-        java.util.List<net.phoenixvine.wiki.client.rich.RichBlock> out = new java.util.ArrayList<>(blocks.size());
-        for (net.phoenixvine.wiki.client.rich.RichBlock b : blocks) {
-            if (b instanceof net.phoenixvine.chronicles.client.rich.ChroniclesConditionalSection cs) {
-                boolean met = ConditionEvaluator.evaluate(cs.condition(),
-                        this::isConditionMet);
-                out.addAll(resolveConditionals(met ? cs.thenChildren() : cs.elseChildren()));
-            } else if (b instanceof net.phoenixvine.wiki.client.rich.RichBlock.Callout c) {
-                out.add(new net.phoenixvine.wiki.client.rich.RichBlock.Callout(c.type(), c.title(),
-                        resolveConditionals(c.children())));
-            } else if (b instanceof net.phoenixvine.wiki.client.rich.RichBlock.Details d) {
-                out.add(new net.phoenixvine.wiki.client.rich.RichBlock.Details(d.expandKey(), d.title(),
-                        resolveConditionals(d.children())));
-            } else if (b instanceof net.phoenixvine.wiki.client.rich.RichBlock.CollapsibleSection s) {
-                out.add(new net.phoenixvine.wiki.client.rich.RichBlock.CollapsibleSection(s.level(),
-                        resolveSpans(s.headingSpans()), s.collapseKey(), resolveConditionals(s.children())));
-            } else if (b instanceof net.phoenixvine.wiki.client.rich.RichBlock.Heading h) {
-                out.add(new net.phoenixvine.wiki.client.rich.RichBlock.Heading(h.level(),
-                        resolveSpans(h.spans()), h.collapsible()));
-            } else if (b instanceof net.phoenixvine.wiki.client.rich.RichBlock.Paragraph p) {
-                out.add(new net.phoenixvine.wiki.client.rich.RichBlock.Paragraph(resolveSpans(p.spans())));
-            } else if (b instanceof net.phoenixvine.wiki.client.rich.RichBlock.ListItem li) {
-                out.add(new net.phoenixvine.wiki.client.rich.RichBlock.ListItem(li.marker(), li.indent(),
-                        resolveSpans(li.spans())));
-            } else if (b instanceof net.phoenixvine.wiki.client.rich.RichBlock.Checklist cl) {
-                out.add(new net.phoenixvine.wiki.client.rich.RichBlock.Checklist(cl.checkKey(),
-                        cl.checkedDefault(), cl.indent(), resolveSpans(cl.spans())));
-            } else if (b instanceof net.phoenixvine.wiki.client.rich.RichBlock.Quote q) {
-                out.add(new net.phoenixvine.wiki.client.rich.RichBlock.Quote(resolveSpans(q.spans())));
-            } else if (b instanceof net.phoenixvine.wiki.client.rich.RichBlock.Table t) {
-                java.util.List<java.util.List<net.phoenixvine.wiki.client.rich.RichSpan>> header = new java.util.ArrayList<>();
-                for (var cell : t.header()) header.add(resolveSpans(cell));
-                java.util.List<java.util.List<java.util.List<net.phoenixvine.wiki.client.rich.RichSpan>>> rows = new java.util.ArrayList<>();
-                for (var row : t.rows()) {
-                    java.util.List<java.util.List<net.phoenixvine.wiki.client.rich.RichSpan>> newRow = new java.util.ArrayList<>();
-                    for (var cell : row) newRow.add(resolveSpans(cell));
-                    rows.add(newRow);
-                }
-                out.add(new net.phoenixvine.wiki.client.rich.RichBlock.Table(header, rows));
-            } else {
-                out.add(b);
-            }
-        }
-        return out;
-    }
-
-    private java.util.List<net.phoenixvine.wiki.client.rich.RichSpan> resolveSpans(
-                                                                                   java.util.List<net.phoenixvine.wiki.client.rich.RichSpan> spans) {
-        boolean anyConditional = false;
-        for (net.phoenixvine.wiki.client.rich.RichSpan s : spans) {
-            if (s instanceof net.phoenixvine.wiki.client.rich.RichSpan.ConditionalTip) {
-                anyConditional = true;
-                break;
-            }
-        }
-        if (!anyConditional) return spans;
-
-        java.util.List<net.phoenixvine.wiki.client.rich.RichSpan> out = new java.util.ArrayList<>(spans.size());
-        for (net.phoenixvine.wiki.client.rich.RichSpan s : spans) {
-            out.add(s instanceof net.phoenixvine.wiki.client.rich.RichSpan.ConditionalTip ct ?
-                    resolveConditionalTip(ct) : s);
-        }
-        return out;
-    }
-
-    private net.phoenixvine.wiki.client.rich.RichSpan resolveConditionalTip(
-                                                                            net.phoenixvine.wiki.client.rich.RichSpan.ConditionalTip ct) {
-        for (net.phoenixvine.wiki.client.rich.RichSpan.TipCandidate candidate : ct.candidates()) {
-            String expr = candidate.conditionExpr();
-            if (expr == null || expr.isBlank()) {
-                return new net.phoenixvine.wiki.client.rich.RichSpan.Tip(ct.label(), ct.style(),
-                        candidate.tooltip());
-            }
-            try {
-                if (ConditionEvaluator.evaluate(
-                        net.phoenixvine.chronicles.common.condition.ConditionExprParser.parse(expr),
-                        this::isConditionMet)) {
-                    return new net.phoenixvine.wiki.client.rich.RichSpan.Tip(ct.label(), ct.style(),
-                            candidate.tooltip());
-                }
-            } catch (net.phoenixvine.chronicles.common.condition.ConditionSyntaxException ignored) {}
-        }
-
-        return new net.phoenixvine.wiki.client.rich.RichSpan.Text(ct.label(), ct.style());
-    }
-
-    private void openLink(String url) {
-        if (url == null || url.isEmpty()) return;
-        if (url.regionMatches(true, 0, "quest:", 0, 6)) {
-            openQuestLink(url.substring(6));
-            return;
-        }
-        if (url.startsWith("wiki:")) {
-            String spec = url.substring(5);
-            String pageId = null;
-            int hash = spec.indexOf('#');
-            if (hash >= 0) {
-                pageId = spec.substring(hash + 1);
-                spec = spec.substring(0, hash);
-            }
-            int slash = spec.indexOf('/');
-            String namespace = slash >= 0 ? spec.substring(0, slash) : spec;
-            String basePath = slash >= 0 ? spec.substring(slash + 1) : "";
-            if (this.minecraft != null) {
-                this.minecraft.setScreen(new net.phoenixvine.wiki.client.screen.WikiScreen(this, namespace,
-                        basePath, pageId));
-            }
-            return;
-        }
-        try {
-            net.minecraft.Util.getPlatform().openUri(java.net.URI.create(url));
-        } catch (Exception e) {
-            net.phoenixvine.chronicles.PhoenixChronicles.LOGGER.warn("Chronicles: failed to open link '{}'", url, e);
-        }
-    }
-
-    private void openQuestLink(String spec) {
-        String raw = spec == null ? "" : spec.trim();
-        if (raw.isEmpty() || minecraft == null) return;
-
-        ResourceLocation id = raw.indexOf(':') >= 0 ? ResourceLocation.tryParse(raw) :
-                ResourceLocation.tryParse(net.phoenixvine.chronicles.PhoenixChronicles.MOD_ID + ":" + raw);
-        QuestNode target = id != null ? QuestTreeRegistry.getQuest(id) : null;
-
-        if (!(parent instanceof ChronicleOverviewScreen overview)) {
-            net.phoenixvine.chronicles.PhoenixChronicles.LOGGER
-                    .warn("Chronicles: quest link '{}' ignored, no overview screen to open it from", raw);
-            return;
-        }
-        if (target == null) {
-            overview.setFeedback("§cBroken quest link: %s", raw);
-            return;
-        }
-        if (target == node) return;
-
-        overview.onNodeClicked(target);
-    }
-
-    private boolean isConditionMet(String type, String value) {
-        if (value == null || value.isEmpty() || this.minecraft.player == null) return false;
-        if (type.equalsIgnoreCase("quest")) {
-            return net.phoenixvine.chronicles.QuestAPI.isCompleted(this.minecraft.player, value);
-        }
-        if (type.equalsIgnoreCase("quest_unlocked")) {
-            return net.phoenixvine.chronicles.QuestAPI.isUnlocked(this.minecraft.player, value);
-        }
-        if (type.equalsIgnoreCase("quest_progress")) {
-            ThresholdCondition.Parsed p = ThresholdCondition
-                    .parse(value);
-            long percent = Math.round(net.phoenixvine.chronicles.QuestAPI.getProgress(this.minecraft.player,
-                    p.id()) * 100f);
-            return ThresholdCondition.test(percent, p.op(), p.threshold());
-        }
-        if (type.equalsIgnoreCase("flag")) {
-            return PhoenixQuestFlags.evaluate(value, null, this.minecraft.player,
-                    "quest text :::if");
-        }
-        return false;
-    }
-
-    private boolean tryOpenArchiveEntry(QuestTask task) {
-        if (!(task instanceof ArchiveEntryTask aet)) return false;
-        if (!net.phoenixvine.chronicles.integration.archive.ArchiveLoreCompat.hasEntry(aet.getArchiveEntryId())) {
-            return false;
-        }
-
-        net.phoenixvine.chronicles.integration.archive.ArchiveLoreCompat.openEntry(this, aet.getArchiveEntryId());
-
-        Player player = this.minecraft.player;
-        if (player != null && !aet.isCompletedFor(player)) {
-            aet.markCompletedClient(player);
-            QuestNode owner = QuestTreeRegistry.getTaskOwner(aet.getTaskId());
-            if (owner != null) {
-                net.neoforged.neoforge.network.PacketDistributor.sendToServer(
-                        new net.phoenixvine.chronicles.network.packet.C2SPhantasiaTaskCompletePacket(owner.getId(),
-                                aet.getTaskId()));
-            }
-        }
-        return true;
-    }
-
-    private static java.util.List<String> splitDescPages(String raw) {
-        if (raw == null || raw.isEmpty()) return java.util.List.of("");
-        String[] parts = DESC_PAGE_BREAK.split(raw);
-        return parts.length == 0 ? java.util.List.of("") : java.util.List.of(parts);
-    }
-
-    private void renderDescPager(GuiGraphics g, int x, int y, int w, int h, int mx, int my, int pageCount) {
-        String pageLabel = "Page " + (descPage + 1) + "/" + pageCount;
-        int arrowW = font.width("◀") + 8;
-        int labelW = font.width(pageLabel) + 10;
-        int pw = arrowW * 2 + labelW;
-        int ph = 14;
-        int px = x + (w - pw) / 2;
-        int py = y + h - ph - 2;
-
-        boolean canPrev = descPage > 0;
-        boolean canNext = descPage < pageCount - 1;
-        boolean overLeft = mx >= px && mx < px + arrowW && my >= py && my < py + ph;
-        boolean overRight = mx >= px + pw - arrowW && mx < px + pw && my >= py && my < py + ph;
-
-        g.fill(px, py, px + pw, py + ph, 0xCC0A0A0E);
-        drawBorder(g, px, py, pw, ph);
-
-        if (canPrev && overLeft) g.fill(px + 1, py + 1, px + arrowW, py + ph - 1, 0x33FFFFFF);
-        if (canNext && overRight) g.fill(px + pw - arrowW, py + 1, px + pw - 1, py + ph - 1, 0x33FFFFFF);
-
-        g.fill(px + arrowW, py + 2, px + arrowW + 1, py + ph - 2, 0x33FFFFFF);
-        g.fill(px + pw - arrowW - 1, py + 2, px + pw - arrowW, py + ph - 2, 0x33FFFFFF);
-
-        int dimColor = 0xFF3A3A42;
-        int leftColor = !canPrev ? dimColor : (overLeft ? C_TEXT : C_TEXT_DIM);
-        int rightColor = !canNext ? dimColor : (overRight ? C_TEXT : C_TEXT_DIM);
-        ChroniclesUIKit.drawCenteredString(g, font, "◀", px + arrowW / 2, py + 3, leftColor);
-        ChroniclesUIKit.drawCenteredString(g, font, pageLabel, px + arrowW + labelW / 2, py + 3, C_TEXT_DIM);
-        ChroniclesUIKit.drawCenteredString(g, font, "▶", px + pw - arrowW / 2, py + 3, rightColor);
-
-        descPagerX = px;
-        descPagerY = py;
-        descPagerW = pw;
-        descPagerH = ph;
-        descPagerPageCount = pageCount;
-    }
-
-    private enum InspTab {
+    enum InspTab {
         INFO,
         TASKS
     }
 
-    private InspTab[] visibleInspTabs() {
-        return isEditMode ? new InspTab[] { InspTab.INFO, InspTab.TASKS } : new InspTab[] { InspTab.TASKS };
-    }
+    static final int INSP_TAB_H = 16;
 
-    private String inspTabLabel(InspTab t) {
-        return switch (t) {
-            case INFO -> "Info";
-            case TASKS -> "Tasks";
-        };
-    }
-
-    private static final int INSP_TAB_H = 16;
-
-    private void renderInspector(GuiGraphics g, int x, int y, int w, int h, int mx, int my) {
-        g.enableScissor(x, y, x + w, y + h);
-        g.fill(x, y, x + w, y + h, C_PANEL);
-        drawBorder(g, x, y, w, h);
-
-        InspTab[] tabs = visibleInspTabs();
-        if (!java.util.Arrays.asList(tabs).contains(inspectorTab)) inspectorTab = tabs[tabs.length - 1];
-
-        int cY;
-        if (tabs.length > 1) {
-            int tabX = x + 6;
-            int tabY = y + 4;
-            for (InspTab t : tabs) {
-                String label = inspTabLabel(t);
-                int tabW = font.width(label) + 6;
-                boolean active = inspectorTab == t;
-                boolean hov = mx >= tabX && mx < tabX + tabW && my >= tabY && my < tabY + INSP_TAB_H;
-                if (active) {
-                    g.fill(tabX, tabY, tabX + tabW, tabY + INSP_TAB_H, 0xFF1A1A26);
-                    g.fill(tabX, tabY + INSP_TAB_H - 1, tabX + tabW, tabY + INSP_TAB_H, C_DONE);
-                } else if (hov) {
-                    g.fill(tabX, tabY, tabX + tabW, tabY + INSP_TAB_H, 0x22FFFFFF);
-                }
-                ChroniclesUIKit.drawString(g, font, (active ? "§a" : "§8") + label, tabX + 3, tabY + 3, C_TEXT_DIM,
-                        false);
-                tabX += tabW + 2;
-            }
-            cY = y + INSP_TAB_H + 6;
-        } else {
-            cY = y + 6;
-        }
-        int cH = (y + h - 6) - cY;
-
-        int maxScroll = Math.max(0, inspectorContentH - cH + 8);
-        inspectorScrollY = Math.max(0, Math.min(inspectorScrollY, maxScroll));
-
-        g.enableScissor(x, cY, x + w, cY + cH);
-        switch (inspectorTab) {
-            case INFO -> renderInfoTab(g, x, cY, w, cH);
-            case TASKS -> renderTasksTab(g, x, cY, w, cH, mx, my);
-        }
-        g.disableScissor();
-        g.disableScissor();
-    }
-
-    private static boolean lineFullyVisible(int lineY, int viewTop, int viewBot) {
+    static boolean lineFullyVisible(int lineY, int viewTop, int viewBot) {
         return lineY >= viewTop && lineY + 9 <= viewBot;
     }
 
-    private void renderInfoTab(GuiGraphics g, int x, int y, int w, int h) {
-        int m = 6;
-        int cy = y - inspectorScrollY + 4;
-        int viewBot = y + h;
-        if (lineFullyVisible(cy, y, viewBot))
-            ChroniclesUIKit.drawString(g, font, "§8Chapter:", x + m, cy, C_TEXT_FAINT, false);
-        if (lineFullyVisible(cy + 10, y, viewBot))
-            ChroniclesUIKit.drawString(g, font, "§7" + (node.getChapter() != null ? node.getChapter() : "(none)"),
-                    x + m, cy + 10,
-                    C_TEXT, false);
-        cy += 24;
-        if (lineFullyVisible(cy, y, viewBot))
-            ChroniclesUIKit.drawString(g, font, "§8Visibility:", x + m, cy, C_TEXT_FAINT, false);
-        if (lineFullyVisible(cy + 10, y, viewBot))
-            ChroniclesUIKit.drawString(g, font, "§7" + (node.getVisibility() != null ? node.getVisibility() : "NORMAL"),
-                    x + m,
-                    cy + 10, C_TEXT, false);
-        cy += 24;
-        if (lineFullyVisible(cy, y, viewBot))
-            ChroniclesUIKit.drawString(g, font, "§8ID:", x + m, cy, C_TEXT_FAINT, false);
-        if (lineFullyVisible(cy + 10, y, viewBot))
-            ChroniclesUIKit.drawString(g, font, "§7" + (node.getId() != null ? node.getId() : "unknown"), x + m,
-                    cy + 10, C_TEXT,
-                    false);
-        cy += 24;
-
-        for (QuestTask task : content.effectiveTasks()) {
-            if (!(task instanceof InfoTask info)) continue;
-            String body = info.getBody();
-            if (body == null || body.isBlank()) continue;
-            if (cy > y + h) break;
-            if (cy >= y) g.fill(x + m, cy, x + w - m, cy + 1, C_BORDER);
-            cy += 6;
-            for (var line : splitRespectingNewlines(font, body, w - m * 2)) {
-                if (cy > y + h) break;
-                if (lineFullyVisible(cy, y, viewBot))
-                    ChroniclesUIKit.drawString(g, font, line, x + m, cy, C_TEXT_DIM, false);
-                cy += 10;
-            }
-            cy += 4;
-        }
-    }
-
-    private List<QuestNode> dependentsOf(QuestNode target) {
+    List<QuestNode> dependentsOf(QuestNode target) {
         List<QuestNode> out = new ArrayList<>();
         for (QuestNode candidate : QuestTreeRegistry.getAllQuests().values()) {
             if (candidate != target && candidate.getPrerequisites().contains(target)) out.add(candidate);
@@ -1671,114 +304,10 @@ public class QuestTasksScreen extends Screen
         return out;
     }
 
-    private void renderTasksTab(GuiGraphics g, int x, int y, int w, int h, int mx, int my) {
-        List<QuestTask> tasks = content.effectiveTasks();
-        List<QuestNode> prereqs = node.getPrerequisites();
-        List<QuestNode> dependents = dependentsOf(node);
-        int m = 6;
-        int cy = y - inspectorScrollY + 4;
-        int viewBot = y + h;
-        if (tasks.isEmpty() && prereqs.isEmpty() && dependents.isEmpty()) {
-            if (lineFullyVisible(cy, y, viewBot))
-                ChroniclesUIKit.drawString(g, font, "§8(none)", x + m, cy, C_TEXT_FAINT, false);
-            if (isEditMode) {
-                int addY = lineFullyVisible(cy, y, viewBot) ? cy + 12 : cy;
-                if (lineFullyVisible(addY, y, viewBot)) {
-                    int boxH = renderAddBox(g, x + m, addY, w - m * 2, "+ Add Task", mx, my);
-                    addTaskBoxRect = new int[] { x + m, addY, w - m * 2, boxH };
-                }
-                cy = addY + 16;
-            }
-            inspectorContentH = Math.max(0, cy - (y - inspectorScrollY + 4));
-            return;
-        }
-        for (QuestTask task : tasks) {
-            if (task instanceof InfoTask) continue;
-
-            String detail = getTaskDetail(task);
-            int rowH = (detail != null ? 22 : 14) + 3 + 5;
-            if (cy < y) {
-                cy += rowH;
-                continue;
-            }
-            int rowEndY = renderRichTaskRow(g, x + m, cy, w - m * 2, task, mx, my);
-            if (mx >= x + m && mx < x + w - m && my >= cy && my < rowEndY - 5) {
-                hoveredTaskFs = task;
-                hoveredFsX = mx;
-                hoveredFsY = my;
-            }
-            cy = rowEndY;
-        }
-
-        if (isEditMode) {
-            cy += 3;
-            if (lineFullyVisible(cy, y, viewBot)) {
-                int boxH = renderAddBox(g, x + m, cy, w - m * 2, "+ Add Task", mx, my);
-                addTaskBoxRect = new int[] { x + m, cy, w - m * 2, boxH };
-            }
-            cy += 16 + 3;
-        }
-
-        if (!prereqs.isEmpty()) {
-            cy += 6;
-            if (lineFullyVisible(cy, y, viewBot)) g.fill(x + m, cy, x + w - m, cy + 1, C_BORDER);
-            cy += 8;
-            if (lineFullyVisible(cy, y, viewBot))
-                ChroniclesUIKit.drawString(g, font, "§8PREREQUISITES:", x + m, cy, C_TEXT_FAINT, false);
-            cy += 12;
-            for (QuestNode req : prereqs) {
-                QuestState state = playerData != null ? playerData.getQuestState(req.getId(), QuestState.LOCKED) :
-                        QuestState.LOCKED;
-                String reqTitle = req.getTitle().getString();
-                int titleMaxW = w - m * 2 - 12;
-                if (net.phoenixvine.chronicles.client.util.EffectText.width(font, reqTitle) > titleMaxW)
-                    reqTitle = net.phoenixvine.chronicles.client.util.EffectText.cut(font, reqTitle,
-                            Math.max(0, titleMaxW - font.width("…"))) + "…";
-                boolean reqHov = mx >= x + m && mx < x + w - m && my >= cy && my < cy + 10;
-                if (lineFullyVisible(cy, y, viewBot)) {
-                    if (reqHov) g.fill(x + m - 2, cy - 1, x + w - m, cy + 9, 0x22FFFFFF);
-                    ChroniclesUIKit.drawString(g, font, (state == QuestState.COMPLETED ? "§a●" : "§8○") + " " +
-                            (reqHov ? "§f" : "§7") + reqTitle, x + m, cy, reqHov ? C_TEXT : C_TEXT_DIM, false);
-                    prereqRowRects.add(new int[] { x + m, cy - 1, w - m * 2, 10 });
-                    prereqRowTargets.add(req);
-                }
-                cy += 10;
-            }
-        }
-
-        if (!dependents.isEmpty()) {
-            cy += 6;
-            if (lineFullyVisible(cy, y, viewBot)) g.fill(x + m, cy, x + w - m, cy + 1, C_BORDER);
-            cy += 8;
-            if (lineFullyVisible(cy, y, viewBot))
-                ChroniclesUIKit.drawString(g, font, "§8UNLOCKS:", x + m, cy, C_TEXT_FAINT, false);
-            cy += 12;
-            for (QuestNode dep : dependents) {
-                QuestState state = playerData != null ? playerData.getQuestState(dep.getId(), QuestState.LOCKED) :
-                        QuestState.LOCKED;
-                String depTitle = dep.getTitle().getString();
-                int titleMaxW = w - m * 2 - 12;
-                if (net.phoenixvine.chronicles.client.util.EffectText.width(font, depTitle) > titleMaxW)
-                    depTitle = net.phoenixvine.chronicles.client.util.EffectText.cut(font, depTitle,
-                            Math.max(0, titleMaxW - font.width("…"))) + "…";
-                boolean depHov = mx >= x + m && mx < x + w - m && my >= cy && my < cy + 10;
-                if (lineFullyVisible(cy, y, viewBot)) {
-                    if (depHov) g.fill(x + m - 2, cy - 1, x + w - m, cy + 9, 0x22FFFFFF);
-                    ChroniclesUIKit.drawString(g, font, (state == QuestState.COMPLETED ? "§a●" : "§8○") + " " +
-                            (depHov ? "§f" : "§7") + depTitle, x + m, cy, depHov ? C_TEXT : C_TEXT_DIM, false);
-                    prereqRowRects.add(new int[] { x + m, cy - 1, w - m * 2, 10 });
-                    prereqRowTargets.add(dep);
-                }
-                cy += 10;
-            }
-        }
-        inspectorContentH = (cy - (y - inspectorScrollY + 4));
-    }
-
-    private int renderRichTaskRow(GuiGraphics g, int x, int y, int w, QuestTask task, int mx, int my) {
+    int renderRichTaskRow(GuiGraphics g, int x, int y, int w, QuestTask task, int mx, int my) {
         boolean done = isTaskDone(task);
-        String progress = taskProgressString(task);
-        String detailForRowH = getTaskDetail(task);
+        String progress = present.taskProgressString(task);
+        String detailForRowH = present.getTaskDetail(task);
         int rowH = detailForRowH != null ? 30 : 22;
 
         boolean rowHov = mx >= x && mx < x + w && my >= y && my < y + rowH;
@@ -1788,14 +317,14 @@ public class QuestTasksScreen extends Screen
                 false);
 
         int cx = x + 10;
-        ItemStack icon = getTaskIcon(task);
+        ItemStack icon = present.getTaskIcon(task);
         if (!icon.isEmpty()) {
             g.renderItem(icon, cx, y);
             g.renderItemDecorations(font, icon, cx, y);
             if (done) g.fill(cx, y, cx + 16, y + 16, 0x5500AA44);
             cx += 18;
         } else {
-            ChroniclesUIKit.drawString(g, font, getTaskGlyph(task), cx, y + 1, 0xFFFFFFFF, false);
+            ChroniclesUIKit.drawString(g, font, present.getTaskGlyph(task), cx, y + 1, 0xFFFFFFFF, false);
             cx += 10;
         }
 
@@ -1820,7 +349,7 @@ public class QuestTasksScreen extends Screen
             ChroniclesUIKit.drawScaledString(g, font, "§8" + detail, cx, y + 11, C_TEXT_FAINT, taskTs);
         }
 
-        float pct = done ? 1f : parseProgress(progress);
+        float pct = done ? 1f : present.parseProgress(progress);
         int barY = y + (detail != null ? 22 : 14);
         int barW = w - 12;
         g.fill(x + 10, barY, x + 10 + barW, barY + 3, 0xFF1A1A22);
@@ -1834,461 +363,35 @@ public class QuestTasksScreen extends Screen
         return barY + 3 + 5;
     }
 
-    private void renderRewardsPanel(GuiGraphics g, int x, int y, int w, int h, int mx, int my) {
-        g.enableScissor(x, y, x + w, y + h);
-        g.fill(x, y, x + w, y + h, C_PANEL);
-        drawBorder(g, x, y, w, h);
-
-        int m = 6;
-        ChroniclesUIKit.drawString(g, font, "§8Rewards", x + m, y + 5, C_TEXT_FAINT, false);
-        g.fill(x + m, y + 15, x + w - m, y + 16, C_BORDER);
-
-        List<QuestReward> rewards = content.effectiveRewards();
-        int cy = y + 21;
-        if (rewards.isEmpty()) {
-            ChroniclesUIKit.drawString(g, font, "§8(none)", x + m, cy, C_TEXT_FAINT, false);
-            if (isEditMode) {
-                int addY = cy + 12;
-                int boxH = renderAddBox(g, x + m, addY, w - m * 2, "+ Add Reward", mx, my);
-                addRewardBoxRect = new int[] { x + m, addY, w - m * 2, boxH };
-            }
-            g.disableScissor();
-            return;
-        }
-
-        if (node.isRewardChoice()) {
-            String choiceHdr = node.getRewardChoiceCount() == 1 ? "§6Pick 1 reward:" :
-                    "§6Pick " + node.getRewardChoiceCount() + " rewards:";
-            ChroniclesUIKit.drawString(g, font, choiceHdr, x + m, cy, C_TEXT, false);
-            cy += 12;
-        }
-
-        int slotSz = 18;
-        for (int ri = 0; ri < rewards.size(); ri++) {
-            QuestReward reward = rewards.get(ri);
-            QuestReward display = displayRewardFor(ri, reward);
-            if (cy > y + h) break;
-            renderRewardSlot(g, x + m, cy, slotSz, display, mx, my);
-
-            boolean rowHov = mx >= x + m && mx < x + m + w - m * 2 && my >= cy && my < cy + slotSz;
-            if (rowHov) {
-                hoveredRewardFs = reward;
-                hoveredRewardFsIndex = ri;
-                hoveredFsX = mx;
-                hoveredFsY = my;
-            }
-
-            String label;
-            if (display instanceof QuestReward.ItemReward ir) {
-                label = (rewardTargetMasked(ir) ? "???" : rewardStack(ir).getHoverName().getString()) + " ×" +
-                        (rewardAmountMasked(ir) ? "?" : String.valueOf(ir.getCount()));
-            } else if (rewardTargetMasked(display)) {
-                label = "???";
-            } else if (reward instanceof QuestReward.ChoiceBoxReward) {
-                label = reward.getSummary().getString();
-            } else {
-                label = switch (display.getType()) {
-                    case XP -> "XP Reward";
-                    case COMMAND -> "Command";
-                    case LOOT_TABLE -> "Loot Table";
-                    case SCRIPT_EVENT -> "Script Event";
-                    case REWARD_TABLE -> "Reward Table";
-                    case FLUID -> display.getSummary().getString();
-                    default -> display.getType().name();
-                };
-            }
-            int labelMaxW = w - m * 2 - slotSz - 8;
-            if (font.width(label.replaceAll("§.", "")) > labelMaxW)
-                label = font.plainSubstrByWidth(label, Math.max(0, labelMaxW - font.width("…"))) + "…";
-            String prefix;
-            if (boxAt(ri) != null) {
-                prefix = isRewardPicked(ri) ? "§a✔ §7" : (rowHov ? "§e► §f" : "§e○ §7");
-            } else if (node.isRewardChoice() && isRewardPicked(ri)) {
-                prefix = "§a✔ §7";
-            } else if (node.isRewardChoice()) {
-                prefix = rowHov ? "§e► §f" : "§e○ §7";
-            } else {
-                prefix = rowHov ? "§f" : "§7";
-            }
-            ChroniclesUIKit.drawString(g, font, prefix + label, x + m + slotSz + 4, cy + 4,
-                    rowHov ? C_TEXT : C_TEXT_DIM, false);
-            cy += slotSz + 4;
-        }
-        if (isEditMode && cy + 16 <= y + h) {
-            int boxH = renderAddBox(g, x + m, cy, w - m * 2, "+ Add Reward", mx, my);
-            addRewardBoxRect = new int[] { x + m, cy, w - m * 2, boxH };
-        }
-        g.disableScissor();
-    }
-
-    private void renderRewardSlot(GuiGraphics g, int x, int y, int sz, QuestReward reward, int mx, int my) {
-        boolean hov = mx >= x && mx < x + sz && my >= y && my < y + sz;
-        g.fill(x, y, x + sz, y + sz, hov ? C_SLOT_HI : C_SLOT_BG);
-        g.fill(x, y, x + sz, y + 1, C_BORDER);
-        g.fill(x, y + sz - 1, x + sz, y + sz, C_BORDER);
-        g.fill(x, y, x + 1, y + sz, C_BORDER);
-        g.fill(x + sz - 1, y, x + sz, y + sz, C_BORDER);
-
-        ItemStack stack = reward instanceof QuestReward.ItemReward ir ? shownRewardStack(ir) : ItemStack.EMPTY;
-        if (!stack.isEmpty()) {
-            int off = (sz - 16) / 2;
-            g.renderItem(stack, x + off, y + off);
-            if (sz >= 18) g.renderItemDecorations(font, stack, x + off, y + off);
-        } else {
-            ChroniclesUIKit.drawCenteredString(g, font, "§7" + rewardGlyph(reward), x + sz / 2, y + sz / 2 - 4,
-                    C_TEXT_DIM);
-        }
-    }
-
-    private void renderFooter(GuiGraphics g, int mx, int my) {
-        int footerY = height - FOOTER_H;
-        g.fill(0, footerY, width, height, C_HEADER);
-        g.fill(0, footerY, width, footerY + 1, C_BORDER);
-        drawEmergencyButton(g, 6, footerY + 2, 22, FOOTER_H - 4, mx, my);
-        drawVoiceButton(g, 6 + voiceOffset(), footerY + 2, 22, FOOTER_H - 4, mx, my);
-        drawLinkButton(g, 6 + linkOffset(), footerY + 2, 22, FOOTER_H - 4, mx, my);
-
-        QuestState state = playerData != null ? playerData.getQuestState(node.getId(), QuestState.LOCKED) :
-                QuestState.LOCKED;
-        boolean canClaim = state == QuestState.COMPLETED && !rewardsClaimed() && !content.effectiveRewards().isEmpty();
-
-        if (canClaim) {
-            int btnW = 140, btnX = (width - btnW) / 2, btnY = footerY + 2;
-            if (node.isRewardChoice()) {
-                String msg = node.getRewardChoiceCount() == 1 ? "§6Pick a reward ↑" :
-                        "§6Pick " + node.getRewardChoiceCount() + " rewards ↑";
-                ChroniclesUIKit.drawCenteredString(g, font, msg, width / 2, btnY + 6, C_TEXT);
-            } else {
-                boolean hov = mx >= btnX && mx < btnX + btnW && my >= btnY && my < btnY + 18;
-                g.fill(btnX, btnY, btnX + btnW, btnY + 18, hov ? 0xFF2A4A2A : 0xFF1A2A1A);
-                g.fill(btnX, btnY, btnX + btnW, btnY + 1, hov ? C_DONE : 0xFF333333);
-                ChroniclesUIKit.drawCenteredString(g, font, "§a✓ Claim Rewards", btnX + btnW / 2, btnY + 6,
-                        hov ? C_DONE : C_TEXT);
-            }
-        } else if (rewardsClaimed()) {
-            ChroniclesUIKit.drawCenteredString(g, font, "§8Rewards claimed", width / 2, footerY + 10, C_TEXT_FAINT);
-        } else {
-            String footerMsg = width < 220 ? "§8Complete tasks first" : "§8Complete all tasks to claim rewards";
-            ChroniclesUIKit.drawCenteredString(g, font, footerMsg, width / 2, footerY + 10, C_TEXT_FAINT);
-        }
-    }
-
-    private void drawBorder(GuiGraphics g, int x, int y, int w, int h) {
+    void drawBorder(GuiGraphics g, int x, int y, int w, int h) {
         ChroniclesUIKit.drawBorder(g, x, y, w, h, C_BORDER);
     }
 
-    private ItemStack rewardStack(QuestReward.ItemReward reward) {
-        ItemStack stack = new ItemStack(reward.getItem(), reward.getCount());
-        ItemData.applyReward(stack, reward.getNbt());
-        return stack;
-    }
-
-    private boolean taskTargetMasked(QuestTask task) {
-        return task.hidesTarget() && !isTaskDone(task);
-    }
-
-    private boolean taskAmountMasked(QuestTask task) {
-        return task.hidesAmount() && !isTaskDone(task);
-    }
-
-    private boolean rewardsRevealed() {
+    boolean rewardsRevealed() {
         return playerData != null &&
                 playerData.getQuestState(node.getId(), QuestState.LOCKED) == QuestState.COMPLETED;
     }
 
-    private boolean rewardTargetMasked(QuestReward reward) {
-        return reward.hidesTarget() && !rewardsRevealed();
-    }
-
-    private boolean rewardAmountMasked(QuestReward reward) {
-        return reward.hidesAmount() && !rewardsRevealed();
-    }
-
-    private ItemStack shownRewardStack(QuestReward.ItemReward reward) {
-        if (rewardTargetMasked(reward)) return ItemStack.EMPTY;
-        ItemStack stack = rewardStack(reward);
-        if (rewardAmountMasked(reward)) stack.setCount(1);
-        return stack;
-    }
-
-    private ItemStack getTaskIcon(QuestTask task) {
-        ResourceLocation id = task.getDisplayItemId();
-        if (id == null || taskTargetMasked(task)) return ItemStack.EMPTY;
-        Item item = BuiltInRegistries.ITEM.get(id);
-        if (item == null || item == net.minecraft.world.item.Items.AIR) return ItemStack.EMPTY;
-        ItemStack stack = new ItemStack(item, taskAmountMasked(task) ? 1 : taskRequiredCount(task));
-
-        if (task instanceof ItemRequirementTask t && t.getNbtFilter() != null &&
-                !t.getNbtFilter().isEmpty()) {
-            ItemData.setTag(stack, t.getNbtFilter().copy());
-        }
-        return stack;
-    }
-
-    private int taskRequiredCount(QuestTask task) {
-        if (task instanceof ItemRequirementTask t) return Math.max(1, t.getRequiredCount());
-        if (task instanceof CraftItemTask t) return Math.max(1, t.getRequiredCount());
-        if (task instanceof TagItemTask t) return Math.max(1, t.getRequired());
-        if (task instanceof FilterItemTask t) return Math.max(1, t.getCount());
-        return 1;
-    }
-
-    private String getTaskGlyph(QuestTask task) {
-        if (task instanceof ItemRequirementTask) return "§6■";
-        if (task instanceof CraftItemTask) return "§e⚒";
-        if (task instanceof KillEntityTask) return "§c⚔";
-        if (task instanceof FluidRequirementTask) return "§3≋";
-        if (task instanceof ExperienceTask) return "§a✦";
-        if (task instanceof StatTrackerTask) return "§9≡";
-        if (task instanceof AdvancementTask) return "§d★";
-        if (task instanceof CheckmarkTask) return "§7☑";
-        if (task instanceof InfoTask) return "§7✎";
-        if (task instanceof TimerTask) return "§b⏱";
-        if (task instanceof TagItemTask) return "§e◈";
-        if (task instanceof EnergyStorageTask) return "§6⚡";
-        if (task instanceof FilterItemTask) return "§e◈";
-        if (task instanceof FilterFluidTask) return "§3◈";
-        if (task instanceof MultiblockFormedTask) return "§6⬡";
-        if (task instanceof ViewMachineTask) return "§b⬡";
-        if (task instanceof ViewSceneTask) return "§b⬢";
-        if (task instanceof ViewGuideTask) return "§b📖";
-        if (task instanceof ArchiveEntryTask) return "§b📖";
-        return "§8◇";
-    }
-
-    private String getTaskDetail(QuestTask task) {
-        String raw = rawTaskDetail(task);
-        if (raw == null) return null;
-        if (taskTargetMasked(task)) {
-            return taskAmountMasked(task) || taskRequiredCount(task) <= 1 ? "???" :
-                    "???  ×" + taskRequiredCount(task);
-        }
-        return taskAmountMasked(task) ? raw.replaceAll("×\\s?\\d+", "×?") : raw;
-    }
-
-    private String rawTaskDetail(QuestTask task) {
-        if (task instanceof ItemRequirementTask t) {
-
-            String name = "item";
-            if (t.getItem() != null) {
-                ItemStack display = t.getItem().getDefaultInstance();
-                if (t.getNbtFilter() != null && !t.getNbtFilter().isEmpty())
-                    ItemData.setTag(display, t.getNbtFilter().copy());
-                name = display.getHoverName().getString();
-            }
-            String suffix = "";
-            if (t.shouldConsume()) {
-                boolean done = minecraft != null && minecraft.player != null && t.isCompletedFor(minecraft.player);
-                boolean ready = !done && minecraft != null && minecraft.player != null &&
-                        t.hasRequiredItems(minecraft.player);
-                suffix = done ? "  (handed in)" : ready ? "  §a▶ click to hand in" : "  (consumed)";
-            }
-            return name + (t.getRequiredCount() > 1 ? "  ×" + t.getRequiredCount() : "") + suffix;
-        }
-        if (task instanceof CraftItemTask t) {
-            Item item = t.getItemId() != null ? BuiltInRegistries.ITEM.get(t.getItemId()) : null;
-            String name = item != null ? item.getDefaultInstance().getHoverName().getString() :
-                    (t.getItemId() != null ? t.getItemId().getPath() : "item");
-            return "Craft: " + name + (t.getRequiredCount() > 1 ? " ×" + t.getRequiredCount() : "");
-        }
-        if (task instanceof KillEntityTask t) {
-            var m = t.getMatcher();
-            String entity = m.isEmpty() ? "entity" :
-                    (m.ids().size() == 1 && m.tags().isEmpty()) ? prettifyId(m.firstId()) : m.displayName();
-            return "Kill: " + entity + " ×" + t.getRequiredCount();
-        }
-        if (task instanceof FluidRequirementTask t) {
-            String fluid = t.getFluidId() != null ? prettifyId(t.getFluidId()) : "fluid";
-            return fluid + ": " + t.getRequiredAmount() + " mB";
-        }
-        if (task instanceof ExperienceTask t) {
-            return "Reach Level " + t.getRequiredLevel();
-        }
-        if (task instanceof StatTrackerTask t) {
-            String stat = t.getStatId() != null ? prettifyId(t.getStatId()) : "stat";
-            return stat + " → " + t.getTargetValue();
-        }
-        if (task instanceof AdvancementTask t) {
-            String adv = t.getAdvancementId() != null ?
-                    t.getAdvancementId().getPath().replace('/', ' ').replace('_', ' ') : "advancement";
-            return "Unlock: " + adv;
-        }
-        if (task instanceof InfoTask) {
-            return null;
-        }
-        if (task instanceof TimerTask t) {
-            return "Wait " + t.getDurationSeconds() + "s";
-        }
-        if (task instanceof TagItemTask t) {
-            String tag = t.getTag() != null ? "#" + t.getTag().location().getPath() : "#unknown";
-            return tag + " ×" + t.getRequired();
-        }
-        if (task instanceof FilterItemTask t) {
-            return t.getFilter().describe() + " ×" + t.getCount() + (t.isConsume() ? "  (consumed)" : "");
-        }
-        if (task instanceof FilterFluidTask t) {
-            return t.getFilter().describe() + ": " + String.format("%,d", t.getAmount()) + " mB" +
-                    (t.isConsume() ? "  (consumed)" : "");
-        }
-        if (task instanceof MultiblockFormedTask t) {
-            return "Form: " + (t.getMachineId() != null ? t.getMachineId() : "any multiblock") + " ×" + t.getRequired();
-        }
-        if (task instanceof ViewMachineTask t) {
-            return "Phantasia: " + t.getMachineId();
-        }
-        if (task instanceof ViewSceneTask t) {
-            return "Phantasia scene: " + t.getSceneId();
-        }
-        if (task instanceof ViewGuideTask t) {
-            return "Phantasia guide: " + t.getGuideId();
-        }
-        if (task instanceof ArchiveEntryTask t) {
-            return "Archive entry: " + t.getArchiveEntryId();
-        }
-        return null;
-    }
-
-    private static String prettifyId(ResourceLocation id) {
-        return id.getPath().replace('_', ' ');
-    }
-
-    private java.util.List<Component> buildTaskTooltip(QuestTask task) {
-        java.util.List<Component> lines = new java.util.ArrayList<>();
-        boolean done = isTaskDone(task);
-        String status = done ? "§a✔ Complete" : (task.isOptional() ? "§8Optional" : "§c✗ Incomplete");
-        lines.add(ChroniclesUIKit.lit(status + "  §7" + task.getDescription().getString()));
-        String detail = getTaskDetail(task);
-        if (detail != null) lines.add(ChroniclesUIKit.lit("§8" + detail));
-        String prog = taskProgressString(task);
-        if (prog != null && !done) lines.add(Component.translatable("phoenix_chronicles.ui.progress_label", prog));
-        ItemStack icon = getTaskIcon(task);
-        if (!icon.isEmpty()) lines.add(Component.translatable("phoenix_chronicles.ui.recipe_browser_hint"));
-        if (isEditMode && (task.hidesAmount() || task.hidesTarget())) {
-            String real = rawTaskDetail(task);
-            lines.add(ChroniclesUIKit.lit("§d✎ Editor only - hidden from players: §7" + (real != null ? real : "")));
-        }
-        return lines;
-    }
-
-    private java.util.List<Component> buildRewardTooltip(QuestReward reward) {
-        java.util.List<Component> lines = buildPlayerRewardTooltip(reward);
-        if (isEditMode && (reward.hidesAmount() || reward.hidesTarget())) {
-            lines.add(
-                    ChroniclesUIKit.lit("§d✎ Editor only - hidden from players: §7" + reward.getSummary().getString()));
-        }
-        return lines;
-    }
-
-    private java.util.List<Component> buildPlayerRewardTooltip(QuestReward reward) {
-        java.util.List<Component> lines = new java.util.ArrayList<>();
-        if (reward instanceof QuestReward.ItemReward ir && (rewardTargetMasked(ir) || rewardAmountMasked(ir))) {
-            Component name = rewardTargetMasked(ir) ? ChroniclesUIKit.lit("???") : rewardStack(ir).getHoverName();
-            lines.add(Component.translatable("phoenix_chronicles.ui.reward_line", name,
-                    rewardAmountMasked(ir) ? "?" : String.valueOf(ir.getCount())));
-            if (!rewardTargetMasked(ir)) {
-                java.util.List<Component> vanillaLines = rewardStack(ir).getTooltipLines(
-                        net.minecraft.world.item.Item.TooltipContext.of(minecraft != null ? minecraft.level : null),
-                        minecraft != null ? minecraft.player : null,
-                        net.minecraft.world.item.TooltipFlag.Default.NORMAL);
-                for (int i = 1; i < vanillaLines.size(); i++) lines.add(vanillaLines.get(i));
-            }
-        } else if (rewardTargetMasked(reward)) {
-            lines.add(ChroniclesUIKit.lit("§7Hidden reward"));
-        } else if (reward instanceof QuestReward.ItemReward ir) {
-            ItemStack stack = rewardStack(ir);
-            lines.add(Component.translatable("phoenix_chronicles.ui.reward_line", stack.getHoverName(),
-                    ir.getCount()));
-
-            java.util.List<Component> vanillaLines = stack.getTooltipLines(
-                    net.minecraft.world.item.Item.TooltipContext.of(minecraft != null ? minecraft.level : null),
-                    minecraft != null ? minecraft.player : null,
-                    net.minecraft.world.item.TooltipFlag.Default.NORMAL);
-            for (int i = 1; i < vanillaLines.size(); i++) lines.add(vanillaLines.get(i));
-            lines.add(Component.translatable("phoenix_chronicles.ui.recipe_browser_hint"));
-        } else if (reward instanceof QuestReward.ChoiceBoxReward box) {
-            boolean resolved = playerData != null &&
-                    playerData.isChoiceBoxResolved(node.getId(), content.effectiveRewards().indexOf(box));
-            lines.add(reward.getSummary());
-            if (box.getMode() == QuestReward.ChoiceBoxReward.Mode.ALL) {
-                for (QuestReward opt : box.getOptions()) lines.add(Component.literal("§7• ").append(opt.getSummary()));
-            } else {
-                lines.add(Component.translatable(resolved ? "phoenix_chronicles.ui.choice_box_opened" :
-                        box.getMode() == QuestReward.ChoiceBoxReward.Mode.LOOTBOX ?
-                                "phoenix_chronicles.ui.choice_box_random_pick" :
-                                "phoenix_chronicles.ui.choice_box_choose"));
-            }
-        } else {
-            lines.add(Component.translatable("phoenix_chronicles.ui.generic_reward_line", reward.getType().name()));
-        }
-        return lines;
-    }
-
-    private void tryOpenInRecipeViewer(ItemStack stack) {
-        if (stack.isEmpty() || minecraft == null) return;
-        try {
-            Class<?> api = Class.forName("dev.emi.emi.api.EmiApi");
-            Class<?> esClass = Class.forName("dev.emi.emi.api.stack.EmiStack");
-            Class<?> ingredientClass = Class.forName("dev.emi.emi.api.stack.EmiIngredient");
-            Object es = esClass.getMethod("of", ItemStack.class).invoke(null, stack);
-
-            api.getMethod("displayRecipes", ingredientClass).invoke(null, es);
-
-            try {
-                if (!QuestChroniclesSettings.get()
-                        .isReturnToQuestbookFromRecipeViewer())
-                    return;
-                Class<?> recipeScreenClass = Class.forName("dev.emi.emi.screen.RecipeScreen");
-                Object current = minecraft.screen;
-                if (recipeScreenClass.isInstance(current)) {
-                    Object ephemeral = recipeScreenClass.getField("old").get(current);
-                    if (ephemeral instanceof net.minecraft.client.gui.screens.Screen ephemeralScreen &&
-                            ephemeralScreen != this) {
-                        EmiReturnScreenFix.armReturnTo(ephemeralScreen, this);
-                    }
-                }
-            } catch (Exception ignored) {}
-            return;
-        } catch (Exception ignored) {}
-
-        try {
-            Class<?> jeiApi = Class.forName("mezz.jei.api.runtime.IJeiRuntime");
-
-        } catch (Exception ignored) {}
-
-        isFullscreen = true;
-    }
-
-    private float parseProgress(String prog) {
-        if (prog == null) return 0f;
-
-        String cleaned = prog.replaceAll(",", "").replaceAll("(?<=\\d)\\s+[a-zA-Z]+", "");
-        int slash = cleaned.indexOf('/');
-        if (slash < 0) return 0f;
-        try {
-            float cur = Float.parseFloat(cleaned.substring(0, slash).trim());
-            float tot = Float.parseFloat(cleaned.substring(slash + 1).trim());
-            return tot > 0 ? Math.min(1f, cur / tot) : 0f;
-        } catch (NumberFormatException e) {
-            return 0f;
-        }
+    boolean superMouseClicked(double mx, double my, int btn) {
+        return super.mouseClicked(mx, my, btn);
     }
 
     @Override
     public boolean mouseClicked(double mx, double my, int btn) {
-        if (openChoiceBox != null) {
+        if (popups.openChoiceBox != null) {
             if (btn == 0) {
                 for (int i = 0; i < choiceBoxRowRects.size(); i++) {
                     int[] r = choiceBoxRowRects.get(i);
                     if (mx >= r[0] && mx < r[0] + r[2] && my >= r[1] && my < r[1] + r[3]) {
                         net.neoforged.neoforge.network.PacketDistributor.sendToServer(
                                 new C2SResolveChoiceBoxPacket(node.getId(), openChoiceBoxRewardIndex, i));
-                        openChoiceBox = null;
+                        popups.openChoiceBox = null;
                         openChoiceBoxRewardIndex = -1;
                         return true;
                     }
                 }
             }
-            openChoiceBox = null;
+            popups.openChoiceBox = null;
             openChoiceBoxRewardIndex = -1;
             return true;
         }
@@ -2297,15 +400,15 @@ public class QuestTasksScreen extends Screen
                         mx, my, previewX, previewY, previewW, previewH, this)) {
             return true;
         }
-        if (isFullscreen && btn == 0 && tryStartDividerDrag(mx, my)) return true;
-        return isFullscreen ? handleFullscreenClick(mx, my, btn) : handleCompactClick(mx, my, btn);
+        if (isFullscreen && btn == 0 && fullscreen.tryStartDividerDrag(mx, my)) return true;
+        return isFullscreen ? fullscreen.handleFullscreenClick(mx, my, btn) : compact.handleCompactClick(mx, my, btn);
     }
 
     @Override
     public boolean mouseDragged(double mx, double my, int btn, double dx, double dy) {
         if (draggingInspDivider) {
             int delta = (int) mx - dividerDragStartMx;
-            int rewardW = calcRewardW();
+            int rewardW = fullscreen.calcRewardW();
             int maxInspW = Math.max(MIN_INSP_W, width - MARGIN * 3 - MIN_CONTENT_W - rewardW);
             int newInspW = Math.max(MIN_INSP_W, Math.min(maxInspW, dividerDragStartInspW - delta));
             QuestChroniclesSettings.get().setTaskInspectorW(newInspW);
@@ -2333,397 +436,6 @@ public class QuestTasksScreen extends Screen
             return true;
         }
         return super.mouseReleased(mx, my, btn);
-    }
-
-    private boolean handleCompactClick(double mx, double my, int btn) {
-        if (btn == 1 && isEditMode && minecraft != null && (hoveredTask != null || hoveredReward != null)) {
-            minecraft.setScreen(new TaskRewardEditorScreen(this, node));
-            return true;
-        }
-        if (btn == 2 && isEditMode && hoveredTask != null) {
-            if (hasShiftDown()) resetTaskProgress(hoveredTask);
-            else forceCompleteTask(hoveredTask);
-            return true;
-        }
-        if (btn != 0) return super.mouseClicked(mx, my, btn);
-
-        List<QuestTask> tasks = content.effectiveTasks();
-        List<QuestReward> rewards = content.effectiveRewards();
-
-        String fullDescText = currentDisplayDescriptionText();
-        int pageCount = splitDescPages(fullDescText).size();
-        String descText = currentDescriptionPageText(fullDescText);
-
-        if (richSpansPage != descPage || !descText.equals(descBlocksSourceText)) {
-            descBlocks = descText.isEmpty() ? java.util.List.of() :
-                    net.phoenixvine.chronicles.client.rich.ChroniclesMarkdown.parse(descText);
-            richSpansPage = descPage;
-            descBlocksSourceText = descText;
-        }
-        java.util.List<net.phoenixvine.wiki.client.rich.RichBlock> resolvedDescBlocks = resolveConditionals(
-                descBlocks);
-
-        float compactTextScale = QuestChroniclesSettings.get().getTextScaleMultiplier();
-        int compactLineH = Math.max(1, Math.round(10 * compactTextScale));
-
-        int questDescLineCount = resolvedDescBlocks.isEmpty() ? 0 :
-                (net.phoenixvine.wiki.client.rich.WikiRichTextRenderer.measureBlocksHeight(
-                        font, resolvedDescBlocks, cardW() - CARD_PAD * 2, compactTextScale, descExpandedKeys) +
-                        compactLineH - 1) / compactLineH;
-
-        java.util.List<net.minecraft.util.FormattedCharSequence> questDescLines = java.util.Collections
-                .nCopies(questDescLineCount, net.minecraft.util.FormattedCharSequence.EMPTY);
-        java.util.List<net.minecraft.util.FormattedCharSequence> descLines = buildAllDescLines(tasks, questDescLines);
-
-        int compactHeaderH = compactHeaderH();
-        int fixedH = compactHeaderH + 1 + compactStripH() + 2 + 1 + 18 + previewBlockH();
-        int rawDesc = Math.min(descLines.size(), CARD_MAX_DESC);
-        int fittedDesc = Math.max(0, Math.min(rawDesc, ((maxCardH() - compactHeaderH) - fixedH - 9) / compactLineH));
-        int descH = fittedDesc > 0 ? 4 + fittedDesc * compactLineH + 6 : (isEditMode ? 24 : 0);
-
-        int pagerStripH = pageCount > 1 ? 17 : 0;
-        int cardH = fixedH + descH + (descH > 0 ? 1 : 0) + pagerStripH + (pagerStripH > 0 ? 1 : 0);
-        cardH = Math.min(cardH, maxCardH());
-        int cardX = (width - cardW()) / 2;
-        int cardY = Math.max(10, (height - cardH) / 2);
-
-        if (mx < cardX || mx >= cardX + cardW() || my < cardY || my >= cardY + cardH) {
-            if (minecraft != null) minecraft.setScreen(parent);
-            return true;
-        }
-
-        if (mx >= cardX + cardW() - 50 && mx < cardX + cardW() - 36 && my >= cardY + 3 && my < cardY + 17) {
-            if (playerData != null) {
-                playerData.togglePin(node.getId());
-                net.neoforged.neoforge.network.PacketDistributor.sendToServer(
-                        new net.phoenixvine.chronicles.network.packet.C2STogglePinPacket(node.getId()));
-            }
-            return true;
-        }
-
-        if (mx >= cardX + cardW() - 34 && mx < cardX + cardW() - 20 && my >= cardY + 3 && my < cardY + 17) {
-            if (minecraft != null) minecraft.setScreen(parent);
-            return true;
-        }
-
-        if (mx >= cardX + cardW() - 18 && mx < cardX + cardW() - 4 && my >= cardY + 3 && my < cardY + 17) {
-            isFullscreen = true;
-            return true;
-        }
-
-        for (net.phoenixvine.wiki.client.rich.RichSpan.Region r : richRegions) {
-            if (r.contains(mx, my)) {
-                if (r.span() instanceof net.phoenixvine.wiki.client.rich.RichSpan.Link l) {
-                    openLink(l.url());
-                    return true;
-                }
-                if (r.span() instanceof net.phoenixvine.wiki.client.rich.RichSpan.TypewriterReveal reveal) {
-                    net.phoenixvine.wiki.client.rich.render.TypewriterSupport.start(reveal.key());
-                    return true;
-                }
-                if (r.span() instanceof net.phoenixvine.wiki.client.rich.RichSpan.CodeCopy cc) {
-                    if (minecraft != null) minecraft.keyboardHandler.setClipboard(cc.code());
-                    return true;
-                }
-                if (r.span() instanceof net.phoenixvine.wiki.client.rich.RichSpan.DetailsToggle dt) {
-                    if (!descExpandedKeys.remove(dt.key())) descExpandedKeys.add(dt.key());
-                    return true;
-                }
-                if (r.span() instanceof net.phoenixvine.wiki.client.rich.RichSpan.ChecklistToggle ct) {
-                    boolean current = descExpandedKeys.contains("CL1:" + ct.key()) ||
-                            !descExpandedKeys.contains("CL0:" + ct.key()) && ct.checkedDefault();
-                    boolean next = !current;
-                    descExpandedKeys.remove("CL1:" + ct.key());
-                    descExpandedKeys.remove("CL0:" + ct.key());
-                    descExpandedKeys.add((next ? "CL1:" : "CL0:") + ct.key());
-                    return true;
-                }
-            }
-        }
-
-        if (hoveredDescBox && isEditMode && minecraft != null) {
-            minecraft.setScreen(new QuestTextInputScreen(this, "Description",
-                    currentFullDescriptionRaw(), 8192,
-                    v -> {
-                        node.setDescription(Component.literal(v));
-                        liveDescOverride = v;
-                        richSpansPage = -1;
-                        QuestFileSaver.saveOneQuestToDisk(node);
-                        LangSyncScheduler.markDirty();
-                    }));
-            return true;
-        }
-
-        if (hoveredTask != null) {
-            if (tryCompleteCheckmark(hoveredTask) || (btn == 0 && trySubmitItemTask(hoveredTask))) return true;
-            if (net.phoenixvine.chronicles.integration.phantasia.PhantasiaCompat.canOpenForTask(hoveredTask)) {
-                net.phoenixvine.chronicles.integration.phantasia.PhantasiaCompat.openForTask(hoveredTask, this);
-                return true;
-            }
-            if (tryOpenArchiveEntry(hoveredTask)) return true;
-            ItemStack icon = getTaskIcon(hoveredTask);
-            if (!icon.isEmpty()) tryOpenInRecipeViewer(icon);
-            else isFullscreen = true;
-            return true;
-        }
-        if (hoveredReward != null) {
-            if (tryClaimReward(hoveredRewardIndex)) return true;
-            if (hoveredReward instanceof QuestReward.ItemReward ir) {
-                tryOpenInRecipeViewer(new ItemStack(ir.getItem(), ir.getCount()));
-            }
-            return true;
-        }
-
-        int footerY = cardY + cardH - 18;
-        if (clickEmergencyButton(cardX + 4, footerY + 1, 22, 16, mx, my)) return true;
-        if (clickVoiceButton(cardX + 4 + voiceOffset(), footerY + 1, 22, 16, mx, my)) return true;
-        if (clickLinkButton(cardX + 4 + linkOffset(), footerY + 1, 22, 16, mx, my)) return true;
-        if (my >= footerY && my < footerY + 18) {
-            QuestState state = playerData != null ? playerData.getQuestState(node.getId(), QuestState.LOCKED) :
-                    QuestState.LOCKED;
-            if (state == QuestState.COMPLETED && !rewardsClaimed() && !rewards.isEmpty()) {
-                net.neoforged.neoforge.network.PacketDistributor
-                        .sendToServer(new C2SClaimQuestRewardPacket(node.getId(), -1));
-            }
-        }
-        return true;
-    }
-
-    private boolean handleFullscreenClick(double mx, double my, int btn) {
-        if (btn == 0 && !usesPopupOpen) {
-            for (int i = 0; i < prereqRowRects.size(); i++) {
-                int[] r = prereqRowRects.get(i);
-                if (mx >= r[0] && mx < r[0] + r[2] && my >= r[1] && my < r[1] + r[3]) {
-                    QuestNode target = prereqRowTargets.get(i);
-                    if (minecraft != null && parent instanceof ChronicleOverviewScreen overview) {
-                        overview.navigateToNode(target);
-                    }
-                    return true;
-                }
-            }
-        }
-
-        if (usesPopupOpen && btn == 0) {
-            for (int i = 0; i < usesPopupRowRects.size(); i++) {
-                int[] r = usesPopupRowRects.get(i);
-                if (mx >= r[0] && mx < r[0] + r[2] && my >= r[1] && my < r[1] + r[3]) {
-                    QuestNode target = usesPopupRowTargets.get(i);
-                    usesPopupOpen = false;
-                    if (minecraft != null && parent instanceof ChronicleOverviewScreen overview) {
-                        overview.navigateToNode(target);
-                    }
-                    return true;
-                }
-            }
-            usesPopupOpen = false;
-            return true;
-        }
-
-        if (btn == 0 && descPagerPageCount > 1 && mx >= descPagerX && mx < descPagerX + descPagerW &&
-                my >= descPagerY && my < descPagerY + descPagerH) {
-            boolean leftHalf = mx < descPagerX + descPagerW / 2.0;
-            if (leftHalf && descPage > 0) descPage--;
-            else if (!leftHalf && descPage < descPagerPageCount - 1) descPage++;
-            descScrollY = 0;
-            return true;
-        }
-        if (btn == 1 && isEditMode && minecraft != null &&
-                (hoveredStripTask != null || hoveredStripReward != null ||
-                        hoveredTaskFs != null || hoveredRewardFs != null)) {
-            minecraft.setScreen(new TaskRewardEditorScreen(this, node));
-            return true;
-        }
-        if (btn == 2 && isEditMode && (hoveredStripTask != null || hoveredTaskFs != null)) {
-            QuestTask target = hoveredStripTask != null ? hoveredStripTask : hoveredTaskFs;
-            if (hasShiftDown()) resetTaskProgress(target);
-            else forceCompleteTask(target);
-            return true;
-        }
-
-        if (btn == 0 && hoveredStripTask != null) {
-            if (tryCompleteCheckmark(hoveredStripTask) || trySubmitItemTask(hoveredStripTask)) return true;
-            inspectorTab = InspTab.TASKS;
-            inspectorScrollY = 0;
-            return true;
-        }
-        if (hoveredStripReward != null) {
-            tryClaimReward(hoveredStripRewardIdx);
-            return true;
-        }
-
-        if (mx >= 4 && mx < 20 && my >= 6 && my < 22) {
-            if (minecraft != null) minecraft.setScreen(parent);
-            return true;
-        }
-
-        int pinX2 = width - 20;
-        int editX2 = pinX2 - (isEditMode ? 18 : 0);
-        int fsX2 = editX2 - 20;
-        int usesX2 = fsX2 - 20;
-
-        boolean usesHasAny = !node.getPrerequisites().isEmpty() || !node.getChildren().isEmpty();
-        if (usesHasAny && mx >= usesX2 && mx < usesX2 + 16 && my >= 6 && my < 22 && btn == 0) {
-            usesPopupOpen = true;
-            return true;
-        }
-
-        if (mx >= fsX2 && mx < fsX2 + 16 && my >= 6 && my < 22 && btn == 0) {
-            isFullscreen = false;
-            return true;
-        }
-
-        if (isEditMode && mx >= editX2 && mx < editX2 + 14 && my >= 6 && my < 22 && btn == 0) {
-            if (minecraft != null) minecraft.setScreen(new QuestCreatorScreen(this, node));
-            return true;
-        }
-
-        if (mx >= pinX2 && mx < width - 4 && my >= 6 && my < 22 && btn == 0) {
-            if (playerData != null) {
-                playerData.togglePin(node.getId());
-                net.neoforged.neoforge.network.PacketDistributor.sendToServer(
-                        new net.phoenixvine.chronicles.network.packet.C2STogglePinPacket(node.getId()));
-            }
-            return true;
-        }
-
-        int contentTop = headerH() + reqBarH() + MARGIN;
-        int[] pw2 = fullscreenPanelWidths();
-        int inspW2 = pw2[0];
-        int contentRight = width - inspW2 - pw2[1] - MARGIN * 3;
-        int rightX = contentRight + MARGIN;
-        if (mx >= rightX && mx < rightX + inspW2 && my >= contentTop && my < contentTop + INSP_TAB_H + 8) {
-            int tabX = rightX + 6;
-            for (InspTab t : visibleInspTabs()) {
-                int tabW = font.width(inspTabLabel(t)) + 6;
-                if (mx >= tabX && mx < tabX + tabW && my >= contentTop + 4 && my < contentTop + 4 + INSP_TAB_H) {
-                    inspectorTab = t;
-                    inspectorScrollY = 0;
-                    return true;
-                }
-                tabX += tabW + 2;
-            }
-        }
-
-        if (btn == 0 && isEditMode && minecraft != null && addTaskBoxRect != null &&
-                mx >= addTaskBoxRect[0] && mx < addTaskBoxRect[0] + addTaskBoxRect[2] &&
-                my >= addTaskBoxRect[1] && my < addTaskBoxRect[1] + addTaskBoxRect[3]) {
-            minecraft.setScreen(new TaskRewardEditorScreen(this, node));
-            return true;
-        }
-        if (btn == 0 && isEditMode && minecraft != null && addRewardBoxRect != null &&
-                mx >= addRewardBoxRect[0] && mx < addRewardBoxRect[0] + addRewardBoxRect[2] &&
-                my >= addRewardBoxRect[1] && my < addRewardBoxRect[1] + addRewardBoxRect[3]) {
-            minecraft.setScreen(new TaskRewardEditorScreen(this, node));
-            return true;
-        }
-
-        if (hoveredTaskFs != null) {
-            if (tryCompleteCheckmark(hoveredTaskFs) || (btn == 0 && trySubmitItemTask(hoveredTaskFs))) return true;
-            if (net.phoenixvine.chronicles.integration.phantasia.PhantasiaCompat.canOpenForTask(hoveredTaskFs)) {
-                net.phoenixvine.chronicles.integration.phantasia.PhantasiaCompat.openForTask(hoveredTaskFs, this);
-                return true;
-            }
-            if (tryOpenArchiveEntry(hoveredTaskFs)) return true;
-            ItemStack icon = getTaskIcon(hoveredTaskFs);
-            if (!icon.isEmpty()) tryOpenInRecipeViewer(icon);
-            return true;
-        }
-        if (hoveredRewardFs != null) {
-            if (tryClaimReward(hoveredRewardFsIndex)) return true;
-            if (hoveredRewardFs instanceof QuestReward.ItemReward ir) {
-                tryOpenInRecipeViewer(new ItemStack(ir.getItem(), ir.getCount()));
-            }
-            return true;
-        }
-
-        int footerY = height - FOOTER_H;
-        if (clickEmergencyButton(6, footerY + 2, 22, FOOTER_H - 4, mx, my)) return true;
-        if (clickVoiceButton(6 + voiceOffset(), footerY + 2, 22, FOOTER_H - 4, mx, my)) return true;
-        if (clickLinkButton(6 + linkOffset(), footerY + 2, 22, FOOTER_H - 4, mx, my)) return true;
-        if (my >= footerY + 2 && my < footerY + 20) {
-            QuestState state = playerData != null ? playerData.getQuestState(node.getId(), QuestState.LOCKED) :
-                    QuestState.LOCKED;
-            if (state == QuestState.COMPLETED && !rewardsClaimed() && !content.effectiveRewards().isEmpty() &&
-                    !node.isRewardChoice()) {
-                net.neoforged.neoforge.network.PacketDistributor
-                        .sendToServer(new C2SClaimQuestRewardPacket(node.getId(), -1));
-                return true;
-            }
-        }
-
-        for (net.phoenixvine.wiki.client.rich.RichSpan.Region r : richRegions) {
-            if (r.contains(mx, my)) {
-                if (r.span() instanceof net.phoenixvine.wiki.client.rich.RichSpan.Link l) {
-                    openLink(l.url());
-                    return true;
-                }
-                if (r.span() instanceof net.phoenixvine.wiki.client.rich.RichSpan.TypewriterReveal reveal) {
-                    net.phoenixvine.wiki.client.rich.render.TypewriterSupport.start(reveal.key());
-                    return true;
-                }
-                if (r.span() instanceof net.phoenixvine.wiki.client.rich.RichSpan.CodeCopy cc) {
-                    if (minecraft != null) minecraft.keyboardHandler.setClipboard(cc.code());
-                    return true;
-                }
-                if (r.span() instanceof net.phoenixvine.wiki.client.rich.RichSpan.DetailsToggle dt) {
-                    if (!descExpandedKeys.remove(dt.key())) descExpandedKeys.add(dt.key());
-                    return true;
-                }
-                if (r.span() instanceof net.phoenixvine.wiki.client.rich.RichSpan.ChecklistToggle ct) {
-                    boolean current = descExpandedKeys.contains("CL1:" + ct.key()) ||
-                            !descExpandedKeys.contains("CL0:" + ct.key()) && ct.checkedDefault();
-                    boolean next = !current;
-                    descExpandedKeys.remove("CL1:" + ct.key());
-                    descExpandedKeys.remove("CL0:" + ct.key());
-                    descExpandedKeys.add((next ? "CL1:" : "CL0:") + ct.key());
-                    return true;
-                }
-            }
-        }
-
-        if (hoveredFsDescBox && isEditMode && minecraft != null) {
-            minecraft.setScreen(new QuestTextInputScreen(this, "Description",
-                    currentFullDescriptionRaw(), 8192,
-                    v -> {
-                        node.setDescription(Component.literal(v));
-                        liveDescOverride = v;
-                        richSpansPage = -1;
-                        QuestFileSaver.saveOneQuestToDisk(node);
-                        LangSyncScheduler.markDirty();
-                    }));
-            return true;
-        }
-        return super.mouseClicked(mx, my, btn);
-    }
-
-    private void refreshEffectiveContent() {
-        if (minecraft == null || minecraft.player == null || node == null) return;
-        net.minecraft.server.MinecraftServer server = minecraft.getSingleplayerServer();
-        if (server == null) return;
-
-        List<QuestTask> liveTasks = node.getEffectiveTasks(server, minecraft.player);
-        List<QuestReward> liveRewards = node.getEffectiveRewards(server, minecraft.player);
-        if (liveTasks.equals(content.effectiveTasks()) && liveRewards.equals(content.effectiveRewards())) return;
-
-        content = new FullQuestData(content.title(), content.description(), content.tasks(), liveTasks, liveRewards);
-    }
-
-    private String currentFullDescriptionRaw() {
-        if (liveDescOverride != null) return liveDescOverride;
-        String mdDesc = (content != null && content.description() != null) ? content.description().getString() : "";
-        return mdDesc.isBlank() ? node.getDescriptionRaw().getString() : mdDesc;
-    }
-
-    private String currentDisplayDescriptionText() {
-        if (liveDescOverride != null) return liveDescOverride;
-        String mdDesc = (content != null && content.description() != null) ? content.description().getString() : "";
-        return mdDesc.isBlank() ? content.description().getString() : mdDesc;
-    }
-
-    private String currentDescriptionPageText(String fullText) {
-        java.util.List<String> pages = splitDescPages(fullText);
-        descPage = Math.max(0, Math.min(descPage, pages.size() - 1));
-        return pages.get(descPage);
     }
 
     @Override
@@ -2758,8 +470,8 @@ public class QuestTasksScreen extends Screen
             compactDescScrollLine = Math.max(0, Math.min(maxScrollLine, compactDescScrollLine - (int) (delta * 2)));
             return true;
         }
-        int contentTop = headerH() + reqBarH() + MARGIN;
-        int[] pw3 = fullscreenPanelWidths();
+        int contentTop = fullscreen.headerH() + fullscreen.reqBarH() + MARGIN;
+        int[] pw3 = fullscreen.fullscreenPanelWidths();
         int inspW3 = pw3[0];
         int contentRight = width - inspW3 - pw3[1] - MARGIN * 3;
         int rightX = contentRight + MARGIN;
@@ -2786,8 +498,8 @@ public class QuestTasksScreen extends Screen
     @Override
     public boolean keyPressed(int key, int scan, int mods) {
         if (key == 256) {
-            if (openChoiceBox != null) {
-                openChoiceBox = null;
+            if (popups.openChoiceBox != null) {
+                popups.openChoiceBox = null;
                 openChoiceBoxRewardIndex = -1;
                 return true;
             }
@@ -2832,226 +544,28 @@ public class QuestTasksScreen extends Screen
         return false;
     }
 
-    private static final int MIN_INSP_W = 90;
-    private static final int MIN_REWARD_W = 70;
-    private static final int MIN_CONTENT_W = 150;
+    static final int MIN_INSP_W = 90;
+    static final int MIN_REWARD_W = 70;
+    static final int MIN_CONTENT_W = 150;
 
-    private int calcInspW() {
-        int stored = QuestChroniclesSettings.get().getTaskInspectorW();
-        if (stored > 0) return Math.max(MIN_INSP_W, stored);
-        int budget = Math.max(140, width - 180 - MARGIN * 4);
-        return Math.max(MIN_INSP_W, Math.min(160, budget * 3 / 5));
-    }
-
-    private int calcRewardW() {
-        int stored = QuestChroniclesSettings.get().getTaskRewardW();
-        if (stored > 0) return Math.max(MIN_REWARD_W, stored);
-        int budget = Math.max(140, width - 180 - MARGIN * 4);
-        return Math.max(MIN_REWARD_W, Math.min(REWARD_W, budget * 2 / 5));
-    }
-
-    private int[] fullscreenPanelWidths() {
-        int inspW = calcInspW();
-        int rewardW = calcRewardW();
-        int avail = width - MARGIN * 3 - MIN_CONTENT_W;
-        if (avail > 0 && inspW + rewardW > avail) {
-            float scale = (float) avail / (inspW + rewardW);
-            inspW = Math.max(MIN_INSP_W, Math.round(inspW * scale));
-            rewardW = Math.max(MIN_REWARD_W, Math.round(rewardW * scale));
-        }
-        return new int[] { inspW, rewardW };
-    }
-
-    private void renderPanelDividers(GuiGraphics g, int d1x, int d2x, int contentTop, int contentH, int mx, int my) {
-        boolean hovD1 = !draggingRewardDivider && isOverDivider(d1x, contentTop, contentH, mx, my);
-        boolean hovD2 = !draggingInspDivider && isOverDivider(d2x, contentTop, contentH, mx, my);
-
-        int c1 = draggingInspDivider ? 0xFFFFCC33 : hovD1 ? 0xFF88CCFF : 0;
-        int c2 = draggingRewardDivider ? 0xFFFFCC33 : hovD2 ? 0xFF88CCFF : 0;
-        if (c1 != 0) {
-            int hx = d1x + MARGIN / 2;
-            g.fill(hx - 1, contentTop, hx + 1, contentTop + contentH, c1);
-        }
-        if (c2 != 0) {
-            int hx = d2x + MARGIN / 2;
-            g.fill(hx - 1, contentTop, hx + 1, contentTop + contentH, c2);
-        }
-    }
-
-    private boolean isOverDivider(int dx, int contentTop, int contentH, int mx, int my) {
-        return mx >= dx - DIVIDER_HIT_PAD && mx < dx + MARGIN + DIVIDER_HIT_PAD &&
-                my >= contentTop && my < contentTop + contentH;
-    }
-
-    private boolean tryStartDividerDrag(double mx, double my) {
-        int contentTop = headerH() + reqBarH() + MARGIN;
-        int contentH = height - contentTop - FOOTER_H - MARGIN;
-        int[] pw = fullscreenPanelWidths();
-        int inspW = pw[0], rewardW = pw[1];
-        int contentRight = width - inspW - rewardW - MARGIN * 3;
-        int inspX = contentRight + MARGIN;
-        int d1x = contentRight;
-        int d2x = inspX + inspW;
-
-        if (isOverDivider(d1x, contentTop, contentH, (int) mx, (int) my)) {
-            draggingInspDivider = true;
-            dividerDragStartMx = (int) mx;
-            dividerDragStartInspW = inspW;
-            return true;
-        }
-        if (isOverDivider(d2x, contentTop, contentH, (int) mx, (int) my)) {
-            draggingRewardDivider = true;
-            dividerDragStartMx = (int) mx;
-            dividerDragStartInspW = inspW;
-            dividerDragStartRewardW = rewardW;
-            return true;
-        }
-        return false;
-    }
-
-    private String taskProgressString(QuestTask task) {
-        String raw = rawTaskProgressString(task);
-        return raw != null && taskAmountMasked(task) ? "?" : raw;
-    }
-
-    private String rawTaskProgressString(QuestTask task) {
-        if (player == null) return null;
-        if (playerData != null && playerData.getQuestState(node.getId(), QuestState.LOCKED) == QuestState.COMPLETED) {
-
-            String live = task.getProgressString(player);
-            if (live != null) {
-                int slash = live.indexOf('/');
-                if (slash >= 0) {
-                    String denom = live.substring(slash + 1).trim();
-                    return denom + "/" + denom;
-                }
-            }
-            return null;
-        }
-        return task.getProgressString(player);
-    }
-
-    private boolean isTaskDone(QuestTask task) {
+    boolean isTaskDone(QuestTask task) {
         if (playerData != null && playerData.getQuestState(node.getId(), QuestState.LOCKED) == QuestState.COMPLETED) {
             return true;
         }
         return player != null && task.isCompletedFor(player);
     }
 
-    private boolean rewardsClaimed() {
+    boolean rewardsClaimed() {
         return playerData != null && playerData.hasClaimedRewards(node.getId());
     }
 
-    private boolean isRewardPicked(int rewardIndex) {
+    boolean isRewardPicked(int rewardIndex) {
         if (playerData == null) return false;
         if (playerData.getChosenRewardIndices(node.getId()).contains(rewardIndex)) return true;
         return playerData.isChoiceBoxResolved(node.getId(), rewardIndex);
     }
 
-    private QuestReward.ChoiceBoxReward boxAt(int rewardIndex) {
-        List<QuestReward> rewards = content.effectiveRewards();
-        if (rewardIndex < 0 || rewardIndex >= rewards.size()) return null;
-        return rewards.get(rewardIndex) instanceof QuestReward.ChoiceBoxReward box ? box : null;
-    }
-
-    private boolean isSlotPicked(int ri, boolean wholeNodeClaimed) {
-        return boxAt(ri) != null ? isRewardPicked(ri) : (wholeNodeClaimed || isRewardPicked(ri));
-    }
-
-    private QuestReward displayRewardFor(int rewardIndex, QuestReward reward) {
-        if (reward instanceof QuestReward.ChoiceBoxReward box && playerData != null) {
-            int chosen = playerData.getResolvedChoiceBoxOption(node.getId(), rewardIndex);
-            if (chosen >= 0 && chosen < box.getOptions().size()) return box.getOptions().get(chosen);
-        }
-        return reward;
-    }
-
-    private String rewardGlyph(QuestReward reward) {
-        if (reward instanceof QuestReward.ChoiceBoxReward box) {
-            return box.getMode() == QuestReward.ChoiceBoxReward.Mode.LOOTBOX ? "🎲" : "🎁";
-        }
-        return switch (reward.getType()) {
-            case XP -> "⚡";
-            case COMMAND -> "◆";
-            case LOOT_TABLE -> "📦";
-            case SCRIPT_EVENT -> "✦";
-            case REWARD_TABLE -> "⊞";
-            case FLUID -> "💧";
-            case OPEN_SCREEN -> "🖥";
-            case QUEST_ACTION -> "✔";
-            default -> "?";
-        };
-    }
-
-    private boolean tryClaimReward(int rewardIndex) {
-        QuestState state = playerData != null ? playerData.getQuestState(node.getId(), QuestState.LOCKED) :
-                QuestState.LOCKED;
-        if (state != QuestState.COMPLETED || content.effectiveRewards().isEmpty()) return false;
-
-        QuestReward.ChoiceBoxReward box = boxAt(rewardIndex);
-        if (box != null && box.getMode() != QuestReward.ChoiceBoxReward.Mode.ALL) {
-            if (playerData != null && playerData.isChoiceBoxResolved(node.getId(), rewardIndex)) return false;
-            if (box.getMode() == QuestReward.ChoiceBoxReward.Mode.LOOTBOX) {
-                net.neoforged.neoforge.network.PacketDistributor
-                        .sendToServer(new C2SResolveChoiceBoxPacket(node.getId(), rewardIndex, -1));
-            } else {
-                openChoiceBox(box, rewardIndex);
-            }
-            return true;
-        }
-
-        if (rewardsClaimed()) return false;
-        if (node.isRewardChoice()) {
-            if (rewardIndex < 0) return false;
-            if (playerData != null && playerData.getChosenRewardIndices(node.getId()).contains(rewardIndex))
-                return false;
-            net.neoforged.neoforge.network.PacketDistributor
-                    .sendToServer(new C2SClaimQuestRewardPacket(node.getId(), rewardIndex));
-        } else {
-            net.neoforged.neoforge.network.PacketDistributor
-                    .sendToServer(new C2SClaimQuestRewardPacket(node.getId(), -1));
-        }
-        return true;
-    }
-
-    private void forceCompleteTask(QuestTask task) {
-        if (minecraft == null || minecraft.player == null || task == null) return;
-        minecraft.player.connection.sendCommand("chronicles forcetask " + task.getTaskId().getPath());
-    }
-
-    private void resetTaskProgress(QuestTask task) {
-        if (minecraft == null || minecraft.player == null || task == null) return;
-        minecraft.player.connection.sendCommand("chronicles resettask " + task.getTaskId().getPath());
-    }
-
-    private boolean trySubmitItemTask(QuestTask task) {
-        if (!(task instanceof ItemRequirementTask it) || !it.shouldConsume() || minecraft == null ||
-                minecraft.player == null) {
-            return false;
-        }
-        if (it.isCompletedFor(minecraft.player)) return false;
-
-        QuestState state = playerData != null ? playerData.getQuestState(node.getId(), QuestState.LOCKED) :
-                QuestState.LOCKED;
-        if (state != QuestState.UNLOCKED && state != QuestState.ACTIVE) return false;
-
-        if (!it.hasRequiredItems(minecraft.player) && !it.usesAe2Storage()) return false;
-
-        net.neoforged.neoforge.network.PacketDistributor.sendToServer(
-                new net.phoenixvine.chronicles.network.packet.C2SSubmitItemTaskPacket(task.getTaskId()));
-        return true;
-    }
-
-    private boolean tryCompleteCheckmark(QuestTask task) {
-        if (!(task instanceof CheckmarkTask)) return false;
-        if (task.isCompletedFor(minecraft.player)) return true;
-
-        QuestState state = playerData != null ? playerData.getQuestState(node.getId(), QuestState.LOCKED) :
-                QuestState.LOCKED;
-        if (state != QuestState.UNLOCKED && state != QuestState.ACTIVE) return true;
-
-        net.neoforged.neoforge.network.PacketDistributor.sendToServer(
-                new net.phoenixvine.chronicles.network.packet.C2SCompleteCheckmarkTaskPacket(task.getTaskId()));
-        return true;
+    boolean isSlotPicked(int ri, boolean wholeNodeClaimed) {
+        return fullscreen.boxAt(ri) != null ? isRewardPicked(ri) : (wholeNodeClaimed || isRewardPicked(ri));
     }
 }

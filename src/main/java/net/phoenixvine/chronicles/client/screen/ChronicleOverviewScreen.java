@@ -4,8 +4,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -14,12 +12,9 @@ import net.minecraft.util.StringUtil;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.item.TooltipFlag;
 import net.phoenixvine.chronicles.capability.PlayerQuestData;
 import net.phoenixvine.chronicles.capability.QuestCapabilityProvider;
-import net.phoenixvine.chronicles.client.event.ChronicleKeyBindings;
 import net.phoenixvine.chronicles.client.profiler.FrameProfiler;
-import net.phoenixvine.chronicles.client.registry.ChroniclesLangPack;
 import net.phoenixvine.chronicles.client.registry.ExternalScreenRegistry;
 import net.phoenixvine.chronicles.client.registry.SeenQuestTracker;
 import net.phoenixvine.chronicles.client.render.*;
@@ -27,22 +22,17 @@ import net.phoenixvine.chronicles.client.screen.utils.*;
 import net.phoenixvine.chronicles.client.screen.widgets.*;
 import net.phoenixvine.chronicles.client.util.BackgroundPictureConfig;
 import net.phoenixvine.chronicles.client.util.ChapterConfig;
-import net.phoenixvine.chronicles.client.util.ClientEmergencyState;
 import net.phoenixvine.chronicles.client.util.HiddenParts;
 import net.phoenixvine.chronicles.common.codec.QuestChroniclesSettings;
 import net.phoenixvine.chronicles.common.codec.QuestContentLoader;
 import net.phoenixvine.chronicles.common.codec.QuestFileSaver;
 import net.phoenixvine.chronicles.common.model.*;
-import net.phoenixvine.chronicles.common.registry.CategoryRegistry;
-import net.phoenixvine.chronicles.common.registry.ChapterFlagRegistry;
 import net.phoenixvine.chronicles.common.registry.QuestTreeRegistry;
 import net.phoenixvine.chronicles.common.tasks.ItemRequirementTask;
 import net.phoenixvine.chronicles.common.tasks.ScreenOpenedTask;
-import net.phoenixvine.chronicles.common.tracker.QuestProgressTracker;
 import net.phoenixvine.chronicles.common.util.ItemData;
 import net.phoenixvine.chronicles.integration.phantasia.PhantasiaCompat;
 import net.phoenixvine.chronicles.network.packet.C2SScreenOpenedTaskPacket;
-import net.phoenixvine.chronicles.network.packet.C2STogglePinPacket;
 import net.phoenixvine.chronicles.network.packet.S2CSyncPlayerProgressPacket;
 import net.phoenixvine.wiki.client.screen.WikiTheme;
 import net.phoenixvine.wiki.theme.PhoenixTheme;
@@ -58,14 +48,89 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
-import java.util.function.BiConsumer;
 import java.util.function.Function;
 
 public class ChronicleOverviewScreen extends Screen
-                                     implements ScreenContext, NodeCtxMenuState, DragControllerState,
-                                     GraphLayoutState, QuestEditOpsState, ChapterActionsState,
-                                     NodeRendererState, BulkOpsPanelState, NodeContextMenuBuilderState,
+                                     implements ScreenContext, NodeCtxMenuState, QuestEditOpsState, BulkOpsPanelState,
+                                     NodeContextMenuBuilderState,
                                      net.phoenixvine.chronicles.client.audio.ChroniclesAudio.AudioSource {
+
+    final GraphEditorState editorState = new GraphEditorState();
+
+    final OverviewChapters chapters = new OverviewChapters(this);
+    public String stateFilter = "ALL";
+
+    public int chapterQuestCount(String chapter) {
+        return chapters.chapterQuestCount(chapter);
+    }
+
+    public List<ResourceLocation> questIdsInChapter(String chapter) {
+        return chapters.questIdsInChapter(chapter);
+    }
+
+    public List<ResourceLocation> questIdsInCategory(String categoryId) {
+        return chapters.questIdsInCategory(categoryId);
+    }
+
+    public List<String> buildChapterList() {
+        return chapters.buildChapterList();
+    }
+
+    public boolean catMatches(QuestNode n) {
+        return chapters.catMatches(n);
+    }
+
+    public int unclaimedRewardCount() {
+        return chapters.unclaimedRewardCount();
+    }
+
+    final OverviewEditModes editModes = new OverviewEditModes(this);
+
+    final OverviewCanvasInput canvasInput = new OverviewCanvasInput(this);
+
+    final OverviewContextMenus menus = new OverviewContextMenus(this);
+
+    public void openContextMenuFor(int mx, int my, List<SidebarPanel.MenuAction> actions) {
+        menus.openContextMenuFor(mx, my, actions);
+    }
+
+    @Override
+    public List<CtxItem> buildCtxItems() {
+        return menus.buildCtxItems();
+    }
+
+    @Override
+    public int menuHeight(List<CtxItem> items) {
+        return menus.menuHeight(items);
+    }
+
+    @Override
+    public int ctxMoveCatX(int catCount) {
+        return menus.ctxMoveCatX(catCount);
+    }
+
+    @Override
+    public int ctxMoveCatYClamped(List<CtxItem> items, int catCount) {
+        return menus.ctxMoveCatYClamped(items, catCount);
+    }
+
+    final OverviewSidebar sidebar = new OverviewSidebar(this);
+
+    public int sidebarW() {
+        return sidebar.sidebarW();
+    }
+
+    public List<SidebarRow> buildSidebarRows() {
+        return sidebar.buildSidebarRows();
+    }
+
+    final OverviewHeader header = new OverviewHeader(this);
+
+    public int[][] computeHeaderBarLayout(int cr) {
+        return header.computeHeaderBarLayout(cr);
+    }
+
+    final OverviewKeys keys = new OverviewKeys(this);
 
     @Override
     public net.phoenixvine.chronicles.common.model.QuestAudio desiredAudio() {
@@ -84,20 +149,20 @@ public class ChronicleOverviewScreen extends Screen
     public static final int C_CTX_SEP = 0xFF2A2A38;
     public static final int C_CTX_TEXT = 0xFFCCCCD8;
     public static final int C_CTX_DANGER = 0xFFCC4444;
-    private static final int C_PROG_ACT = 0xFFBB8800;
-    private static final float ZOOM_MIN = 0.12f;
-    private static final float ZOOM_MAX = 2.5f;
-    private static final float ZOOM_STEP = 0.12f;
+    static final int C_PROG_ACT = 0xFFBB8800;
+    static final float ZOOM_MIN = 0.12f;
+    static final float ZOOM_MAX = 2.5f;
+    static final float ZOOM_STEP = 0.12f;
 
     private static final float POSITION_ZOOM_EXPONENT = 0.68f;
     private static final long POST_MOVE_UNDO_WINDOW_MS = 1000;
-    private static final float PIC_EDIT_MIN_SIZE = 4f, PIC_EDIT_MAX_SIZE = 4096f;
+    static final float PIC_EDIT_MIN_SIZE = 4f, PIC_EDIT_MAX_SIZE = 4096f;
     public static final int CTX_ROW = 16;
     public static final int CTX_SEP = 5;
     public static final int CTX_W = 128;
     public static final int CTX_MOVE_CAT_MAX_ROWS = 10;
     public static final Set<ResourceLocation> collapsedSubtreeRoots = new HashSet<>();
-    private static final int[] GRID_SNAP_CYCLE = { 1, 4, 8, 16, 32, 64, 128 };
+    static final int[] GRID_SNAP_CYCLE = { 1, 4, 8, 16, 32, 64, 128 };
     public static final long OPEN_FADE_MS = 120;
     private static final long TOOLTIP_DELAY_MS = 0;
 
@@ -105,18 +170,15 @@ public class ChronicleOverviewScreen extends Screen
 
     public static final int GROUP_LABEL_BAR_H = 11;
     final Map<ResourceLocation, String> searchCache = new HashMap<>();
-    private final SidebarPanel sidebarPanel = new SidebarPanel();
+    final SidebarPanel sidebarPanel = new SidebarPanel();
 
     public SidebarPanel sidebarPanelInstance() {
         return sidebarPanel;
     }
 
-    private final BiConsumer<Integer, Integer> panCanvasFn = this::panCanvas;
-
     private final Map<Item, ItemStack> iconStackCache = new HashMap<>();
     private final Map<QuestTask, ItemStack> nbtIconStackCache = new IdentityHashMap<>();
 
-    @Override
     public ItemStack cachedIconStack(Item icon) {
         return iconStackCache.computeIfAbsent(icon, ItemStack::new);
     }
@@ -126,13 +188,13 @@ public class ChronicleOverviewScreen extends Screen
     private final Set<ResourceLocation> hiddenByCollapse = new HashSet<>();
     private final MinimapRenderer minimap = new MinimapRenderer();
     final Map<ResourceLocation, int[]> nodeScreenPos = new LinkedHashMap<>();
-    private final Map<ResourceLocation, NodeHitbox> nodeButtons = new LinkedHashMap<>();
-    private final DependencyLineRenderer depLineRenderer = new DependencyLineRenderer();
+    final Map<ResourceLocation, NodeHitbox> nodeButtons = new LinkedHashMap<>();
+    final DependencyLineRenderer depLineRenderer = new DependencyLineRenderer();
     private final Map<String, int[]> progressCache = new HashMap<>();
     private final Map<String, Boolean> attentionCache = new HashMap<>();
     private final Map<String, Boolean> rewardsCache = new HashMap<>();
     final ValidationPanel validationPanel = new ValidationPanel(this);
-    private final StatsPanel statsPanel = new StatsPanel(this);
+    final StatsPanel statsPanel = new StatsPanel(this);
     private final TutorialOverlay tutorialOverlay = new TutorialOverlay();
 
     @Override
@@ -145,13 +207,12 @@ public class ChronicleOverviewScreen extends Screen
         }
     }
 
-    private final Set<ResourceLocation> unlockPathHighlight = new HashSet<>();
+    final Set<ResourceLocation> unlockPathHighlight = new HashSet<>();
 
-    private QuestNode nonDevCtxNode;
-    private int nonDevCtxX, nonDevCtxY;
-    private final List<Runnable> pendingDeferredDraws = new ArrayList<>();
-    private final Set<ResourceLocation> subgraphNodes = new HashSet<>();
-    private final ToolbarPanel toolbarPanel = new ToolbarPanel();
+    QuestNode nonDevCtxNode;
+    final List<Runnable> pendingDeferredDraws = new ArrayList<>();
+    final Set<ResourceLocation> subgraphNodes = new HashSet<>();
+    final ToolbarPanel toolbarPanel = new ToolbarPanel();
 
     public ToolbarPanel toolbarPanelInstance() {
         return toolbarPanel;
@@ -161,102 +222,88 @@ public class ChronicleOverviewScreen extends Screen
         return bulkOpsPanel;
     }
 
-    private final PaletteState palette = new PaletteState();
+    final PaletteState palette = new PaletteState();
     String selectedChapter = "";
     private String viewChapterTracker = null;
-    private ResourceLocation lastHoveredNodeId = null;
+    ResourceLocation lastHoveredNodeId = null;
     private int dbgFull3DIconCount = 0;
     private int dbgCustomIconCount = 0;
     private int dbgPickedTextureIconCount = 0;
     private int dbgFluidIconCount = 0;
     private int dbgGlyphIconCount = 0;
-    private boolean isDevMode = false;
+    boolean isDevMode = false;
     private String feedbackMsg = "";
     private long feedbackAtMs = 0L;
     private static final long FEEDBACK_DURATION_MS = 5000L;
     final UndoRedoManager undoRedo = new UndoRedoManager(this::setFeedback);
-    private int viewOffX = 0, viewOffY = 0;
-    private int pendingPanDX = 0, pendingPanDY = 0;
-    private float zoom = 1.0f;
-    private boolean isPanning = false;
-    private boolean boxSelecting = false;
-    private int boxSelectStartX, boxSelectStartY, boxSelectCurX, boxSelectCurY;
-    private Set<ResourceLocation> boxSelectBaseSelection = null;
-    private boolean hideCompleted = false;
-    private long lastCanvasClickTime = 0;
-    private int lastCanvasClickX = 0;
-    private int lastCanvasClickY = 0;
-    private int dragGrabX = 0, dragGrabY = 0;
-    private int dragOrigX = 0, dragOrigY = 0;
-    private boolean pickupPlaceActive = false;
+    int viewOffX = 0, viewOffY = 0;
+    int pendingPanDX = 0, pendingPanDY = 0;
+    float zoom = 1.0f;
+    boolean boxSelecting = false;
+    int boxSelectStartX, boxSelectStartY, boxSelectCurX, boxSelectCurY;
+    Set<ResourceLocation> boxSelectBaseSelection = null;
+    boolean hideCompleted = false;
+    int dragGrabX = 0, dragGrabY = 0;
+    int dragOrigX = 0, dragOrigY = 0;
+    boolean pickupPlaceActive = false;
 
-    private boolean middleDragPickupActive = false;
+    boolean middleDragPickupActive = false;
 
-    private boolean quickDepKeyDown = false;
+    boolean quickDepKeyDown = false;
 
-    private int groupDragGrabX = 0, groupDragGrabY = 0;
-    @Nullable
-    private BackgroundPictureConfig.Picture draggedPicture = null;
-    private int pictureDragGrabX = 0, pictureDragGrabY = 0;
-    private float pictureDragStartX, pictureDragStartY;
-    private final PictureContextMenu pictureCtxMenu = new PictureContextMenu(this);
+    final PictureContextMenu pictureCtxMenu = new PictureContextMenu(this);
     private final TogglePanel.NodeContextMenu nodeCtxMenu = new TogglePanel.NodeContextMenu(this);
-    private final GraphEditorState editorState = new GraphEditorState();
 
     public GraphEditorState editorStateInstance() {
         return editorState;
     }
 
-    private final DragController dragController = new DragController(this, this, editorState);
+    final DragController dragController = new DragController(this, this, editorState);
     private final GraphLayoutEngine layoutEngine = new GraphLayoutEngine(this, this, this);
     private final QuestEditOps questEditOps = new QuestEditOps(this, this, editorState);
-    private final ChapterActions chapterActions = new ChapterActions(this, this, editorState);
     private final BulkOpsPanel bulkOpsPanel = new BulkOpsPanel(this, this, editorState);
     private final NodeRenderer nodeRenderer = new NodeRenderer(this, this, editorState);
-    private final NodeContextMenuBuilder ctxMenuBuilder = new NodeContextMenuBuilder(this, this, this, editorState);
     @Nullable
     BackgroundPictureConfig.Picture pictureEditMode = null;
-    private float pictureEditStartX, pictureEditStartY, pictureEditStartW, pictureEditStartH;
+    float pictureEditStartX, pictureEditStartY, pictureEditStartW, pictureEditStartH;
     @Nullable
-    private QuestNode nodeSizeEditMode = null;
-    private QuestNode.NodeSize nodeSizeEditStartSize;
-    private int nodeSizeEditStartOverridePx, nodeSizeEditStartX, nodeSizeEditStartY;
-    private StringBuilder nodeSizeTypedBuffer = null;
-    private double nodeSizeDragAccX = 0, nodeSizeDragAccY = 0;
-    private boolean ctxOpen = false;
+    QuestNode nodeSizeEditMode = null;
+    QuestNode.NodeSize nodeSizeEditStartSize;
+    int nodeSizeEditStartOverridePx, nodeSizeEditStartX, nodeSizeEditStartY;
+    StringBuilder nodeSizeTypedBuffer = null;
+    double nodeSizeDragAccX = 0, nodeSizeDragAccY = 0;
+    boolean ctxOpen = false;
     private long ctxOpenTimeMs = 0;
-    private int ctxX, ctxY;
+    int ctxX, ctxY;
 
-    private float ctxScale = 1f;
+    float ctxScale = 1f;
     private int ctxRawX, ctxRawY;
-    private QuestNode ctxNode = null;
-    private boolean ctxMoveCatOpen = false;
-    private int ctxMoveCatScroll = 0;
+    QuestNode ctxNode = null;
+    boolean ctxMoveCatOpen = false;
+    int ctxMoveCatScroll = 0;
     @Nullable
     private QuestGroup ctxGroup = null;
     private boolean renderingAsBackdrop = false;
 
-    public String stateFilter = "ALL";
-    private Object phantasiaPreview = null;
-    private List<String> chapterListCache = null;
-    private long chapterListCacheAtMs = 0;
-    private static final long CHAPTER_LIST_CACHE_TTL_MS = 2000;
-    private QuestNode linkDragSource = null;
-    private int linkDragX, linkDragY;
-    private int gridSnap = 8;
-    private boolean gridSnapEnabled = true;
+    Object phantasiaPreview = null;
+    List<String> chapterListCache = null;
+    static final long CHAPTER_LIST_CACHE_TTL_MS = 2000;
+    QuestNode linkDragSource = null;
+    int linkDragX, linkDragY;
+    int gridSnap = 8;
+    boolean gridSnapEnabled = true;
     private GridDisplayMode gridDisplayMode = GridDisplayMode.ON_DRAG;
-    private boolean dragForceSnap = false;
+    boolean dragForceSnap = false;
 
     private long openTimeMs = -1;
     private ResourceLocation tooltipHoverNodeId = null;
     private long tooltipHoverStartMs = 0;
-    private boolean testMode = false;
+    boolean testMode = false;
     private PlayerQuestData testModeData = new PlayerQuestData();
-    private boolean minimapOpen = false;
+    boolean minimapOpen = false;
     private boolean mmDragging = false;
     @Nullable
-    private PlayerQuestData playerData = null;
+    PlayerQuestData playerData = null;
     private int lastSeenProgressVersion = -1;
     private String lastTickHand = null;
 
@@ -344,22 +391,6 @@ public class ChronicleOverviewScreen extends Screen
                 Collections.emptyList());
     }
 
-    public int sidebarW() {
-        return sidebarPanel.width();
-    }
-
-    private boolean isSidebarNarrow() {
-        return sidebarPanel.isNarrow();
-    }
-
-    private int sidebarVisualW() {
-        return sidebarPanel.visualWidth();
-    }
-
-    private void updateSidebarHoverPeek(int mx, int my) {
-        sidebarPanel.updateHoverPeek(mx, my, panCanvasFn);
-    }
-
     @Override
     public float posZoom() {
         return zoom < 1f ? (float) Math.pow(zoom, POSITION_ZOOM_EXPONENT) : zoom;
@@ -403,7 +434,6 @@ public class ChronicleOverviewScreen extends Screen
         return playerData.getQuestState(node.getId(), QuestState.LOCKED);
     }
 
-    @Override
     public boolean isGatedHidden(QuestNode node) {
         if (node.isSelfGatedHidden(this::getState)) return true;
         return isAncestorGatedHidden(node);
@@ -419,7 +449,7 @@ public class ChronicleOverviewScreen extends Screen
         return (vis == QuestNode.Visibility.HIDDEN && getState(n) == QuestState.LOCKED) || isAncestorGatedHidden(n);
     }
 
-    private boolean isAncestorGatedHidden(QuestNode node) {
+    boolean isAncestorGatedHidden(QuestNode node) {
         if (!QuestChroniclesSettings.get().isCascadeHiddenQuests()) return false;
         Boolean cached = ancestorGatedCache.get(node.getId());
         if (cached != null) return cached;
@@ -443,7 +473,6 @@ public class ChronicleOverviewScreen extends Screen
         return null;
     }
 
-    @Override
     public QuestTask fallbackTaskIconTask(QuestNode node) {
         for (QuestTask task : node.getTasks()) {
             if (HiddenParts.taskTargetHidden(node, task)) continue;
@@ -454,7 +483,6 @@ public class ChronicleOverviewScreen extends Screen
         return null;
     }
 
-    @Override
     public QuestTask matchingIconTask(QuestNode node, Item icon) {
         for (QuestTask task : node.getTasks()) {
             if (task instanceof ItemRequirementTask t && t.getItem() == icon) {
@@ -464,7 +492,6 @@ public class ChronicleOverviewScreen extends Screen
         return null;
     }
 
-    @Override
     public ItemStack nbtAwareIconStack(QuestTask task, Item icon) {
         if (!(task instanceof ItemRequirementTask t) || t.getNbtFilter() == null ||
                 t.getNbtFilter().isEmpty()) {
@@ -477,94 +504,22 @@ public class ChronicleOverviewScreen extends Screen
         });
     }
 
-    private QuestState getDisplayState(QuestNode node) {
+    QuestState getDisplayState(QuestNode node) {
         QuestNode target = resolveLinkTarget(node);
         return getState(target != null ? target : node);
     }
 
-    @Override
     public boolean isTaskDone(QuestTask task) {
         if (minecraft == null || minecraft.player == null) return false;
         return task.isCompletedFor(minecraft.player);
     }
 
-    boolean chapterHasQuests(String chapter) {
-        return chapterQuestCount(chapter) > 0;
-    }
-
-    @Override
-    public int chapterQuestCount(String chapter) {
-        int count = 0;
-        for (QuestNode n : QuestTreeRegistry.getAllQuests().values()) {
-            if (chapter.equalsIgnoreCase(n.getChapter())) count++;
-        }
-        return count;
-    }
-
-    @Override
-    public List<ResourceLocation> questIdsInChapter(String chapter) {
-        List<ResourceLocation> ids = new ArrayList<>();
-        for (QuestNode n : QuestTreeRegistry.getAllQuests().values()) {
-            if (chapter.equalsIgnoreCase(n.getChapter())) ids.add(n.getId());
-        }
-        return ids;
-    }
-
-    @Override
-    public List<ResourceLocation> questIdsInCategory(String categoryId) {
-        List<ResourceLocation> ids = new ArrayList<>();
-        CategoryDefinition cat = CategoryRegistry
-                .get(categoryId);
-        if (cat == null) return ids;
-        for (String chapter : cat.chapters()) ids.addAll(questIdsInChapter(chapter));
-        return ids;
-    }
-
-    private void forceCompleteChapterOnRightClick(String chapter) {
-        chapterActions.forceCompleteChapterOnRightClick(chapter);
-    }
-
-    private void resetChapterOnRightClick(String chapter) {
-        chapterActions.resetChapterOnRightClick(chapter);
-    }
-
-    private void forceCompleteCategoryOnRightClick(String categoryId) {
-        chapterActions.forceCompleteCategoryOnRightClick(categoryId);
-    }
-
-    private void resetCategoryOnRightClick(String categoryId) {
-        chapterActions.resetCategoryOnRightClick(categoryId);
-    }
-
-    void deleteChapter(String chapter) {
-        chapterActions.deleteChapter(chapter);
-    }
-
-    private void deleteCategoryOnRightClick(String categoryId) {
-        chapterActions.deleteCategoryOnRightClick(categoryId);
-    }
-
-    private void deleteChapterOnRightClick(String chapter) {
-        chapterActions.deleteChapterOnRightClick(chapter);
-    }
-
-    private void openSidebarContextMenu(SidebarRow row, int mx, int my) {
-        chapterActions.openSidebarContextMenu(row, mx, my);
-    }
-
-    @Override
     public void setSelectedChapter(String chapter) {
         selectedChapter = chapter;
     }
 
-    @Override
     public void invalidateChapterCaches() {
         chapterListCache = null;
-    }
-
-    @Override
-    public void openContextMenuFor(int mx, int my, List<SidebarPanel.MenuAction> actions) {
-        sidebarPanel.openContextMenu(mx, my, actions, width, height);
     }
 
     @Override
@@ -572,61 +527,16 @@ public class ChronicleOverviewScreen extends Screen
         return this;
     }
 
-    public List<String> buildChapterList() {
-        if (chapterListCache != null && System.currentTimeMillis() - chapterListCacheAtMs > CHAPTER_LIST_CACHE_TTL_MS) {
-            chapterListCache = null;
-        }
-        if (chapterListCache == null) {
-            Set<String> chapters = new TreeSet<>();
-            for (QuestNode n : QuestTreeRegistry.getAllQuests().values()) {
-                String cat = n.getChapter();
-                if (cat != null && !cat.isBlank()) chapters.add(cat.toUpperCase(Locale.ROOT));
-            }
-            try {
-                Path f = chaptersFile();
-                if (Files.exists(f)) {
-                    for (String line : Files.readAllLines(f, StandardCharsets.UTF_8)) {
-                        String cat = line.trim().toUpperCase(Locale.ROOT);
-                        if (!cat.isEmpty()) chapters.add(cat);
-                    }
-                }
-            } catch (IOException ignored) {}
-
-            if (!isDevMode || !QuestChroniclesSettings.get().isShowFlagDisabledChapters()) {
-                MinecraftServer server = minecraft != null ? minecraft.getSingleplayerServer() : null;
-                chapters.removeIf(c -> !ChapterFlagRegistry.isChapterEnabled(c));
-                if (QuestChroniclesSettings.get().isCascadeHiddenQuests())
-                    chapters.removeIf(c -> QuestTreeRegistry.isChapterGatedHidden(c, this::getState));
-            }
-
-            chapterListCache = new ArrayList<>(chapters);
-            chapterListCacheAtMs = System.currentTimeMillis();
-        }
-        return new ArrayList<>(chapterListCache);
+    Function<String, int[]> progressLookup() {
+        return cat -> progressCache.computeIfAbsent(cat, chapters::computeChapterProgress);
     }
 
-    private Function<String, int[]> progressLookup() {
-        return cat -> progressCache.computeIfAbsent(cat, this::computeChapterProgress);
+    Function<String, Boolean> attentionLookup() {
+        return cat -> attentionCache.computeIfAbsent(cat, chapters::computeChapterHasAttention);
     }
 
-    private Function<String, Boolean> attentionLookup() {
-        return cat -> attentionCache.computeIfAbsent(cat, this::computeChapterHasAttention);
-    }
-
-    private Function<String, Boolean> rewardsLookup() {
-        return cat -> rewardsCache.computeIfAbsent(cat, this::computeChapterHasUnclaimedRewards);
-    }
-
-    public List<SidebarRow> buildSidebarRows() {
-        return sidebarPanel.buildRows(this::friendly, progressLookup(), buildChapterList());
-    }
-
-    private int sidebarScrollAreaHeight() {
-        return sidebarPanel.scrollAreaHeight(height);
-    }
-
-    private int sidebarContentHeight() {
-        return sidebarPanel.contentHeight(height, this::friendly, progressLookup(), buildChapterList());
+    Function<String, Boolean> rewardsLookup() {
+        return cat -> rewardsCache.computeIfAbsent(cat, chapters::computeChapterHasUnclaimedRewards);
     }
 
     @Override
@@ -800,7 +710,8 @@ public class ChronicleOverviewScreen extends Screen
                 if (external != null) {
                     for (QuestTask task : target.getEffectiveTasks(minecraft.getSingleplayerServer(),
                             minecraft.player)) {
-                        if (task instanceof ScreenOpenedTask &&
+                        if (task instanceof ScreenOpenedTask screenTask &&
+                                screenTask.matchesScreen(externalScreenIdStr) &&
                                 minecraft.player != null && !task.isCompletedFor(minecraft.player)) {
                             net.neoforged.neoforge.network.PacketDistributor.sendToServer(
                                     new C2SScreenOpenedTaskPacket(
@@ -908,11 +819,11 @@ public class ChronicleOverviewScreen extends Screen
 
     @Override
     public void buildLineCache() {
-        depLineRenderer.rebuildFromGraph(this, sidebarVisualW(), this::catMatches, palette.lineLocked,
+        depLineRenderer.rebuildFromGraph(this, sidebar.sidebarVisualW(), this::catMatches, palette.lineLocked,
                 palette.lineDone, palette.lineActive, QuestChroniclesSettings.get());
     }
 
-    private void softRebuild() {
+    void softRebuild() {
         Map<String, int[]> savedProgress = new HashMap<>(progressCache);
         Map<String, Boolean> savedAttention = new HashMap<>(attentionCache);
         Map<String, Boolean> savedRewards = new HashMap<>(rewardsCache);
@@ -926,8 +837,8 @@ public class ChronicleOverviewScreen extends Screen
         chapterListCache = savedCats;
     }
 
-    private void rescaleForZoom() {
-        int cl = sidebarVisualW(), cr = width;
+    void rescaleForZoom() {
+        int cl = sidebar.sidebarVisualW(), cr = width;
         for (Map.Entry<ResourceLocation, NodeHitbox> e : nodeButtons.entrySet()) {
             QuestNode n = QuestTreeRegistry.getQuest(e.getKey());
             if (n == null) continue;
@@ -952,8 +863,8 @@ public class ChronicleOverviewScreen extends Screen
         buildLineCache();
     }
 
-    private void panCanvas(int dx, int dy) {
-        int cl = sidebarVisualW(), cr = width;
+    void panCanvas(int dx, int dy) {
+        int cl = sidebar.sidebarVisualW(), cr = width;
         int sz = scaledNodeSize();
         for (Map.Entry<ResourceLocation, NodeHitbox> e : nodeButtons.entrySet()) {
             NodeHitbox btn = e.getValue();
@@ -974,7 +885,7 @@ public class ChronicleOverviewScreen extends Screen
         buildLineCache();
     }
 
-    private void openWiki() {
+    void openWiki() {
         if (minecraft == null) return;
         PhoenixTheme theme = PhoenixTheme.current();
         WikiTheme wikiTheme = new WikiTheme(
@@ -986,16 +897,16 @@ public class ChronicleOverviewScreen extends Screen
 
     @Override
     public boolean keyPressed(int key, int scan, int mods) {
-        if (tryHandleDragCancelEscape(key)) return true;
-        if (tryHandleNodeSizeTypedInput(key)) return true;
+        if (keys.tryHandleDragCancelEscape(key)) return true;
+        if (keys.tryHandleNodeSizeTypedInput(key)) return true;
 
         boolean ctrl = (mods & 2) != 0;
         boolean shift = (mods & 1) != 0;
 
-        if (tryHandleSmokeTestKeybind(key)) return true;
+        if (keys.tryHandleSmokeTestKeybind(key)) return true;
 
-        if (tryHandleQuickKeybinds(key, scan, ctrl, mods)) return true;
-        if (key == 256 && tryHandleEscapeDispatch()) return true;
+        if (keys.tryHandleQuickKeybinds(key, scan, ctrl, mods)) return true;
+        if (key == 256 && keys.tryHandleEscapeDispatch()) return true;
 
         if (key == 256 && isDevMode && !editorState.multiSelection.isEmpty()) {
             editorState.multiSelection.clear();
@@ -1003,236 +914,14 @@ public class ChronicleOverviewScreen extends Screen
             return true;
         }
 
-        if (tryHandleUndoRedoKeybind(key, ctrl, shift)) return true;
-        if (tryHandleActionKeybinds(key, scan, ctrl, shift)) return true;
+        if (keys.tryHandleUndoRedoKeybind(key, ctrl, shift)) return true;
+        if (keys.tryHandleActionKeybinds(key, scan, ctrl, shift)) return true;
 
         if (key == 68) {
             quickDepKeyDown = true;
         }
 
         return super.keyPressed(key, scan, mods);
-    }
-
-    private boolean tryHandleSmokeTestKeybind(int key) {
-        if (isDevMode && key == 298) {
-            ScreenClickSmokeTest.run(this);
-            return true;
-        }
-        return false;
-    }
-
-    private boolean tryHandleNodeSizeTypedInput(int key) {
-        if (nodeSizeEditMode == null) return false;
-        if (key >= 48 && key <= 57) {
-            if (nodeSizeTypedBuffer == null) nodeSizeTypedBuffer = new StringBuilder();
-            if (nodeSizeTypedBuffer.length() < 3) nodeSizeTypedBuffer.append((char) key);
-            return true;
-        }
-        if (key == 259) {
-            if (nodeSizeTypedBuffer == null || nodeSizeTypedBuffer.isEmpty()) return false;
-            nodeSizeTypedBuffer.deleteCharAt(nodeSizeTypedBuffer.length() - 1);
-            return true;
-        }
-        if (key == 257 || key == 335) {
-            if (nodeSizeTypedBuffer == null || nodeSizeTypedBuffer.isEmpty()) return false;
-            try {
-                nodeSizeEditMode.setSizeOverridePx(Integer.parseInt(nodeSizeTypedBuffer.toString()));
-                dragController.refreshNodeScreenPos(nodeSizeEditMode);
-                depLineRenderer.refreshEdgeEndpoints(nodeSizeEditMode.getId(), this::nodeCenterForLine, posZoom(),
-                        QuestChroniclesSettings.get());
-                setFeedback("Size: %dpx  (scroll to resize - shift/ctrl for finer steps, drag to move, " +
-                        "right-click/Esc to finish)", nodeSizeEditMode.getNodePixelSize());
-            } catch (NumberFormatException ignored) {}
-            nodeSizeTypedBuffer = null;
-            return true;
-        }
-        return false;
-    }
-
-    private boolean tryHandleDragCancelEscape(int key) {
-        if (key == 256 && editorState.draggedNode != null) {
-            if (editorState.bulkDragOrigPositions != null) {
-                int count = editorState.bulkDragOrigPositions.size();
-                for (Map.Entry<ResourceLocation, int[]> e : editorState.bulkDragOrigPositions.entrySet()) {
-                    QuestNode n = QuestTreeRegistry.getQuest(e.getKey());
-                    if (n != null) {
-                        n.setCustomPosition(e.getValue()[0], e.getValue()[1]);
-                        saveNodeToDisk(n);
-                    }
-                }
-                editorState.bulkDragOrigPositions = null;
-                setFeedback("Move cancelled (%d quests)", count);
-            } else {
-                editorState.draggedNode.setCustomPosition(dragOrigX, dragOrigY);
-                saveNodeToDisk(editorState.draggedNode);
-                setFeedback("Move cancelled");
-            }
-            editorState.draggedNode = null;
-            pickupPlaceActive = false;
-            middleDragPickupActive = false;
-            dragForceSnap = false;
-            rebuild();
-            return true;
-        }
-        return false;
-    }
-
-    private boolean tryHandleQuickKeybinds(int key, int scan, boolean ctrl, int mods) {
-        if (ChronicleKeyBindings.SEARCH.matches(key, scan)) {
-            openSearchOverlay();
-            return true;
-        }
-
-        if (key == 80 && ctrl && (mods & 1) == 0) {
-            FrameProfiler.setEnabled(!FrameProfiler.isEnabled());
-            setFeedback(FrameProfiler.isEnabled() ? "§aProfiler ON" : "§7Profiler OFF");
-            return true;
-        }
-
-        if (ChronicleKeyBindings.PIN_QUEST.matches(key, scan)) {
-            if (lastHoveredNodeId != null && playerData != null) {
-                playerData.togglePin(lastHoveredNodeId);
-                net.neoforged.neoforge.network.PacketDistributor.sendToServer(
-                        new C2STogglePinPacket(lastHoveredNodeId));
-                QuestNode hovered = QuestTreeRegistry.getQuest(lastHoveredNodeId);
-                boolean nowPinned = playerData.isPinned(lastHoveredNodeId);
-                String pinPrefix = nowPinned ? "§dPinned" : "§7Unpinned";
-                if (hovered != null) {
-                    setFeedback("%s: %s", pinPrefix,
-                            hovered.getEffectiveTitleRaw(minecraft.getSingleplayerServer(), minecraft.player)
-                                    .getString());
-                } else {
-                    setFeedback(pinPrefix);
-                }
-            }
-            return true;
-        }
-
-        if (ChronicleKeyBindings.TOGGLE_LINE_STYLE.matches(key, scan)) {
-            QuestChroniclesSettings s = QuestChroniclesSettings.get();
-            boolean nowSpline = s.isSplineLines();
-            s.setLineStyle(
-                    nowSpline ? QuestChroniclesSettings.LineStyle.STRAIGHT : QuestChroniclesSettings.LineStyle.SPLINE);
-            s.save();
-            setFeedback("Line style: %s", nowSpline ? "Straight" : "Spline");
-            return true;
-        }
-        return false;
-    }
-
-    private boolean tryHandleEscapeDispatch() {
-        if (sidebarPanel.contextMenuOpen()) {
-            sidebarPanel.closeContextMenu();
-            return true;
-        }
-        if (depLineRenderer.isContextMenuOpen()) {
-            depLineRenderer.closeContextMenu();
-            return true;
-        }
-        if (!unlockPathHighlight.isEmpty()) {
-            unlockPathHighlight.clear();
-            return true;
-        }
-        for (TogglePanel p : List.of(validationPanel, statsPanel)) {
-            if (p.isOpen()) {
-                p.close();
-                return true;
-            }
-        }
-        if (ctxOpen) {
-            ctxOpen = false;
-            ctxMoveCatOpen = false;
-            return true;
-        }
-        if (pictureCtxMenu.isOpen()) {
-            pictureCtxMenu.close();
-            return true;
-        }
-        if (pictureEditMode != null) {
-            finalizePictureEdit();
-            setFeedback("Picture edit finished  (Ctrl+Z to undo the whole edit)");
-            return true;
-        }
-        if (nodeSizeEditMode != null) {
-            finalizeNodeSizeEdit();
-            setFeedback("Node resize finished  (Ctrl+Z to undo the whole edit)");
-            softRebuild();
-            return true;
-        }
-        if (editorState.activeTool != GraphEditorState.EditorTool.SELECT) {
-            editorState.activeTool = GraphEditorState.EditorTool.SELECT;
-            setFeedback("Select mode");
-            return true;
-        }
-        return false;
-    }
-
-    private boolean tryHandleUndoRedoKeybind(int key, boolean ctrl, boolean shift) {
-        if (ctrl && isDevMode) {
-            if (key == 90 && !shift) {
-                undoRedo.undo();
-                return true;
-            }
-            if (key == 89 || (key == 90 && shift)) {
-                undoRedo.redo();
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private boolean tryHandleActionKeybinds(int key, int scan, boolean ctrl, boolean shift) {
-        if (ChronicleKeyBindings.FIT_TO_CANVAS.matches(key, scan)) {
-            fitToCanvas();
-            return true;
-        }
-
-        if (ChronicleKeyBindings.OPEN_DEV_WIKI.matches(key, scan) && isDevMode) {
-            openWiki();
-            return true;
-        }
-
-        if (ChronicleKeyBindings.TOGGLE_VALIDATION.matches(key, scan) && !ctrl && isDevMode) {
-            validationPanel.toggle();
-            return true;
-        }
-
-        if (ChronicleKeyBindings.IMPORT_FTB.matches(key, scan) && isDevMode) {
-            runFtbImport();
-            return true;
-        }
-
-        if (ChronicleKeyBindings.TOGGLE_SUBGRAPH.matches(key, scan) && isDevMode) {
-            editorState.subgraphMode = !editorState.subgraphMode;
-            if (editorState.subgraphMode) rebuildSubgraph();
-            return true;
-        }
-
-        if (key == 67 && ctrl && !shift && isDevMode && editorState.selectedNode != null) {
-            questCopy(editorState.selectedNode);
-            return true;
-        }
-
-        if (key == 86 && ctrl && !shift && isDevMode) {
-            questPaste();
-            return true;
-        }
-
-        if (key == 68 && ctrl && !shift && isDevMode && editorState.selectedNode != null) {
-            duplicateQuest(editorState.selectedNode);
-            return true;
-        }
-
-        if (ChronicleKeyBindings.TOGGLE_MINIMAP.matches(key, scan)) {
-            minimapOpen = !minimapOpen;
-            return true;
-        }
-
-        if (ChronicleKeyBindings.TOGGLE_STATS.matches(key, scan)) {
-            toggleStatsPanel();
-            return true;
-        }
-        return false;
     }
 
     @Override
@@ -1263,7 +952,7 @@ public class ChronicleOverviewScreen extends Screen
         questEditOps.fanFromLeftmost();
     }
 
-    private void runFtbImport() {
+    void runFtbImport() {
         questEditOps.runFtbImport();
     }
 
@@ -1279,104 +968,32 @@ public class ChronicleOverviewScreen extends Screen
 
     @Override
     public boolean mouseScrolled(double mx, double my, double scrollX, double delta) {
-        if (tryHandleMoveCatDropdownScroll(mx, my, delta)) return true;
-        if (tryHandleNodeSizeEditScroll(delta)) return true;
-        if (tryHandlePictureEditScroll(delta)) return true;
+        if (menus.tryHandleMoveCatDropdownScroll(mx, my, delta)) return true;
+        if (editModes.tryHandleNodeSizeEditScroll(delta)) return true;
+        if (editModes.tryHandlePictureEditScroll(delta)) return true;
         if (statsPanel.isVisible(this) && statsPanel.mouseScrolled(mx, my, 0.0, delta)) return true;
 
         int cl = sidebarW(), cr = width;
         if (mx <= cl && my > HEADER_H) {
 
-            sidebarPanel.scrollBy(delta, sidebarContentHeight(), sidebarScrollAreaHeight());
+            sidebarPanel.scrollBy(delta, sidebar.sidebarContentHeight(), sidebar.sidebarScrollAreaHeight());
             return true;
         }
         if (mx <= cl || mx >= cr || my <= HEADER_H) return super.mouseScrolled(mx, my, 0.0, delta);
 
-        return handleCanvasZoomScroll(mx, my, delta, cl, cr);
-    }
-
-    private boolean tryHandleMoveCatDropdownScroll(double mx, double my, double delta) {
-        if (ctxMoveCatOpen && ctxNode != null) {
-            List<String> cats = buildChapterList();
-            cats.remove("ALL");
-            int subX = ctxMoveCatX(cats.size());
-            int subY = ctxMoveCatYClamped(buildCtxItems(), cats.size());
-            int visibleRows = Math.min(cats.size(), CTX_MOVE_CAT_MAX_ROWS);
-            int subH = visibleRows * CTX_ROW + 4;
-            if (mx >= subX && mx <= subX + CTX_W && my >= subY && my <= subY + subH) {
-                int maxScroll = Math.max(0, cats.size() - CTX_MOVE_CAT_MAX_ROWS);
-                ctxMoveCatScroll = Math.max(0, Math.min(maxScroll, ctxMoveCatScroll - (int) Math.signum(delta)));
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private boolean tryHandleNodeSizeEditScroll(double delta) {
-        if (nodeSizeEditMode != null) {
-            float step = 1.1f;
-            if (hasShiftDown()) step = 1f + (step - 1f) * 0.3f;
-            if (hasControlDown()) step = 1f + (step - 1f) * 0.3f;
-            float factor = delta > 0 ? step : (1f / step);
-            int newPx = Math.round(nodeSizeEditMode.getNodePixelSize() * factor);
-            nodeSizeEditMode.setSizeOverridePx(newPx);
-            dragController.refreshNodeScreenPos(nodeSizeEditMode);
-            setFeedback("Size: %dpx  (scroll to resize - shift/ctrl for finer steps, drag to move, " +
-                    "right-click/Esc to finish)", nodeSizeEditMode.getNodePixelSize());
-            return true;
-        }
-        return false;
-    }
-
-    private boolean tryHandlePictureEditScroll(double delta) {
-        if (pictureEditMode != null) {
-            if (hasAltDown()) {
-                pictureEditMode.rotateBy((hasShiftDown() ? 1f : 5f) * (delta > 0 ? 1f : -1f));
-                return true;
-            }
-
-            float step = hasShiftDown() ? 1.05f : 1.2f;
-            float factor = delta > 0 ? step : (1f / step);
-            pictureEditMode.w = Math.max(PIC_EDIT_MIN_SIZE, Math.min(PIC_EDIT_MAX_SIZE, pictureEditMode.w * factor));
-            pictureEditMode.h = Math.max(PIC_EDIT_MIN_SIZE, Math.min(PIC_EDIT_MAX_SIZE, pictureEditMode.h * factor));
-            return true;
-        }
-        return false;
-    }
-
-    private boolean handleCanvasZoomScroll(double mx, double my, double delta, int cl, int cr) {
-        float oldPosZoom = posZoom();
-        float oldZoom = zoom;
-        zoom = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, zoom + (float) delta * ZOOM_STEP));
-        if (zoom == oldZoom) return true;
-        float newPosZoom = posZoom();
-
-        if (oldPosZoom != newPosZoom) {
-            int canvasW = cr - cl, canvasH = height - HEADER_H;
-
-            boolean cursorAnchored = !ChronicleKeyBindings.CURSOR_ZOOM.isDown();
-            float anchorX = cursorAnchored ? (float) mx - cl : canvasW / 2f;
-            float anchorY = cursorAnchored ? (float) my - HEADER_H : canvasH / 2f;
-            float worldCx = (anchorX - viewOffX) / oldPosZoom;
-            float worldCy = (anchorY - viewOffY) / oldPosZoom;
-            viewOffX = (int) (anchorX - worldCx * newPosZoom);
-            viewOffY = (int) (anchorY - worldCy * newPosZoom);
-        }
-
-        rescaleForZoom();
-        return true;
+        return canvasInput.handleCanvasZoomScroll(mx, my, delta, cl, cr);
     }
 
     @Override
     public boolean mouseClicked(double mx, double my, int btn) {
-        if (tryHandleSidebarContextMenuClick(mx, my, btn)) return true;
-        if (tryHandleDepLineContextMenuClick(mx, my, btn)) return true;
-        if (tryHandlePictureContextMenuClick(mx, my, btn)) return true;
-        if (tryHandleNodeContextMenuClick(mx, my, btn)) return true;
-        if (tryHandleNonDevCtxMenuClick(mx, my, btn)) return true;
+        if (sidebar.tryHandleSidebarContextMenuClick(mx, my, btn)) return true;
+        if (menus.tryHandleDepLineContextMenuClick(mx, my, btn)) return true;
+        if (menus.tryHandlePictureContextMenuClick(mx, my, btn)) return true;
+        if (menus.tryHandleNodeContextMenuClick(mx, my, btn)) return true;
+        if (menus.tryHandleNonDevCtxMenuClick(mx, my, btn)) return true;
 
-        if (tryHandleNodeResizeModeClick(btn)) return true;
-        if (tryHandlePictureEditModeClick(btn)) return true;
+        if (editModes.tryHandleNodeResizeModeClick(btn)) return true;
+        if (editModes.tryHandlePictureEditModeClick(btn)) return true;
 
         if (btn == 0 && tutorialOverlay.mouseClicked(this, mx, my, btn)) return true;
 
@@ -1385,68 +1002,36 @@ public class ChronicleOverviewScreen extends Screen
         int cl = sidebarW(), cr = width;
 
         if (btn == 0) {
-            if (tryHandleLeftClickUi(mx, my, cl, cr)) return true;
+            if (canvasInput.tryHandleLeftClickUi(mx, my, cl, cr)) return true;
         }
 
-        if (tryHandleLangExportClick(mx, my, btn)) return true;
+        if (sidebar.tryHandleLangExportClick(mx, my, btn)) return true;
 
-        if (tryHandleSidebarRowContextMenuClick(mx, my, btn)) return true;
+        if (sidebar.tryHandleSidebarRowContextMenuClick(mx, my, btn)) return true;
 
         if (bulkOpsPanel.mouseClicked(mx, my, btn, cl)) return true;
 
-        if (tryHandleMultiSelectToggleClick(mx, my, btn)) return true;
+        if (canvasInput.tryHandleMultiSelectToggleClick(mx, my, btn)) return true;
 
-        if (tryHandlePickupPlaceReleaseClick(btn)) return true;
+        if (canvasInput.tryHandlePickupPlaceReleaseClick(btn)) return true;
 
-        if (tryHandleMiddleDragReleaseClick(btn)) return true;
+        if (canvasInput.tryHandleMiddleDragReleaseClick(btn)) return true;
 
-        if (tryHandleQuickDepDragStart(mx, my, btn)) return true;
+        if (canvasInput.tryHandleQuickDepDragStart(mx, my, btn)) return true;
 
-        if (tryHandleShiftDragStart(mx, my, btn, cl)) return true;
+        if (canvasInput.tryHandleShiftDragStart(mx, my, btn, cl)) return true;
 
-        if (tryHandleMiddleClickNodeDragStart(mx, my, btn)) return true;
+        if (canvasInput.tryHandleMiddleClickNodeDragStart(mx, my, btn)) return true;
 
-        if (tryHandleShiftRightClickForceComplete(mx, my, btn, cl, cr)) return true;
+        if (canvasInput.tryHandleShiftRightClickForceComplete(mx, my, btn, cl, cr)) return true;
 
-        if (tryHandleDevRightClickContextMenu(mx, my, btn, cl, cr)) return true;
+        if (menus.tryHandleDevRightClickContextMenu(mx, my, btn, cl, cr)) return true;
 
-        handleNonDevRightClick(mx, my, btn, cl, cr);
+        menus.handleNonDevRightClick(mx, my, btn, cl, cr);
 
-        if (tryHandleCanvasClick(mx, my, btn, cl, cr)) return true;
+        if (canvasInput.tryHandleCanvasClick(mx, my, btn, cl, cr)) return true;
 
         return super.mouseClicked(mx, my, btn);
-    }
-
-    private boolean tryHandleSidebarContextMenuClick(double mx, double my, int btn) {
-        if (sidebarPanel.contextMenuOpen()) {
-            if (btn == 0) sidebarPanel.handleContextMenuClick((int) mx, (int) my);
-            else sidebarPanel.closeContextMenu();
-            return true;
-        }
-        return false;
-    }
-
-    private boolean tryHandleNodeResizeModeClick(int btn) {
-        if (nodeSizeEditMode != null) {
-            if (btn == 1) {
-                finalizeNodeSizeEdit();
-                setFeedback("Node resize finished  (Ctrl+Z to undo the whole edit)");
-                softRebuild();
-            }
-            return true;
-        }
-        return false;
-    }
-
-    private boolean tryHandlePictureEditModeClick(int btn) {
-        if (pictureEditMode != null) {
-            if (btn == 1) {
-                finalizePictureEdit();
-                setFeedback("Picture edit finished  (Ctrl+Z to undo the whole edit)");
-            }
-            return true;
-        }
-        return false;
     }
 
     private boolean tryHandleMinimapClick(double mx, double my, int btn) {
@@ -1455,724 +1040,6 @@ public class ChronicleOverviewScreen extends Screen
             minimapPanTo(mx, my, sidebarW());
             softRebuild();
             return true;
-        }
-        return false;
-    }
-
-    private boolean tryHandleLeftClickUi(double mx, double my, int cl, int cr) {
-        if (tryHandleQuestbookTitleClick(mx, my)) return true;
-        if (tryHandleHeaderBarClick(mx, my, cr)) return true;
-        if (tryHandleToolbarButtonClick(mx, my)) return true;
-        if (tryHandleFilterPillClick(mx, my, cl, cr)) return true;
-        if (tryHandleSidebarCollapseToggleClick(mx, my)) return true;
-        if (tryHandleSidebarPanelClick(mx, my)) return true;
-        return false;
-    }
-
-    private boolean tryHandleQuestbookTitleClick(double mx, double my) {
-        if (questbookTitleHovered((int) mx, (int) my)) {
-            if (minecraft != null) minecraft.setScreen(new QuestbookTitleScreen(this));
-            return true;
-        }
-        return false;
-    }
-
-    private boolean tryHandleHeaderBarClick(double mx, double my, int cr) {
-        if (my < 0 || my >= TOOLBAR_Y) return false;
-
-        int[][] layout = computeHeaderBarLayout(cr);
-        int[] claimBtn = layout[0], gridBtn = layout[1], subgraphBtn = layout[2], emergencyBtn = layout[3];
-        int[] autoClaimBtn = layout[4];
-
-        if (claimBtn != null && hitsRect(claimBtn, mx, my)) {
-            if (minecraft != null) minecraft.setScreen(new ClaimRewardsScreen(this));
-            return true;
-        }
-
-        if (emergencyBtn != null && hitsRect(emergencyBtn, mx, my)) {
-            if (minecraft != null) minecraft.setScreen(new EmergencyClaimScreen(this));
-            return true;
-        }
-
-        if (autoClaimBtn != null && hitsRect(autoClaimBtn, mx, my)) {
-            if (minecraft != null) minecraft.setScreen(new AutoClaimSettingsScreen(this));
-            return true;
-        }
-
-        if (hitsRect(gridBtn, mx, my)) {
-            for (int gi = 0; gi < GRID_SNAP_CYCLE.length; gi++) {
-                if (GRID_SNAP_CYCLE[gi] == gridSnap) {
-                    gridSnap = GRID_SNAP_CYCLE[(gi + 1) % GRID_SNAP_CYCLE.length];
-                    break;
-                }
-            }
-            return true;
-        }
-
-        if (subgraphBtn != null && hitsRect(subgraphBtn, mx, my)) {
-            editorState.subgraphMode = !editorState.subgraphMode;
-            if (editorState.subgraphMode) rebuildSubgraph();
-            return true;
-        }
-
-        return false;
-    }
-
-    private static boolean hitsRect(int[] b, double mx, double my) {
-        return mx >= b[0] && mx < b[2] && my >= b[1] && my < b[3];
-    }
-
-    public int[][] computeHeaderBarLayout(int cr) {
-        String zoomStr2 = Math.round(zoom * 100) + "%";
-        int zw2 = font.width(zoomStr2);
-        int zx2 = cr - zw2 - 10;
-
-        int[] claimBtn = null;
-        int unclaimedCount2 = unclaimedRewardCount();
-        if (unclaimedCount2 > 0) {
-            String claimLabel2 = "🎁 " + unclaimedCount2;
-            int cw2 = font.width(claimLabel2);
-            int cpx2 = zx2 - cw2 - 18;
-            claimBtn = new int[] { cpx2 - 3, 3, cpx2 + cw2 + 5, 16 };
-            zx2 = cpx2;
-        }
-
-        int[] emergencyBtn = null;
-        EmergencyPill emergency2 = emergencyPill();
-        if (emergencyPillVisible(emergency2)) {
-            int ew2 = font.width(emergencyPillLabel(emergency2));
-            int epx2 = zx2 - ew2 - 18;
-            emergencyBtn = new int[] { epx2 - 3, 3, epx2 + ew2 + 5, 16 };
-            zx2 = epx2;
-        }
-
-        int[] autoClaimBtn = null;
-        if (playerData != null) {
-            int aw2 = font.width(autoClaimPillLabel());
-            int apx2 = zx2 - aw2 - 18;
-            autoClaimBtn = new int[] { apx2 - 3, 3, apx2 + aw2 + 5, 16 };
-            zx2 = apx2;
-        }
-
-        String gridLabel2 = !gridSnapEnabled ? "Grid: off" :
-                (gridSnap == 1) ? "Grid: free" : "Grid: " + gridSnap;
-        int gw2 = font.width(gridLabel2);
-        int gpx2 = zx2 - gw2 - 18;
-        int[] gridBtn = { gpx2 - 3, 3, gpx2 + gw2 + 5, 16 };
-
-        int[] subgraphBtn = null;
-        if (isDevMode) {
-            String sgLabel2 = editorState.subgraphMode ? "Subgraph: " + subgraphNodes.size() : "Subgraph";
-            int sgw2 = font.width(sgLabel2);
-            int sgx2 = gpx2 - sgw2 - 18;
-            subgraphBtn = new int[] { sgx2 - 3, 3, sgx2 + sgw2 + 5, 16 };
-        }
-
-        return new int[][] { claimBtn, gridBtn, subgraphBtn, emergencyBtn, autoClaimBtn };
-    }
-
-    private boolean tryHandleToolbarButtonClick(double mx, double my) {
-        if (my >= TOOLBAR_Y && my < HEADER_H) {
-            if (hitsToolbarBtn("fit", mx, my)) {
-                fitToCanvas();
-                return true;
-            }
-            if (isDevMode && hitsToolbarBtn("toolSelect", mx, my)) {
-                editorState.activeTool = GraphEditorState.EditorTool.SELECT;
-                return true;
-            }
-            if (isDevMode && hitsToolbarBtn("toolPlace", mx, my)) {
-                boolean enteringPlace = editorState.activeTool != GraphEditorState.EditorTool.PLACE;
-                editorState.activeTool = enteringPlace ?
-                        GraphEditorState.EditorTool.PLACE : GraphEditorState.EditorTool.SELECT;
-
-                if (enteringPlace) editorState.multiSelection.clear();
-                return true;
-            }
-            if (isDevMode && hitsToolbarBtn("toolConnect", mx, my)) {
-                editorState.activeTool = editorState.activeTool == GraphEditorState.EditorTool.CONNECT ?
-                        GraphEditorState.EditorTool.SELECT : GraphEditorState.EditorTool.CONNECT;
-                return true;
-            }
-            if (hitsToolbarBtn("settings", mx, my) && minecraft != null) {
-                minecraft.setScreen(new SettingsScreen(this));
-                return true;
-            }
-            if (isDevMode && hitsToolbarBtn("wiki", mx, my) && minecraft != null) {
-                openWiki();
-                return true;
-            }
-            if (hitsToolbarBtn("hideDone", mx, my)) {
-                hideCompleted = !hideCompleted;
-                softRebuild();
-                return true;
-            }
-            if (hitsToolbarBtn("map", mx, my)) {
-                minimapOpen = !minimapOpen;
-                return true;
-            }
-            if (hitsToolbarBtn("stats", mx, my)) {
-                toggleStatsPanel();
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private boolean tryHandleFilterPillClick(double mx, double my, int cl, int cr) {
-        int[][] pills = filterPillBounds(cl, cr);
-        for (int i = 0; i < toolbarPanel.filterKeyCount(); i++) {
-            int[] b = pills[i];
-            if (mx >= b[0] && mx < b[2] && my >= b[1] && my < b[3]) {
-                stateFilter = toolbarPanel.filterKey(i);
-                editorState.selectedNode = null;
-                softRebuild();
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private boolean tryHandleSidebarCollapseToggleClick(double mx, double my) {
-        if (!sidebarPanel.isHoverSidebar() && sidebarCollapseToggleHovered((int) mx, (int) my)) {
-            sidebarPanel.setCollapsed(!sidebarPanel.collapsed());
-            sidebarPanel.resetScroll();
-            rebuild();
-            return true;
-        }
-        return false;
-    }
-
-    private boolean tryHandleSidebarPanelClick(double mx, double my) {
-        if (!isSidebarNarrow()) {
-
-            if (gearHovered((int) mx, (int) my) && minecraft != null) {
-                minecraft.setScreen(new LangEditorScreen(this));
-                return true;
-            }
-
-            if (newCatButtonHovered((int) mx, (int) my)) {
-                if (minecraft != null) minecraft.setScreen(new NewChapterChoiceScreen(this));
-                return true;
-            }
-
-            int scrollTop = HEADER_H + 1 + SidebarPanel.SIDEBAR_COLLAPSE_TOGGLE_H;
-            int scrollBottom = scrollTop + sidebarScrollAreaHeight();
-            if (mx < sidebarW() - 1 && my >= scrollTop && my < scrollBottom) {
-                for (SidebarRow row : buildSidebarRows()) {
-                    if (my < row.y() || my >= row.y() + row.height()) continue;
-
-                    if (isDevMode) {
-                        sidebarPanel.setDragRow(row);
-                        sidebarPanel.setDragStart((int) mx, (int) my);
-                        sidebarPanel.setDragMoved(false);
-                        return true;
-                    }
-                    if (row.isFolder()) {
-                        CategoryRegistry.toggleCollapsed(row.id());
-                        CategoryRegistry.save();
-                        rebuild();
-                    } else if (row.locked()) {
-
-                        setFeedback("§7Locked. Complete a quest in the parent chapter first");
-                    } else {
-                        selectedChapter = row.id();
-                        editorState.selectedNode = null;
-                        PhantasiaCompat.closePreview(phantasiaPreview);
-                        phantasiaPreview = null;
-
-                        ctxOpen = false;
-                        ctxMoveCatOpen = false;
-                        rebuild();
-                    }
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    private boolean tryHandleLangExportClick(double mx, double my, int btn) {
-        if (btn == 1 && gearHovered((int) mx, (int) my) && isDevMode) {
-            Path base = Minecraft.getInstance().gameDirectory.toPath()
-                    .resolve("config").resolve("phoenix_chronicles");
-            LangEditorScreen.writeEnUsJson(base);
-
-            ChroniclesLangPack.reload();
-            setFeedback("§aExported lang/en_us.json");
-            return true;
-        }
-        return false;
-    }
-
-    private boolean tryHandleSidebarRowContextMenuClick(double mx, double my, int btn) {
-        if (btn == 1 && isDevMode && !isSidebarNarrow()) {
-            SidebarRow hitRow = sidebarRowAt(buildSidebarRows(), (int) mx, (int) my);
-            if (hitRow != null) {
-                openSidebarContextMenu(hitRow, (int) mx, (int) my);
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private boolean tryHandleDepLineContextMenuClick(double mx, double my, int btn) {
-        if (depLineRenderer.isContextMenuOpen() && btn == 0) {
-
-            depLineRenderer.handleContextMenuClick((int) mx, (int) my, width, height,
-                    this::buildLineCache, this::setFeedback, this::openLineSettingsFor, this::pushUndo);
-            depLineRenderer.closeContextMenu();
-            return true;
-        }
-        if (depLineRenderer.isContextMenuOpen()) {
-            depLineRenderer.closeContextMenu();
-            return true;
-        }
-        return false;
-    }
-
-    private boolean tryHandlePictureContextMenuClick(double mx, double my, int btn) {
-        if (pictureCtxMenu.isOpen() && btn == 0) {
-            pictureCtxMenu.mouseClicked(this, mx, my, btn);
-            return true;
-        }
-        if (pictureCtxMenu.isOpen()) {
-            pictureCtxMenu.close();
-            return true;
-        }
-        return false;
-    }
-
-    private boolean tryHandleNodeContextMenuClick(double mx, double my, int btn) {
-        if (ctxOpen && btn == 0) {
-            if (handleCtxClick((int) mx, (int) my)) return true;
-            ctxOpen = false;
-            ctxMoveCatOpen = false;
-            return true;
-        }
-        return false;
-    }
-
-    private boolean tryHandleMultiSelectToggleClick(double mx, double my, int btn) {
-        if (btn == 0 && isDevMode && hasControlDown() && !hasShiftDown()) {
-            for (Map.Entry<ResourceLocation, NodeHitbox> e : nodeButtons.entrySet()) {
-                if (e.getValue().visible && e.getValue().isMouseOver(mx, my)) {
-                    if (editorState.multiSelection.contains(e.getKey())) editorState.multiSelection.remove(e.getKey());
-                    else editorState.multiSelection.add(e.getKey());
-                    return true;
-                }
-            }
-
-            if (mx > sidebarW()) {
-                boxSelecting = true;
-                boxSelectStartX = boxSelectCurX = (int) mx;
-                boxSelectStartY = boxSelectCurY = (int) my;
-                boxSelectBaseSelection = new HashSet<>(editorState.multiSelection);
-            } else {
-                editorState.multiSelection.clear();
-            }
-            return true;
-        }
-        return false;
-    }
-
-    private void updateBoxSelection() {
-        int x0 = Math.min(boxSelectStartX, boxSelectCurX), x1 = Math.max(boxSelectStartX, boxSelectCurX);
-        int y0 = Math.min(boxSelectStartY, boxSelectCurY), y1 = Math.max(boxSelectStartY, boxSelectCurY);
-        editorState.multiSelection.clear();
-        editorState.multiSelection.addAll(boxSelectBaseSelection);
-        for (Map.Entry<ResourceLocation, NodeHitbox> e : nodeButtons.entrySet()) {
-            NodeHitbox hb = e.getValue();
-            if (!hb.visible) continue;
-            boolean intersects = hb.x < x1 && hb.x + hb.w > x0 && hb.y < y1 && hb.y + hb.h > y0;
-            if (intersects) editorState.multiSelection.add(e.getKey());
-        }
-    }
-
-    private boolean tryHandlePickupPlaceReleaseClick(int btn) {
-        if (btn == 0 && pickupPlaceActive && editorState.draggedNode != null) {
-            boolean wasBulk = editorState.bulkDragOrigPositions != null;
-            dragController.finalizeDragRelease();
-            editorState.draggedNode = null;
-            pickupPlaceActive = false;
-            dragForceSnap = false;
-            softRebuild();
-            if (!wasBulk) setFeedback("Placed");
-            return true;
-        }
-        return false;
-    }
-
-    private boolean tryHandleMiddleDragReleaseClick(int btn) {
-        if (btn == 2 && middleDragPickupActive && editorState.draggedNode != null) {
-            boolean wasBulk = editorState.bulkDragOrigPositions != null;
-            dragController.finalizeDragRelease();
-            editorState.draggedNode = null;
-            middleDragPickupActive = false;
-            dragForceSnap = false;
-            softRebuild();
-            if (!wasBulk) setFeedback("Placed");
-            return true;
-        }
-        return false;
-    }
-
-    private boolean tryHandleQuickDepDragStart(double mx, double my, int btn) {
-        if (btn == 0 && isDevMode && (quickDepKeyDown || (hasAltDown() && !hasShiftDown()) ||
-                editorState.activeTool == GraphEditorState.EditorTool.CONNECT)) {
-            for (Map.Entry<ResourceLocation, NodeHitbox> e : nodeButtons.entrySet()) {
-                if (e.getValue().visible && e.getValue().isMouseOver(mx, my)) {
-                    linkDragSource = QuestTreeRegistry.getQuest(e.getKey());
-                    linkDragX = (int) mx;
-                    linkDragY = (int) my;
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    private boolean tryHandleShiftDragStart(double mx, double my, int btn, int cl) {
-        if (btn == 0 && isDevMode && hasShiftDown()) {
-
-            for (Map.Entry<ResourceLocation, NodeHitbox> e : nodeButtons.entrySet()) {
-                if (e.getValue().visible && e.getValue().isMouseOver(mx, my)) {
-                    editorState.draggedNode = QuestTreeRegistry.getQuest(e.getKey());
-                    if (editorState.draggedNode != null) {
-                        pickupPlaceActive = QuestChroniclesSettings.get()
-                                .getNodeMoveMode() ==
-                                QuestChroniclesSettings.NodeMoveMode.PICKUP_PLACE;
-                        final int preX = editorState.draggedNode.getCustomX(),
-                                preY = editorState.draggedNode.getCustomY();
-                        dragOrigX = preX;
-                        dragOrigY = preY;
-                        final QuestNode capturedNode = editorState.draggedNode;
-                        dragController.beginDragUndo(capturedNode, preX, preY);
-                        dragGrabX = (int) mx - e.getValue().getX();
-                        dragGrabY = (int) my - e.getValue().getY();
-                        editorState.selectedNode = editorState.draggedNode;
-                        if (editorState.subgraphMode) rebuildSubgraph();
-                    }
-                    return true;
-                }
-            }
-
-            QuestGroup hitGrp = groupAtLabelBar(mx, my, cl);
-            if (hitGrp != null) {
-                editorState.draggedGroup = hitGrp;
-                int sx = (int) (hitGrp.getX() * posZoom()) + viewOffX + cl;
-                int sy = (int) (hitGrp.getY() * posZoom()) + viewOffY + HEADER_H;
-                groupDragGrabX = (int) mx - sx;
-                groupDragGrabY = (int) my - sy;
-                return true;
-            }
-
-            BackgroundPictureConfig.Picture hitPic = pictureAt(mx, my, cl);
-            if (hitPic != null) {
-
-                pictureDragStartX = hitPic.x;
-                pictureDragStartY = hitPic.y;
-                draggedPicture = hitPic;
-                int[] rect = BackgroundPictureRenderer.screenRect(hitPic, cl, HEADER_H, posZoom(), viewOffX, viewOffY);
-                pictureDragGrabX = (int) mx - rect[0];
-                pictureDragGrabY = (int) my - rect[1];
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private boolean tryHandleMiddleClickNodeDragStart(double mx, double my, int btn) {
-        if (btn == 2 && isDevMode) {
-            for (Map.Entry<ResourceLocation, NodeHitbox> e : nodeButtons.entrySet()) {
-                if (e.getValue().visible && e.getValue().isMouseOver(mx, my)) {
-                    editorState.draggedNode = QuestTreeRegistry.getQuest(e.getKey());
-                    if (editorState.draggedNode != null) {
-                        final int preX = editorState.draggedNode.getCustomX(),
-                                preY = editorState.draggedNode.getCustomY();
-                        dragOrigX = preX;
-                        dragOrigY = preY;
-                        final QuestNode capturedNode = editorState.draggedNode;
-                        dragController.beginDragUndo(capturedNode, preX, preY);
-                        dragGrabX = (int) mx - e.getValue().getX();
-                        dragGrabY = (int) my - e.getValue().getY();
-                        editorState.selectedNode = editorState.draggedNode;
-                        dragForceSnap = true;
-                        middleDragPickupActive = QuestChroniclesSettings.get()
-                                .isMiddleClickPickupPlace();
-                        if (editorState.subgraphMode) rebuildSubgraph();
-                    }
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    private boolean tryHandleShiftRightClickForceComplete(double mx, double my, int btn, int cl, int cr) {
-        if (btn == 1 && hasShiftDown() && mx > cl && mx < cr) {
-            for (Map.Entry<ResourceLocation, NodeHitbox> e : nodeButtons.entrySet()) {
-                if (e.getValue().visible && e.getValue().isMouseOver(mx, my)) {
-                    QuestNode node = QuestTreeRegistry.getQuest(e.getKey());
-                    if (node != null && (getState(node) != QuestState.LOCKED || isDevMode)) {
-                        onNodeClicked(node);
-                        return true;
-                    }
-                }
-            }
-            return true;
-        }
-        return false;
-    }
-
-    private boolean tryHandleDevRightClickContextMenu(double mx, double my, int btn, int cl, int cr) {
-        if (btn == 1 && isDevMode && mx > cl && mx < cr) {
-
-            if (ctxOpen) {
-                ctxOpen = false;
-                return true;
-            }
-            QuestNode hit = null;
-            for (Map.Entry<ResourceLocation, NodeHitbox> e : nodeButtons.entrySet()) {
-                if (e.getValue().visible && e.getValue().isMouseOver(mx, my)) {
-                    hit = QuestTreeRegistry.getQuest(e.getKey());
-                    break;
-                }
-            }
-            QuestGroup hitGrp = (hit == null) ? groupAtLabelBar(mx, my, cl) : null;
-
-            if (hit == null && hitGrp == null) {
-                BackgroundPictureConfig.Picture hitPic = pictureAt(mx, my, cl);
-                if (hitPic != null) {
-                    ctxOpen = false;
-                    pictureCtxMenu.open((int) mx, (int) my, hitPic);
-                    return true;
-                }
-            }
-
-            if (hit == null && hitGrp == null && depLineRenderer.tryOpenContextMenuAt((int) mx, (int) my, 6)) {
-
-                return true;
-            }
-            openCtx((int) mx, (int) my, hit, hitGrp);
-            return true;
-        }
-        return false;
-    }
-
-    private void handleNonDevRightClick(double mx, double my, int btn, int cl, int cr) {
-        if (btn == 1 && !isDevMode && mx > cl && mx < cr) {
-            boolean hitNode = false;
-            for (Map.Entry<ResourceLocation, NodeHitbox> e : nodeButtons.entrySet()) {
-                if (e.getValue().visible && e.getValue().isMouseOver(mx, my)) {
-                    QuestNode node = QuestTreeRegistry.getQuest(e.getKey());
-                    if (node != null && getState(node) == QuestState.LOCKED) {
-                        nonDevCtxNode = node;
-                        nonDevCtxX = (int) mx;
-                        nonDevCtxY = (int) my;
-                        hitNode = true;
-                    }
-                    break;
-                }
-            }
-            if (!hitNode) {
-                unlockPathHighlight.clear();
-                nonDevCtxNode = null;
-            }
-        }
-    }
-
-    private List<CtxItem> buildNonDevCtxItems() {
-        List<CtxItem> items = new ArrayList<>();
-        if (nonDevCtxNode == null) return items;
-        items.add(new CtxItem("👁 Show unlock path", "§b", false, false,
-                () -> computeUnlockPath(nonDevCtxNode)));
-        QuestNode linkTarget = nonDevCtxNode.isLinkStub() ? resolveLinkTarget(nonDevCtxNode) : null;
-        if (linkTarget != null) {
-            items.add(new CtxItem("🔗 Jump to linked quest", "§b", false, false,
-                    () -> navigateToNode(linkTarget)));
-        }
-        return items;
-    }
-
-    private boolean tryHandleNonDevCtxMenuClick(double mx, double my, int btn) {
-        if (nonDevCtxNode != null && btn == 0) {
-            List<CtxItem> items = buildNonDevCtxItems();
-            int iy = nonDevCtxY;
-            for (CtxItem item : items) {
-                if (mx >= nonDevCtxX && mx <= nonDevCtxX + CTX_W && my >= iy && my <= iy + CTX_ROW) {
-                    item.action().run();
-                    nonDevCtxNode = null;
-                    return true;
-                }
-                iy += CTX_ROW;
-            }
-            nonDevCtxNode = null;
-            return true;
-        }
-        return false;
-    }
-
-    private void renderNonDevCtxMenu(GuiGraphics g, int mx, int my) {
-        if (nonDevCtxNode == null) return;
-        List<CtxItem> items = buildNonDevCtxItems();
-        int menuH = items.size() * CTX_ROW + 2;
-        int x = Math.min(nonDevCtxX, width - CTX_W - 4);
-        int y = Math.min(nonDevCtxY, height - menuH - 4);
-
-        g.pose().pushPose();
-        g.pose().translate(0, 0, 400);
-        g.flush();
-        RenderSystem.disableDepthTest();
-
-        g.fill(x, y, x + CTX_W, y + menuH, C_CTX_BG);
-        g.fill(x, y, x + CTX_W, y + 1, C_CTX_BORDER);
-        g.fill(x, y + menuH - 1, x + CTX_W, y + menuH, C_CTX_BORDER);
-        g.fill(x, y, x + 1, y + menuH, C_CTX_BORDER);
-        g.fill(x + CTX_W - 1, y, x + CTX_W, y + menuH, C_CTX_BORDER);
-
-        int iy = y + 1;
-        for (CtxItem item : items) {
-            boolean hov = mx >= x && mx <= x + CTX_W && my >= iy && my <= iy + CTX_ROW;
-            if (hov) g.fill(x + 1, iy, x + CTX_W - 1, iy + CTX_ROW, C_CTX_HOVER);
-            ChroniclesUIKit.drawString(g, font, item.color() + item.label(), x + 6, iy + 4, C_CTX_TEXT);
-            iy += CTX_ROW;
-        }
-
-        RenderSystem.enableDepthTest();
-        g.flush();
-        g.pose().popPose();
-    }
-
-    private boolean tryHandleCanvasClick(double mx, double my, int btn, int cl, int cr) {
-        if (btn == 0 && mx > cl && mx < cr && my > HEADER_H) {
-
-            boolean handled = false;
-            for (Map.Entry<ResourceLocation, NodeHitbox> e : nodeButtons.entrySet()) {
-                NodeHitbox hb = e.getValue();
-                if (hb.active && hb.isMouseOver(mx, my)) {
-                    QuestNode node = QuestTreeRegistry.getQuest(e.getKey());
-                    if (node != null) onNodeClicked(node);
-                    handled = true;
-                    break;
-                }
-            }
-            if (!handled) {
-                if (isDevMode && editorState.activeTool == GraphEditorState.EditorTool.PLACE) {
-                    int canvasX = (int) ((mx - cl - viewOffX) / posZoom());
-                    int canvasY = (int) ((my - HEADER_H - viewOffY) / posZoom());
-                    placeQuickQuest(canvasX, canvasY);
-                    return true;
-                }
-                if (isDevMode && minecraft != null) {
-                    long now = System.currentTimeMillis();
-                    int imx = (int) mx, imy = (int) my;
-                    if (hasShiftDown() && now - lastCanvasClickTime < 350 && Math.abs(imx - lastCanvasClickX) < 10 &&
-                            Math.abs(imy - lastCanvasClickY) < 10) {
-
-                        int canvasX = (int) ((imx - cl - viewOffX) / posZoom());
-                        int canvasY = (int) ((imy - HEADER_H - viewOffY) / posZoom());
-                        lastCanvasClickTime = 0;
-                        minecraft.setScreen(new QuestCreatorScreen(this, canvasX, canvasY, selectedChapter));
-                        return true;
-                    }
-                    lastCanvasClickTime = System.currentTimeMillis();
-                    lastCanvasClickX = imx;
-                    lastCanvasClickY = imy;
-                }
-                isPanning = true;
-            }
-            return true;
-        }
-        return false;
-    }
-
-    private void placeQuickQuest(int canvasX, int canvasY) {
-        String idBase = "new_quest_";
-        int n = 1;
-        ResourceLocation questId;
-        do {
-            questId = ResourceLocation.fromNamespaceAndPath("phoenix_chronicles", idBase + n);
-            n++;
-        } while (QuestTreeRegistry.getAllQuests().containsKey(questId));
-
-        QuestNode node = new QuestNode(questId, Component.literal("New Quest"), Component.literal(""));
-        node.setChapter(selectedChapter);
-        node.setCustomPosition(canvasX, canvasY);
-
-        QuestTreeRegistry.injectDynamicQuestNode(node, null);
-        QuestFileSaver.saveOneQuestToDisk(node, false);
-        rebuild();
-        setFeedback("Placed quest -- click again to place more");
-
-        ResourceLocation placedId = questId;
-
-        editorState.multiSelection.add(placedId);
-        pushUndo("Undo: quest placed", () -> {
-            QuestTreeRegistry.removeQuest(placedId);
-            QuestFileSaver.deleteQuestFiles(node);
-            editorState.multiSelection.remove(placedId);
-            rebuild();
-        }, () -> {
-            QuestTreeRegistry.injectDynamicQuestNode(node, null);
-            QuestFileSaver.saveOneQuestToDisk(node, false);
-            editorState.multiSelection.add(placedId);
-            rebuild();
-        });
-    }
-
-    private boolean handleCtxClick(int mx, int my) {
-        List<CtxItem> items = buildCtxItems();
-
-        int lmx = Math.round(ctxX + (mx - ctxX) / ctxScale);
-        int lmy = Math.round(ctxY + (my - ctxY) / ctxScale);
-        int x = ctxX, y = ctxY + 2;
-        if (ctxNode != null) y += CTX_ROW;
-
-        for (CtxItem item : items) {
-            if (item.isSep()) {
-                y += CTX_SEP;
-                continue;
-            }
-            if (lmx >= x && lmx <= x + CTX_W && lmy >= y && lmy <= y + CTX_ROW) {
-                item.action().run();
-                return true;
-            }
-            y += CTX_ROW;
-        }
-
-        if (ctxMoveCatOpen) {
-            List<String> cats = buildChapterList();
-            cats.remove("ALL");
-            int subX = ctxMoveCatX(cats.size());
-            int subY = ctxMoveCatYClamped(items, cats.size());
-            int visibleRows = Math.min(cats.size(), CTX_MOVE_CAT_MAX_ROWS);
-            for (int i = ctxMoveCatScroll; i < Math.min(cats.size(), ctxMoveCatScroll + visibleRows); i++) {
-                int ry = subY + (i - ctxMoveCatScroll) * CTX_ROW;
-                if (mx >= subX && mx <= subX + CTX_W && my >= ry && my <= ry + CTX_ROW) {
-                    String newCat = cats.get(i);
-                    if (ctxNode != null) {
-                        QuestNode movedNode = ctxNode;
-                        String oldCat = movedNode.getChapter();
-                        movedNode.setChapter(newCat);
-                        saveNodeChapterToDisk(movedNode, newCat);
-                        setFeedback("Moved to %s", friendly(newCat));
-                        pushUndo("Undo: quest moved back to " + friendly(oldCat), () -> {
-                            movedNode.setChapter(oldCat);
-                            saveNodeChapterToDisk(movedNode, oldCat);
-                            rebuild();
-                        }, () -> {
-                            movedNode.setChapter(newCat);
-                            saveNodeChapterToDisk(movedNode, newCat);
-                            rebuild();
-                        });
-                    }
-                    ctxOpen = false;
-                    ctxMoveCatOpen = false;
-                    rebuild();
-                    return true;
-                }
-            }
         }
         return false;
     }
@@ -2188,7 +1055,7 @@ public class ChronicleOverviewScreen extends Screen
     }
 
     @Nullable
-    private int[] nodeCenterForLine(ResourceLocation id) {
+    int[] nodeCenterForLine(ResourceLocation id) {
         int[] pos = nodeScreenPos.get(id);
         QuestNode n = QuestTreeRegistry.getQuest(id);
         if (pos == null || n == null) return null;
@@ -2198,14 +1065,14 @@ public class ChronicleOverviewScreen extends Screen
 
     @Override
     public boolean mouseDragged(double mx, double my, int btn, double dx, double dy) {
-        if (tryHandleSidebarRowDragThreshold(mx, my, btn)) return true;
-        if (tryHandleNodeSizeEditDrag(btn, dx, dy)) return true;
-        if (tryHandlePictureEditDrag(btn, dx, dy)) return true;
+        if (sidebar.tryHandleSidebarRowDragThreshold(mx, my, btn)) return true;
+        if (editModes.tryHandleNodeSizeEditDrag(btn, dx, dy)) return true;
+        if (editModes.tryHandlePictureEditDrag(btn, dx, dy)) return true;
 
         if (btn == 0 && boxSelecting) {
             boxSelectCurX = (int) mx;
             boxSelectCurY = (int) my;
-            updateBoxSelection();
+            canvasInput.updateBoxSelection();
             return true;
         }
         if (btn == 0 && mmDragging) {
@@ -2218,7 +1085,7 @@ public class ChronicleOverviewScreen extends Screen
             return true;
         }
         if (btn == 0) {
-            if (tryHandleLeftButtonDragMove(mx, my, dx, dy)) return true;
+            if (canvasInput.tryHandleLeftButtonDragMove(mx, my, dx, dy)) return true;
         }
 
         if (btn == 2 && editorState.draggedNode != null) {
@@ -2230,96 +1097,9 @@ public class ChronicleOverviewScreen extends Screen
         return super.mouseDragged(mx, my, btn, dx, dy);
     }
 
-    private boolean tryHandleSidebarRowDragThreshold(double mx, double my, int btn) {
-        if (btn == 0 && sidebarPanel.dragRow() != null) {
-            if (!sidebarPanel.dragMoved() &&
-                    (Math.abs(mx - sidebarPanel.dragStartX()) > SidebarPanel.SIDEBAR_DRAG_THRESHOLD ||
-                            Math.abs(my - sidebarPanel.dragStartY()) > SidebarPanel.SIDEBAR_DRAG_THRESHOLD)) {
-                sidebarPanel.setDragMoved(true);
-            }
-            return true;
-        }
-        return false;
-    }
-
-    private boolean tryHandleNodeSizeEditDrag(int btn, double dx, double dy) {
-        if (nodeSizeEditMode != null) {
-            if (btn == 0) {
-                int snap = dragController.currentDragSnap();
-                nodeSizeDragAccX += dx / posZoom();
-                nodeSizeDragAccY += dy / posZoom();
-                int stepX = (int) Math.round(nodeSizeDragAccX / snap) * snap;
-                int stepY = (int) Math.round(nodeSizeDragAccY / snap) * snap;
-                if (stepX != 0 || stepY != 0) {
-                    nodeSizeEditMode.setCustomPosition(
-                            nodeSizeEditMode.getCustomX() + stepX,
-                            nodeSizeEditMode.getCustomY() + stepY);
-                    nodeSizeDragAccX -= stepX;
-                    nodeSizeDragAccY -= stepY;
-                    dragController.refreshNodeScreenPos(nodeSizeEditMode);
-                    depLineRenderer.refreshEdgeEndpoints(nodeSizeEditMode.getId(), this::nodeCenterForLine, posZoom(),
-                            QuestChroniclesSettings.get());
-                }
-            }
-            return true;
-        }
-        return false;
-    }
-
-    private boolean tryHandlePictureEditDrag(int btn, double dx, double dy) {
-        if (pictureEditMode != null) {
-            if (btn == 0) {
-                pictureEditMode.x += (float) (dx / posZoom());
-                pictureEditMode.y += (float) (dy / posZoom());
-            }
-            return true;
-        }
-        return false;
-    }
-
-    private boolean tryHandleLeftButtonDragMove(double mx, double my, double dx, double dy) {
-        if (editorState.draggedGroup != null) {
-            int cl = sidebarW();
-            int screenX = (int) mx - groupDragGrabX;
-            int screenY = (int) my - groupDragGrabY;
-            editorState.draggedGroup.setX((int) ((screenX - cl - viewOffX) / posZoom()));
-            editorState.draggedGroup.setY((int) ((screenY - HEADER_H - viewOffY) / posZoom()));
-            return true;
-        }
-        if (draggedPicture != null) {
-            int cl = sidebarW();
-
-            int screenX = (int) mx - pictureDragGrabX;
-            int screenY = (int) my - pictureDragGrabY;
-            float dragZoom = BackgroundPictureRenderer.parallaxZoom(draggedPicture, posZoom());
-            float canvasX = (screenX - cl - BackgroundPictureRenderer.parallaxOffset(draggedPicture, viewOffX)) /
-                    dragZoom + draggedPicture.w / 2f;
-            float canvasY = (screenY - HEADER_H - BackgroundPictureRenderer.parallaxOffset(draggedPicture, viewOffY)) /
-                    dragZoom + draggedPicture.h / 2f;
-            draggedPicture.x = canvasX;
-            draggedPicture.y = canvasY;
-            return true;
-        }
-        if (editorState.draggedNode != null) {
-            dragController.updateDraggedNodeScreenPos(mx, my, dragController.currentDragSnap());
-            depLineRenderer.refreshEdgeEndpoints(editorState.draggedNode.getId(), this::nodeCenterForLine,
-                    posZoom(),
-                    QuestChroniclesSettings.get());
-            return true;
-        }
-        if (isPanning) {
-            viewOffX += (int) dx;
-            viewOffY += (int) dy;
-            pendingPanDX += (int) dx;
-            pendingPanDY += (int) dy;
-            return true;
-        }
-        return false;
-    }
-
     @Override
     public boolean mouseReleased(double mx, double my, int btn) {
-        resetNodeSizeDragAccumulator(btn);
+        editModes.resetNodeSizeDragAccumulator(btn);
 
         if (btn == 0 && boxSelecting) {
             boxSelecting = false;
@@ -2327,55 +1107,19 @@ public class ChronicleOverviewScreen extends Screen
             return true;
         }
 
-        if (tryHandleSidebarRowDrop(mx, my, btn)) return true;
+        if (sidebar.tryHandleSidebarRowDrop(mx, my, btn)) return true;
 
         if (tryHandleMinimapDragEnd(btn)) return true;
 
-        if (tryHandleLinkDragEnd(mx, my, btn)) return true;
+        if (canvasInput.tryHandleLinkDragEnd(mx, my, btn)) return true;
 
         if (btn == 0) {
-            if (tryHandleLeftButtonDragRelease()) return true;
+            if (canvasInput.tryHandleLeftButtonDragRelease()) return true;
         }
 
-        if (tryHandleMiddleButtonDragRelease(btn)) return true;
+        if (canvasInput.tryHandleMiddleButtonDragRelease(btn)) return true;
 
         return super.mouseReleased(mx, my, btn);
-    }
-
-    private void resetNodeSizeDragAccumulator(int btn) {
-        if (btn == 0 && nodeSizeEditMode != null) {
-            nodeSizeDragAccX = 0;
-            nodeSizeDragAccY = 0;
-        }
-    }
-
-    private boolean tryHandleSidebarRowDrop(double mx, double my, int btn) {
-        if (btn == 0 && sidebarPanel.dragRow() != null) {
-            SidebarRow source = sidebarPanel.dragRow();
-            boolean moved = sidebarPanel.dragMoved();
-            sidebarPanel.setDragRow(null);
-            sidebarPanel.setDragMoved(false);
-            if (!moved) {
-
-                if (source.isFolder()) {
-                    CategoryRegistry.toggleCollapsed(source.id());
-                    CategoryRegistry.save();
-                    rebuild();
-                } else {
-                    selectedChapter = source.id();
-                    editorState.selectedNode = null;
-                    PhantasiaCompat.closePreview(phantasiaPreview);
-                    phantasiaPreview = null;
-                    ctxOpen = false;
-                    ctxMoveCatOpen = false;
-                    rebuild();
-                }
-                return true;
-            }
-            handleSidebarDrop(source, (int) mx, (int) my);
-            return true;
-        }
-        return false;
     }
 
     private boolean tryHandleMinimapDragEnd(int btn) {
@@ -2386,128 +1130,6 @@ public class ChronicleOverviewScreen extends Screen
             return true;
         }
         return false;
-    }
-
-    private boolean tryHandleLinkDragEnd(double mx, double my, int btn) {
-        if (btn == 0 && linkDragSource != null) {
-            QuestNode src = linkDragSource;
-            linkDragSource = null;
-            for (Map.Entry<ResourceLocation, NodeHitbox> e : nodeButtons.entrySet()) {
-                if (e.getValue().visible && e.getValue().isMouseOver(mx, my)) {
-                    QuestNode target = QuestTreeRegistry.getQuest(e.getKey());
-                    if (target != null && target != src && !target.getPrerequisites().contains(src) &&
-                            !src.getPrerequisites().contains(target)) {
-                        target.addPrerequisite(src);
-                        target.setPrereqLink(src.getId(), true);
-                        saveNodePrereqsToDisk(target);
-                        setFeedback("§aLinked: %s → prereq of %s", src.getId().getPath(), target.getId().getPath());
-                        buildLineCache();
-                        rebuild();
-                        QuestNode undoTarget = target;
-                        QuestNode undoSrc = src;
-                        pushUndo("Undo: dependency link removed", () -> {
-                            undoTarget.removePrerequisite(undoSrc);
-                            undoTarget.setPrereqLink(undoSrc.getId(), false);
-                            saveNodePrereqsToDisk(undoTarget);
-                            buildLineCache();
-                            rebuild();
-                        }, () -> {
-                            undoTarget.addPrerequisite(undoSrc);
-                            undoTarget.setPrereqLink(undoSrc.getId(), true);
-                            saveNodePrereqsToDisk(undoTarget);
-                            buildLineCache();
-                            rebuild();
-                        });
-                    } else if (target != null && src.getPrerequisites().contains(target)) {
-                        setFeedback("§cCan't link. Would create a dependency cycle");
-                    } else if (target != null && target.getPrerequisites().contains(src)) {
-                        setFeedback("§eAlready a prerequisite");
-                    }
-                    return true;
-                }
-            }
-            return true;
-        }
-        return false;
-    }
-
-    private boolean tryHandleLeftButtonDragRelease() {
-        if (editorState.draggedGroup != null) {
-            QuestGroupManager.save(groupsConfigPath());
-            editorState.draggedGroup = null;
-            return true;
-        }
-        if (draggedPicture != null) {
-            BackgroundPictureConfig.save();
-            BackgroundPictureConfig.Picture movedPic = draggedPicture;
-            float startX = pictureDragStartX, startY = pictureDragStartY;
-            float endX = movedPic.x, endY = movedPic.y;
-            if (startX != endX || startY != endY) {
-                pushUndo("Undo: picture moved back", () -> {
-                    movedPic.x = startX;
-                    movedPic.y = startY;
-                    BackgroundPictureConfig.save();
-                }, () -> {
-                    movedPic.x = endX;
-                    movedPic.y = endY;
-                    BackgroundPictureConfig.save();
-                });
-            }
-            draggedPicture = null;
-            return true;
-        }
-        if (editorState.draggedNode != null && !pickupPlaceActive) {
-            dragController.finalizeDragRelease();
-            editorState.draggedNode = null;
-            dragForceSnap = false;
-            softRebuild();
-            return true;
-        }
-        if (isPanning) {
-
-            buildLineCache();
-        }
-        isPanning = false;
-        return false;
-    }
-
-    private boolean tryHandleMiddleButtonDragRelease(int btn) {
-        if (btn == 2 && editorState.draggedNode != null && !middleDragPickupActive) {
-            dragController.finalizeDragRelease();
-            editorState.draggedNode = null;
-            dragForceSnap = false;
-            softRebuild();
-            return true;
-        }
-        return false;
-    }
-
-    @Override
-    public List<CtxItem> buildCtxItems() {
-        return ctxMenuBuilder.buildCtxItems();
-    }
-
-    private void openCtx(int x, int y, QuestNode node) {
-        ctxMenuBuilder.openCtx(x, y, node);
-    }
-
-    private void openCtx(int x, int y, QuestNode node, @Nullable QuestGroup group) {
-        ctxMenuBuilder.openCtx(x, y, node, group);
-    }
-
-    @Override
-    public int menuHeight(List<CtxItem> items) {
-        return ctxMenuBuilder.menuHeight(items);
-    }
-
-    @Override
-    public int ctxMoveCatX(int catCount) {
-        return ctxMenuBuilder.ctxMoveCatX(catCount);
-    }
-
-    @Override
-    public int ctxMoveCatYClamped(List<CtxItem> items, int catCount) {
-        return ctxMenuBuilder.ctxMoveCatYClamped(items, catCount);
     }
 
     private String stampChapterKey = "";
@@ -2535,7 +1157,7 @@ public class ChronicleOverviewScreen extends Screen
         refreshPalette();
         rebuildLinesIfThemeChanged();
         pendingDeferredDraws.clear();
-        updateSidebarHoverPeek(mx, my);
+        sidebar.updateSidebarHoverPeek(mx, my);
 
         if (pendingPanDX != 0 || pendingPanDY != 0) {
             panCanvas(pendingPanDX, pendingPanDY);
@@ -2545,14 +1167,14 @@ public class ChronicleOverviewScreen extends Screen
 
         dragController.handleLiveDragging(mx, my);
 
-        int cl = sidebarVisualW();
+        int cl = sidebar.sidebarVisualW();
         int cr = width;
         int sz = scaledNodeSize();
 
         long animTick = QuestChroniclesSettings.get().isReduceMotion() ? 0L : System.currentTimeMillis();
 
         FrameProfiler.begin("header");
-        renderHeaderAndBaseLayout(g, mx, my, cl, cr);
+        header.renderHeaderAndBaseLayout(g, mx, my, cl, cr);
         FrameProfiler.end("header");
 
         PhantasiaCompat.tickPreview(phantasiaPreview);
@@ -2565,7 +1187,7 @@ public class ChronicleOverviewScreen extends Screen
             }
         }
 
-        renderSidebarPanel(g, mx, my);
+        sidebar.renderSidebarPanel(g, mx, my);
 
         renderCanvasLayers(g, mx, my, cl, cr, animTick);
 
@@ -2614,197 +1236,6 @@ public class ChronicleOverviewScreen extends Screen
         FrameProfiler.end("TOTAL render()");
         FrameProfiler.endFrame();
         if (FrameProfiler.isEnabled()) renderProfilerPanel(g);
-    }
-
-    private void renderHeaderAndBaseLayout(GuiGraphics g, int mx, int my, int cl, int cr) {
-        renderBackground(g, mx, my, 0f);
-
-        int visW = sidebarVisualW();
-        g.fill(0, 0, visW, height, palette.panelDark);
-
-        ChapterConfig canvasCfg = selectedChapter.isEmpty() ? new ChapterConfig() :
-                ChapterConfig.getEffective(selectedChapter);
-        if (canvasCfg.getColorAlpha() > 0) {
-            g.fill(visW, 0, cr, height, palette.bg);
-        }
-
-        g.fill(cr, 0, width, height, palette.panelDark);
-        g.fill(cr, 0, cr + 1, height, palette.border);
-
-        g.fill(0, 0, width, TOOLBAR_Y, palette.header);
-        g.fill(0, TOOLBAR_Y - 1, width, TOOLBAR_Y, palette.border);
-        String titlePrefix = testMode ? "§c⏵ PLAYER  §8⟫  §7" : "§8Chronicles  §8⟫  §7";
-
-        int pillReserve = font.width(Math.round(zoom * 100) + "%") + 10;
-        if (unclaimedRewardCount() > 0)
-            pillReserve += font.width("🎁 " + unclaimedRewardCount()) + 18;
-        EmergencyPill emergencyReserve = emergencyPill();
-        if (emergencyPillVisible(emergencyReserve))
-            pillReserve += font.width(emergencyPillLabel(emergencyReserve)) + 18;
-        if (playerData != null) pillReserve += font.width(autoClaimPillLabel()) + 18;
-        pillReserve += font.width("Grid: off") + 18;
-        if (isDevMode) pillReserve += font.width("⊛ Subgraph: 000") + 18;
-        int titleMaxW = Math.max(20, (cr - pillReserve) - (cl + 8));
-        String titleFull = titlePrefix + chapterBreadcrumb(selectedChapter);
-        String titleToDraw = titleFull;
-        if (font.width(StringUtil.stripColor(titleFull)) > titleMaxW) {
-            titleToDraw = font.plainSubstrByWidth(titleFull, titleMaxW - font.width("…")) + "…";
-        }
-        ChroniclesUIKit.drawString(g, font, titleToDraw, cl + 8, 7, palette.text);
-        if (testMode) g.fill(cl, TOOLBAR_Y - 1, cr, TOOLBAR_Y, 0xFFCC2222);
-        if (pictureEditMode != null) {
-            g.fill(cl, TOOLBAR_Y - 1, cr, TOOLBAR_Y, 0xFFFFCC33);
-            String hint = "§e🖼 Editing picture. Scroll to resize, Alt+scroll to rotate (shift = fine), drag to move, right-click/Esc to finish";
-            ChroniclesUIKit.drawCenteredString(g, font, hint, (cl + cr) / 2, 7, 0xFFFFEEAA);
-        }
-
-        g.enableScissor(0, 0, sidebarVisualW(), TOOLBAR_Y);
-        renderQuestbookTitle(g, mx, my);
-        g.disableScissor();
-
-        String zoomStr = Math.round(zoom * 100) + "%";
-        int zw = font.width(zoomStr);
-        int zx = cr - zw - 10, zy = 3;
-        g.fill(zx - 3, zy, zx + zw + 3, zy + 13, 0x22FFFFFF);
-        ChroniclesUIKit.drawString(g, font, "§7" + zoomStr, zx, zy + 3, palette.textDim);
-
-        int unclaimedCount = unclaimedRewardCount();
-        if (unclaimedCount > 0) {
-            String claimLabel = "§d🎁 " + unclaimedCount;
-            int cw = font.width(StringUtil.stripColor(claimLabel));
-            int cpx = zx - cw - 18, cpy = 3;
-            boolean claimHov = mx >= cpx - 3 && mx < cpx + cw + 5 && my >= cpy && my < cpy + 13;
-            g.fill(cpx - 3, cpy, cpx + cw + 5, cpy + 13, claimHov ? 0x44FFFFFF : 0x33AA4488);
-            ChroniclesUIKit.drawString(g, font, claimLabel, cpx, cpy + 3, palette.textDim, false);
-            if (claimHov) {
-                pendingDeferredDraws.add(() -> g.renderTooltip(font,
-                        ChroniclesUIKit.lit("§7" + unclaimedCount + " quest(s) with unclaimed rewards - click to open"),
-                        mx, my));
-            }
-            zx = cpx;
-        }
-
-        EmergencyPill emergency = emergencyPill();
-        if (emergencyPillVisible(emergency)) {
-            boolean anyReady = emergency.ready() > 0;
-            String plain = emergencyPillLabel(emergency);
-            int ew = font.width(plain);
-            int epx = zx - ew - 18, epy = 3;
-            boolean emergencyHov = mx >= epx - 3 && mx < epx + ew + 5 && my >= epy && my < epy + 13;
-            g.fill(epx - 3, epy, epx + ew + 5, epy + 13,
-                    emergencyHov ? 0x44FFFFFF : anyReady ? 0x44B08A2E : 0x22FFFFFF);
-            ChroniclesUIKit.drawString(g, font, (anyReady ? "§6" : "§8") + plain, epx, epy + 3, palette.textDim,
-                    false);
-            if (emergencyHov) {
-                String tip = anyReady ?
-                        "§7" + emergency.ready() + " quest(s) with emergency items ready - click to open" :
-                        "§7Emergency items ready again in " +
-                                QuestProgressTracker.formatDuration(emergency.soonestCooldownMs()) +
-                                " - click to open";
-                pendingDeferredDraws.add(() -> g.renderTooltip(font, ChroniclesUIKit.lit(tip), mx, my));
-            }
-            zx = epx;
-        }
-
-        if (playerData != null) {
-            boolean autoOn = playerData.isAutoClaimEnabled();
-            String autoPlain = autoClaimPillLabel();
-            int aw = font.width(autoPlain);
-            int apx = zx - aw - 18, apy = 3;
-            boolean autoHov = mx >= apx - 3 && mx < apx + aw + 5 && my >= apy && my < apy + 13;
-            g.fill(apx - 3, apy, apx + aw + 5, apy + 13, autoHov ? 0x44FFFFFF : autoOn ? 0x3355CC77 : 0x22FFFFFF);
-            ChroniclesUIKit.drawString(g, font, (autoOn ? "§a" : "§8") + autoPlain, apx, apy + 3, palette.textDim,
-                    false);
-            if (autoHov) {
-                pendingDeferredDraws.add(() -> g.renderTooltip(font, ChroniclesUIKit.lit(autoOn ?
-                        "§7Auto-claim is on - click to choose what it claims" :
-                        "§7Auto-claim is off - click to set it up"), mx, my));
-            }
-            zx = apx;
-        }
-
-        String gridLabel = !gridSnapEnabled ? "§8Grid: §c§loff" :
-                (gridSnap == 1) ? "§8Grid: §afree" : "§8Grid: §7" + gridSnap;
-        int gw = font.width(StringUtil.stripColor(gridLabel));
-        int gpx = zx - gw - 18, gpy = 3;
-        boolean gridHov = mx >= gpx - 3 && mx < gpx + gw + 5 && my >= gpy && my < gpy + 13;
-        g.fill(gpx - 3, gpy, gpx + gw + 5, gpy + 13, gridHov ? 0x44FFFFFF : 0x22FFFFFF);
-        ChroniclesUIKit.drawString(g, font, gridLabel, gpx, gpy + 3, palette.textDim, false);
-        if (gridHov) {
-
-            pendingDeferredDraws.add(() -> g.renderTooltip(font,
-                    ChroniclesUIKit.lit("§7Click to cycle canvas snap grid size"), mx, my));
-        }
-
-        if (isDevMode) {
-            String sgLabel = editorState.subgraphMode ? "§b⊛ Subgraph: " + subgraphNodes.size() : "§8⊛ Subgraph";
-            int sgw = font.width(StringUtil.stripColor(sgLabel));
-            int sgx = gpx - sgw - 18, sgy = 3;
-            boolean sgHov = mx >= sgx - 3 && mx < sgx + sgw + 5 && my >= sgy && my < sgy + 13;
-            g.fill(sgx - 3, sgy, sgx + sgw + 5, sgy + 13,
-                    editorState.subgraphMode ? 0x4444CCFF : (sgHov ? 0x44FFFFFF : 0x22FFFFFF));
-            ChroniclesUIKit.drawString(g, font, sgLabel, sgx, sgy + 3, palette.textDim, false);
-            if (sgHov) {
-                pendingDeferredDraws.add(() -> g.renderComponentTooltip(font, List.of(
-                        ChroniclesUIKit.lit("§b⊛ Subgraph mode"),
-                        ChroniclesUIKit.lit("§7Dims every quest that isn't an ancestor or"),
-                        ChroniclesUIKit.lit("§7descendant of the currently selected one,"),
-                        ChroniclesUIKit.lit("§7isolating just its dependency chain."),
-                        ChroniclesUIKit.lit("§8Click a quest to select it, then click this"),
-                        ChroniclesUIKit.lit("§8pill (or press G) to toggle it on/off.")), mx, my));
-            }
-
-        }
-
-        g.enableScissor(0, TOOLBAR_Y, width, HEADER_H);
-        renderToolbar(g, mx, my, cl, cr);
-        g.disableScissor();
-    }
-
-    private boolean sidebarCollapseToggleHovered(int mx, int my) {
-        return sidebarPanel.collapseToggleHovered(mx, my);
-    }
-
-    private boolean questbookTitleHovered(int mx, int my) {
-        return !isSidebarNarrow() && mx >= 0 && mx < sidebarW() - 1 && my >= 0 && my < TOOLBAR_Y;
-    }
-
-    private void renderQuestbookTitle(GuiGraphics g, int mx, int my) {
-        if (isSidebarNarrow()) return;
-        boolean hov = questbookTitleHovered(mx, my);
-        QuestChroniclesSettings s = QuestChroniclesSettings.get();
-        if (hov) g.fill(0, 0, sidebarW() - 1, TOOLBAR_Y - 1, 0x14FFFFFF);
-
-        Item iconItem = s.getQuestbookIconItem();
-        int iconY = (TOOLBAR_Y - 1 - 16) / 2;
-        g.renderItem(new ItemStack(iconItem), 3, iconY);
-
-        String name = s.getQuestbookName();
-        int maxW = sidebarW() - 22;
-        if (font.width(name) > maxW) name = font.plainSubstrByWidth(name, maxW - 4) + "…";
-        ChroniclesUIKit.drawString(g, font, (hov ? "§f" : "§7") + name, 21, 7, hov ? palette.text : palette.textDim,
-                false);
-    }
-
-    private SidebarPanel.Colors sidebarColors() {
-        return new SidebarPanel.Colors(palette.border, palette.borderLit, palette.text, palette.textDim,
-                palette.textFaint, palette.panelDark,
-                palette.selTab, palette.progFill, C_PROG_ACT);
-    }
-
-    private void renderSidebarPanel(GuiGraphics g, int mx, int my) {
-        sidebarPanel.renderPanel(g, font, mx, my, width, height, sidebarColors(), isDevMode, selectedChapter,
-                this::friendly, progressLookup(), attentionLookup(), rewardsLookup(), pendingDeferredDraws::add,
-                buildChapterList());
-    }
-
-    private SidebarRow sidebarRowAt(List<SidebarRow> rows, int mx, int my) {
-        return sidebarPanel.rowAt(rows, mx, my);
-    }
-
-    private void handleSidebarDrop(SidebarRow source, int mx, int my) {
-        sidebarPanel.handleDrop(source, mx, my, this::friendly, progressLookup(),
-                this::setFeedback, this::rebuild, buildChapterList());
     }
 
     private void renderCanvasLayers(GuiGraphics g, int mx, int my, int cl, int cr, long animTick) {
@@ -2896,13 +1327,13 @@ public class ChronicleOverviewScreen extends Screen
             ChroniclesUIKit.drawString(g, font, clipped, cl + 6, height - 10, palette.textDim);
         }
 
-        if (!isSidebarNarrow()) {
+        if (!sidebar.isSidebarNarrow()) {
 
-            g.enableScissor(0, 0, sidebarVisualW(), height);
+            g.enableScissor(0, 0, sidebar.sidebarVisualW(), height);
 
             RenderSystem.disableDepthTest();
-            renderSidebarNewChapterButton(g, mx, my);
-            renderSidebarGear(g, mx, my);
+            sidebar.renderSidebarNewChapterButton(g, mx, my);
+            sidebar.renderSidebarGear(g, mx, my);
             g.flush();
             RenderSystem.enableDepthTest();
             g.disableScissor();
@@ -2955,11 +1386,11 @@ public class ChronicleOverviewScreen extends Screen
                     false);
         }
 
-        if (!renderingAsBackdrop) renderNonDevCtxMenu(g, (int) mx, (int) my);
+        if (!renderingAsBackdrop) menus.renderNonDevCtxMenu(g, (int) mx, (int) my);
 
         if (depLineRenderer.isContextMenuOpen()) depLineRenderer.renderContextMenu(g, font, mx, my, width, height);
         if (sidebarPanel.contextMenuOpen()) {
-            sidebarPanel.renderContextMenu(g, font, (int) mx, (int) my, width, height, sidebarColors());
+            sidebarPanel.renderContextMenu(g, font, (int) mx, (int) my, width, height, sidebar.sidebarColors());
         }
 
         for (TogglePanel p : List.of(validationPanel, statsPanel)) {
@@ -3035,52 +1466,8 @@ public class ChronicleOverviewScreen extends Screen
         g.pose().popPose();
     }
 
-    private void openSearchOverlay() {
+    void openSearchOverlay() {
         if (minecraft != null) minecraft.setScreen(new SearchOverlayScreen(this));
-    }
-
-    private ToolbarPanel.Colors toolbarColors() {
-        return new ToolbarPanel.Colors(palette.panelDark, palette.border, palette.text, palette.textDim);
-    }
-
-    private int[][] filterPillBounds(int cl, int cr) {
-        return toolbarPanel.filterPillBounds(cl, cr, TOOLBAR_Y, TOOLBAR_H, font, isDevMode);
-    }
-
-    private void renderToolbar(GuiGraphics g, int mx, int my, int cl, int cr) {
-        toolbarPanel.render(g, font, mx, my, width, cl, cr, TOOLBAR_Y, TOOLBAR_H, toolbarColors(), stateFilter,
-                hideCompleted, minimapOpen, statsPanel.isOpen(), isDevMode, editorState.activeTool,
-                pendingDeferredDraws::add);
-    }
-
-    private boolean hitsToolbarBtn(String key, double mx, double my) {
-        return toolbarPanel.hits(key, mx, my);
-    }
-
-    private boolean gearHovered(int mx, int my) {
-        return sidebarPanel.gearHovered(mx, my, height);
-    }
-
-    private boolean newCatButtonHovered(int mx, int my) {
-        return sidebarPanel.newCatButtonHovered(mx, my, height, isDevMode);
-    }
-
-    public void openNewChapterForm() {
-        if (minecraft != null) {
-            minecraft.setScreen(new NewChapterScreen(this, id -> {
-                selectedChapter = id;
-                rebuild();
-                setFeedback("Chapter '%s' created", friendly(id));
-            }));
-        }
-    }
-
-    private void renderSidebarNewChapterButton(GuiGraphics g, int mx, int my) {
-        sidebarPanel.renderNewChapterButton(g, font, mx, my, height, isDevMode, sidebarColors());
-    }
-
-    private void renderSidebarGear(GuiGraphics g, int mx, int my) {
-        sidebarPanel.renderGear(g, font, mx, my, width, height, isDevMode, sidebarColors(), pendingDeferredDraws::add);
     }
 
     private ResourceLocation resolveShapeTexture(QuestNode node) {
@@ -3106,11 +1493,11 @@ public class ChronicleOverviewScreen extends Screen
     }
 
     @Nullable
-    private QuestGroup groupAtLabelBar(double mx, double my, int cl) {
+    QuestGroup groupAtLabelBar(double mx, double my, int cl) {
         return nodeRenderer.groupAtLabelBar(mx, my, cl);
     }
 
-    private BackgroundPictureConfig.Picture pictureAt(double mx, double my, int cl) {
+    BackgroundPictureConfig.Picture pictureAt(double mx, double my, int cl) {
         return nodeRenderer.pictureAt(mx, my, cl);
     }
 
@@ -3137,103 +1524,6 @@ public class ChronicleOverviewScreen extends Screen
         }
         g.flush();
         RenderSystem.disableScissor();
-    }
-
-    @Override
-    public boolean catMatches(QuestNode n) {
-        MinecraftServer server = minecraft != null ? minecraft.getSingleplayerServer() : null;
-
-        if (n.isFlagDisabled(server)) return isDevMode && QuestChroniclesSettings.get().isShowFlagDisabledQuests();
-
-        if (!selectedChapter.equals(n.getChapter())) return false;
-
-        if (!isDevMode) {
-            QuestNode.Visibility vis = n.getEffectiveVisibility(server, minecraft.player);
-            if (vis == QuestNode.Visibility.HIDDEN && getState(n) == QuestState.LOCKED) return false;
-            if (isAncestorGatedHidden(n)) return false;
-        }
-
-        if (!stateFilter.equals("ALL")) {
-            QuestState st = getState(n);
-            boolean stateMatch = switch (stateFilter) {
-                case "AVAILABLE" -> st == QuestState.UNLOCKED;
-                case "ACTIVE" -> st == QuestState.ACTIVE;
-                case "COMPLETE" -> st == QuestState.COMPLETED;
-                case "LOCKED" -> st == QuestState.LOCKED;
-                default -> true;
-            };
-            return stateMatch;
-        }
-        return true;
-    }
-
-    String buildSearchHaystack(QuestNode n) {
-        StringBuilder sb = new StringBuilder();
-        MinecraftServer server = minecraft != null ? minecraft.getSingleplayerServer() : null;
-
-        sb.append(n.getEffectiveTitleRaw(server, minecraft.player).getString().toLowerCase()).append(' ');
-        sb.append(n.getId().getPath().replace('_', ' ').toLowerCase()).append(' ');
-        sb.append(n.getId().toString().toLowerCase()).append(' ');
-        if (!n.getEffectiveDescriptionRaw(server, minecraft.player).getString().isEmpty())
-            sb.append(n.getEffectiveDescriptionRaw(server, minecraft.player).getString().toLowerCase()).append(' ');
-        if (n.getSubtitle() != null && !n.getSubtitle().isEmpty()) sb.append(n.getSubtitle().toLowerCase()).append(' ');
-        sb.append(n.getChapter().toLowerCase()).append(' ');
-
-        for (QuestTask task : n.getEffectiveTasks(server, minecraft.player)) {
-            sb.append(task.getDescription().getString().toLowerCase()).append(' ');
-
-            ResourceLocation displayId = HiddenParts.taskTargetHidden(n, task) ? null : task.getDisplayItemId();
-            if (displayId != null) {
-                Item item = BuiltInRegistries.ITEM.get(displayId);
-                if (item != null && item != Items.AIR) {
-
-                    sb.append(item.getDescription().getString().toLowerCase()).append(' ');
-
-                    sb.append(displayId.getPath().replace('_', ' ').toLowerCase()).append(' ');
-                    sb.append(displayId.toString().toLowerCase()).append(' ');
-
-                    try {
-                        Registry<Item> itemReg = BuiltInRegistries.ITEM;
-                        var holder = itemReg.getHolder(itemReg.getId(item));
-                        if (holder.isPresent()) {
-                            for (var tag : holder.get().tags().toList()) {
-                                sb.append(tag.location().getPath().replace('/', ' ').replace('_', ' ').toLowerCase())
-                                        .append(' ');
-                                sb.append(tag.location().toString().toLowerCase()).append(' ');
-                            }
-                        }
-                    } catch (Exception ignored) {}
-
-                    try {
-                        ItemStack stack = new ItemStack(item);
-                        LocalPlayer localPlayer = Minecraft
-                                .getInstance().player;
-                        var tooltipLines = stack.getTooltipLines(
-                                net.minecraft.world.item.Item.TooltipContext.of(Minecraft.getInstance().level),
-                                localPlayer, TooltipFlag.Default.NORMAL);
-                        for (int ti = 1; ti < tooltipLines.size(); ti++) {
-
-                            String txt = tooltipLines.get(ti).getString().trim().toLowerCase();
-                            if (!txt.isEmpty()) sb.append(txt).append(' ');
-                        }
-                    } catch (Exception ignored) {}
-                }
-            }
-        }
-
-        for (QuestReward reward : n.getEffectiveRewards(server, minecraft.player)) {
-            if (HiddenParts.rewardTargetHidden(n, reward)) continue;
-            sb.append(reward.getSummary().getString()).append(' ');
-            if (reward instanceof QuestReward.ItemReward ir) {
-                ResourceLocation rid = BuiltInRegistries.ITEM.getKey(ir.getItem());
-                if (rid != null) {
-                    sb.append(rid.getPath().replace('_', ' ')).append(' ');
-                    sb.append(rid).append(' ');
-                }
-            }
-        }
-
-        return sb.toString().toLowerCase();
     }
 
     public String friendly(String cat) {
@@ -3306,31 +1596,6 @@ public class ChronicleOverviewScreen extends Screen
             pictureEditStartW = picture.w;
             pictureEditStartH = picture.h;
         }
-    }
-
-    private void finalizePictureEdit() {
-        BackgroundPictureConfig.Picture pic = pictureEditMode;
-        if (pic == null) return;
-        float startX = pictureEditStartX, startY = pictureEditStartY;
-        float startW = pictureEditStartW, startH = pictureEditStartH;
-        float endX = pic.x, endY = pic.y, endW = pic.w, endH = pic.h;
-        BackgroundPictureConfig.save();
-        if (startX != endX || startY != endY || startW != endW || startH != endH) {
-            pushUndo("Undo: picture edit reverted", () -> {
-                pic.x = startX;
-                pic.y = startY;
-                pic.w = startW;
-                pic.h = startH;
-                BackgroundPictureConfig.save();
-            }, () -> {
-                pic.x = endX;
-                pic.y = endY;
-                pic.w = endW;
-                pic.h = endH;
-                BackgroundPictureConfig.save();
-            });
-        }
-        pictureEditMode = null;
     }
 
     @Override
@@ -3450,33 +1715,6 @@ public class ChronicleOverviewScreen extends Screen
         }
     }
 
-    private void finalizeNodeSizeEdit() {
-        QuestNode node = nodeSizeEditMode;
-        if (node == null) return;
-        QuestNode.NodeSize startSize = nodeSizeEditStartSize;
-        int startOverridePx = nodeSizeEditStartOverridePx, startX = nodeSizeEditStartX, startY = nodeSizeEditStartY;
-        int endOverridePx = node.getSizeOverridePx(), endX = node.getCustomX(), endY = node.getCustomY();
-
-        QuestFileSaver.saveOneQuestToDisk(node, false);
-        if (startOverridePx != endOverridePx || startX != endX || startY != endY) {
-            pushUndo("Undo: node resize reverted", () -> {
-                node.setNodeSize(startSize);
-                if (startOverridePx > 0) node.setSizeOverridePx(startOverridePx);
-                node.setCustomPosition(startX, startY);
-                QuestFileSaver.saveOneQuestToDisk(node, false);
-                softRebuild();
-            }, () -> {
-                node.setNodeSize(startSize);
-                if (endOverridePx > 0) node.setSizeOverridePx(endOverridePx);
-                node.setCustomPosition(endX, endY);
-                QuestFileSaver.saveOneQuestToDisk(node, false);
-                softRebuild();
-            });
-        }
-        nodeSizeEditMode = null;
-        nodeSizeTypedBuffer = null;
-    }
-
     @Override
     public void setNodeSizeDragAccX(double v) {
         this.nodeSizeDragAccX = v;
@@ -3559,7 +1797,6 @@ public class ChronicleOverviewScreen extends Screen
         return viewOffY;
     }
 
-    @Override
     public int gridSnap() {
         return gridSnap;
     }
@@ -3569,42 +1806,34 @@ public class ChronicleOverviewScreen extends Screen
         return gridSnapEnabled;
     }
 
-    @Override
     public boolean dragForceSnap() {
         return dragForceSnap;
     }
 
-    @Override
     public Map<ResourceLocation, NodeHitbox> nodeButtons() {
         return nodeButtons;
     }
 
-    @Override
     public int dragGrabX() {
         return dragGrabX;
     }
 
-    @Override
     public int dragGrabY() {
         return dragGrabY;
     }
 
-    @Override
     public int dragOrigX() {
         return dragOrigX;
     }
 
-    @Override
     public int dragOrigY() {
         return dragOrigY;
     }
 
-    @Override
     public Set<ResourceLocation> hiddenByCollapse() {
         return hiddenByCollapse;
     }
 
-    @Override
     public boolean hideCompleted() {
         return hideCompleted;
     }
@@ -3614,13 +1843,11 @@ public class ChronicleOverviewScreen extends Screen
         return playerData;
     }
 
-    @Override
     public void resetViewOffset() {
         viewOffX = 0;
         viewOffY = 0;
     }
 
-    @Override
     public Set<ResourceLocation> subgraphNodes() {
         return subgraphNodes;
     }
@@ -3630,57 +1857,46 @@ public class ChronicleOverviewScreen extends Screen
         return testMode;
     }
 
-    @Override
     public PlayerQuestData testModeData() {
         return testModeData;
     }
 
-    @Override
     public int colorNodeLocked() {
         return palette.nodeLocked;
     }
 
-    @Override
     public int colorNodeUnlocked() {
         return palette.nodeUnlocked;
     }
 
-    @Override
     public int colorNodeActive() {
         return palette.nodeActive;
     }
 
-    @Override
     public int colorNodeDone() {
         return palette.nodeDone;
     }
 
-    @Override
     public int colorNodeBorderLocked() {
         return palette.nbordLocked;
     }
 
-    @Override
     public int colorNodeBorderUnlocked() {
         return palette.nbordUnlocked;
     }
 
-    @Override
     public int colorNodeBorderActive() {
         return palette.nbordActive;
     }
 
-    @Override
     public int colorNodeBorderDev() {
         return palette.nbordDev;
     }
 
-    @Override
     public int colorTextDone() {
         return palette.textDone;
     }
 
-    @Override
     public int colorTextActive() {
         return palette.textAct;
     }
@@ -3690,7 +1906,6 @@ public class ChronicleOverviewScreen extends Screen
         return palette.borderLit;
     }
 
-    @Override
     public boolean validationPanelOpen() {
         return validationPanel.isOpen();
     }
@@ -3700,149 +1915,56 @@ public class ChronicleOverviewScreen extends Screen
         return statsPanel.isOpen();
     }
 
-    @Override
     public boolean minimapOpen() {
         return minimapOpen;
     }
 
-    @Override
     public int dbgFull3DIconCount() {
         return dbgFull3DIconCount;
     }
 
-    @Override
     public void setDbgFull3DIconCount(int count) {
         dbgFull3DIconCount = count;
     }
 
-    @Override
     public int dbgCustomIconCount() {
         return dbgCustomIconCount;
     }
 
-    @Override
     public void setDbgCustomIconCount(int count) {
         dbgCustomIconCount = count;
     }
 
-    @Override
     public int dbgPickedTextureIconCount() {
         return dbgPickedTextureIconCount;
     }
 
-    @Override
     public void setDbgPickedTextureIconCount(int count) {
         dbgPickedTextureIconCount = count;
     }
 
-    @Override
     public int dbgFluidIconCount() {
         return dbgFluidIconCount;
     }
 
-    @Override
     public void setDbgFluidIconCount(int count) {
         dbgFluidIconCount = count;
     }
 
-    @Override
     public int dbgGlyphIconCount() {
         return dbgGlyphIconCount;
     }
 
-    @Override
     public void setDbgGlyphIconCount(int count) {
         dbgGlyphIconCount = count;
     }
 
-    @Override
     public Map<String, Integer> dbgShapeCounts() {
         return dbgShapeCounts;
     }
 
-    private String autoClaimPillLabel() {
-        return playerData != null && playerData.isAutoClaimEnabled() ? "⚡ On" : "⚡ Off";
-    }
+    record EmergencyPill(int ready, long soonestCooldownMs) {}
 
-    private record EmergencyPill(int ready, long soonestCooldownMs) {}
-
-    private EmergencyPill cachedEmergencyPill = new EmergencyPill(0, 0);
-    private long emergencyPillStampMs = 0;
-
-    private EmergencyPill emergencyPill() {
-        long now = System.currentTimeMillis();
-        if (now - emergencyPillStampMs < 250) return cachedEmergencyPill;
-        emergencyPillStampMs = now;
-
-        int ready = 0;
-        long soonest = 0;
-        if (playerData != null) {
-            for (QuestNode node : QuestTreeRegistry.getAllQuests().values()) {
-                if (node.isFlagDisabled(null)) continue;
-                if (playerData.getQuestState(node.getId(), QuestState.LOCKED) != QuestState.ACTIVE) continue;
-                if (!ClientEmergencyState.hasEmergencyItems(node.getId())) continue;
-                ClientEmergencyState.Availability av = ClientEmergencyState.availability(playerData, node.getId());
-                if (av.state() == ClientEmergencyState.State.READY) {
-                    ready++;
-                } else if (av.state() == ClientEmergencyState.State.COOLDOWN) {
-                    soonest = soonest == 0 ? av.remainingMs() : Math.min(soonest, av.remainingMs());
-                }
-            }
-            for (ResourceLocation stationId : ClientEmergencyState.stationIds()) {
-                ClientEmergencyState.Availability av = ClientEmergencyState.availability(playerData, stationId);
-                if (av.state() == ClientEmergencyState.State.READY) {
-                    ready++;
-                } else if (av.state() == ClientEmergencyState.State.COOLDOWN) {
-                    soonest = soonest == 0 ? av.remainingMs() : Math.min(soonest, av.remainingMs());
-                }
-            }
-        }
-        cachedEmergencyPill = new EmergencyPill(ready, soonest);
-        return cachedEmergencyPill;
-    }
-
-    private static boolean emergencyPillVisible(EmergencyPill pill) {
-        return pill.ready() > 0 || pill.soonestCooldownMs() > 0;
-    }
-
-    private static String emergencyPillLabel(EmergencyPill pill) {
-        return pill.ready() > 0 ? "⚠ " + pill.ready() : "⚠ " + ClientEmergencyState.compactDuration(
-                pill.soonestCooldownMs());
-    }
-
-    public int unclaimedRewardCount() {
-        if (playerData == null) return 0;
-        int count = 0;
-        for (QuestNode node : QuestTreeRegistry.getAllQuests().values()) {
-            if (node.isFlagDisabled(null)) continue;
-            if (playerData.getQuestState(node.getId(), QuestState.LOCKED) != QuestState.COMPLETED) continue;
-            if (playerData.hasClaimedRewards(node.getId())) continue;
-            if (node.isRewardChoice()) continue;
-            if (node.getEffectiveRewards(minecraft != null ? minecraft.getSingleplayerServer() : null,
-                    minecraft != null ? minecraft.player : null).isEmpty())
-                continue;
-            count++;
-        }
-        return count;
-    }
-
-    private String chapterBreadcrumb(String cat) {
-        List<String> chain = new ArrayList<>();
-        Set<String> visited = new HashSet<>();
-        String cur = cat;
-        while (cur != null && !cur.isEmpty() && visited.add(cur)) {
-            String parent = ChapterConfig.get(cur).getParentChapter();
-            if (parent.isEmpty()) break;
-            chain.add(0, parent);
-            cur = parent;
-        }
-        StringBuilder sb = new StringBuilder();
-        for (String p : chain) sb.append(friendly(p)).append(" §8›  §7");
-        sb.append(friendly(cat));
-        return sb.toString();
-    }
-
-    @Override
     public String shortLabel(QuestNode node) {
         MinecraftServer server = minecraft != null ? minecraft.getSingleplayerServer() : null;
         String t = node.getEffectiveTitleRaw(server, minecraft.player).getString();
@@ -3860,7 +1982,7 @@ public class ChronicleOverviewScreen extends Screen
                 net.phoenixvine.chronicles.client.util.EffectText.cut(font, t, maxW - 4) + "…" : t;
     }
 
-    private void fitToCanvas() {
+    void fitToCanvas() {
         if (!applyFitView()) return;
         rebuild();
     }
@@ -3893,44 +2015,6 @@ public class ChronicleOverviewScreen extends Screen
         nodeRenderer.renderNodeTooltip(g, node, mx, my);
     }
 
-    private int[] computeChapterProgress(String cat) {
-        int done = 0, total = 0;
-        for (QuestNode n : QuestTreeRegistry.getAllQuests().values()) {
-            if (!cat.equals("ALL") && !cat.equals(n.getChapter())) continue;
-            if (n.isFlagDisabled(null)) continue;
-
-            total++;
-
-            if (getDisplayState(n) == QuestState.COMPLETED) done++;
-        }
-        return new int[] { done, total };
-    }
-
-    private boolean computeChapterHasAttention(String cat) {
-        for (QuestNode n : QuestTreeRegistry.getAllQuests().values()) {
-            if (!cat.equals("ALL") && !cat.equals(n.getChapter())) continue;
-            if (n.isFlagDisabled(null)) continue;
-            if (getDisplayState(n) == QuestState.ACTIVE) return true;
-        }
-        return false;
-    }
-
-    private boolean computeChapterHasUnclaimedRewards(String cat) {
-        if (playerData == null) return false;
-        for (QuestNode n : QuestTreeRegistry.getAllQuests().values()) {
-            if (!cat.equals("ALL") && !cat.equals(n.getChapter())) continue;
-            if (n.isFlagDisabled(null)) continue;
-            if (playerData.getQuestState(n.getId(), QuestState.LOCKED) != QuestState.COMPLETED) continue;
-            if (playerData.hasClaimedRewards(n.getId())) continue;
-            if (n.isRewardChoice()) continue;
-            if (n.getEffectiveRewards(minecraft != null ? minecraft.getSingleplayerServer() : null,
-                    minecraft != null ? minecraft.player : null).isEmpty())
-                continue;
-            return true;
-        }
-        return false;
-    }
-
     public void setFeedback(String msg, Object... args) {
         feedbackMsg = msg.formatted(args);
         feedbackAtMs = System.currentTimeMillis();
@@ -3956,7 +2040,7 @@ public class ChronicleOverviewScreen extends Screen
         setFeedback(doneMsg + "  (Ctrl+Z to undo)", args);
     }
 
-    private void openLineSettingsFor(QuestNode parentNode) {
+    void openLineSettingsFor(QuestNode parentNode) {
         if (minecraft != null) minecraft.setScreen(new DepLineSettingsScreen(this, selectedChapter, parentNode));
     }
 
@@ -3968,12 +2052,10 @@ public class ChronicleOverviewScreen extends Screen
         QuestFileSaver.updateHideDepLine(node);
     }
 
-    @Override
     public void saveNodeToDisk(QuestNode node) {
         QuestFileSaver.updateNodePosition(node);
     }
 
-    @Override
     public void refreshEdgeEndpointsFor(QuestNode node) {
         depLineRenderer.refreshEdgeEndpoints(node.getId(), this::nodeCenterForLine, posZoom(),
                 QuestChroniclesSettings.get());
@@ -4004,30 +2086,6 @@ public class ChronicleOverviewScreen extends Screen
         QuestFileSaver.deleteQuestFiles(node);
     }
 
-    private void computeUnlockPath(QuestNode target) {
-        unlockPathHighlight.clear();
-
-        Queue<QuestNode> queue = new LinkedList<>();
-        for (QuestNode prereq : target.getPrerequisites()) queue.add(prereq);
-        Set<ResourceLocation> visited = new HashSet<>();
-        Minecraft mc = Minecraft.getInstance();
-        PlayerQuestData data = mc.player == null ? null :
-                QuestCapabilityProvider.of(mc.player)
-                        .orElse(null);
-        while (!queue.isEmpty()) {
-            QuestNode n = queue.poll();
-            if (!visited.add(n.getId())) continue;
-            unlockPathHighlight.add(n.getId());
-
-            if (data != null) {
-                QuestState st = data.getQuestState(n.getId(), QuestState.LOCKED);
-                if (st == QuestState.COMPLETED || st == QuestState.ACTIVE) continue;
-            }
-            for (QuestNode req : n.getPrerequisites()) queue.add(req);
-        }
-    }
-
-    @Override
     public int[] minimapBounds(int cr) {
         return minimap.bounds(cr, height);
     }
