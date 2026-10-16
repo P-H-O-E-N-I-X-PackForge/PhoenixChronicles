@@ -1452,7 +1452,7 @@ public class ChronicleOverviewScreen extends Screen
         if (btn == 0 && isInMinimap(mx, my)) {
             mmDragging = true;
             minimapPanTo(mx, my, sidebarW());
-            softRebuild();
+            rescaleForZoom();
             return true;
         }
         return false;
@@ -2209,6 +2209,7 @@ public class ChronicleOverviewScreen extends Screen
         }
         if (btn == 0 && mmDragging) {
             minimapPanTo(mx, my, sidebarW());
+            rescaleForZoom();
             return true;
         }
         if (btn == 0 && linkDragSource != null) {
