@@ -187,6 +187,7 @@ dependencies {
     compileOnly "dev.latvian.mods:kubejs-neoforge:${kubejs_version}"
     compileOnly "curse.maven:phoenixs-chromatic-colors-1483210:8388618"
     compileOnly "net.phoenixvine.guilds:phoenix-guilds-neoforge:${phoenix_guilds_version}"
+    compileOnly("net.phoenix.core:PhoenixCore:${phoenix_core_version}") { transitive = false }
     compileOnly("com.gregtechceu.gtceu:gtceu-${minecraft_version}:${gtm_version}") { transitive = false }
     compileOnly("brachy.modularui:modularui-mc${minecraft_version}:${mui_version}") { transitive = false }
 
