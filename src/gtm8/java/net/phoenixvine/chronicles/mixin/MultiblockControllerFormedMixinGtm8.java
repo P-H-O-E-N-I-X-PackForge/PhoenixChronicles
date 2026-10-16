@@ -1,5 +1,6 @@
 package net.phoenixvine.chronicles.mixin;
 
+import net.phoenixvine.chronicles.integration.gtm.GtmHooks;
 import com.gregtechceu.gtceu.api.machine.multiblock.MultiblockControllerMachine;
 
 import org.spongepowered.asm.mixin.Mixin;

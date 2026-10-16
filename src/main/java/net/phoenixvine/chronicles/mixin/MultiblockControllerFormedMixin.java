@@ -2,6 +2,8 @@ package net.phoenixvine.chronicles.mixin;
 
 import com.gregtechceu.gtceu.api.machine.multiblock.MultiblockControllerMachine;
 
+import net.phoenixvine.chronicles.integration.gtm.GtmHooks;
+
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;

@@ -1,4 +1,4 @@
-package net.phoenixvine.chronicles.mixin;
+package net.phoenixvine.chronicles.integration.gtm;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
