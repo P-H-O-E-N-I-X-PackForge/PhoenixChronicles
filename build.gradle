@@ -130,6 +130,14 @@ neoForge {
         client {
             client()
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+            programArguments.addAll('--username', 'Phoenixvine')
+        }
+        client2 {
+            client()
+            sourceSet = sourceSets.main
+            gameDirectory = file('run/client2')
+            programArguments.addAll('--username', 'Dev2')
+            jvmArguments.addAll('-Xmx3G')
         }
         server {
             server()
@@ -190,6 +198,10 @@ dependencies {
     compileOnly("net.phoenix.core:PhoenixCore:${phoenix_core_version}") { transitive = false }
     compileOnly("com.gregtechceu.gtceu:gtceu-${minecraft_version}:${gtm_version}") { transitive = false }
     compileOnly("brachy.modularui:modularui-mc${minecraft_version}:${mui_version}") { transitive = false }
+
+    localRuntime  "dev.emi:emi-neoforge:${emi_version}+${minecraft_version}"
+    localRuntime "top.theillusivec4.curios:curios-neoforge:${curios_version}"
+
 
     // GregTech in the dev client, so its hooks can be exercised
     localRuntime "curse.maven:phoenixs-chromatic-colors-1483210:8388618"
