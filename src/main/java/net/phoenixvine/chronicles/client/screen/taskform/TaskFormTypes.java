@@ -282,6 +282,7 @@ public final class TaskFormTypes {
                 FluidRequirementTask task = new FluidRequirementTask(v.taskId, v.description,
                         ResourceLocation.parse(v.target), v.intCount(), v.consume);
                 task.setCheckAe2Storage(v.checkAe2);
+                task.setSource(v.fluidSource);
                 yield task;
             }
             case "stat" -> new StatTrackerTask(v.taskId, v.description, ResourceLocation.parse(v.target),
@@ -443,6 +444,7 @@ public final class TaskFormTypes {
                 v.target = t.getFluidId().toString();
                 v.count = t.getRequiredAmount();
                 v.consume = t.shouldConsume();
+                v.fluidSource = t.getSource();
             }
             case "stat" -> {
                 StatTrackerTask t = (StatTrackerTask) task;
@@ -598,6 +600,7 @@ public final class TaskFormTypes {
         fluidCheck.showConsume = true;
         fluidCheck.showSticky = true;
         fluidCheck.showAe2 = true;
+        fluidCheck.showBlock = true;
 
         TaskFormType stat = define("stat", StatTrackerTask.class);
         stat.target("§8Stat id  (e.g. minecraft:jump)", TargetPicker.REGISTRY);

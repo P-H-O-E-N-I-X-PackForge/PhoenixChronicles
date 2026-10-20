@@ -274,6 +274,8 @@ public class ChronicleEvents {
         }
 
         if (player.level().isClientSide) return;
+        net.phoenixvine.chronicles.common.tasks.FluidRequirementTask.onBlockRightClicked(player, event.getLevel(),
+                event.getPos());
         handleBlockEvent(player, clicked, "RIGHT_CLICK");
     }
 
@@ -356,6 +358,7 @@ public class ChronicleEvents {
 
     @SubscribeEvent
     public static void onPlayerLogout(PlayerEvent.PlayerLoggedOutEvent event) {
+        net.phoenixvine.chronicles.common.tasks.FluidRequirementTask.clearBlockCache(event.getEntity().getUUID());
         EnergyStorageTask.clearBlockCache(
                 event.getEntity().getUUID());
         QuestProgressTracker.clearInventoryFingerprint(

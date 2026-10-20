@@ -18,9 +18,38 @@ import net.phoenixvine.chronicles.integration.ae2.AE2Compat;
 import net.phoenixvine.chronicles.integration.curios.CuriosCompat;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 public class FluidRequirementTask extends QuestTask {
+
+    public enum Source {
+        ITEMS,
+        BLOCK,
+        BOTH
+    }
+
+    private static final Map<UUID, Map<ResourceLocation, Integer>> blockFluids = new HashMap<>();
+
+    public static void onBlockRightClicked(Player player, net.minecraft.world.level.Level level,
+                                           net.minecraft.core.BlockPos pos) {
+        IFluidHandler handler = level.getCapability(Capabilities.FluidHandler.BLOCK, pos, null);
+        if (handler == null) return;
+        Map<ResourceLocation, Integer> amounts = new HashMap<>();
+        for (int i = 0; i < handler.getTanks(); i++) {
+            FluidStack stack = handler.getFluidInTank(i);
+            if (stack.isEmpty()) continue;
+            ResourceLocation id = BuiltInRegistries.FLUID.getKey(stack.getFluid());
+            amounts.merge(id, stack.getAmount(), Integer::sum);
+        }
+        blockFluids.put(player.getUUID(), amounts);
+    }
+
+    public static void clearBlockCache(UUID playerId) {
+        blockFluids.remove(playerId);
+    }
 
     private ResourceLocation fluidId;
     private int requiredAmount;
@@ -31,6 +60,8 @@ public class FluidRequirementTask extends QuestTask {
     private boolean sticky = true;
 
     private boolean checkAe2Storage = AE2Compat.isAvailable();
+
+    private Source source = Source.ITEMS;
 
     public FluidRequirementTask(ResourceLocation taskId, Component description, ResourceLocation fluidId,
                                 int requiredAmount, boolean consume) {
@@ -76,6 +107,28 @@ public class FluidRequirementTask extends QuestTask {
         this.checkAe2Storage = checkAe2Storage;
     }
 
+    public Source getSource() {
+        return source;
+    }
+
+    public void setSource(Source source) {
+        this.source = source != null ? source : Source.ITEMS;
+    }
+
+    private boolean countsBlocks() {
+        return source != Source.ITEMS;
+    }
+
+    private boolean countsItems() {
+        return source != Source.BLOCK;
+    }
+
+    private int blockAmount(Player player) {
+        if (!countsBlocks() || fluidId == null) return 0;
+        Map<ResourceLocation, Integer> amounts = blockFluids.get(player.getUUID());
+        return amounts == null ? 0 : amounts.getOrDefault(fluidId, 0);
+    }
+
     private boolean fluidMatches(FluidStack fs) {
         if (fs.isEmpty()) return false;
         ResourceLocation candidateId = BuiltInRegistries.FLUID.getKey(fs.getFluid());
@@ -89,7 +142,7 @@ public class FluidRequirementTask extends QuestTask {
 
     @Override
     public boolean dependsOnInventory() {
-        return !checksAe2Storage();
+        return !checksAe2Storage() && !countsBlocks();
     }
 
     @Override
@@ -101,7 +154,7 @@ public class FluidRequirementTask extends QuestTask {
             if (sticky) TaskProgressAccess.with(player, getTaskId(), nbt -> nbt.putBoolean("completed", true));
             return true;
         }
-        if (found + getTotalFluidInInventory(player) >= requiredAmount) {
+        if (found + blockAmount(player) + itemFluid(player) >= requiredAmount) {
             if (sticky) TaskProgressAccess.with(player, getTaskId(), nbt -> nbt.putBoolean("completed", true));
             return true;
         }
@@ -116,6 +169,10 @@ public class FluidRequirementTask extends QuestTask {
         List<ItemStack> all = new ArrayList<>(player.getInventory().items);
         all.addAll(CuriosCompat.getEquippedCurios(player));
         return all;
+    }
+
+    private int itemFluid(Player player) {
+        return countsItems() ? getTotalFluidInInventory(player) : 0;
     }
 
     private int getTotalFluidInInventory(Player player) {
@@ -174,7 +231,7 @@ public class FluidRequirementTask extends QuestTask {
         if (sticky && TaskProgressAccess.getOrEmpty(player, getTaskId()).getBoolean("completed"))
             return String.format("%,d / %,d mB", requiredAmount, requiredAmount);
         long found = checksAe2Storage() ? AE2Compat.getStoredAmount(player, getFluid()) : 0;
-        found = Math.min(found + getTotalFluidInInventory(player), requiredAmount);
+        found = Math.min(found + blockAmount(player) + itemFluid(player), requiredAmount);
         return String.format("%,d / %,d mB", found, requiredAmount);
     }
 
@@ -196,6 +253,7 @@ public class FluidRequirementTask extends QuestTask {
         tag.putBoolean("consume", consume);
         tag.putBoolean("sticky", sticky);
         tag.putBoolean("check_ae2_storage", checkAe2Storage);
+        if (source != Source.ITEMS) tag.putString("fluid_source", source.name());
         if (nbtFilter != null && !nbtFilter.isEmpty()) tag.put("nbt_filter", nbtFilter);
         return tag;
     }
@@ -209,5 +267,11 @@ public class FluidRequirementTask extends QuestTask {
         this.consume = nbt.getBoolean("consume");
         this.sticky = !nbt.contains("sticky") || nbt.getBoolean("sticky");
         this.checkAe2Storage = !nbt.contains("check_ae2_storage") || nbt.getBoolean("check_ae2_storage");
+        this.source = Source.ITEMS;
+        if (nbt.contains("fluid_source")) {
+            try {
+                this.source = Source.valueOf(nbt.getString("fluid_source"));
+            } catch (IllegalArgumentException ignored) {}
+        }
     }
 }

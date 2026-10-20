@@ -42,15 +42,23 @@ public class EnchantmentTask extends QuestTask {
                 .orElse(null);
         if (ench == null) return false;
         for (EquipmentSlot slot : SLOTS) {
-            ItemStack stack = player.getItemBySlot(slot);
-            if (!stack.isEmpty() && EnchantmentHelper.getItemEnchantmentLevel(ench, stack) >= requiredLevel)
-                return true;
+            if (hasEnchantment(player.getItemBySlot(slot), ench)) return true;
+        }
+        for (ItemStack stack : player.getInventory().items) {
+            if (hasEnchantment(stack, ench)) return true;
         }
         for (ItemStack stack : CuriosCompat.getEquippedCurios(player)) {
-            if (!stack.isEmpty() && EnchantmentHelper.getItemEnchantmentLevel(ench, stack) >= requiredLevel)
-                return true;
+            if (hasEnchantment(stack, ench)) return true;
         }
         return false;
+    }
+
+    private boolean hasEnchantment(ItemStack stack, net.minecraft.core.Holder<Enchantment> ench) {
+        if (stack.isEmpty()) return false;
+        if (EnchantmentHelper.getItemEnchantmentLevel(ench, stack) >= requiredLevel) return true;
+        net.minecraft.world.item.enchantment.ItemEnchantments stored = stack
+                .get(net.minecraft.core.component.DataComponents.STORED_ENCHANTMENTS);
+        return stored != null && stored.getLevel(ench) >= requiredLevel;
     }
 
     public CompoundTag serializeNBT() {

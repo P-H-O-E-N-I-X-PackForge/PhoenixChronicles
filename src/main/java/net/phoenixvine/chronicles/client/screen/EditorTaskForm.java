@@ -411,6 +411,10 @@ final class EditorTaskForm {
             buttons.add(ae2Button());
             idealWidths.add(40);
         }
+        if (form.showBlock()) {
+            buttons.add(blockButton());
+            idealWidths.add(48);
+        }
         if (form.showSticky()) {
             buttons.add(stickyButton());
             idealWidths.add(56);
@@ -470,6 +474,23 @@ final class EditorTaskForm {
                 "ON (default when AE2 is installed): also count/withdraw matching items or\n" +
                         "fluid stored in your linked Applied Energistics 2 ME network, in addition\n" +
                         "to the player's inventory.")));
+    }
+
+    private Button.Builder blockButton() {
+        String label = switch (taskFluidSource) {
+            case ITEMS -> "§fItems";
+            case BLOCK -> "§6Block";
+            case BOTH -> "§aBoth";
+        };
+        return Button.builder(ChroniclesUIKit.lit(label), b -> {
+            FluidRequirementTask.Source[] all = FluidRequirementTask.Source.values();
+            taskFluidSource = all[(taskFluidSource.ordinal() + 1) % all.length];
+            screen.rebuildWidgets();
+        }).tooltip(Tooltip.create(ChroniclesUIKit.lit(
+                "Where the fluid is counted. Click to cycle.\n" +
+                        "Items: fluid carried in buckets, tanks and other items.\n" +
+                        "Block: right-click a tank or drum block to count the fluid inside it.\n" +
+                        "Both: carried fluid and the last right-clicked block add together.")));
     }
 
     private Button.Builder stickyButton() {
@@ -546,6 +567,7 @@ final class EditorTaskForm {
         String countVal = screen.taskCountBox != null ? screen.taskCountBox.getValue() : "1";
         boolean optional = taskOptional, consume = taskConsume, sticky = taskSticky;
         boolean ae2 = taskCheckAe2Storage;
+        FluidRequirementTask.Source fluidSource = taskFluidSource;
         int hidden = taskHiddenParts;
         for (ItemStack stack : picked) {
             ResourceLocation id = BuiltInRegistries.ITEM.getKey(stack.getItem());
@@ -562,6 +584,7 @@ final class EditorTaskForm {
             taskConsume = consume;
             taskSticky = sticky;
             taskCheckAe2Storage = ae2;
+            taskFluidSource = fluidSource;
             taskHiddenParts = hidden;
             commitTaskFromForm();
         }
@@ -605,6 +628,7 @@ final class EditorTaskForm {
         values.consume = taskConsume;
         values.sticky = taskSticky;
         values.checkAe2 = taskCheckAe2Storage;
+        values.fluidSource = taskFluidSource;
         values.itemFilter = screen.pendingPickedItemFilter;
         values.fluidFilter = screen.pendingPickedFluidFilter;
         QuestTask task = null;
@@ -632,6 +656,7 @@ final class EditorTaskForm {
             taskSticky = true;
             taskConsume = false;
             taskCheckAe2Storage = AE2Compat.isAvailable();
+            taskFluidSource = FluidRequirementTask.Source.ITEMS;
             screen.pendingTaskDesc = screen.pendingTaskTarget = screen.pendingTaskSecondary = screen.pendingTaskNbt = "";
             screen.pendingTaskCount = "1";
             screen.pendingPickedItemFilter = null;
@@ -659,6 +684,7 @@ final class EditorTaskForm {
         taskConsume = values.consume;
         taskSticky = values.sticky;
         taskCheckAe2Storage = values.checkAe2;
+        taskFluidSource = values.fluidSource;
         screen.pendingTaskDesc = t.getDescriptionRaw().getString();
         screen.pendingTaskTarget = values.target;
         screen.pendingTaskSecondary = values.second;
@@ -682,6 +708,7 @@ final class EditorTaskForm {
         taskOptional = false;
         taskHiddenParts = 0;
         taskCheckAe2Storage = AE2Compat.isAvailable();
+        taskFluidSource = FluidRequirementTask.Source.ITEMS;
         screen.pendingTaskDesc = screen.pendingTaskTarget = screen.pendingTaskSecondary = screen.pendingTaskCount = screen.pendingTaskNbt = "";
         screen.pendingPickedItemFilter = null;
         screen.pendingPickedFluidFilter = null;
@@ -731,4 +758,6 @@ final class EditorTaskForm {
     private boolean taskSticky = true;
 
     private boolean taskCheckAe2Storage = AE2Compat.isAvailable();
+
+    private FluidRequirementTask.Source taskFluidSource = FluidRequirementTask.Source.ITEMS;
 }

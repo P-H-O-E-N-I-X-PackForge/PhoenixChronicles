@@ -51,6 +51,7 @@ public final class TaskFormType {
     boolean showConsume = false;
     boolean showSticky = false;
     boolean showAe2 = false;
+    boolean showBlock = false;
 
     boolean generic = false;
     boolean canCreate = true;
@@ -139,6 +140,10 @@ public final class TaskFormType {
 
     public boolean showAe2() {
         return showAe2;
+    }
+
+    public boolean showBlock() {
+        return showBlock;
     }
 
     @Nullable
