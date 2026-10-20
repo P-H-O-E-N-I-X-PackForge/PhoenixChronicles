@@ -655,7 +655,7 @@ public final class TaskFormTypes {
 
         TaskFormType energy = define("energy_check", EnergyStorageTask.class);
         energy.target("§8FE / EU / ANY", TargetPicker.ENERGY_TYPE);
-        energy.second("§8INVENTORY / HELD / BLOCK", SecondPicker.ENERGY_SOURCE);
+        energy.second("§8INVENTORY / HELD / BLOCK / ALL", SecondPicker.ENERGY_SOURCE);
         energy.count("§8FE required");
         energy.showSticky = true;
 

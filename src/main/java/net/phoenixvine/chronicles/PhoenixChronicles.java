@@ -16,6 +16,7 @@ import net.phoenixvine.chronicles.client.ChronicleShaders;
 import net.phoenixvine.chronicles.client.ChroniclesClient;
 import net.phoenixvine.chronicles.client.registry.ChroniclesLangPack;
 import net.phoenixvine.chronicles.common.item.ChronicleItems;
+import net.phoenixvine.chronicles.common.registry.PhoenixTaskRegistry;
 import net.phoenixvine.chronicles.integration.phantasia.PhantasiaCompat;
 import net.phoenixvine.chronicles.network.ChronicleNetwork;
 import net.phoenixvine.wiki.theme.PhoenixTheme;
@@ -53,6 +54,7 @@ public class PhoenixChronicles {
             LOGGER.info("[Phoenix Chronicles] Bootstrapping standalone quest engine core...");
 
             PhoenixTheme.loadThemes();
+            PhoenixTaskRegistry.registerBuiltins();
 
             if (FMLEnvironment.dist.isClient() && ModList.get().isLoaded("phantasia")) {
                 PhantasiaCompat.init();

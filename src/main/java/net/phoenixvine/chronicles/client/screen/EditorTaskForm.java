@@ -380,12 +380,12 @@ final class EditorTaskForm {
     private void addEnergySourceCycleButton(int buttonX, int y) {
         screen.addWidgetBridge(Button.builder(ChroniclesUIKit.lit("§6⟳"), b -> {
             if (screen.taskSecondaryBox == null) return;
-            String[] options = { "INVENTORY", "HELD", "BLOCK" };
+            String[] options = { "INVENTORY", "HELD", "BLOCK", "ALL" };
             String cur = screen.taskSecondaryBox.getValue().trim().toUpperCase();
             int idx = java.util.Arrays.asList(options).indexOf(cur);
             screen.taskSecondaryBox.setValue(options[(idx + 1) % options.length]);
         }).bounds(buttonX, y, 16, TaskRewardEditorScreen.FIELD_H)
-                .tooltip(Tooltip.create(ChroniclesUIKit.lit("Cycle INVENTORY / HELD / BLOCK")))
+                .tooltip(Tooltip.create(ChroniclesUIKit.lit("Cycle INVENTORY / HELD / BLOCK / ALL")))
                 .build());
     }
 
