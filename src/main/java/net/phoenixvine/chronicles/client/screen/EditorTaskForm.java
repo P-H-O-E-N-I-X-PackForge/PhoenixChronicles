@@ -690,6 +690,8 @@ final class EditorTaskForm {
         screen.pendingTaskSecondary = values.second;
         screen.pendingTaskCount = String.valueOf(values.count);
         screen.pendingTaskNbt = values.nbt;
+        screen.pendingPickedItemFilter = values.itemFilter;
+        screen.pendingPickedFluidFilter = values.fluidFilter;
 
         screen.forcePendingTaskValues = true;
         screen.taskTypeDropOpen = false;

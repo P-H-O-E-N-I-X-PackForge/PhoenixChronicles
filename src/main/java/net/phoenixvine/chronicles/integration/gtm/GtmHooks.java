@@ -8,6 +8,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
+import net.phoenixvine.chronicles.PhoenixChronicles;
 import net.phoenixvine.chronicles.QuestAPI;
 
 import java.util.UUID;
@@ -36,7 +37,14 @@ public final class GtmHooks {
         if (machineId == null) return;
 
         ServerPlayer player = findPlayer(serverLevel, controllerPos, owner);
-        if (player == null) return;
+        if (player == null) {
+            PhoenixChronicles.LOGGER.info("[multiblock] {} formed at {} but no owner or nearby player was found",
+                    machineId,
+                    controllerPos);
+            return;
+        }
+        PhoenixChronicles.LOGGER.info("[multiblock] {} formed at {}, credited to {}", machineId, controllerPos,
+                player.getGameProfile().getName());
 
         QuestAPI.fireMultiblockFormed(player, machineId, 1);
 

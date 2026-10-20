@@ -181,7 +181,10 @@ public class FilterTokenEditorScreen extends Screen {
                     rebuildModeButton();
                 }).bounds(bx, by3, 44, 14)
                 .tooltip(Tooltip.create(Component.literal(
-                        "OR: item matches if it satisfies ANY listed rule\nAND: item must satisfy ALL listed rules")))
+                        fluidMode ?
+                                "OR: fluid matches if it satisfies ANY listed rule\nAND: fluid must satisfy ALL listed rules" :
+                                "OR: any item matching ANY listed rule counts\n" +
+                                        "AND: a task needs a matching item for EACH listed rule (for example one of every listed item)")))
                 .build());
 
         addRenderableWidget(Button.builder(

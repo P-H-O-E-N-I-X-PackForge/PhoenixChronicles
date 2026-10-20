@@ -12,7 +12,6 @@ import net.phoenixvine.chronicles.common.flag.PhoenixQuestFlags;
 import net.phoenixvine.chronicles.common.registry.ChapterFlagRegistry;
 import net.phoenixvine.chronicles.common.registry.ChapterPrereqDefaults;
 import net.phoenixvine.chronicles.common.registry.QuestTreeRegistry;
-import net.phoenixvine.chronicles.common.tracker.TeamKeyResolver;
 import net.phoenixvine.chronicles.common.tracker.TutorialStep;
 
 import com.google.gson.annotations.SerializedName;
@@ -154,7 +153,7 @@ public class QuestNode {
 
     @Setter
     @Getter
-    private boolean shared = TeamKeyResolver.anyTeamModLoaded();
+    private boolean shared = true;
 
     @Getter
     private boolean pooledProgress = false;
