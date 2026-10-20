@@ -174,7 +174,7 @@ public class QuestFileSaver {
             tag.put("tags", tagList);
         }
         if (node.isDisabledBlocksChildren()) tag.putBoolean("disabled_blocks_children", true);
-        if (node.isShared()) tag.putBoolean("shared", true);
+        if (!node.isShared()) tag.putBoolean("shared", false);
         if (node.isPooledProgress()) tag.putBoolean("pooled_progress", true);
         if (node.isLinkStub()) tag.putString("link_target", node.getLinkTarget().toString());
         if (node.isAutoClaimRewards()) tag.putBoolean("auto_claim_rewards", true);

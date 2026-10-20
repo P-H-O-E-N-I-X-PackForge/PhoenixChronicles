@@ -134,6 +134,28 @@ public final class TaskFormTypes {
         return id != null ? id.toString() : "";
     }
 
+    private static boolean isPlainItemIdList(IItemFilter f) {
+        if (f instanceof ItemFilters.ExactItem ex) return ex.nbt() == null || ex.nbt().isEmpty();
+        if (f instanceof ItemFilters.AnyOf any) {
+            for (IItemFilter child : any.children()) {
+                if (!isPlainItemIdList(child)) return false;
+            }
+            return true;
+        }
+        return false;
+    }
+
+    private static boolean isPlainFluidIdList(IFluidFilter f) {
+        if (f instanceof FluidFilters.ExactFluid ex) return ex.nbt() == null || ex.nbt().isEmpty();
+        if (f instanceof FluidFilters.AnyOf any) {
+            for (IFluidFilter child : any.children()) {
+                if (!isPlainFluidIdList(child)) return false;
+            }
+            return true;
+        }
+        return false;
+    }
+
     private static String itemFilterAsIdList(IItemFilter f) {
         if (f instanceof ItemFilters.ExactItem ex) {
             ResourceLocation id = BuiltInRegistries.ITEM.getKey(ex.item());
@@ -586,6 +608,7 @@ public final class TaskFormTypes {
                 })
                 .load((t, v) -> {
                     v.target = itemFilterAsIdList(t.getFilter());
+                    if (!isPlainItemIdList(t.getFilter())) v.itemFilter = t.getFilter();
                     v.count = t.getCount();
                     v.consume = t.isConsume();
                 })
@@ -608,6 +631,7 @@ public final class TaskFormTypes {
                 })
                 .load((t, v) -> {
                     v.target = fluidFilterAsIdList(t.getFilter());
+                    if (!isPlainFluidIdList(t.getFilter())) v.fluidFilter = t.getFilter();
                     v.count = t.getAmount();
                     v.consume = t.isConsume();
                 })

@@ -1325,6 +1325,8 @@ public class TaskRewardEditorScreen extends Screen {
         pendingTaskSecondary = values.second;
         pendingTaskCount = String.valueOf(values.count);
         pendingTaskNbt = values.nbt;
+        pendingPickedItemFilter = values.itemFilter;
+        pendingPickedFluidFilter = values.fluidFilter;
 
         forcePendingTaskValues = true;
         taskTypeDropOpen = false;

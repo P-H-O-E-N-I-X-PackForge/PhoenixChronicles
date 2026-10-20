@@ -462,7 +462,7 @@ public class QuestFileLoader {
             boolean hideDepLine = tag.contains("hide_dep_line") && tag.getBoolean("hide_dep_line");
             boolean disabledBlocksChildren = tag.contains("disabled_blocks_children") &&
                     tag.getBoolean("disabled_blocks_children");
-            boolean shared = tag.contains("shared") && tag.getBoolean("shared");
+            boolean shared = !tag.contains("shared") || tag.getBoolean("shared");
             boolean pooledProgress = tag.contains("pooled_progress") && tag.getBoolean("pooled_progress");
             boolean autoClaimRewards = tag.contains("auto_claim_rewards") && tag.getBoolean("auto_claim_rewards");
             List<String> chapterPrereqs = new java.util.ArrayList<>();

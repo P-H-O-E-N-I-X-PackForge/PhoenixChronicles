@@ -43,10 +43,15 @@ public class FilterItemTask extends QuestTask {
         return all;
     }
 
-    private int countMatching(Player player) {
+    private List<IItemFilter> requirements() {
+        if (filter instanceof ItemFilters.AllOf all && !all.children().isEmpty()) return all.children();
+        return List.of(filter);
+    }
+
+    private int countMatching(Player player, IItemFilter requirement) {
         int found = 0;
         for (ItemStack stack : allSlots(player)) {
-            if (!stack.isEmpty() && filter.test(stack)) found += stack.getCount();
+            if (!stack.isEmpty() && requirement.test(stack)) found += stack.getCount();
         }
         return found;
     }
@@ -55,9 +60,17 @@ public class FilterItemTask extends QuestTask {
         return checkAe2Storage && AE2Compat.isAvailable();
     }
 
-    private long countMatchingWithAe2(Player player) {
-        long found = checksAe2Storage() ? AE2Compat.getStoredAmount(player, filter) : 0;
-        return found + countMatching(player);
+    private long countMatchingWithAe2(Player player, IItemFilter requirement) {
+        long found = checksAe2Storage() ? AE2Compat.getStoredAmount(player, requirement) : 0;
+        return found + countMatching(player, requirement);
+    }
+
+    private int satisfiedRequirements(Player player) {
+        int satisfied = 0;
+        for (IItemFilter requirement : requirements()) {
+            if (countMatchingWithAe2(player, requirement) >= count) satisfied++;
+        }
+        return satisfied;
     }
 
     @Override
@@ -68,7 +81,7 @@ public class FilterItemTask extends QuestTask {
     @Override
     public boolean isCompletedFor(Player player) {
         if (sticky && TaskProgressAccess.getOrEmpty(player, getTaskId()).getBoolean("completed")) return true;
-        if (countMatchingWithAe2(player) >= count) {
+        if (satisfiedRequirements(player) == requirements().size()) {
             if (sticky) TaskProgressAccess.with(player, getTaskId(), nbt -> nbt.putBoolean("completed", true));
             return true;
         }
@@ -79,7 +92,9 @@ public class FilterItemTask extends QuestTask {
     public String getProgressString(Player player) {
         if (sticky && TaskProgressAccess.getOrEmpty(player, getTaskId()).getBoolean("completed"))
             return count + "/" + count;
-        return Math.min(countMatchingWithAe2(player), count) + "/" + count;
+        List<IItemFilter> requirements = requirements();
+        if (requirements.size() > 1) return satisfiedRequirements(player) + "/" + requirements.size() + " items";
+        return Math.min(countMatchingWithAe2(player, requirements.get(0)), count) + "/" + count;
     }
 
     @Override
@@ -92,25 +107,30 @@ public class FilterItemTask extends QuestTask {
 
     @Override
     public boolean matchesItem(ItemStack stack) {
-        return filter != null && stack != null && !stack.isEmpty() && filter.test(stack);
+        if (filter == null || stack == null || stack.isEmpty()) return false;
+        for (IItemFilter requirement : requirements()) {
+            if (requirement.test(stack)) return true;
+        }
+        return false;
     }
 
     @Override
     public void tryConsume(Player player) {
         if (!consume) return;
-        int remaining = count;
-        for (ItemStack stack : allSlots(player)) {
-            if (remaining <= 0) break;
-            if (stack.isEmpty() || !filter.test(stack)) continue;
-            int take = Math.min(remaining, stack.getCount());
-            stack.shrink(take);
-            remaining -= take;
+        for (IItemFilter requirement : requirements()) {
+            int remaining = count;
+            for (ItemStack stack : allSlots(player)) {
+                if (remaining <= 0) break;
+                if (stack.isEmpty() || !requirement.test(stack)) continue;
+                int take = Math.min(remaining, stack.getCount());
+                stack.shrink(take);
+                remaining -= take;
+            }
+            if (remaining > 0 && checksAe2Storage()) {
+                AE2Compat.tryConsume(player, requirement, remaining);
+            }
         }
         player.getInventory().setChanged();
-
-        if (remaining > 0 && checksAe2Storage()) {
-            AE2Compat.tryConsume(player, filter, remaining);
-        }
     }
 
     @Override

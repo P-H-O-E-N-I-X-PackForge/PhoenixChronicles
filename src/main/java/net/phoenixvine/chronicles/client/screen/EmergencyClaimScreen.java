@@ -37,6 +37,7 @@ public class EmergencyClaimScreen extends Screen {
     private static final int ACTION_W = 96;
     private static final int REFRESH_INTERVAL_TICKS = 20;
     private static final long ARM_WINDOW_MS = 3000;
+    private static final long PENDING_CLAIM_MS = 6000;
 
     private static final int COL_READY = 0xFFE0A030;
     private static final int COL_COOLDOWN = 0xFF666677;
@@ -50,6 +51,7 @@ public class EmergencyClaimScreen extends Screen {
     private int scrollY = 0;
     private int refreshTicks = 0;
     private @Nullable ResourceLocation armedQuest = null;
+    private final java.util.Map<ResourceLocation, Long> pendingClaims = new java.util.HashMap<>();
     private long armedUntilMs = 0;
 
     public EmergencyClaimScreen(Screen parent) {
@@ -72,7 +74,7 @@ public class EmergencyClaimScreen extends Screen {
     @Override
     public void tick() {
         super.tick();
-        if (++refreshTicks >= REFRESH_INTERVAL_TICKS) {
+        if (!pendingClaims.isEmpty() || ++refreshTicks >= REFRESH_INTERVAL_TICKS) {
             refreshTicks = 0;
             refreshRows();
         }
@@ -100,6 +102,9 @@ public class EmergencyClaimScreen extends Screen {
                         ClientEmergencyState.availability(data, stationId)));
             }
         }
+        pendingClaims.entrySet().removeIf(e -> System.currentTimeMillis() - e.getValue() > PENDING_CLAIM_MS ||
+                list.stream().anyMatch(r -> r.id().equals(e.getKey()) &&
+                        r.availability().state() != ClientEmergencyState.State.READY));
         list.sort(Comparator.comparingInt((Row r) -> r.availability().state().ordinal())
                 .thenComparingLong(r -> r.availability().remainingMs()));
         rows = list;
@@ -237,6 +242,11 @@ public class EmergencyClaimScreen extends Screen {
         int h = ROW_H - 12;
         switch (av.state()) {
             case READY -> {
+                if (pendingClaims.containsKey(row.id())) {
+                    g.fill(x, y, x + ACTION_W, y + h, 0xFF16161C);
+                    g.drawCenteredString(font, "§7Claiming...", x + ACTION_W / 2, y + (h - 8) / 2, 0xFFAAAABB);
+                    return;
+                }
                 boolean armed = isArmed(row.id());
                 boolean hov = mx >= x && mx < x + ACTION_W && my >= y && my < y + h;
                 g.fill(x, y, x + ACTION_W, y + h, armed ? 0xFF6B4C1F : hov ? 0xFF4A3A18 : 0xFF2A2214);
@@ -272,7 +282,9 @@ public class EmergencyClaimScreen extends Screen {
                 int y = ty + 6, h = ROW_H - 12;
                 boolean inList = my >= listTop() && my < listBottom();
                 if (inList && mx >= x && mx < x + ACTION_W && my >= y && my < y + h) {
-                    if (row.availability().state() == ClientEmergencyState.State.READY) claim(row);
+                    if (row.availability().state() == ClientEmergencyState.State.READY &&
+                            !pendingClaims.containsKey(row.id()))
+                        claim(row);
                     return true;
                 }
                 ty += ROW_H;
@@ -289,6 +301,7 @@ public class EmergencyClaimScreen extends Screen {
             return;
         }
         armedQuest = null;
+        pendingClaims.put(id, System.currentTimeMillis());
         ChronicleNetwork.CHANNEL.sendToServer(new C2SRequestEmergencyItemsPacket(id));
     }
 
