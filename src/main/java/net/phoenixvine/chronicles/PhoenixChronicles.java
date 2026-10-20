@@ -68,6 +68,7 @@ public class PhoenixChronicles {
             ChronicleNetwork.init();
 
             PhoenixTheme.loadThemes();
+            net.phoenixvine.chronicles.common.registry.PhoenixTaskRegistry.registerBuiltins();
 
             if (FMLEnvironment.dist.isClient() && ModList.get().isLoaded("phantasia")) {
                 PhantasiaCompat.init();

@@ -113,6 +113,7 @@ public class TaskRewardEditorScreen extends Screen {
 
     private boolean taskSticky = true;
     private boolean taskCheckAe2Storage = AE2Compat.isAvailable();
+    private FluidRequirementTask.Source taskFluidSource = FluidRequirementTask.Source.ITEMS;
     private boolean taskTypeDropOpen = false;
     private int taskTypeDropScroll = 0;
     private EditBox taskDescBox, taskTargetBox, taskCountBox, taskSecondaryBox, taskNbtBox;
@@ -542,12 +543,12 @@ public class TaskRewardEditorScreen extends Screen {
             } else if (hasSourceCycle) {
                 addRenderableWidget(Button.builder(ChroniclesUIKit.lit("§6⟳"), b -> {
                     if (taskSecondaryBox == null) return;
-                    String[] options = { "INVENTORY", "HELD", "BLOCK" };
+                    String[] options = { "INVENTORY", "HELD", "BLOCK", "ALL" };
                     String cur = taskSecondaryBox.getValue().trim().toUpperCase();
                     int idx = java.util.Arrays.asList(options).indexOf(cur);
                     taskSecondaryBox.setValue(options[(idx + 1) % options.length]);
                 }).bounds(tx + secondW, fy, 16, FIELD_H)
-                        .tooltip(Tooltip.create(ChroniclesUIKit.lit("Cycle INVENTORY / HELD / BLOCK")))
+                        .tooltip(Tooltip.create(ChroniclesUIKit.lit("Cycle INVENTORY / HELD / BLOCK / ALL")))
                         .build());
             }
             fy += FIELD_H + FIELD_GAP;
@@ -590,6 +591,24 @@ public class TaskRewardEditorScreen extends Screen {
                             "ON (default when AE2 is installed): also count/withdraw matching items or\n" +
                                     "fluid stored in your linked Applied Energistics 2 ME network, in addition\n" +
                                     "to the player's inventory.")))));
+        }
+        if (form.showBlock()) {
+            flexBtns.add(new FlexBtn(48, () -> {
+                String label = switch (taskFluidSource) {
+                    case ITEMS -> "§fItems";
+                    case BLOCK -> "§6Block";
+                    case BOTH -> "§aBoth";
+                };
+                return Button.builder(ChroniclesUIKit.lit(label), b -> {
+                    FluidRequirementTask.Source[] all = FluidRequirementTask.Source.values();
+                    taskFluidSource = all[(taskFluidSource.ordinal() + 1) % all.length];
+                    rebuildWidgets();
+                }).tooltip(Tooltip.create(ChroniclesUIKit.lit(
+                        "Where the fluid is counted. Click to cycle.\n" +
+                                "Items: fluid carried in buckets, tanks and other items.\n" +
+                                "Block: right-click a tank or drum block to count the fluid inside it.\n" +
+                                "Both: carried fluid and the last right-clicked block add together.")));
+            }));
         }
         if (showSticky) {
             flexBtns.add(new FlexBtn(56, () -> Button.builder(
@@ -1162,6 +1181,7 @@ public class TaskRewardEditorScreen extends Screen {
         String countVal = taskCountBox != null ? taskCountBox.getValue() : "1";
         boolean optional = taskOptional, consume = taskConsume, sticky = taskSticky;
         boolean ae2 = taskCheckAe2Storage;
+        FluidRequirementTask.Source fluidSource = taskFluidSource;
         int hidden = taskHiddenParts;
         for (ItemStack stack : picked) {
             ResourceLocation id = ForgeRegistries.ITEMS.getKey(stack.getItem());
@@ -1177,6 +1197,7 @@ public class TaskRewardEditorScreen extends Screen {
             taskConsume = consume;
             taskSticky = sticky;
             taskCheckAe2Storage = ae2;
+            taskFluidSource = fluidSource;
             taskHiddenParts = hidden;
             commitTaskFromForm();
         }
@@ -1242,6 +1263,7 @@ public class TaskRewardEditorScreen extends Screen {
         values.consume = taskConsume;
         values.sticky = taskSticky;
         values.checkAe2 = taskCheckAe2Storage;
+        values.fluidSource = taskFluidSource;
         values.itemFilter = pendingPickedItemFilter;
         values.fluidFilter = pendingPickedFluidFilter;
         QuestTask task = null;
@@ -1269,6 +1291,7 @@ public class TaskRewardEditorScreen extends Screen {
             taskSticky = true;
             taskConsume = false;
             taskCheckAe2Storage = AE2Compat.isAvailable();
+            taskFluidSource = FluidRequirementTask.Source.ITEMS;
             pendingTaskDesc = pendingTaskTarget = pendingTaskSecondary = pendingTaskNbt = "";
             pendingTaskCount = "1";
             pendingPickedItemFilter = null;
@@ -1296,6 +1319,7 @@ public class TaskRewardEditorScreen extends Screen {
         taskConsume = values.consume;
         taskSticky = values.sticky;
         taskCheckAe2Storage = values.checkAe2;
+        taskFluidSource = values.fluidSource;
         pendingTaskDesc = t.getDescriptionRaw().getString();
         pendingTaskTarget = values.target;
         pendingTaskSecondary = values.second;
@@ -1333,6 +1357,7 @@ public class TaskRewardEditorScreen extends Screen {
         taskOptional = false;
         taskHiddenParts = 0;
         taskCheckAe2Storage = AE2Compat.isAvailable();
+        taskFluidSource = FluidRequirementTask.Source.ITEMS;
         pendingTaskDesc = pendingTaskTarget = pendingTaskSecondary = pendingTaskCount = pendingTaskNbt = "";
         pendingPickedItemFilter = null;
         pendingPickedFluidFilter = null;

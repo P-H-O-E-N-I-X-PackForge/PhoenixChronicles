@@ -19,6 +19,7 @@ public final class TaskFormValues {
     public boolean consume;
     public boolean sticky = true;
     public boolean checkAe2;
+    public net.phoenixvine.chronicles.common.tasks.FluidRequirementTask.Source fluidSource = net.phoenixvine.chronicles.common.tasks.FluidRequirementTask.Source.ITEMS;
 
     @Nullable
     public IItemFilter itemFilter;

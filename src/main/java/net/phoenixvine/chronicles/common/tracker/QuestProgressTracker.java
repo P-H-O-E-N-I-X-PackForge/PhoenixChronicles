@@ -140,11 +140,12 @@ public class QuestProgressTracker {
         boolean firstTickThisSession = !lastInventoryFingerprint.containsKey(player.getUUID());
 
         boolean invChanged = false;
-        if (firstTickThisSession || (tracked != null && !tracked.isEmpty())) {
+        if (data != null && (firstTickThisSession || (tracked != null && !tracked.isEmpty()))) {
             int fingerprint = computeInventoryFingerprint(player);
             Integer previous = lastInventoryFingerprint.put(player.getUUID(), fingerprint);
             invChanged = previous == null || previous != fingerprint;
         }
+        if (player.tickCount % INVENTORY_RESCAN_INTERVAL_TICKS == 0) invChanged = true;
 
         if (data != null) {
 
@@ -198,12 +199,13 @@ public class QuestProgressTracker {
 
         if (data != null) sweepLockedQuestsIfDue(player, data);
 
-        if (firstTickThisSession) {
+        if (firstTickThisSession && data != null) {
             endLoginSync(player.getUUID());
         }
     }
 
     private static final int LOCKED_SWEEP_INTERVAL_TICKS = 100;
+    private static final int INVENTORY_RESCAN_INTERVAL_TICKS = 100;
     private static final java.util.Map<java.util.UUID, Integer> lockedSweepTickCounter = new java.util.concurrent.ConcurrentHashMap<>();
 
     private static void sweepLockedQuestsIfDue(Player player, PlayerQuestData data) {

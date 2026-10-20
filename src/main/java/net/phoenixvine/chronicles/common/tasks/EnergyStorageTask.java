@@ -1,6 +1,7 @@
 package net.phoenixvine.chronicles.common.tasks;
 
 import com.gregtechceu.gtceu.api.capability.GTCapabilityHelper;
+import com.gregtechceu.gtceu.api.capability.IElectricItem;
 import com.gregtechceu.gtceu.api.capability.IEnergyContainer;
 
 import net.minecraft.core.BlockPos;
@@ -32,7 +33,8 @@ public class EnergyStorageTask extends QuestTask {
     public enum Source {
         INVENTORY,
         HELD,
-        BLOCK
+        BLOCK,
+        ALL
     }
 
     private static final Map<UUID, long[]> blockCache = new HashMap<>();
@@ -121,6 +123,18 @@ public class EnergyStorageTask extends QuestTask {
             case INVENTORY -> inventoryFE(player);
             case HELD -> heldFE(player);
             case BLOCK -> blockStored(player);
+            case ALL -> inventoryFE(player) + blockStored(player);
+        };
+    }
+
+    private long energyStored(ItemStack stack) {
+        long fe = stack.getCapability(ForgeCapabilities.ENERGY).map(IEnergyStorage::getEnergyStored).orElse(0);
+        IElectricItem electric = GTCapabilityHelper.getElectricItem(stack);
+        long eu = electric == null ? 0 : electric.getCharge();
+        return switch (energyType) {
+            case FE -> fe;
+            case EU -> eu;
+            case ANY -> fe > 0 ? fe : eu;
         };
     }
 
@@ -128,21 +142,17 @@ public class EnergyStorageTask extends QuestTask {
         long total = 0;
         for (ItemStack stack : player.getInventory().items) {
             if (stack.isEmpty()) continue;
-            total += stack.getCapability(ForgeCapabilities.ENERGY)
-                    .map(IEnergyStorage::getEnergyStored).orElse(0);
+            total += energyStored(stack);
         }
         for (ItemStack stack : CuriosCompat.getEquippedCurios(player)) {
             if (stack.isEmpty()) continue;
-            total += stack.getCapability(ForgeCapabilities.ENERGY)
-                    .map(IEnergyStorage::getEnergyStored).orElse(0);
+            total += energyStored(stack);
         }
         return total;
     }
 
     private long heldFE(Player player) {
-        return player.getMainHandItem()
-                .getCapability(ForgeCapabilities.ENERGY)
-                .map(IEnergyStorage::getEnergyStored).orElse(0);
+        return energyStored(player.getMainHandItem());
     }
 
     private long blockStored(Player player) {
@@ -159,6 +169,7 @@ public class EnergyStorageTask extends QuestTask {
         return switch (source) {
             case INVENTORY -> "in inventory";
             case HELD -> "in held item";
+            case ALL -> "in inventory and linked block";
             case BLOCK -> {
                 long[] cache = blockCache.get(player.getUUID());
                 if (cache == null) yield "§8Right-click an energy block to link";

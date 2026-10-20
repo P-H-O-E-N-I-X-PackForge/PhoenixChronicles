@@ -39,12 +39,24 @@ public class EnchantmentTask extends QuestTask {
         Enchantment ench = ForgeRegistries.ENCHANTMENTS.getValue(enchantmentId);
         if (ench == null) return false;
         for (EquipmentSlot slot : SLOTS) {
-            ItemStack stack = player.getItemBySlot(slot);
-            if (!stack.isEmpty() && EnchantmentHelper.getItemEnchantmentLevel(ench, stack) >= requiredLevel)
-                return true;
+            if (hasEnchantment(player.getItemBySlot(slot), ench)) return true;
+        }
+        for (ItemStack stack : player.getInventory().items) {
+            if (hasEnchantment(stack, ench)) return true;
         }
         for (ItemStack stack : CuriosCompat.getEquippedCurios(player)) {
-            if (!stack.isEmpty() && EnchantmentHelper.getItemEnchantmentLevel(ench, stack) >= requiredLevel)
+            if (hasEnchantment(stack, ench)) return true;
+        }
+        return false;
+    }
+
+    private boolean hasEnchantment(ItemStack stack, Enchantment ench) {
+        if (stack.isEmpty()) return false;
+        if (EnchantmentHelper.getItemEnchantmentLevel(ench, stack) >= requiredLevel) return true;
+        for (net.minecraft.nbt.Tag entry : net.minecraft.world.item.EnchantedBookItem.getEnchantments(stack)) {
+            if (!(entry instanceof CompoundTag tag)) continue;
+            ResourceLocation id = EnchantmentHelper.getEnchantmentId(tag);
+            if (id != null && id.equals(enchantmentId) && EnchantmentHelper.getEnchantmentLevel(tag) >= requiredLevel)
                 return true;
         }
         return false;

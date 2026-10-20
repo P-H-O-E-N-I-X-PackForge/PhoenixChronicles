@@ -534,7 +534,7 @@ public final class PhoenixTaskRegistry {
             return t;
         }).icon("§b✦").label("Enchantment")
                 .tooltip(
-                        "Complete when the player has a specific enchantment at >= the required level on any equipped item.\nenchantment_id: registry id (e.g. minecraft:sharpness). required_level: minimum enchantment level.")
+                        "Complete when the player has a specific enchantment at >= the required level on any item the player carries or wears (enchanted books count).\nenchantment_id: registry id (e.g. minecraft:sharpness). required_level: minimum enchantment level.")
                 .field(FieldDef.text("enchantment_id", "Enchantment ID", "e.g. minecraft:sharpness"))
                 .field(FieldDef.integer("required_level", "Min Level"))
                 .register();

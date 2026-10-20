@@ -58,6 +58,7 @@ public final class TaskFormType {
     private final boolean showConsume;
     private final boolean showSticky;
     private final boolean showAe2;
+    private final boolean showBlock;
     private final Supplier<Collection<ResourceLocation>> registryIds;
     private final Supplier<Collection<String>> stringIds;
     private final Factory factory;
@@ -84,6 +85,7 @@ public final class TaskFormType {
         this.showConsume = b.showConsume;
         this.showSticky = b.stickyGetter != null;
         this.showAe2 = b.ae2Getter != null;
+        this.showBlock = b.showBlock;
         this.registryIds = b.registryIds;
         this.stringIds = b.stringIds;
         this.factory = b.factory;
@@ -158,6 +160,10 @@ public final class TaskFormType {
         return showAe2;
     }
 
+    public boolean showBlock() {
+        return showBlock;
+    }
+
     @Nullable
     public Collection<ResourceLocation> registryIds() {
         return registryIds == null ? null : registryIds.get();
@@ -216,6 +222,7 @@ public final class TaskFormType {
         private Predicate<QuestTask> stickyGetter;
         private BiConsumer<QuestTask, Boolean> stickySetter;
         private Predicate<QuestTask> ae2Getter;
+        private boolean showBlock = false;
 
         private Builder(String id, Class<T> taskClass) {
             this.id = id;
@@ -279,6 +286,11 @@ public final class TaskFormType {
         public Builder<T> sticky(Predicate<T> getter, BiConsumer<T, Boolean> setter) {
             this.stickyGetter = task -> getter.test(taskClass.cast(task));
             this.stickySetter = (task, value) -> setter.accept(taskClass.cast(task), value);
+            return this;
+        }
+
+        public Builder<T> blockSource() {
+            this.showBlock = true;
             return this;
         }
 

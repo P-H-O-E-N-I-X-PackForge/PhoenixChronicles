@@ -375,16 +375,19 @@ public final class TaskFormTypes {
                 .consume()
                 .sticky(FluidRequirementTask::isSticky, FluidRequirementTask::setSticky)
                 .ae2(FluidRequirementTask::isCheckAe2Storage)
+                .blockSource()
                 .create(v -> {
                     FluidRequirementTask task = new FluidRequirementTask(v.taskId, v.description,
                             new ResourceLocation(v.target), v.intCount(), v.consume);
                     task.setCheckAe2Storage(v.checkAe2);
+                    task.setSource(v.fluidSource);
                     return task;
                 })
                 .load((t, v) -> {
                     v.target = t.getFluidId().toString();
                     v.count = t.getRequiredAmount();
                     v.consume = t.shouldConsume();
+                    v.fluidSource = t.getSource();
                 })
                 .detail(t -> t.getFluidId().getPath().replace('_', ' ') + "  " + t.getRequiredAmount() + " mB")
                 .build());
@@ -541,7 +544,7 @@ public final class TaskFormTypes {
         add(TaskFormType.of("energy_check", EnergyStorageTask.class)
                 .target("§8FE / EU / ANY")
                 .targetPicker(TargetPicker.ENERGY_TYPE)
-                .second("§8INVENTORY / HELD / BLOCK", SecondPicker.ENERGY_SOURCE)
+                .second("§8INVENTORY / HELD / BLOCK / ALL", SecondPicker.ENERGY_SOURCE)
                 .count("§8FE required")
                 .sticky(EnergyStorageTask::isSticky, EnergyStorageTask::setSticky)
                 .create(v -> {
