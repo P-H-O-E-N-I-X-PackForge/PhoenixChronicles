@@ -60,7 +60,7 @@ final class AE2CompatImpl {
     @Nullable
     private static IGrid getLinkedGrid(@NotNull Player player, @NotNull ItemStack stack) {
         if (!(stack.getItem() instanceof WirelessTerminalItem term)) return null;
-        return term.getLinkedGrid(stack, player.level(), player);
+        return term.getLinkedGrid(stack, player.level(), (Player) null);
     }
 
     static long getStoredAmount(@NotNull Player player, @NotNull Item item) {

@@ -12,11 +12,15 @@ import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.phoenixvine.chronicles.client.screen.ChronicleOverviewScreen;
+import net.phoenixvine.chronicles.common.filter.IItemFilter;
+import net.phoenixvine.chronicles.common.filter.ItemFilters;
 import net.phoenixvine.chronicles.common.model.QuestNode;
 import net.phoenixvine.chronicles.common.model.QuestTask;
 import net.phoenixvine.chronicles.common.tasks.CraftItemTask;
+import net.phoenixvine.chronicles.common.tasks.FilterItemTask;
 import net.phoenixvine.chronicles.common.tasks.FluidRequirementTask;
 import net.phoenixvine.chronicles.common.tasks.ItemRequirementTask;
+import net.phoenixvine.chronicles.common.tasks.TagItemTask;
 import net.phoenixvine.chronicles.integration.QuestRewardDisplay;
 
 import dev.emi.emi.api.recipe.EmiRecipe;
@@ -69,6 +73,16 @@ public class QuestEmiRecipe implements EmiRecipe {
                 if (item != null && item != Items.AIR) {
                     dynamicInputs.add(EmiStack.of(item, craftTask.getRequiredCount()));
                 }
+            } else if (task instanceof TagItemTask tagTask) {
+                dynamicInputs.add(EmiIngredient.of(tagTask.getTag(), tagTask.getRequired()));
+            } else if (task instanceof FilterItemTask filterTask) {
+                IItemFilter filter = filterTask.getFilter();
+                List<IItemFilter> requirements = filter instanceof ItemFilters.AllOf allOf ? allOf.children() :
+                        List.of(filter);
+                for (IItemFilter requirement : requirements) {
+                    EmiIngredient filterInput = filterInput(requirement, filterTask.getCount());
+                    if (filterInput != null) dynamicInputs.add(filterInput);
+                }
             } else if (task instanceof FluidRequirementTask fluidTask) {
                 Fluid fluid = ForgeRegistries.FLUIDS.getValue(fluidTask.getFluidId());
                 if (fluid != null && fluid != Fluids.EMPTY) {
@@ -77,6 +91,26 @@ public class QuestEmiRecipe implements EmiRecipe {
             }
         }
         return dynamicInputs;
+    }
+
+    private static EmiIngredient filterInput(IItemFilter filter, int count) {
+        List<EmiStack> options = new ArrayList<>();
+        collectFilterItems(filter, count, options);
+        if (options.isEmpty()) return null;
+        return options.size() == 1 ? options.get(0) : EmiIngredient.of(options);
+    }
+
+    private static void collectFilterItems(IItemFilter filter, int count, List<EmiStack> out) {
+        if (filter instanceof ItemFilters.AnyOf anyOf) {
+            for (IItemFilter child : anyOf.children()) collectFilterItems(child, count, out);
+        } else if (filter instanceof ItemFilters.AllOf allOf) {
+            for (IItemFilter child : allOf.children()) collectFilterItems(child, count, out);
+        } else if (filter instanceof ItemFilters.Tag tag) {
+            out.addAll(EmiIngredient.of(tag.tag(), count).getEmiStacks());
+        } else {
+            ItemStack display = filter.getDisplayStack();
+            if (!display.isEmpty()) out.add(EmiStack.of(display.getItem(), count));
+        }
     }
 
     @Override

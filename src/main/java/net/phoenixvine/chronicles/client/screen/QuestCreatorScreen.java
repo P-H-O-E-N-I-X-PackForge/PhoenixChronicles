@@ -149,6 +149,8 @@ public class QuestCreatorScreen extends Screen {
     private int cachedRepeatCooldownHours = 24;
     private boolean cachedHideDepLine = false;
     private boolean cachedAutoClaimRewards = false;
+    private boolean cachedShared = true;
+    private boolean cachedPooledProgress = false;
     private boolean cachedRewardChoice = false;
     private int cachedRewardChoiceCount = 1;
     private QuestNode.NodeSize cachedNodeSize = QuestNode.NodeSize.NORMAL;
@@ -244,6 +246,8 @@ public class QuestCreatorScreen extends Screen {
         cachedRepeatCooldownHours = editingNode.getRepeatCooldownHours();
         cachedHideDepLine = editingNode.isHideDepLine();
         cachedAutoClaimRewards = editingNode.isAutoClaimRewards();
+        cachedShared = editingNode.isShared();
+        cachedPooledProgress = editingNode.isPooledProgress();
         cachedRewardChoice = editingNode.isRewardChoice();
         cachedRewardChoiceCount = editingNode.getRewardChoiceCount();
         cachedNodeSize = editingNode.getNodeSize();
@@ -280,7 +284,8 @@ public class QuestCreatorScreen extends Screen {
                 String.valueOf(cachedCategoryPrereqs), String.valueOf(cachedDisabledBlocksChildren),
                 String.valueOf(cachedTaskMinCount), String.valueOf(cachedRepeatMode),
                 String.valueOf(cachedRepeatCooldownHours), String.valueOf(cachedHideDepLine),
-                String.valueOf(cachedAutoClaimRewards), String.valueOf(cachedRewardChoice),
+                String.valueOf(cachedAutoClaimRewards), String.valueOf(cachedShared),
+                String.valueOf(cachedPooledProgress), String.valueOf(cachedRewardChoice),
                 String.valueOf(cachedRewardChoiceCount), String.valueOf(cachedNodeSize),
                 String.valueOf(cachedSizeOverridePx), cachedDevNotes, cachedPreviewMachineId,
                 cachedExternalScreenId, cachedUnlockSoundId, cachedCompleteSoundId, cachedVoiceId,
@@ -919,6 +924,31 @@ public class QuestCreatorScreen extends Screen {
                 .bounds(cx, rowY, cw, FIELD_H)
                 .tooltip(Tooltip.create(ChroniclesUIKit.lit(
                         "Automatically grant rewards on completion. No claim button needed")))
+                .build());
+        y = rowY + FIELD_H + ROW_GAP;
+
+        rowY = y + LABEL_H + LABEL_GAP;
+        labels.add(new LabelEntry(cx, y, "§fTeams", C_TEXT_FAINT));
+        int teamBtnW = (cw - 4) / 2;
+        addRenderableWidget(Button.builder(
+                ChroniclesUIKit.lit(cachedShared ? "§a⚑ Share completion" : "§f⚑ Share completion"),
+                b -> {
+                    cachedShared = !cachedShared;
+                    rebuildWidgets();
+                })
+                .bounds(cx, rowY, teamBtnW, FIELD_H)
+                .tooltip(Tooltip.create(ChroniclesUIKit.lit(
+                        "When someone on a team completes this quest, everyone on that team completes it too.")))
+                .build());
+        addRenderableWidget(Button.builder(
+                ChroniclesUIKit.lit(cachedPooledProgress ? "§a⚑ Pool progress" : "§f⚑ Pool progress"),
+                b -> {
+                    cachedPooledProgress = !cachedPooledProgress;
+                    rebuildWidgets();
+                })
+                .bounds(cx + teamBtnW + 4, rowY, cw - teamBtnW - 4, FIELD_H)
+                .tooltip(Tooltip.create(ChroniclesUIKit.lit(
+                        "Task progress (kills, items handed in, and so on) is counted together for the whole team.")))
                 .build());
         y = rowY + FIELD_H + ROW_GAP;
 
@@ -1601,6 +1631,8 @@ public class QuestCreatorScreen extends Screen {
             }
             if (cachedHideDepLine) tag.putBoolean("hide_dep_line", true);
             if (cachedAutoClaimRewards) tag.putBoolean("auto_claim_rewards", true);
+            if (!cachedShared) tag.putBoolean("shared", false);
+            if (cachedPooledProgress) tag.putBoolean("pooled_progress", true);
             if (cachedRewardChoice) {
                 tag.putBoolean("reward_choice", true);
                 if (cachedRewardChoiceCount != 1) tag.putInt("reward_choice_count", cachedRewardChoiceCount);
@@ -1674,6 +1706,8 @@ public class QuestCreatorScreen extends Screen {
                     editingNode.setRepeatCooldownHours(cachedRepeatCooldownHours);
                 editingNode.setHideDepLine(cachedHideDepLine);
                 editingNode.setAutoClaimRewards(cachedAutoClaimRewards);
+                editingNode.setShared(cachedShared);
+                editingNode.setPooledProgress(cachedPooledProgress);
                 editingNode.setRewardChoice(cachedRewardChoice);
                 editingNode.setRewardChoiceCount(cachedRewardChoiceCount);
                 editingNode.setNodeSize(cachedNodeSize);
@@ -1721,6 +1755,8 @@ public class QuestCreatorScreen extends Screen {
                     node.setRepeatCooldownHours(cachedRepeatCooldownHours);
                 node.setHideDepLine(cachedHideDepLine);
                 node.setAutoClaimRewards(cachedAutoClaimRewards);
+                node.setShared(cachedShared);
+                node.setPooledProgress(cachedPooledProgress);
                 node.setRewardChoice(cachedRewardChoice);
                 node.setRewardChoiceCount(cachedRewardChoiceCount);
                 node.setNodeSize(cachedNodeSize);
@@ -1740,8 +1776,6 @@ public class QuestCreatorScreen extends Screen {
                     for (QuestTask t : editingNode.getTasks()) node.addTask(t);
                     for (QuestReward r : editingNode.getRewards()) node.addReward(r);
                     for (QuestNode.QuestVariant v : editingNode.getVariants()) node.addVariant(v);
-                    node.setShared(editingNode.isShared());
-                    node.setPooledProgress(editingNode.isPooledProgress());
                     if (editingNode.getOptionalPrereqMinCount() != null)
                         node.setOptionalPrereqMinCount(editingNode.getOptionalPrereqMinCount());
                     node.setEmergencyKit(editingNode.getEmergencyKit());
