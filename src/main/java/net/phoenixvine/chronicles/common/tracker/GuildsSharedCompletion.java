@@ -7,19 +7,25 @@ import net.phoenixvine.chronicles.common.model.QuestState;
 import net.phoenixvine.guilds.data.GuildManager;
 
 import java.util.UUID;
+import java.util.function.Function;
 
-final class GuildsSharedCompletion {
+public final class GuildsSharedCompletion {
 
     private GuildsSharedCompletion() {}
 
     static boolean propagate(ServerPlayer source, QuestNode node) {
+        return propagate(source, node, uuid -> source.getServer().getPlayerList().getPlayer(uuid));
+    }
+
+    public static boolean propagate(ServerPlayer source, QuestNode node,
+                                    Function<UUID, ServerPlayer> memberByUuid) {
         GuildManager guildMgr = GuildManager.get(source.getServer().overworld());
         var pTeam = guildMgr.getGuildFor(source.getUUID());
         if (pTeam.isEmpty()) return false;
 
         for (UUID memberUUID : pTeam.get().getMembers()) {
             if (memberUUID.equals(source.getUUID())) continue;
-            ServerPlayer member = source.getServer().getPlayerList().getPlayer(memberUUID);
+            ServerPlayer member = memberByUuid.apply(memberUUID);
             if (member == null) continue;
             PlayerQuestData data = QuestProgressTracker.resolveData(member);
             if (data != null && data.getQuestState(node.getId(), QuestState.LOCKED) != QuestState.COMPLETED) {

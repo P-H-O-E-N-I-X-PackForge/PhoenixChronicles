@@ -200,6 +200,12 @@ dependencies {
     compileOnly("brachy.modularui:modularui-mc${minecraft_version}:${mui_version}") { transitive = false }
 
     localRuntime  "dev.emi:emi-neoforge:${emi_version}+${minecraft_version}"
+
+    // Team mods in the dev client and gametests, so shared-completion code runs against the real APIs
+    localRuntime("dev.ftb.mods:ftb-teams-neoforge:${ftbteams_version}") { transitive = false }
+    localRuntime("dev.ftb.mods:ftb-library-neoforge:${ftblibrary_version}") { transitive = false }
+    localRuntime("dev.architectury:architectury-neoforge:13.0.11") { transitive = false }
+    localRuntime("net.phoenixvine.guilds:phoenix-guilds-neoforge:${phoenix_guilds_version}") { transitive = false }
     localRuntime "top.theillusivec4.curios:curios-neoforge:${curios_version}"
 
 
