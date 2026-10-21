@@ -36,6 +36,7 @@ public class ChroniclesEmiPlugin implements EmiPlugin {
     }
 
     public static void loadQuestsIntoEmi(@NotNull EmiRegistry registry) {
+        int added = 0;
         for (QuestNode node : QuestTreeRegistry.getAllQuests().values()) {
 
             if (node.isFlagDisabled(null)) {
@@ -44,8 +45,11 @@ public class ChroniclesEmiPlugin implements EmiPlugin {
 
             if (node.getVisibility() != QuestNode.Visibility.HIDDEN) {
                 registry.addRecipe(new QuestEmiRecipe(node));
+                added++;
             }
         }
+        net.phoenixvine.chronicles.PhoenixChronicles.LOGGER.info("[EMI] Registered {} quest recipes (of {} quests)",
+                added, QuestTreeRegistry.getAllQuests().size());
     }
 
     public static void refreshQuestRecipes() {

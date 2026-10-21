@@ -40,7 +40,8 @@ public class QuestEmiRecipe implements EmiRecipe {
 
     public QuestEmiRecipe(@NotNull QuestNode node) {
         this.node = node;
-        this.id = ResourceLocation.fromNamespaceAndPath(node.getId().getNamespace(), "quest/" + node.getId().getPath());
+        this.id = ResourceLocation.fromNamespaceAndPath(node.getId().getNamespace(),
+                "/quest/" + node.getId().getPath());
     }
 
     @Override

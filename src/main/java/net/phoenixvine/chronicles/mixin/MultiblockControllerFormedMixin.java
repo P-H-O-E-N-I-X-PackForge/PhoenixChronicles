@@ -25,7 +25,7 @@ public abstract class MultiblockControllerFormedMixin {
         phoenixChronicles$wasFormed = isFormed;
     }
 
-    @Inject(method = "formStructure(Ljava/lang/String;)V", at = @At("TAIL"), remap = false)
+    @Inject(method = "formStructure(Ljava/lang/String;)V", at = @At("RETURN"), remap = false)
     private void phoenixChronicles$afterForm(String name, CallbackInfo ci) {
         if (phoenixChronicles$wasFormed || !isFormed) return;
         MultiblockControllerMachine self = (MultiblockControllerMachine) (Object) this;
