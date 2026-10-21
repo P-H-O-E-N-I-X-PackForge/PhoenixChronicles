@@ -30,26 +30,20 @@ public class FluidRequirementTask extends QuestTask {
         BOTH
     }
 
-    private static final Map<UUID, Map<ResourceLocation, Integer>> blockFluids = new HashMap<>();
+    private record ClickedBlock(net.minecraft.resources.ResourceKey<net.minecraft.world.level.Level> dimension,
+                                net.minecraft.core.BlockPos pos) {}
+
+    private static final Map<UUID, ClickedBlock> clickedBlocks = new HashMap<>();
 
     public static void onBlockRightClicked(Player player, net.minecraft.world.level.Level level,
                                            net.minecraft.core.BlockPos pos) {
         net.minecraft.world.level.block.entity.BlockEntity be = level.getBlockEntity(pos);
-        if (be == null) return;
-        be.getCapability(ForgeCapabilities.FLUID_HANDLER).ifPresent(handler -> {
-            Map<ResourceLocation, Integer> amounts = new HashMap<>();
-            for (int i = 0; i < handler.getTanks(); i++) {
-                FluidStack stack = handler.getFluidInTank(i);
-                if (stack.isEmpty()) continue;
-                ResourceLocation id = ForgeRegistries.FLUIDS.getKey(stack.getFluid());
-                amounts.merge(id, stack.getAmount(), Integer::sum);
-            }
-            blockFluids.put(player.getUUID(), amounts);
-        });
+        if (be == null || !be.getCapability(ForgeCapabilities.FLUID_HANDLER).isPresent()) return;
+        clickedBlocks.put(player.getUUID(), new ClickedBlock(level.dimension(), pos.immutable()));
     }
 
     public static void clearBlockCache(UUID playerId) {
-        blockFluids.remove(playerId);
+        clickedBlocks.remove(playerId);
     }
 
     private ResourceLocation fluidId;
@@ -126,8 +120,21 @@ public class FluidRequirementTask extends QuestTask {
 
     private int blockAmount(Player player) {
         if (!countsBlocks() || fluidId == null) return 0;
-        Map<ResourceLocation, Integer> amounts = blockFluids.get(player.getUUID());
-        return amounts == null ? 0 : amounts.getOrDefault(fluidId, 0);
+        ClickedBlock clicked = clickedBlocks.get(player.getUUID());
+        if (clicked == null || player.level().dimension() != clicked.dimension() ||
+                !player.level().isLoaded(clicked.pos())) {
+            return 0;
+        }
+        net.minecraft.world.level.block.entity.BlockEntity be = player.level().getBlockEntity(clicked.pos());
+        if (be == null) return 0;
+        return be.getCapability(ForgeCapabilities.FLUID_HANDLER).map(handler -> {
+            int total = 0;
+            for (int i = 0; i < handler.getTanks(); i++) {
+                FluidStack stack = handler.getFluidInTank(i);
+                if (fluidMatches(stack)) total += stack.getAmount();
+            }
+            return total;
+        }).orElse(0);
     }
 
     private int itemFluid(Player player) {

@@ -759,6 +759,10 @@ public class QuestNode {
         if (p != null && !prerequisites.contains(p)) prerequisites.add(p);
     }
 
+    public void detachPrerequisite(QuestNode p) {
+        prerequisites.remove(p);
+    }
+
     public void removePrerequisite(QuestNode p) {
         if (p != null) {
             prerequisites.remove(p);

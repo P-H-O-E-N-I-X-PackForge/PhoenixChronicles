@@ -77,6 +77,7 @@ public final class TaskProgressAccess {
     }
 
     public static void clear(Player player, ResourceLocation taskId) {
+        net.phoenixvine.chronicles.common.tasks.FluidRequirementTask.clearBlockCache(player.getUUID());
         player.getCapability(QuestCapabilityProvider.PLAYER_QUESTS)
                 .ifPresent(data -> data.clearTaskProgress(taskId));
 

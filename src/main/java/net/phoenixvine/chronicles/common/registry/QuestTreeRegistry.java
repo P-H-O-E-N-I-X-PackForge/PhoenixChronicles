@@ -17,6 +17,8 @@ public class QuestTreeRegistry {
 
     private static final java.util.Set<ResourceLocation> CONFIG_QUEST_IDS = ConcurrentHashMap.newKeySet();
 
+    private static final Map<ResourceLocation, java.util.Set<ResourceLocation>> DANGLING_PREREQS = new ConcurrentHashMap<>();
+
     private static final Map<ResourceLocation, QuestNode> TASK_OWNER = new ConcurrentHashMap<>();
 
     public static void registerRootChapter(QuestNode root) {
@@ -29,6 +31,7 @@ public class QuestTreeRegistry {
         if (node == null) return;
         ALL_QUESTS.put(node.getId(), node);
         indexTasks(node);
+        relinkDanglingDependents(node);
         for (QuestNode child : node.getChildren()) {
             registerRecursively(child);
         }
@@ -55,6 +58,7 @@ public class QuestTreeRegistry {
         if (node != null && node.getId() != null) {
             ALL_QUESTS.put(node.getId(), node);
             indexTasks(node);
+            relinkDanglingDependents(node);
         }
     }
 
@@ -62,6 +66,7 @@ public class QuestTreeRegistry {
         if (node == null || node.getId() == null) return;
         ALL_QUESTS.put(node.getId(), node);
         indexTasks(node);
+        relinkDanglingDependents(node);
 
         if (parentId != null) {
             QuestNode parent = ALL_QUESTS.get(parentId);
@@ -136,6 +141,19 @@ public class QuestTreeRegistry {
 
         for (QuestNode n : ALL_QUESTS.values()) {
             n.removeChild(removed);
+            if (n.getPrerequisites().contains(removed)) {
+                n.detachPrerequisite(removed);
+                DANGLING_PREREQS.computeIfAbsent(id, k -> ConcurrentHashMap.newKeySet()).add(n.getId());
+            }
+        }
+    }
+
+    private static void relinkDanglingDependents(QuestNode fresh) {
+        java.util.Set<ResourceLocation> dependents = DANGLING_PREREQS.remove(fresh.getId());
+        if (dependents == null) return;
+        for (ResourceLocation dependentId : dependents) {
+            QuestNode dependent = ALL_QUESTS.get(dependentId);
+            if (dependent != null && dependent != fresh) dependent.addPrerequisite(fresh);
         }
     }
 
@@ -157,6 +175,7 @@ public class QuestTreeRegistry {
         ROOT_NODES.clear();
         CONFIG_QUEST_IDS.clear();
         TASK_OWNER.clear();
+        DANGLING_PREREQS.clear();
 
         QuestProgressTracker.invalidateAllActiveTracking();
     }
