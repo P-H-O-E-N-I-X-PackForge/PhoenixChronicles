@@ -31,24 +31,19 @@ public class FluidRequirementTask extends QuestTask {
         BOTH
     }
 
-    private static final Map<UUID, Map<ResourceLocation, Integer>> blockFluids = new HashMap<>();
+    private record ClickedBlock(net.minecraft.resources.ResourceKey<net.minecraft.world.level.Level> dimension,
+                                net.minecraft.core.BlockPos pos) {}
+
+    private static final Map<UUID, ClickedBlock> clickedBlocks = new HashMap<>();
 
     public static void onBlockRightClicked(Player player, net.minecraft.world.level.Level level,
                                            net.minecraft.core.BlockPos pos) {
-        IFluidHandler handler = level.getCapability(Capabilities.FluidHandler.BLOCK, pos, null);
-        if (handler == null) return;
-        Map<ResourceLocation, Integer> amounts = new HashMap<>();
-        for (int i = 0; i < handler.getTanks(); i++) {
-            FluidStack stack = handler.getFluidInTank(i);
-            if (stack.isEmpty()) continue;
-            ResourceLocation id = BuiltInRegistries.FLUID.getKey(stack.getFluid());
-            amounts.merge(id, stack.getAmount(), Integer::sum);
-        }
-        blockFluids.put(player.getUUID(), amounts);
+        if (level.getCapability(Capabilities.FluidHandler.BLOCK, pos, null) == null) return;
+        clickedBlocks.put(player.getUUID(), new ClickedBlock(level.dimension(), pos.immutable()));
     }
 
     public static void clearBlockCache(UUID playerId) {
-        blockFluids.remove(playerId);
+        clickedBlocks.remove(playerId);
     }
 
     private ResourceLocation fluidId;
@@ -125,8 +120,19 @@ public class FluidRequirementTask extends QuestTask {
 
     private int blockAmount(Player player) {
         if (!countsBlocks() || fluidId == null) return 0;
-        Map<ResourceLocation, Integer> amounts = blockFluids.get(player.getUUID());
-        return amounts == null ? 0 : amounts.getOrDefault(fluidId, 0);
+        ClickedBlock clicked = clickedBlocks.get(player.getUUID());
+        if (clicked == null || player.level().dimension() != clicked.dimension() ||
+                !player.level().isLoaded(clicked.pos())) {
+            return 0;
+        }
+        IFluidHandler handler = player.level().getCapability(Capabilities.FluidHandler.BLOCK, clicked.pos(), null);
+        if (handler == null) return 0;
+        int total = 0;
+        for (int i = 0; i < handler.getTanks(); i++) {
+            FluidStack stack = handler.getFluidInTank(i);
+            if (fluidMatches(stack)) total += stack.getAmount();
+        }
+        return total;
     }
 
     private boolean fluidMatches(FluidStack fs) {

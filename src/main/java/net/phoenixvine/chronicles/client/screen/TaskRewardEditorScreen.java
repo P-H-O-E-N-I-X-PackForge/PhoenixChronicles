@@ -745,7 +745,7 @@ public class TaskRewardEditorScreen extends Screen {
                 return true;
             }
             if (hoveredTaskRow >= 0 && hoveredTaskRow < tasks.size()) {
-                copiedTaskNBT = tasks.get(hoveredTaskRow).serializeWithMeta();
+                copiedTaskNBT = copyableTask(tasks.get(hoveredTaskRow));
                 return true;
             }
         }
@@ -890,7 +890,7 @@ public class TaskRewardEditorScreen extends Screen {
 
     private boolean clickListRowButtons(double mx) {
         if (hoveredTaskRow >= 0 && mx >= splitX - COL_GAP - 28 && mx < splitX - COL_GAP - 14) {
-            copiedTaskNBT = tasks.get(hoveredTaskRow).serializeWithMeta();
+            copiedTaskNBT = copyableTask(tasks.get(hoveredTaskRow));
             return true;
         }
 
@@ -1078,8 +1078,15 @@ public class TaskRewardEditorScreen extends Screen {
         return t;
     }
 
-    private static QuestTask retaskId(QuestTask task, String newId) {
+    private static CompoundTag copyableTask(QuestTask task) {
         CompoundTag nbt = task.serializeWithMeta();
+        nbt.putString("description", Component.Serializer.toJson(task.getDescriptionRaw(),
+                net.minecraft.core.RegistryAccess.EMPTY));
+        return nbt;
+    }
+
+    private static QuestTask retaskId(QuestTask task, String newId) {
+        CompoundTag nbt = copyableTask(task);
         nbt.putString("task_id", "phoenix_chronicles:" + newId);
         QuestTask copy = deserializeTask(nbt);
         return copy != null ? copy : task;
