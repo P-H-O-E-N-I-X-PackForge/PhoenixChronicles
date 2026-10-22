@@ -9,10 +9,8 @@ import net.phoenixvine.chronicles.common.model.QuestTask;
 
 import org.jetbrains.annotations.Nullable;
 
-/** Completes when a GregTech multiblock forms, counted for the machine's owner or the nearest player. */
 public class MultiblockFormedTask extends QuestTask {
 
-    /** Target text meaning "any multiblock". */
     public static final String ANY = "*";
 
     @Nullable

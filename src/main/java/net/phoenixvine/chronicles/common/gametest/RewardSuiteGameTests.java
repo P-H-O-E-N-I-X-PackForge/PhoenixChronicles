@@ -62,7 +62,7 @@ public class RewardSuiteGameTests {
             sword.setHoverName(text("Reward Blade"));
 
             for (ItemStack source : List.of(book, sword)) {
-                // The editor stores the stack's tag in the quest file, and the claim rebuilds the item from it.
+
                 QuestReward.ItemReward stored = new QuestReward.ItemReward(source.getItem(), 1, source.getTag().copy(),
                         false);
                 QuestReward reloaded = QuestReward.deserializeNBT(stored.serializeWithMeta());

@@ -8,7 +8,6 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-/** Fires when the structure actually forms, not when the controller is placed. */
 @Mixin(value = MultiblockControllerMachine.class, remap = false)
 public abstract class MultiblockControllerFormedMixinGtm8 {
 

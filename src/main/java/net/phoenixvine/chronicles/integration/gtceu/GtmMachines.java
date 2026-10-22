@@ -10,12 +10,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-/** Only touch this class when GregTech is loaded. */
 public final class GtmMachines {
 
     private GtmMachines() {}
 
-    /** "*" (any multiblock) followed by every multiblock controller id, sorted. */
     public static Collection<String> multiblockControllerIds() {
         List<String> ids = new ArrayList<>();
         for (var block : ForgeRegistries.BLOCKS) {
