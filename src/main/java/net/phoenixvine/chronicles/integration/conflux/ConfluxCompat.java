@@ -7,7 +7,6 @@ import net.neoforged.fml.ModList;
 
 import org.jetbrains.annotations.NotNull;
 
-/** Soft-dependency facade over PhoenixCore's Conflux research; every check reports "no" when it is absent. */
 public final class ConfluxCompat {
 
     public static final String PHOENIXCORE_MOD_ID = "phoenixcore";
