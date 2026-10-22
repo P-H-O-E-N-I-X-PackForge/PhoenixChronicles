@@ -401,12 +401,17 @@ public class QuestProgressTracker {
             return;
         }
 
-        net.minecraft.world.scores.Team team = source.getTeam();
-        if (team == null) return;
         net.minecraft.server.MinecraftServer server = source.getServer();
         if (server == null) return;
+        propagateToScoreboardTeam(source, node, name -> server.getPlayerList().getPlayerByName(name));
+    }
+
+    public static void propagateToScoreboardTeam(net.minecraft.server.level.ServerPlayer source, QuestNode node,
+                                                 java.util.function.Function<String, net.minecraft.server.level.ServerPlayer> memberByName) {
+        net.minecraft.world.scores.Team team = source.getTeam();
+        if (team == null) return;
         for (String memberName : team.getPlayers()) {
-            net.minecraft.server.level.ServerPlayer member = server.getPlayerList().getPlayerByName(memberName);
+            net.minecraft.server.level.ServerPlayer member = memberByName.apply(memberName);
             if (member == null || member.getUUID().equals(source.getUUID())) continue;
             PlayerQuestData data = resolveData(member);
             if (data != null && data.getQuestState(node.getId(), QuestState.LOCKED) != QuestState.COMPLETED) {

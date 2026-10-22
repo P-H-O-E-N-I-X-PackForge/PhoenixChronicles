@@ -7,11 +7,19 @@ import net.phoenixvine.chronicles.common.model.QuestState;
 
 import dev.ftb.mods.ftbteams.api.FTBTeamsAPI;
 
-final class FtbTeamsSharedCompletion {
+import java.util.UUID;
+import java.util.function.Function;
+
+public final class FtbTeamsSharedCompletion {
 
     private FtbTeamsSharedCompletion() {}
 
     static boolean propagate(ServerPlayer source, QuestNode node) {
+        return propagate(source, node, uuid -> source.getServer().getPlayerList().getPlayer(uuid));
+    }
+
+    public static boolean propagate(ServerPlayer source, QuestNode node,
+                                    Function<UUID, ServerPlayer> memberByUuid) {
         if (!FTBTeamsAPI.api().isManagerLoaded()) return false;
         var opt = FTBTeamsAPI.api().getManager().getTeamForPlayerID(source.getUUID());
         if (opt.isEmpty()) return false;
@@ -19,8 +27,9 @@ final class FtbTeamsSharedCompletion {
         var team = opt.get();
         if (!team.isPartyTeam() && !team.isServerTeam()) return false;
 
-        for (ServerPlayer member : team.getOnlineMembers()) {
-            if (member.getUUID().equals(source.getUUID())) continue;
+        for (UUID memberId : team.getMembers()) {
+            ServerPlayer member = memberByUuid.apply(memberId);
+            if (member == null || member.getUUID().equals(source.getUUID())) continue;
             PlayerQuestData data = QuestProgressTracker.resolveData(member);
             if (data != null && data.getQuestState(node.getId(), QuestState.LOCKED) != QuestState.COMPLETED) {
                 QuestProgressTracker.changeQuestState(member, node, QuestState.COMPLETED);

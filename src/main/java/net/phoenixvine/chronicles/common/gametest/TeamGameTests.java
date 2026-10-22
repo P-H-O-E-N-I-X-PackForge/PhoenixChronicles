@@ -95,6 +95,28 @@ public class TeamGameTests {
     }
 
     @GameTest(template = TEMPLATE)
+    public static void sharedCompletionReachesTeammates(@NotNull GameTestHelper helper) {
+        withTeam(helper, (h, alice, bob, outsider) -> {
+            QuestNode node = quest("shared_reach", new ScreenOpenedTask(id("shared_reach_task"), text("shared")));
+
+            QuestProgressTracker.changeQuestState(alice, node, QuestState.COMPLETED);
+            assertState(h, alice, node, QuestState.COMPLETED, "the player who completed it has it completed");
+
+            QuestProgressTracker.propagateToScoreboardTeam(alice, node, name -> membersByName(name, alice, bob,
+                    outsider));
+            assertState(h, bob, node, QuestState.COMPLETED, "a teammate completes a shared quest too");
+            assertState(h, outsider, node, QuestState.LOCKED, "a player on no team is not affected");
+        });
+    }
+
+    private static ServerPlayer membersByName(String name, ServerPlayer... players) {
+        for (ServerPlayer player : players) {
+            if (player.getScoreboardName().equals(name)) return player;
+        }
+        return null;
+    }
+
+    @GameTest(template = TEMPLATE)
     public static void unsharedCompletionStaysWithThePlayer(@NotNull GameTestHelper helper) {
         withTeam(helper, (h, alice, bob, outsider) -> {
             QuestNode node = quest("unshared_quest", new ScreenOpenedTask(id("unshared_task"), text("unshared")));

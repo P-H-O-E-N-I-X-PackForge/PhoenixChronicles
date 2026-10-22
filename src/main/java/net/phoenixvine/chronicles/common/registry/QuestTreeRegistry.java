@@ -139,13 +139,27 @@ public class QuestTreeRegistry {
             }
         }
 
+        boolean detachedAny = false;
         for (QuestNode n : ALL_QUESTS.values()) {
             n.removeChild(removed);
             if (n.getPrerequisites().contains(removed)) {
                 n.detachPrerequisite(removed);
                 DANGLING_PREREQS.computeIfAbsent(id, k -> ConcurrentHashMap.newKeySet()).add(n.getId());
+                detachedAny = true;
             }
         }
+        if (detachedAny) reevaluateUnlocksSoon();
+    }
+
+    private static void reevaluateUnlocksSoon() {
+        net.minecraft.server.MinecraftServer server = net.minecraftforge.server.ServerLifecycleHooks
+                .getCurrentServer();
+        if (server == null) return;
+        server.execute(() -> {
+            for (net.minecraft.server.level.ServerPlayer player : server.getPlayerList().getPlayers()) {
+                QuestProgressTracker.autoUnlockSatisfiedQuests(player);
+            }
+        });
     }
 
     private static void relinkDanglingDependents(QuestNode fresh) {
