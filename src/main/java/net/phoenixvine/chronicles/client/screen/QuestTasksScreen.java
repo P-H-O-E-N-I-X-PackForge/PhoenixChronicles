@@ -25,10 +25,14 @@ import net.phoenixvine.chronicles.network.ChronicleNetwork;
 import net.phoenixvine.chronicles.network.packet.C2SAcknowledgeInfoTasksPacket;
 import net.phoenixvine.chronicles.network.packet.C2SClaimQuestRewardPacket;
 import net.phoenixvine.chronicles.network.packet.C2SResolveChoiceBoxPacket;
+import net.phoenixvine.wiki.client.rich.RichBlock;
+import net.phoenixvine.wiki.client.rich.RichSpan;
 import net.phoenixvine.wiki.theme.PhoenixTheme;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class QuestTasksScreen extends Screen
                               implements net.phoenixvine.chronicles.client.audio.ChroniclesAudio.AudioSource {
@@ -168,9 +172,9 @@ public class QuestTasksScreen extends Screen
     private final Player player;
 
     private int descScrollY = 0;
-    private java.util.List<net.phoenixvine.wiki.client.rich.RichSpan.Region> richRegions = java.util.List.of();
-    private java.util.List<net.phoenixvine.wiki.client.rich.RichBlock> descBlocks = java.util.List.of();
-    private final java.util.Set<String> descExpandedKeys = new java.util.HashSet<>();
+    private List<RichSpan.Region> richRegions = java.util.List.of();
+    private List<RichBlock> descBlocks = java.util.List.of();
+    private final Set<String> descExpandedKeys = new HashSet<>();
 
     private static final java.util.regex.Pattern DESC_PAGE_BREAK = java.util.regex.Pattern
             .compile("(?m)^[ \\t]*-{3,}[ \\t]*$");

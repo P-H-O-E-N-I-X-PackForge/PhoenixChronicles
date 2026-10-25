@@ -45,7 +45,9 @@ public final class ScreenAutoRegistrar {
         Map<String, String> parentOf = new HashMap<>();
         for (ModFileScanData data : ModList.get().getAllScanData()) {
             for (ModFileScanData.ClassData classData : data.getClasses()) {
-                parentOf.put(classData.clazz().getClassName(), classData.parent().getClassName());
+                if (classData.parent() != null) {
+                    parentOf.put(classData.clazz().getClassName(), classData.parent().getClassName());
+                }
             }
         }
         return parentOf;
