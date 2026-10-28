@@ -292,6 +292,9 @@ public class SidebarPanel {
             List<String> fcats = category.chapters().stream().filter(cats::contains)
                     .filter(c -> !hasParent.contains(c)).toList();
 
+            // a folder with a condition and nothing left to show in it (none of its chapters is shown to this player)
+            if (category.hasCondition() && fcats.isEmpty()) continue;
+
             boolean collapsedFolder = CategoryRegistry.isCollapsed(category.id());
             rows.add(new SidebarRow(true, category.id(), category.displayName(), y, SIDEBAR_FOLDER_ROW_H, false,
                     collapsedFolder, false, false));

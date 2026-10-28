@@ -19,11 +19,23 @@ public final class ConfluxCompat {
     }
 
     public static boolean isUnlocked(Player player, ResourceLocation nodeId) {
-        return isAvailable() && player instanceof ServerPlayer sp && ConfluxBridge.isUnlocked(sp, nodeId);
+        if (!isAvailable()) return false;
+        if (player instanceof ServerPlayer sp) return ConfluxBridge.isUnlocked(sp, nodeId);
+        // a client sees the research the server sent it
+        return player != null && player.level().isClientSide() && ConfluxBridge.clientIsUnlocked(nodeId);
     }
 
     public static boolean hasFlag(Player player, String flag) {
-        return isAvailable() && player instanceof ServerPlayer sp && ConfluxBridge.hasFlag(sp, flag);
+        if (!isAvailable()) return false;
+        if (player instanceof ServerPlayer sp) return ConfluxBridge.hasFlag(sp, flag);
+        return player != null && player.level().isClientSide() && ConfluxBridge.clientHasFlag(flag);
+    }
+
+    /** The discipline the player's Conflux team chose, or null. */
+    public static String discipline(Player player) {
+        if (!isAvailable() || player == null) return null;
+        if (player instanceof ServerPlayer sp) return ConfluxBridge.discipline(sp);
+        return player.level().isClientSide() ? ConfluxBridge.clientDiscipline() : null;
     }
 
     public static void grantUnlock(@NotNull ServerPlayer player, ResourceLocation nodeId) {

@@ -8,6 +8,22 @@ final class ConfluxBridge {
 
     private ConfluxBridge() {}
 
+    static boolean clientHasFlag(String flag) {
+        return ConfluxApi.clientHasFlag(flag);
+    }
+
+    static boolean clientIsUnlocked(ResourceLocation nodeId) {
+        return ConfluxApi.clientIsUnlocked(nodeId);
+    }
+
+    static String clientDiscipline() {
+        return ConfluxApi.clientDiscipline();
+    }
+
+    static String discipline(ServerPlayer player) {
+        return ConfluxApi.discipline(player);
+    }
+
     static boolean hasFlag(ServerPlayer player, String flag) {
         return ConfluxApi.hasFlag(player, flag);
     }

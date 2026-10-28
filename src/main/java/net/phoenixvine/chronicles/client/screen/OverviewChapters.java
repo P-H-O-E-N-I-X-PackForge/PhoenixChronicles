@@ -120,6 +120,9 @@ final class OverviewChapters {
                 MinecraftServer server = Minecraft.getInstance() != null ?
                         Minecraft.getInstance().getSingleplayerServer() : null;
                 chapters.removeIf(c -> !ChapterFlagRegistry.isChapterEnabled(c));
+                net.minecraft.world.entity.player.Player me = Minecraft.getInstance().player;
+                chapters.removeIf(c -> !net.phoenixvine.chronicles.common.registry.CategoryRegistry
+                        .isEnabledFor(net.phoenixvine.chronicles.common.registry.CategoryRegistry.categoryFor(c), me));
                 if (QuestChroniclesSettings.get().isCascadeHiddenQuests())
                     chapters.removeIf(c -> QuestTreeRegistry.isChapterGatedHidden(c, screen::getState));
             }

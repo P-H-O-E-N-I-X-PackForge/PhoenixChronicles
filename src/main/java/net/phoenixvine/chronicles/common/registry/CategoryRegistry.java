@@ -193,7 +193,7 @@ public final class CategoryRegistry {
         chapters.add(Math.max(0, Math.min(chapters.size(), idx)), upperChapId);
 
         CategoryDefinition updated = new CategoryDefinition(cat.id(), cat.displayName(), chapters, cat.color(),
-                cat.icon(), cat.nameColor());
+                cat.icon(), cat.nameColor(), cat.enableIf());
         CATEGORIES.put(categoryId, updated);
         writeCategory(updated);
     }
@@ -220,7 +220,7 @@ public final class CategoryRegistry {
         CategoryDefinition c = CATEGORIES.get(id);
         if (c == null) return;
         CategoryDefinition updated = new CategoryDefinition(id, newLabel, c.chapters(), c.color(), c.icon(),
-                c.nameColor());
+                c.nameColor(), c.enableIf());
         CATEGORIES.put(id, updated);
         writeCategory(updated);
     }
@@ -240,9 +240,17 @@ public final class CategoryRegistry {
         String upper = chapter.toUpperCase();
         if (!chaps.contains(upper)) chaps.add(upper);
         CategoryDefinition updated = new CategoryDefinition(c.id(), c.displayName(), chaps, c.color(), c.icon(),
-                c.nameColor());
+                c.nameColor(), c.enableIf());
         CATEGORIES.put(categoryId, updated);
         writeCategory(updated);
+    }
+
+    /** Whether the player can see the category (and so its chapters): its enable_if, if it has one, is true for them. */
+    public static boolean isEnabledFor(@Nullable CategoryDefinition category,
+                                       @Nullable net.minecraft.world.entity.player.Player player) {
+        if (category == null || !category.hasCondition()) return true;
+        return net.phoenixvine.chronicles.common.flag.PhoenixQuestFlags.evaluate(category.enableIf(), null, player,
+                "category " + category.id() + " enable_if");
     }
 
     public static synchronized void removeChapterFromCategory(String categoryId, String chapter) {
@@ -251,7 +259,7 @@ public final class CategoryRegistry {
         List<String> chaps = new ArrayList<>(c.chapters());
         chaps.remove(chapter.toUpperCase());
         CategoryDefinition updated = new CategoryDefinition(c.id(), c.displayName(), chaps, c.color(), c.icon(),
-                c.nameColor());
+                c.nameColor(), c.enableIf());
         CATEGORIES.put(categoryId, updated);
         writeCategory(updated);
     }

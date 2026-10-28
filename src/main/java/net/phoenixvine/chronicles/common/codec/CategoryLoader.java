@@ -56,6 +56,7 @@ public class CategoryLoader {
         int color = 0;
         int nameColor = 0;
         String icon = "";
+        String enableIf = "";
         boolean inChapters = false;
 
         for (String rawLine : lines) {
@@ -77,6 +78,7 @@ public class CategoryLoader {
                     case "color" -> color = parseColor(kv[1]);
                     case "name_color" -> nameColor = parseColor(kv[1]);
                     case "icon" -> icon = unquote(kv[1]);
+                    case "enable_if" -> enableIf = unquote(kv[1]);
                 }
                 continue;
             }
@@ -93,7 +95,7 @@ public class CategoryLoader {
         id = id.toLowerCase();
         if (displayName == null) displayName = id;
 
-        return new CategoryDefinition(id, displayName, chapters, color, icon, nameColor);
+        return new CategoryDefinition(id, displayName, chapters, color, icon, nameColor, enableIf);
     }
 
     private static int parseColor(String hex) {
@@ -118,6 +120,7 @@ public class CategoryLoader {
                 sb.append("name_color: ").append(String.format("%06X", category.nameColor())).append('\n');
             if (category.icon() != null && !category.icon().isEmpty())
                 sb.append("icon: \"").append(category.icon()).append("\"\n");
+            if (category.hasCondition()) sb.append("enable_if: \"").append(category.enableIf()).append("\"\n");
             sb.append("chapters:\n");
             for (String chap : category.chapters()) sb.append("  - ").append(chap).append('\n');
             Files.writeString(fileFor(categoriesFolder, category.id()), sb.toString(), StandardCharsets.UTF_8);
