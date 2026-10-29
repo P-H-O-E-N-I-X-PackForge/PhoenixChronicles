@@ -245,7 +245,9 @@ public final class CategoryRegistry {
         writeCategory(updated);
     }
 
-    /** Whether the player can see the category (and so its chapters): its enable_if, if it has one, is true for them. */
+    /**
+     * Whether the player can see the category (and so its chapters): its enable_if, if it has one, is true for them.
+     */
     public static boolean isEnabledFor(@Nullable CategoryDefinition category,
                                        @Nullable net.minecraft.world.entity.player.Player player) {
         if (category == null || !category.hasCondition()) return true;
