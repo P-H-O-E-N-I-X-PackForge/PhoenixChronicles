@@ -593,6 +593,9 @@ public class ChronicleOverviewScreen extends Screen
             if (!isDevMode || !QuestChroniclesSettings.get().isShowFlagDisabledChapters()) {
                 MinecraftServer server = minecraft != null ? minecraft.getSingleplayerServer() : null;
                 chapters.removeIf(c -> !ChapterFlagRegistry.isChapterEnabled(c));
+                net.minecraft.world.entity.player.Player me = minecraft != null ? minecraft.player : null;
+                chapters.removeIf(c -> !net.phoenixvine.chronicles.common.registry.CategoryRegistry
+                        .isEnabledFor(net.phoenixvine.chronicles.common.registry.CategoryRegistry.categoryFor(c), me));
                 if (QuestChroniclesSettings.get().isCascadeHiddenQuests())
                     chapters.removeIf(c -> QuestTreeRegistry.isChapterGatedHidden(c, this::getState));
             }

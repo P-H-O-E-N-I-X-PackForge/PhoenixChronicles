@@ -35,6 +35,10 @@ public class ConfluxFlagProvider implements QuestFlagProvider {
         if (player == null) return evaluate(expression, server);
         if (!ConfluxCompat.isAvailable()) return false;
 
+        if (expression.startsWith("discipline:")) {
+            String chosen = ConfluxCompat.discipline(player);
+            return chosen != null && chosen.equalsIgnoreCase(expression.substring(11).trim());
+        }
         if (expression.startsWith("flag:")) {
             return ConfluxCompat.hasFlag(player, expression.substring(5).trim());
         }
