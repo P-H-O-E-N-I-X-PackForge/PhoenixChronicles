@@ -19,7 +19,10 @@ public record CategoryDefinition(String id, String displayName, List<String> cha
                 enableIf);
     }
 
-    /** A flag expression (like a quest's enable_if): when it is false for the player, the category and its chapters are hidden. */
+    /**
+     * A flag expression (like a quest's enable_if): when it is false for the player, the category and its chapters are
+     * hidden.
+     */
     public boolean hasCondition() {
         return enableIf != null && !enableIf.isBlank();
     }

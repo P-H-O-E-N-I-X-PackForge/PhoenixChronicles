@@ -29,7 +29,9 @@ public final class ConfluxCompat {
         return WorldResearchData.get(sp.serverLevel()).hasFlag(team, flag);
     }
 
-    /** The discipline the player's Conflux team chose, or null (also null on a client: the server alone knows it here). */
+    /**
+     * The discipline the player's Conflux team chose, or null (also null on a client: the server alone knows it here).
+     */
     public static String discipline(Player player) {
         if (!isAvailable() || !(player instanceof ServerPlayer sp)) return null;
         return WorldResearchData.get(sp.serverLevel()).getDiscipline(ResearchTeamHelper.getTeamId(sp));
