@@ -44,6 +44,7 @@ public class C2SSetAutoClaimPacket implements CustomPacketPayload {
     public void handle(IPayloadContext context) {
         context.enqueueWork(() -> {
             ServerPlayer player = (net.minecraft.server.level.ServerPlayer) context.player();
+            if (player != null && !net.phoenixvine.chronicles.common.ChroniclesGates.check(player, net.phoenixvine.chronicles.common.ChroniclesGates.AUTO_CLAIM, null)) return;
             if (player == null) return;
             PlayerQuestData data = QuestCapabilityProvider.of(player).orElse(null);
             if (data == null) return;

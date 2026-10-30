@@ -38,6 +38,7 @@ public class C2SClaimAllRewardsPacket implements CustomPacketPayload {
     public void handle(IPayloadContext context) {
         context.enqueueWork(() -> {
             ServerPlayer player = (net.minecraft.server.level.ServerPlayer) context.player();
+            if (player != null && !net.phoenixvine.chronicles.common.ChroniclesGates.check(player, net.phoenixvine.chronicles.common.ChroniclesGates.CLAIM_REWARDS, null)) return;
             if (player == null) return;
 
             PlayerQuestData data = QuestCapabilityProvider.of(player).orElse(null);

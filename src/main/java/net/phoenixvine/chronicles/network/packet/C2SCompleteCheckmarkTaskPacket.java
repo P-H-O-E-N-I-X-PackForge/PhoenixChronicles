@@ -42,6 +42,7 @@ public class C2SCompleteCheckmarkTaskPacket implements CustomPacketPayload {
     public void handle(IPayloadContext context) {
         context.enqueueWork(() -> {
             ServerPlayer player = (net.minecraft.server.level.ServerPlayer) context.player();
+            if (player != null && !net.phoenixvine.chronicles.common.ChroniclesGates.check(player, net.phoenixvine.chronicles.common.ChroniclesGates.SUBMIT_TASKS, null)) return;
             if (player == null || taskId == null) return;
 
             QuestNode node = QuestTreeRegistry.getTaskOwner(taskId);

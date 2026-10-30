@@ -40,6 +40,7 @@ public class C2SRequestEmergencyItemsPacket implements CustomPacketPayload {
     public void handle(IPayloadContext context) {
         context.enqueueWork(() -> {
             ServerPlayer player = (net.minecraft.server.level.ServerPlayer) context.player();
+            if (player != null && !net.phoenixvine.chronicles.common.ChroniclesGates.check(player, net.phoenixvine.chronicles.common.ChroniclesGates.EMERGENCY_ITEMS, questId)) return;
             if (player == null || questId == null) return;
 
             QuestProgressTracker.EmergencyResult result;

@@ -44,6 +44,7 @@ public class C2SClaimQuestRewardPacket implements CustomPacketPayload {
     public void handle(IPayloadContext context) {
         context.enqueueWork(() -> {
             ServerPlayer player = (net.minecraft.server.level.ServerPlayer) context.player();
+            if (player != null && !net.phoenixvine.chronicles.common.ChroniclesGates.check(player, net.phoenixvine.chronicles.common.ChroniclesGates.CLAIM_REWARDS, questId)) return;
             if (player == null || questId == null) return;
 
             QuestNode node = QuestTreeRegistry.getQuest(questId);
