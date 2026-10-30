@@ -1,6 +1,5 @@
 package net.phoenixvine.chronicles.common;
 
-import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.phoenixvine.wiki.api.gate.SuiteGates;
@@ -35,7 +34,8 @@ public final class ChroniclesGates {
     /** Whether the player may use the feature (and the quest, if there is one); tells them when not. */
     public static boolean check(ServerPlayer player, String feature, ResourceLocation questId) {
         if (allowed(player, feature) && (questId == null || allowed(player, quest(questId)))) return true;
-        player.displayClientMessage(Component.literal("Your team has not researched this yet."), true);
+        player.displayClientMessage(SuiteGates.denial(
+                !allowed(player, feature) || questId == null ? feature : quest(questId), SuiteGates.ANY_SCOPE), false);
         return false;
     }
 }
