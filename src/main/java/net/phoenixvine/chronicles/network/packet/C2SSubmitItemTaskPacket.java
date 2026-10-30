@@ -34,6 +34,7 @@ public class C2SSubmitItemTaskPacket {
     public void handle(Supplier<NetworkEvent.Context> ctx) {
         ctx.get().enqueueWork(() -> {
             ServerPlayer player = ctx.get().getSender();
+            if (player != null && !net.phoenixvine.chronicles.common.ChroniclesGates.check(player, net.phoenixvine.chronicles.common.ChroniclesGates.SUBMIT_TASKS, null)) return;
             if (player == null || taskId == null) return;
 
             QuestNode node = QuestTreeRegistry.getTaskOwner(taskId);
