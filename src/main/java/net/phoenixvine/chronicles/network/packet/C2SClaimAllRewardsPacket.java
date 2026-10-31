@@ -26,7 +26,9 @@ public class C2SClaimAllRewardsPacket {
     public void handle(Supplier<NetworkEvent.Context> ctx) {
         ctx.get().enqueueWork(() -> {
             ServerPlayer player = ctx.get().getSender();
-            if (player != null && !net.phoenixvine.chronicles.common.ChroniclesGates.check(player, net.phoenixvine.chronicles.common.ChroniclesGates.CLAIM_REWARDS, null)) return;
+            if (player != null && !net.phoenixvine.chronicles.common.ChroniclesGates.check(player,
+                    net.phoenixvine.chronicles.common.ChroniclesGates.CLAIM_REWARDS, null))
+                return;
             if (player == null) return;
 
             PlayerQuestData data = player.getCapability(QuestCapabilityProvider.PLAYER_QUESTS).orElse(null);

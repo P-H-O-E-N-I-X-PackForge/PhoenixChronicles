@@ -30,7 +30,9 @@ public class C2SRequestEmergencyItemsPacket {
     public void handle(Supplier<NetworkEvent.Context> ctx) {
         ctx.get().enqueueWork(() -> {
             ServerPlayer player = ctx.get().getSender();
-            if (player != null && !net.phoenixvine.chronicles.common.ChroniclesGates.check(player, net.phoenixvine.chronicles.common.ChroniclesGates.EMERGENCY_ITEMS, questId)) return;
+            if (player != null && !net.phoenixvine.chronicles.common.ChroniclesGates.check(player,
+                    net.phoenixvine.chronicles.common.ChroniclesGates.EMERGENCY_ITEMS, questId))
+                return;
             if (player == null || questId == null) return;
 
             QuestProgressTracker.EmergencyResult result;

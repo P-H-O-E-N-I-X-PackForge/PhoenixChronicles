@@ -33,7 +33,9 @@ public class C2SSetAutoClaimPacket {
     public void handle(Supplier<NetworkEvent.Context> ctx) {
         ctx.get().enqueueWork(() -> {
             ServerPlayer player = ctx.get().getSender();
-            if (player != null && !net.phoenixvine.chronicles.common.ChroniclesGates.check(player, net.phoenixvine.chronicles.common.ChroniclesGates.AUTO_CLAIM, null)) return;
+            if (player != null && !net.phoenixvine.chronicles.common.ChroniclesGates.check(player,
+                    net.phoenixvine.chronicles.common.ChroniclesGates.AUTO_CLAIM, null))
+                return;
             if (player == null) return;
             PlayerQuestData data = player.getCapability(QuestCapabilityProvider.PLAYER_QUESTS).orElse(null);
             if (data == null) return;

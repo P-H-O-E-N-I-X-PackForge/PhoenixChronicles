@@ -37,7 +37,9 @@ public class C2SResolveChoiceBoxPacket {
     public void handle(Supplier<NetworkEvent.Context> ctx) {
         ctx.get().enqueueWork(() -> {
             ServerPlayer player = ctx.get().getSender();
-            if (player != null && !net.phoenixvine.chronicles.common.ChroniclesGates.check(player, net.phoenixvine.chronicles.common.ChroniclesGates.CLAIM_REWARDS, questId)) return;
+            if (player != null && !net.phoenixvine.chronicles.common.ChroniclesGates.check(player,
+                    net.phoenixvine.chronicles.common.ChroniclesGates.CLAIM_REWARDS, questId))
+                return;
             if (player == null || questId == null) return;
 
             QuestNode node = QuestTreeRegistry.getQuest(questId);
