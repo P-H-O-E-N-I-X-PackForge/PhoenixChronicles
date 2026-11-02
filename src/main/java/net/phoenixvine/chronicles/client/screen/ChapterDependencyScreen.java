@@ -52,8 +52,9 @@ public class ChapterDependencyScreen extends Screen {
 
         List<CategoryDefinition> categoryList = CategoryRegistry.getCategories();
         if (!categoryList.isEmpty()) {
-            rows.add(new Row("", "Categories (every chapter in it)", true, true));
-            for (CategoryDefinition c : categoryList) rows.add(new Row(c.id(), c.displayName(), true, false));
+            rows.add(new Row("", "Categories (every chapter in it, incl. subcategories)", true, true));
+            for (CategoryDefinition c : categoryList)
+                rows.add(new Row(c.id(), CategoryRegistry.pathLabel(c.id()), true, false));
         }
         Set<String> chapterIds = new TreeSet<>();
         for (QuestNode n : QuestTreeRegistry.getAllQuests().values()) {

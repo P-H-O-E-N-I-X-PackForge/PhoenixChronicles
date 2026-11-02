@@ -171,14 +171,14 @@ public class ChapterThemeScreen extends Screen {
     private String categoryLabel(String id) {
         if (id == null) return "(none)";
         for (CategoryDefinition c : CategoryRegistry.getCategories())
-            if (c.id().equals(id)) return c.displayName();
+            if (c.id().equals(id)) return CategoryRegistry.pathLabel(c.id());
         return "(none)";
     }
 
     private List<String> categoryOptions() {
         List<String> opts = new ArrayList<>();
         opts.add("(none)");
-        for (CategoryDefinition c : CategoryRegistry.getCategories()) opts.add(c.displayName());
+        for (CategoryDefinition c : CategoryRegistry.getCategories()) opts.add(CategoryRegistry.pathLabel(c.id()));
         opts.add("+ New category…");
         return opts;
     }

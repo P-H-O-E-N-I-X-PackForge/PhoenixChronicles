@@ -721,6 +721,11 @@ public class QuestFileSaver {
         }
     }
 
+    /** Formats a quest tag the way quest files are written. */
+    public static String prettySnbt(CompoundTag tag) {
+        return toPrettySnbt(tag);
+    }
+
     private static String toPrettySnbt(CompoundTag tag) {
         return new SnbtPrettyPrinter().prettyPrint(tag);
     }

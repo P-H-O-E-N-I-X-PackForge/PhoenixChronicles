@@ -204,6 +204,13 @@ public class ChapterActions {
                     "uncategorized, not deleted themselves)", cat.displayName(), cat.chapters().size());
             return;
         }
+        if (cat.chapters().isEmpty() && !CategoryRegistry.childrenOf(categoryId).isEmpty() &&
+                !categoryId.equals(armedDeleteCategoryId)) {
+            armedDeleteCategoryId = categoryId;
+            ctx.setFeedback("§6Right-click '%s' -> Delete Category again to confirm §7(its subcategories move up " +
+                    "a level)", cat.displayName());
+            return;
+        }
 
         armedDeleteCategoryId = null;
         int chapterCount = cat.chapters().size();
@@ -229,6 +236,29 @@ public class ChapterActions {
         ctx.setFeedback("§aChapter deleted: %s", ctx.friendly(chapter));
     }
 
+    private void openPasteScreen(@NotNull Screen parent, @Nullable String destCategoryId) {
+        Minecraft.getInstance().setScreen(new PasteCategoryScreen(parent, destCategoryId, result -> {
+            if (result.newRootId() == null) {
+                ctx.setFeedback("§cCan't paste there (too deep)");
+                return;
+            }
+            if (destCategoryId != null && CategoryRegistry.isCollapsed(destCategoryId))
+                CategoryRegistry.toggleCollapsed(destCategoryId);
+            CategoryRegistry.save();
+            state.invalidateChapterCaches();
+            state.rebuild();
+            if (!result.warnings().isEmpty()) {
+                ctx.setFeedback("§6Pasted %s: %d chapter(s), %d quest(s), %d warning(s) - see log",
+                        CategoryRegistry.pathLabel(result.newRootId()), result.chapters(), result.quests(),
+                        result.warnings().size());
+                for (String w : result.warnings()) System.err.println("[Phoenix Chronicles] Paste: " + w);
+            } else {
+                ctx.setFeedback("§aPasted %s (%d chapter(s), %d quest(s))",
+                        CategoryRegistry.pathLabel(result.newRootId()), result.chapters(), result.quests());
+            }
+        }));
+    }
+
     public void openSidebarContextMenu(@NotNull SidebarRow row, int mx, int my) {
         List<SidebarPanel.MenuAction> actions = new ArrayList<>();
         Screen parent = state.thisScreen();
@@ -239,6 +269,39 @@ public class ChapterActions {
                 Minecraft mc = Minecraft.getInstance();
                 mc.setScreen(new NewFolderScreen(parent, row.id(), currentLabel, id -> state.rebuild()));
             }));
+            if (CategoryRegistry.depthOf(row.id()) + 1 < CategoryRegistry.MAX_DEPTH) {
+                actions.add(new SidebarPanel.MenuAction("New Subcategory…", () -> {
+                    Minecraft mc = Minecraft.getInstance();
+                    mc.setScreen(new NewFolderScreen(parent, row.id(), id -> {
+                        if (CategoryRegistry.isCollapsed(row.id())) CategoryRegistry.toggleCollapsed(row.id());
+                        CategoryRegistry.save();
+                        state.rebuild();
+                    }));
+                }));
+            }
+            if (!CategoryRegistry.parentOf(row.id()).isEmpty()) {
+                actions.add(new SidebarPanel.MenuAction("Move to Top Level", () -> {
+                    CategoryRegistry.moveCategory(row.id(), null, null);
+                    CategoryRegistry.save();
+                    state.rebuild();
+                }));
+            }
+            actions.add(new SidebarPanel.MenuAction("Copy Category", () -> {
+                if (CategoryRegistry.copyCategory(row.id())) {
+                    ctx.setFeedback("§aCopied %s (%d categories, %d chapters)", row.label(),
+                            CategoryRegistry.clipboardSize(), CategoryRegistry.clipboardChapters().size());
+                }
+            }));
+            if (CategoryRegistry.hasClipboard()) {
+                if (CategoryRegistry.canPasteInto(row.id())) {
+                    actions.add(new SidebarPanel.MenuAction("Paste Inside…",
+                            () -> openPasteScreen(parent, row.id())));
+                }
+                if (CategoryRegistry.canPasteInto(null)) {
+                    actions.add(new SidebarPanel.MenuAction("Paste at Top Level…",
+                            () -> openPasteScreen(parent, null)));
+                }
+            }
             actions.add(new SidebarPanel.MenuAction("Category Theme…",
                     () -> Minecraft.getInstance().setScreen(new CategoryThemeScreen(parent, row.id()))));
             actions.add(new SidebarPanel.MenuAction("Force Complete Category",

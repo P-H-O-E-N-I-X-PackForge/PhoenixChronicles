@@ -25,20 +25,32 @@ public class NewFolderScreen extends Screen {
     private final Consumer<String> onCreated;
 
     private final String renameCategoryId;
+    private final String newParentId;
     private String name = "";
 
     private EditBox nameBox;
     private int panelLeft, panelTop;
 
     public NewFolderScreen(Screen parent, Consumer<String> onCreated) {
-        this(parent, null, "", onCreated);
+        this(parent, null, "", null, onCreated);
+    }
+
+    /** Creates a new category nested inside {@code newParentId}. */
+    public NewFolderScreen(Screen parent, String newParentId, Consumer<String> onCreated) {
+        this(parent, null, "", newParentId, onCreated);
     }
 
     public NewFolderScreen(Screen parent, String renameCategoryId, String currentLabel, Consumer<String> onDone) {
+        this(parent, renameCategoryId, currentLabel, null, onDone);
+    }
+
+    private NewFolderScreen(Screen parent, String renameCategoryId, String currentLabel, String newParentId,
+                            Consumer<String> onDone) {
         super(Component.translatable(renameCategoryId != null ? "phoenix_chronicles.screen.new_folder.title_rename" :
                 "phoenix_chronicles.screen.new_folder.title_new"));
         this.parent = parent;
         this.renameCategoryId = renameCategoryId;
+        this.newParentId = newParentId;
         this.onCreated = onDone;
         this.name = currentLabel == null ? "" : currentLabel;
     }
@@ -81,7 +93,7 @@ public class NewFolderScreen extends Screen {
             onCreated.accept(renameCategoryId);
         } else {
             String id = label.toLowerCase().replaceAll("[^a-z0-9_]", "_");
-            CategoryRegistry.addCategory(id, label);
+            CategoryRegistry.addCategory(id, label, newParentId);
             CategoryRegistry.save();
             onCreated.accept(id);
         }
@@ -99,7 +111,9 @@ public class NewFolderScreen extends Screen {
         g.pose().translate(0f, 0f, 300f);
 
         ChroniclesUIKit.drawModalChrome(g, font, width, height, panelLeft, panelTop, PANEL_W, PANEL_H, 22,
-                renameCategoryId != null ? "§bRename Category" : "§bNew Category", ChroniclesThemePalette.PANEL,
+                renameCategoryId != null ? "§bRename Category" :
+                        newParentId != null ? "§bNew Subcategory" : "§bNew Category",
+                ChroniclesThemePalette.PANEL,
                 ChroniclesThemePalette.HEADER, ACCENT, ChroniclesThemePalette.TEXT);
 
         g.drawString(font, "§8Category name", panelLeft + MARGIN, panelTop + 24, ChroniclesThemePalette.TEXT_FAINT,

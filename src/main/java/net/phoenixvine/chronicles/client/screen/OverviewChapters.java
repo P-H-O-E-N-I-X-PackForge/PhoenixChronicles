@@ -63,7 +63,8 @@ final class OverviewChapters {
         CategoryDefinition cat = CategoryRegistry
                 .get(categoryId);
         if (cat == null) return ids;
-        for (String chapter : cat.chapters()) ids.addAll(questIdsInChapter(chapter));
+        for (String chapter : CategoryRegistry.chaptersIncludingDescendants(categoryId))
+            ids.addAll(questIdsInChapter(chapter));
         return ids;
     }
 

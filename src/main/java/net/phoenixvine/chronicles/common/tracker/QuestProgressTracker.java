@@ -546,7 +546,8 @@ public class QuestProgressTracker {
             net.phoenixvine.chronicles.common.model.CategoryDefinition category = net.phoenixvine.chronicles.common.registry.CategoryRegistry
                     .get(categoryId);
             if (category == null) continue;
-            for (String chapter : category.chapters()) {
+            for (String chapter : net.phoenixvine.chronicles.common.registry.CategoryRegistry
+                    .chaptersIncludingDescendants(categoryId)) {
                 if (!chapterComplete(chapter, node, data, server)) return false;
             }
         }
@@ -574,7 +575,9 @@ public class QuestProgressTracker {
         for (String categoryId : node.getCategoryPrereqs()) {
             net.phoenixvine.chronicles.common.model.CategoryDefinition category = net.phoenixvine.chronicles.common.registry.CategoryRegistry
                     .get(categoryId);
-            if (category != null && category.chapters().contains(chapter)) return true;
+            if (category != null && net.phoenixvine.chronicles.common.registry.CategoryRegistry
+                    .chaptersIncludingDescendants(categoryId).contains(chapter))
+                return true;
         }
         return false;
     }
