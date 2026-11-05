@@ -8,6 +8,7 @@ import net.phoenixvine.chronicles.PhoenixChronicles;
 import net.phoenixvine.chronicles.common.model.QuestNode;
 import net.phoenixvine.chronicles.common.model.QuestState;
 import net.phoenixvine.chronicles.common.registry.QuestTreeRegistry;
+import net.phoenixvine.chronicles.common.tasks.ScreenOpenedTask;
 import net.phoenixvine.chronicles.common.tracker.QuestProgressTracker;
 
 import org.jetbrains.annotations.NotNull;
@@ -22,6 +23,7 @@ public class PrerequisiteGameTests {
 
     private static QuestNode register(String path) {
         QuestNode node = new QuestNode(id(path), text(path), text(""));
+        node.addTask(new ScreenOpenedTask(id(path + "_task"), text(path)));
         QuestTreeRegistry.registerBareQuestNode(node);
         return node;
     }
@@ -39,6 +41,17 @@ public class PrerequisiteGameTests {
             QuestTreeRegistry.removeQuest(prereq.getId());
             QuestProgressTracker.autoUnlockSatisfiedQuests(p);
             assertState(h, p, dependent, QuestState.UNLOCKED, "with the prerequisite gone, the dependent is open");
+        });
+    }
+
+    @GameTest(template = TEMPLATE)
+    public static void aQuestWithNoTasksCompletesWhenItUnlocks(@NotNull GameTestHelper helper) {
+        run(helper, (h, p) -> {
+            QuestNode empty = new QuestNode(id("no_tasks"), text("no_tasks"), text(""));
+            QuestTreeRegistry.registerBareQuestNode(empty);
+
+            QuestProgressTracker.autoUnlockSatisfiedQuests(p);
+            assertState(h, p, empty, QuestState.COMPLETED, "a quest with no tasks has nothing left to do once open");
         });
     }
 

@@ -40,6 +40,9 @@ public class QuestProgressGameTests {
             QuestNode gate = node("gametest_gate");
             QuestNode dependent = node("gametest_dependent");
             dependent.addPrerequisite(gate);
+            dependent.addTask(new net.phoenixvine.chronicles.common.tasks.ScreenOpenedTask(
+                    ResourceLocation.fromNamespaceAndPath(PhoenixChronicles.MOD_ID, "gametest_dependent_task"),
+                    Component.literal("open")));
 
             QuestTreeRegistry.registerBareQuestNode(gate);
             QuestTreeRegistry.registerBareQuestNode(dependent);

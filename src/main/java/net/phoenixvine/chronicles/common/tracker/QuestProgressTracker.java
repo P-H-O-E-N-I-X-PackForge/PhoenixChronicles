@@ -274,7 +274,7 @@ public class QuestProgressTracker {
                 complete = target != null &&
                         data.getQuestState(target.getId(), QuestState.LOCKED) == QuestState.COMPLETED;
             } else {
-                complete = false;
+                complete = true;
             }
         } else {
 
@@ -330,7 +330,7 @@ public class QuestProgressTracker {
                 complete = target != null &&
                         data.getQuestState(target.getId(), QuestState.LOCKED) == QuestState.COMPLETED;
             } else {
-                complete = false;
+                complete = true;
             }
         } else {
 
@@ -380,11 +380,9 @@ public class QuestProgressTracker {
                 if (node.isAutoClaimRewards()) grantRewards(sp, node);
                 else autoClaimForPlayer(sp, data, node);
             }
-        } else if (newState == QuestState.UNLOCKED && evaluateTasks &&
-                !node.getEffectiveTasks(player.getServer(), player).isEmpty()) {
-
-                    checkAndTryComplete(player, node);
-                }
+        } else if (newState == QuestState.UNLOCKED && evaluateTasks) {
+            checkAndTryComplete(player, node);
+        }
 
         sendProgressSync(player);
     }
@@ -436,9 +434,7 @@ public class QuestProgressTracker {
             if (prereqsSatisfied(child, data, player.getServer())) {
                 changeQuestState(player, child, QuestState.UNLOCKED);
 
-                if (!child.getEffectiveTasks(player.getServer(), player).isEmpty()) {
-                    checkAndTryComplete(player, child);
-                }
+                checkAndTryComplete(player, child);
             }
         }
     }
