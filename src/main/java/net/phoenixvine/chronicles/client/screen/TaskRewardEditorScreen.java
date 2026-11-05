@@ -177,6 +177,9 @@ public class TaskRewardEditorScreen extends Screen {
     private final Map<String, String> externalFieldValues = new LinkedHashMap<>();
     private PhoenixRewardRegistry.Entry externalEntryAtBuild;
 
+    /** The tasks and rewards as they were when the screen opened, to tell whether Escape would lose changes. */
+    private String openedState = "";
+
     public TaskRewardEditorScreen(Screen parent, QuestNode questNode) {
         this(parent, questNode, null);
     }
@@ -196,6 +199,7 @@ public class TaskRewardEditorScreen extends Screen {
             this.tasks.addAll(questNode.getTasks());
             this.rewards.addAll(questNode.getRewards());
         }
+        this.openedState = stateSnapshot();
     }
 
     public TaskRewardEditorScreen(Screen parent, @Nullable QuestNode questNode, List<QuestReward> emergencyRewards,
@@ -208,6 +212,7 @@ public class TaskRewardEditorScreen extends Screen {
         this.emergencySink = sink;
         this.emergencyLabel = label;
         this.rewards.addAll(emergencyRewards);
+        this.openedState = stateSnapshot();
     }
 
     private String[] rewardTypes() {
@@ -2194,8 +2199,34 @@ public class TaskRewardEditorScreen extends Screen {
         return super.mouseReleased(mx, my, btn);
     }
 
+    private String stateSnapshot() {
+        StringBuilder sb = new StringBuilder();
+        for (QuestTask t : tasks) sb.append(t.serializeWithMeta()).append('|');
+        sb.append('#');
+        for (QuestReward r : rewards) sb.append(r.serializeWithMeta()).append('|');
+        return sb.toString();
+    }
+
+    /** Whether closing now would lose something: a changed list, or a task or reward being edited. */
+    private boolean hasUnsavedWork() {
+        return editingTaskIndex >= 0 || editingRewardIndex >= 0 || !stateSnapshot().equals(openedState);
+    }
+
+    /** Escape asks before throwing changes away; the Done button is what saves. */
     @Override
     public void onClose() {
+        if (minecraft != null && hasUnsavedWork()) {
+            minecraft.setScreen(new net.minecraft.client.gui.screens.ConfirmScreen(discard -> {
+                if (discard) {
+                    minecraft.setScreen(parent);
+                } else {
+                    minecraft.setScreen(this);
+                }
+            }, ChroniclesUIKit.lit("Discard changes?"),
+                    ChroniclesUIKit.lit("You have unsaved changes to this quest's tasks and rewards. Use Done to save them."),
+                    ChroniclesUIKit.lit("Discard"), ChroniclesUIKit.lit("Keep editing")));
+            return;
+        }
         flushToQuestNode();
         LangSyncScheduler.flushNow();
         if (!emergencyMode) ChronicleOverviewScreen.invalidateNodeCachesUpChain(parent, questNode);
