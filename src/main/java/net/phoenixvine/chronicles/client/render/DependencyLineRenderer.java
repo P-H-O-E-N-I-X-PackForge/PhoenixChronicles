@@ -175,6 +175,7 @@ public class DependencyLineRenderer {
 
                     if (!catMatches.test(prereq)) continue;
                     if (prereq.isFlagDisabled(null)) continue;
+                    if (prereq.isHideDepLine()) continue;
 
                     int[] prereqPos = nodeScreenPos.get(prereq.getId());
                     if (prereqPos == null) continue;

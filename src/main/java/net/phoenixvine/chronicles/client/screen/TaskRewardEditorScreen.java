@@ -1904,16 +1904,20 @@ public class TaskRewardEditorScreen extends Screen {
             redoLastChange();
             return true;
         }
-        if (ctrl && key == 67) {
+        EditBox typingBox = getFocused() instanceof EditBox box && box.isFocused() ? box : null;
+        boolean copyingText = typingBox != null && !typingBox.getHighlighted().isEmpty();
+        if (ctrl && key == 67 && !copyingText) {
             if (hoveredRewardRow >= 0 && hoveredRewardRow < rewards.size()) {
                 copiedRewardNBT = rewards.get(hoveredRewardRow).serializeWithMeta();
                 return true;
             }
-            if (hoveredTaskRow >= 0 && hoveredTaskRow < tasks.size()) {
-                copiedTaskNBT = copyableTask(tasks.get(hoveredTaskRow));
+            int copyIndex = hoveredTaskRow >= 0 ? hoveredTaskRow : editingTaskIndex;
+            if (copyIndex >= 0 && copyIndex < tasks.size()) {
+                copiedTaskNBT = copyableTask(tasks.get(copyIndex));
                 return true;
             }
         }
+        if (ctrl && key == 86 && typingBox != null) return super.keyPressed(key, scan, mods);
         boolean pasteReward = copiedRewardNBT != null && (hoveredRewardRow >= 0 || copiedTaskNBT == null);
         if (ctrl && key == 86 && pasteReward) {
             QuestReward pastedReward = QuestReward.deserializeNBT(copiedRewardNBT.copy());
@@ -2223,7 +2227,8 @@ public class TaskRewardEditorScreen extends Screen {
                     minecraft.setScreen(this);
                 }
             }, ChroniclesUIKit.lit("Discard changes?"),
-                    ChroniclesUIKit.lit("You have unsaved changes to this quest's tasks and rewards. Use Done to save them."),
+                    ChroniclesUIKit
+                            .lit("You have unsaved changes to this quest's tasks and rewards. Use Done to save them."),
                     ChroniclesUIKit.lit("Discard"), ChroniclesUIKit.lit("Keep editing")));
             return;
         }

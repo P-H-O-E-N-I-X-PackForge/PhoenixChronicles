@@ -112,6 +112,7 @@ public class S2CSyncQuestsPacket {
             String unlockSoundId = buf.readUtf();
             String completeSoundId = buf.readUtf();
             CompoundTag audio = buf.readNbt();
+            boolean hideDepLine = buf.readBoolean();
 
             snapshotMap.put(id, new QuestSnapshot(
                     id, title, description, chapter, shapeType, iconItemId,
@@ -120,7 +121,7 @@ public class S2CSyncQuestsPacket {
                     prereqLineShape, prereqLineVisual, prereqLineSpeed, prereqLineArrow, prereqLineStyleId,
                     optionalPrereqMinCount, tasksNbt, rewardsNbt, linkTarget, iconTexture, shapeTexture,
                     nodeSize, sizeOverridePx, iconFluid, backgroundType, externalScreenId, unlockSoundId,
-                    completeSoundId, audio));
+                    completeSoundId, audio, hideDepLine));
         }
     }
 
@@ -185,6 +186,7 @@ public class S2CSyncQuestsPacket {
             buf.writeUtf(snap.unlockSoundId != null ? snap.unlockSoundId : "");
             buf.writeUtf(snap.completeSoundId != null ? snap.completeSoundId : "");
             buf.writeNbt(snap.audio != null ? snap.audio : new CompoundTag());
+            buf.writeBoolean(snap.hideDepLine);
         }
     }
 
@@ -242,6 +244,7 @@ public class S2CSyncQuestsPacket {
         final String unlockSoundId;
         final String completeSoundId;
         final CompoundTag audio;
+        final boolean hideDepLine;
 
         QuestSnapshot(QuestNode node, net.minecraft.server.MinecraftServer server) {
             this.id = node.getId();
@@ -271,6 +274,7 @@ public class S2CSyncQuestsPacket {
             this.unlockSoundId = node.getUnlockSoundId() != null ? node.getUnlockSoundId() : "";
             this.completeSoundId = node.getCompleteSoundId() != null ? node.getCompleteSoundId() : "";
             this.audio = node.getAudio().toTag();
+            this.hideDepLine = node.isHideDepLine();
 
             this.childIds = new ArrayList<>();
             for (QuestNode child : node.getChildren()) {
@@ -348,7 +352,7 @@ public class S2CSyncQuestsPacket {
                       ResourceLocation linkTarget, String iconTexture, String shapeTexture,
                       String nodeSize, int sizeOverridePx, String iconFluid,
                       String backgroundType, String externalScreenId, String unlockSoundId,
-                      String completeSoundId, CompoundTag audio) {
+                      String completeSoundId, CompoundTag audio, boolean hideDepLine) {
             this.id = id;
             this.fullQuestData = new FullQuestData(title, description, null, new ArrayList<>(), new ArrayList<>());
             this.chapter = chapter;
@@ -386,6 +390,7 @@ public class S2CSyncQuestsPacket {
             this.unlockSoundId = unlockSoundId;
             this.completeSoundId = completeSoundId;
             this.audio = audio;
+            this.hideDepLine = hideDepLine;
         }
     }
 
@@ -402,6 +407,7 @@ public class S2CSyncQuestsPacket {
                 node.setCustomX(snap.customX);
                 node.setCustomY(snap.customY);
                 node.setSubtitle(snap.subtitle);
+                node.setHideDepLine(snap.hideDepLine);
                 node.setTaskMinCount(snap.taskMinCount);
                 node.setRequireAllPrerequisites(snap.requireAllPrerequisites);
                 node.setOptionalPrereqMinCount(snap.optionalPrereqMinCount);
