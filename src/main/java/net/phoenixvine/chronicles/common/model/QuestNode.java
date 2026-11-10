@@ -360,11 +360,23 @@ public class QuestNode {
         }
         if (net.neoforged.fml.loading.FMLEnvironment.dist == net.neoforged.api.distmarker.Dist.CLIENT) {
             String override = ClientTextOverrides.get(langKey("description"));
-            if (override != null) return Component.literal(override);
+            if (override != null) return withLineBreaks(Component.literal(override));
             Component d = ClientLangLookup.resolve(langKey("description"));
-            if (d != null) return d;
+            if (d != null) return withLineBreaks(d);
         }
-        return description;
+        return withLineBreaks(description);
+    }
+
+    /**
+     * Imported and hand-written descriptions often carry a typed backslash-n instead of a real newline (the FTB
+     * importer writes them that way). Shown as is, they print the two characters; turn them into line breaks.
+     */
+    private static Component withLineBreaks(Component text) {
+        if (text == null) return Component.empty();
+        String s = text.getString();
+        String typed = "\\" + "n";
+        if (!s.contains(typed)) return text;
+        return Component.literal(s.replace("\\" + "r" + "\\" + "n", "\n").replace(typed, "\n")).withStyle(text.getStyle());
     }
 
     public void setDescription(Component d) {
