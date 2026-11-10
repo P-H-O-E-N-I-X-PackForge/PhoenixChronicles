@@ -18,9 +18,15 @@ public final class NbtMatchUtil {
         if (actual == null) return false;
 
         for (String key : filter.getAllKeys()) {
-            if (!actual.contains(key)) return false;
-            Tag actualValue = actual.get(key);
             Tag filterValue = filter.get(key);
+            if (!actual.contains(key)) {
+                // A filter that asks for an empty compound/list ("GT.Behaviours": {}) is satisfied by a stack that
+                // never wrote the tag: tools create such tags lazily, so a fresh one would otherwise never match.
+                if (filterValue instanceof CompoundTag c && c.isEmpty()) continue;
+                if (filterValue instanceof ListTag l && l.isEmpty()) continue;
+                return false;
+            }
+            Tag actualValue = actual.get(key);
             if (!matchesTag(actualValue, filterValue)) {
                 return false;
             }
