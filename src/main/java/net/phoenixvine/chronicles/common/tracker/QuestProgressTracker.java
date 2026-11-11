@@ -191,6 +191,15 @@ public class QuestProgressTracker {
                             if (!task.dependsOnInventory()) taskDone[i] = task.isCompletedFor(player);
                         }
                     }
+                    if (net.phoenixvine.chronicles.common.debug.ChronicleDebug.isWatching(node) &&
+                            (invChanged || player.tickCount % 20 == 0)) {
+                        net.phoenixvine.chronicles.common.debug.ChronicleDebug.log("{} {} state={} tick={} invChanged={}",
+                                player.getName().getString(), node.getId(), state, player.tickCount, invChanged);
+                        for (int i = 0; i < tasks.size(); i++) {
+                            net.phoenixvine.chronicles.common.debug.ChronicleDebug.log("  task {} {} skipped={} done={}", i,
+                                    tasks.get(i).getTaskId(), taskSkipped[i], taskDone[i]);
+                        }
+                    }
                     checkAndTryComplete(player, node, tasks, taskDone, taskSkipped);
                 }
             }
@@ -214,6 +223,13 @@ public class QuestProgressTracker {
         for (QuestNode node : QuestTreeRegistry.getAllQuests().values()) {
             if (node.isFlagDisabled(player.getServer())) continue;
             if (data.getQuestState(node.getId(), QuestState.LOCKED) != QuestState.LOCKED) continue;
+            if (net.phoenixvine.chronicles.common.debug.ChronicleDebug.isWatching(node)) {
+                net.phoenixvine.chronicles.common.debug.ChronicleDebug.log("{} {} is LOCKED, sticky tasks are still scanned; prerequisites:",
+                        player.getName().getString(), node.getId());
+                for (var e : node.getPrereqRequired().entrySet()) {
+                    net.phoenixvine.chronicles.common.debug.ChronicleDebug.log("  {} -> {}", e.getKey(), data.getQuestState(e.getKey(), QuestState.LOCKED));
+                }
+            }
             if (node.getEffectiveVisibility(player.getServer(), player) == QuestNode.Visibility.DISABLED) continue;
 
             for (QuestTask task : node.getEffectiveTasks(player.getServer(), player)) {
@@ -368,6 +384,9 @@ public class QuestProgressTracker {
 
         data.setQuestState(node.getId(), newState);
         updateActiveTracking(player.getUUID(), node, newState);
+        if (net.phoenixvine.chronicles.common.debug.ChronicleDebug.isWatching(node)) {
+            net.phoenixvine.chronicles.common.debug.ChronicleDebug.log("{} {} {} -> {}", player.getName().getString(), node.getId(), oldState, newState);
+        }
         NeoForge.EVENT_BUS.post(new QuestEvent.StateChanged(player, node, oldState, newState));
 
         if (newState == QuestState.COMPLETED) {

@@ -43,6 +43,8 @@ public class ChroniclesCommands {
                 .then(statusCommand())
                 .then(emergencyCommand())
                 .then(completeCommand())
+                .then(diagnoseCommand())
+                .then(debugCommand())
                 .then(forcetaskCommand())
                 .then(resettaskCommand())
                 .then(unlockCommand())
@@ -141,6 +143,79 @@ public class ChroniclesCommands {
                                 .executes(ctx -> devSetState(ctx, QuestState.COMPLETED,
                                         net.minecraft.commands.arguments.EntityArgument.getPlayer(ctx,
                                                 "player")))));
+    }
+
+    private static LiteralArgumentBuilder<CommandSourceStack> diagnoseCommand() {
+        return Commands.literal("diagnose")
+                .requires(src -> src.hasPermission(2))
+                .then(Commands.argument("quest", com.mojang.brigadier.arguments.StringArgumentType.string())
+                        .executes(ctx -> {
+                            if (!(ctx.getSource()
+                                    .getEntity() instanceof net.minecraft.server.level.ServerPlayer sp)) {
+                                ctx.getSource().sendFailure(Component.literal("Must be run by a player."));
+                                return 0;
+                            }
+                            String qStr = com.mojang.brigadier.arguments.StringArgumentType.getString(ctx, "quest");
+                            QuestNode node;
+                            try {
+                                node = QuestTreeRegistry.getQuest(parseQuestArg(qStr));
+                            } catch (Exception e) {
+                                node = null;
+                            }
+                            if (node == null) {
+                                ctx.getSource().sendFailure(Component.literal("Quest not found: " + qStr));
+                                return 0;
+                            }
+                            final QuestNode fn = node;
+                            QuestState state = QuestCapabilityProvider.of(sp)
+                                    .map(d -> d.getQuestState(fn.getId(), QuestState.LOCKED))
+                                    .orElse(QuestState.LOCKED);
+                            List<String> lines = new ArrayList<>();
+                            lines.add("Quest " + fn.getId() + " is " + state + " for " + sp.getName().getString());
+                            QuestCapabilityProvider.of(sp).ifPresent(d -> {
+                                for (var e : fn.getPrereqRequired().entrySet()) {
+                                    lines.add("  prerequisite " + e.getKey() + (e.getValue() ? "" : " (optional)") +
+                                            ": " + d.getQuestState(e.getKey(), QuestState.LOCKED));
+                                }
+                            });
+                            lines.addAll(net.phoenixvine.chronicles.common.debug.ChronicleDebug.describeTasks(sp, fn));
+                            for (String line : lines) {
+                                ctx.getSource().sendSuccess(() -> Component.literal(line), false);
+                                PhoenixChronicles.LOGGER.info("[Chronicles diagnose] {}", line);
+                            }
+                            return 1;
+                        }));
+    }
+
+    private static LiteralArgumentBuilder<CommandSourceStack> debugCommand() {
+        return Commands.literal("debug")
+                .requires(src -> src.hasPermission(2))
+                .then(Commands.literal("off")
+                        .executes(ctx -> {
+                            net.phoenixvine.chronicles.common.debug.ChronicleDebug.watch(null);
+                            ctx.getSource().sendSuccess(() -> Component.literal("Quest debug logging off."), false);
+                            return 1;
+                        }))
+                .then(Commands.argument("quest", com.mojang.brigadier.arguments.StringArgumentType.string())
+                        .executes(ctx -> {
+                            String qStr = com.mojang.brigadier.arguments.StringArgumentType.getString(ctx, "quest");
+                            QuestNode node;
+                            try {
+                                node = QuestTreeRegistry.getQuest(parseQuestArg(qStr));
+                            } catch (Exception e) {
+                                node = null;
+                            }
+                            if (node == null) {
+                                ctx.getSource().sendFailure(Component.literal("Quest not found: " + qStr));
+                                return 0;
+                            }
+                            net.phoenixvine.chronicles.common.debug.ChronicleDebug.watch(node.getId());
+                            ctx.getSource().sendSuccess(() -> Component.literal(
+                                    "Watching " + qStr + ": its state changes and every task check go to the " +
+                                            "server log as [Chronicles debug]. /chronicles debug off to stop."),
+                                    false);
+                            return 1;
+                        }));
     }
 
     private static LiteralArgumentBuilder<CommandSourceStack> forcetaskCommand() {

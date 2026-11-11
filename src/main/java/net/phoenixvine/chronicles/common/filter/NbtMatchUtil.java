@@ -90,4 +90,30 @@ public final class NbtMatchUtil {
         }
         return true;
     }
+
+    /** Why {@code actual} fails {@code filter}, as a path and the two values; null when it matches. */
+    public static String firstMismatch(Tag actual, Tag filter) {
+        return mismatch(actual, filter, "");
+    }
+
+    private static String mismatch(Tag actual, Tag filter, String path) {
+        String at = path.isEmpty() ? "(root)" : path;
+        if (filter == null) return null;
+        if (actual == null) return at + ": stack has no tag, filter wants " + filter;
+        if (filter instanceof CompoundTag fc) {
+            if (!(actual instanceof CompoundTag ac)) return at + ": stack has " + actual + ", filter wants a compound";
+            for (String key : fc.getAllKeys()) {
+                Tag fv = fc.get(key);
+                if (!ac.contains(key)) {
+                    if (fv instanceof CompoundTag c && c.isEmpty()) continue;
+                    if (fv instanceof ListTag l && l.isEmpty()) continue;
+                    return at + "/" + key + ": missing on the stack, filter wants " + fv;
+                }
+                String inner = mismatch(ac.get(key), fv, path.isEmpty() ? key : path + "/" + key);
+                if (inner != null) return inner;
+            }
+            return null;
+        }
+        return matchesTag(actual, filter) ? null : at + ": stack has " + actual + ", filter wants " + filter;
+    }
 }
