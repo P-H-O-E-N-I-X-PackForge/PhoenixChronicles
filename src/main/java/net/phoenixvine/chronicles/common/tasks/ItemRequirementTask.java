@@ -188,6 +188,35 @@ public class ItemRequirementTask extends QuestTask {
     }
 
     @Override
+    public String diagnose(Player player) {
+        StringBuilder sb = new StringBuilder();
+        boolean stored = isSubmitted(player);
+        boolean done = isCompletedFor(player);
+        sb.append(done ? "DONE" : "not done").append(" | needs ").append(requiredCount).append("x ")
+                .append(item == null ? "null item" : ForgeRegistries.ITEMS.getKey(item))
+                .append(" | sticky=").append(sticky).append(" consume=").append(consume)
+                .append(" recorded=").append(stored)
+                .append(" ae2=").append(checksAe2Storage())
+                .append(" filter=").append(nbtFilter == null || nbtFilter.isEmpty() ? "none" : "yes")
+                .append(" | scanned by ").append(dependsOnInventory() ? "inventory rescans" : "direct checks");
+        int i = 0;
+        boolean any = false;
+        var inv = player.getInventory();
+        for (ItemStack stack : allSlots(player)) {
+            String where = i < inv.items.size() ? (i < 9 ? "hotbar " + i : "inv " + i) :
+                    i < inv.items.size() + inv.offhand.size() ? "offhand" : "other " + i;
+            i++;
+            if (stack.isEmpty() || stack.getItem() != item) continue;
+            any = true;
+            String why = NbtMatchUtil.firstMismatch(stack.getTag(), nbtFilter);
+            sb.append("\n    ").append(where).append(" x").append(stack.getCount()).append(": ")
+                    .append(why == null ? "MATCHES" : "no match, " + why);
+        }
+        if (!any) sb.append("\n    no stack of that item in inventory, offhand, armor, cursor or curios");
+        return sb.toString();
+    }
+
+    @Override
     public CompoundTag serializeNBT() {
         CompoundTag tag = new CompoundTag();
         tag.putString("type", "item_check");

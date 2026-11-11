@@ -376,7 +376,8 @@ public class QuestNode {
         String s = text.getString();
         String typed = "\\" + "n";
         if (!s.contains(typed)) return text;
-        return Component.literal(s.replace("\\" + "r" + "\\" + "n", "\n").replace(typed, "\n")).withStyle(text.getStyle());
+        return Component.literal(s.replace("\\" + "r" + "\\" + "n", "\n").replace(typed, "\n"))
+                .withStyle(text.getStyle());
     }
 
     public void setDescription(Component d) {

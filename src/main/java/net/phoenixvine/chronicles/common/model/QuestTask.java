@@ -105,6 +105,16 @@ public abstract class QuestTask implements INBTSerializable<CompoundTag> {
         return null;
     }
 
+    /**
+     * A one-line account of how this task evaluates for the player right now, for /chronicles diagnose and the
+     * debug log. Evaluates for real (a sticky task that is satisfied is recorded as it would be in play).
+     */
+    public String diagnose(Player player) {
+        boolean done = isCompletedFor(player);
+        String progress = getProgressString(player);
+        return (done ? "DONE" : "not done") + (progress != null ? " (" + progress + ")" : "");
+    }
+
     public ResourceLocation getDisplayItemId() {
         return null;
     }
