@@ -6,6 +6,14 @@ public final class NbtMatchUtil {
 
     private NbtMatchUtil() {}
 
+    /**
+     * Top-level keys a filter never checks. GregTech writes a tool's stats ("GT.Tool", "GT.Behaviours") only once
+     * the tool has been used: a freshly crafted pickaxe has just three of them, while a filter copied from a used
+     * one (what an import captures) wants the lot, so no new tool would ever match. The stats follow from the
+     * item itself, so there is nothing worth checking in them.
+     */
+    private static final java.util.Set<String> UNCHECKED_KEYS = java.util.Set.of("GT.Tool", "GT.Behaviours", "Damage");
+
     public static boolean matches(CompoundTag actual, CompoundTag filter) {
         if (filter == null || filter.isEmpty()) return true;
         if (actual == null) return false;
@@ -18,6 +26,7 @@ public final class NbtMatchUtil {
         if (actual == null) return false;
 
         for (String key : filter.getAllKeys()) {
+            if (UNCHECKED_KEYS.contains(key)) continue;
             Tag filterValue = filter.get(key);
             if (!actual.contains(key)) {
                 // A filter that asks for an empty compound/list ("GT.Behaviours": {}) is satisfied by a stack that
@@ -103,6 +112,7 @@ public final class NbtMatchUtil {
         if (filter instanceof CompoundTag fc) {
             if (!(actual instanceof CompoundTag ac)) return at + ": stack has " + actual + ", filter wants a compound";
             for (String key : fc.getAllKeys()) {
+                if (UNCHECKED_KEYS.contains(key)) continue;
                 Tag fv = fc.get(key);
                 if (!ac.contains(key)) {
                     if (fv instanceof CompoundTag c && c.isEmpty()) continue;
