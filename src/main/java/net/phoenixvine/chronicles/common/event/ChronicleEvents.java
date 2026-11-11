@@ -467,10 +467,12 @@ public class ChronicleEvents {
                                             .map(d -> d.getQuestState(fn.getId(), QuestState.LOCKED))
                                             .orElse(QuestState.LOCKED);
                                     java.util.List<String> lines = new java.util.ArrayList<>();
-                                    lines.add("Quest " + fn.getId() + " is " + state + " for " + sp.getName().getString());
+                                    lines.add("Quest " + fn.getId() + " is " + state + " for " +
+                                            sp.getName().getString());
                                     sp.getCapability(QuestCapabilityProvider.PLAYER_QUESTS).ifPresent(d -> {
                                         for (var e : fn.getPrereqRequired().entrySet()) {
-                                            lines.add("  prerequisite " + e.getKey() + (e.getValue() ? "" : " (optional)") +
+                                            lines.add("  prerequisite " + e.getKey() +
+                                                    (e.getValue() ? "" : " (optional)") +
                                                     ": " + d.getQuestState(e.getKey(), QuestState.LOCKED));
                                         }
                                     });
