@@ -3,6 +3,7 @@ package net.phoenixvine.chronicles.client.screen;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.resources.ResourceLocation;
 import net.phoenixvine.chronicles.client.render.*;
+import net.phoenixvine.chronicles.client.render.ChroniclesUIKit;
 import net.phoenixvine.chronicles.client.screen.utils.*;
 import net.phoenixvine.chronicles.client.screen.widgets.*;
 import net.phoenixvine.chronicles.client.util.BackgroundPictureConfig;
@@ -142,12 +143,15 @@ final class OverviewContextMenus {
     private List<ChronicleOverviewScreen.CtxItem> buildNonDevCtxItems() {
         List<ChronicleOverviewScreen.CtxItem> items = new ArrayList<>();
         if (screen.nonDevCtxNode == null) return items;
-        items.add(new ChronicleOverviewScreen.CtxItem("👁 Show unlock path", "§b", false, false,
+        items.add(new ChronicleOverviewScreen.CtxItem(
+                ChroniclesUIKit.str("phoenix_chronicles.screen.overview_context_menus.show_unlock_path"), "§b", false,
+                false,
                 () -> screen.chapters.computeUnlockPath(screen.nonDevCtxNode)));
         QuestNode linkTarget = screen.nonDevCtxNode.isLinkStub() ? screen.resolveLinkTarget(screen.nonDevCtxNode) :
                 null;
         if (linkTarget != null) {
-            items.add(new ChronicleOverviewScreen.CtxItem("🔗 Jump to linked quest", "§b", false, false,
+            items.add(new ChronicleOverviewScreen.CtxItem(
+                    ChroniclesUIKit.str("phoenix_chronicles.ui.jump_to_linked_quest"), "§b", false, false,
                     () -> screen.navigateToNode(linkTarget)));
         }
         return items;
@@ -245,16 +249,20 @@ final class OverviewContextMenus {
                         String oldCat = movedNode.getChapter();
                         movedNode.setChapter(newCat);
                         screen.saveNodeChapterToDisk(movedNode, newCat);
-                        screen.setFeedback("Moved to %s", screen.friendly(newCat));
-                        screen.pushUndo("Undo: quest moved back to " + screen.friendly(oldCat), () -> {
-                            movedNode.setChapter(oldCat);
-                            screen.saveNodeChapterToDisk(movedNode, oldCat);
-                            screen.rebuild();
-                        }, () -> {
-                            movedNode.setChapter(newCat);
-                            screen.saveNodeChapterToDisk(movedNode, newCat);
-                            screen.rebuild();
-                        });
+                        screen.setFeedback(
+                                ChroniclesUIKit.label("phoenix_chronicles.screen.overview_context_menus.moved_to"),
+                                screen.friendly(newCat));
+                        screen.pushUndo(ChroniclesUIKit.str(
+                                "phoenix_chronicles.screen.overview_context_menus.undo_quest_moved_back_to",
+                                screen.friendly(oldCat)), () -> {
+                                    movedNode.setChapter(oldCat);
+                                    screen.saveNodeChapterToDisk(movedNode, oldCat);
+                                    screen.rebuild();
+                                }, () -> {
+                                    movedNode.setChapter(newCat);
+                                    screen.saveNodeChapterToDisk(movedNode, newCat);
+                                    screen.rebuild();
+                                });
                     }
                     screen.ctxOpen = false;
                     screen.ctxMoveCatOpen = false;

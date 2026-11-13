@@ -3,6 +3,7 @@ package net.phoenixvine.chronicles.client.screen.utils;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.resources.ResourceLocation;
 import net.phoenixvine.chronicles.client.render.*;
+import net.phoenixvine.chronicles.client.render.ChroniclesUIKit;
 import net.phoenixvine.chronicles.client.screen.ChronicleOverviewScreen;
 import net.phoenixvine.chronicles.common.model.QuestNode;
 import net.phoenixvine.chronicles.common.registry.QuestTreeRegistry;
@@ -122,7 +123,7 @@ public class DragController {
             }
             editorState.bulkDragOrigPositions = null;
             editorState.lastMovedNode = null;
-            ctx.setFeedback("Moved %d quests", count);
+            ctx.setFeedback(ChroniclesUIKit.label("phoenix_chronicles.screen.drag_controller.moved_d_quests"), count);
             if (orig != null && !orig.equals(after)) {
                 ctx.undoRedo().push(
                         () -> applyBulkPositions(orig),

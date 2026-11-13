@@ -13,6 +13,7 @@ import net.minecraft.world.phys.HitResult;
 import net.phoenixvine.chronicles.common.model.QuestReward.ItemReward;
 import net.phoenixvine.chronicles.common.model.QuestReward.WeightedReward;
 import net.phoenixvine.chronicles.common.model.RewardTable;
+import net.phoenixvine.chronicles.common.util.ChroniclesLang;
 import net.phoenixvine.chronicles.common.util.ItemData;
 
 import org.jetbrains.annotations.Nullable;
@@ -101,7 +102,7 @@ public final class RewardTableChest {
     }
 
     private static Component weightLore(int weight) {
-        return Component.literal("Reward weight: " + weight)
+        return ChroniclesLang.tr("phoenix_chronicles.reward_table_chest.reward_weight", weight)
                 .withStyle(s -> s.withColor(ChatFormatting.GRAY).withItalic(false));
     }
 

@@ -35,7 +35,6 @@ public class NewFolderScreen extends Screen {
         this(parent, null, "", null, onCreated);
     }
 
-    /** Creates a new category nested inside {@code newParentId}. */
     public NewFolderScreen(Screen parent, String newParentId, Consumer<String> onCreated) {
         this(parent, null, "", newParentId, onCreated);
     }
@@ -111,12 +110,15 @@ public class NewFolderScreen extends Screen {
         g.pose().translate(0f, 0f, 300f);
 
         ChroniclesUIKit.drawModalChrome(g, font, width, height, panelLeft, panelTop, PANEL_W, PANEL_H, 22,
-                renameCategoryId != null ? "§bRename Category" :
-                        newParentId != null ? "§bNew Subcategory" : "§bNew Category",
+                renameCategoryId != null ? ChroniclesUIKit.str("phoenix_chronicles.screen.new_folder.rename_category") :
+                        newParentId != null ?
+                                ChroniclesUIKit.str("phoenix_chronicles.screen.new_folder.new_subcategory") :
+                                ChroniclesUIKit.str("phoenix_chronicles.screen.new_chapter_choice.new_category"),
                 ChroniclesThemePalette.PANEL,
                 ChroniclesThemePalette.HEADER, ACCENT, ChroniclesThemePalette.TEXT);
 
-        g.drawString(font, "§8Category name", panelLeft + MARGIN, panelTop + 24, ChroniclesThemePalette.TEXT_FAINT,
+        g.drawString(font, ChroniclesUIKit.str("phoenix_chronicles.screen.new_folder.category_name"),
+                panelLeft + MARGIN, panelTop + 24, ChroniclesThemePalette.TEXT_FAINT,
                 false);
 
         g.flush();

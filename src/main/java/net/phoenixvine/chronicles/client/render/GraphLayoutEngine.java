@@ -148,7 +148,8 @@ public class GraphLayoutEngine {
         for (QuestNode n : nodes) QuestFileSaver.saveOneQuestToDisk(n, false);
         layoutState.resetViewOffset();
         dragState.rebuild();
-        ctx.setFeedback("Auto-arranged %d quest(s)", nodes.size());
+        ctx.setFeedback(ChroniclesUIKit.label("phoenix_chronicles.screen.graph_layout_engine.auto_arranged_d_quest_s"),
+                nodes.size());
 
         Map<ResourceLocation, int[]> newPositions = new HashMap<>();
         for (QuestNode n : nodes) newPositions.put(n.getId(), new int[] { n.getCustomX(), n.getCustomY() });
@@ -186,7 +187,8 @@ public class GraphLayoutEngine {
         }
 
         applyPositions(nodes, newPositions);
-        ctx.setFeedback("Rotated %d quest(s) in chapter", nodes.size());
+        ctx.setFeedback(ChroniclesUIKit.label("phoenix_chronicles.screen.graph_layout_engine.rotated_d_quest_s_in"),
+                nodes.size());
 
         ctx.undoRedo().push(
                 () -> applyPositions(nodes, oldPositions),

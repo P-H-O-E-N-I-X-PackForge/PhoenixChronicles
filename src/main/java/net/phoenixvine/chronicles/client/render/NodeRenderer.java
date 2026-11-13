@@ -167,8 +167,8 @@ public class NodeRenderer {
             g.flush();
             g.pose().popPose();
 
-            String badge = "§b⊛ Subgraph  §7" + state.subgraphNodes().size() + " node" +
-                    (state.subgraphNodes().size() == 1 ? "" : "s") + " isolated  §8(G to exit)";
+            String badge = ChroniclesUIKit.str("phoenix_chronicles.screen.node_renderer.subgraph_node_isolated_g_to",
+                    state.subgraphNodes().size(), (state.subgraphNodes().size() == 1 ? "" : "s"));
             int bw = ctx.font().width(net.minecraft.util.StringUtil.stripColor(badge)) + 10;
             int bx = cl + 6, by = ChronicleOverviewScreen.HEADER_H + 4;
             g.fill(bx, by, bx + bw, by + 12, 0xCC101018);
@@ -197,7 +197,8 @@ public class NodeRenderer {
                 int badgeX = pos[0] + nodeSz - 2;
                 int badgeY = pos[1] - 1;
                 g.fill(badgeX, badgeY, badgeX + ctx.font().width("NEW") + 4, badgeY + 8, 0xFF1144BB);
-                g.drawString(ctx.font(), "NEW", badgeX + 2, badgeY + 1, 0xFFAADDFF, false);
+                g.drawString(ctx.font(), ChroniclesUIKit.str("phoenix_chronicles.screen.node_renderer.new"), badgeX + 2,
+                        badgeY + 1, 0xFFAADDFF, false);
             }
             if (st == QuestState.COMPLETED && nodeSz >= 12 &&
                     !node.getEffectiveRewards(Minecraft.getInstance().getSingleplayerServer(),
@@ -806,7 +807,7 @@ public class NodeRenderer {
         List<String> lines = new java.util.ArrayList<>();
         lines.add("§f" + title);
         if (sub != null) lines.add("§8" + sub);
-        if (node.isOptional()) lines.add("§d★ Optional quest");
+        if (node.isOptional()) lines.add(ChroniclesUIKit.str("phoenix_chronicles.screen.node_renderer.optional_quest"));
 
         if (showFull) {
 
@@ -848,11 +849,12 @@ public class NodeRenderer {
             if (!taskLines.isEmpty()) {
                 lines.add("§8─────────────");
                 lines.addAll(taskLines.stream().limit(6).toList());
-                if (taskLines.size() > 6) lines.add("§8  … +" + (taskLines.size() - 6) + " more");
+                if (taskLines.size() > 6) lines.add(
+                        ChroniclesUIKit.str("phoenix_chronicles.screen.node_renderer.more", (taskLines.size() - 6)));
             }
             if (!prereqLines.isEmpty() && st == QuestState.LOCKED) {
                 lines.add("§8─────────────");
-                lines.add("§8Requires:");
+                lines.add(ChroniclesUIKit.str("phoenix_chronicles.screen.node_renderer.requires"));
                 lines.addAll(prereqLines.stream().limit(4).toList());
             }
 
@@ -860,12 +862,12 @@ public class NodeRenderer {
                 List<String> issues = ctx.validationIssues(node);
                 if (!issues.isEmpty()) {
                     lines.add("§8─────────────");
-                    lines.add("§6⚠ Validation issues:");
+                    lines.add(ChroniclesUIKit.str("phoenix_chronicles.screen.node_renderer.validation_issues"));
                     issues.forEach(i -> lines.add("  §e• §7" + i));
                 }
             }
         } else {
-            lines.add("§8Hold Shift for details");
+            lines.add(ChroniclesUIKit.str("phoenix_chronicles.screen.node_renderer.hold_shift_for_details"));
         }
 
         float ts = QuestChroniclesSettings.get().getTextScaleMultiplier();

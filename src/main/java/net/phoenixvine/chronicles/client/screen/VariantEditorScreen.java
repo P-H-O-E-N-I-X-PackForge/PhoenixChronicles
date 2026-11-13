@@ -58,7 +58,7 @@ public class VariantEditorScreen extends Screen {
     }
 
     public VariantEditorScreen(Screen parent, QuestNode questNode) {
-        super(Component.literal("Quest Variants"));
+        super(Component.translatable("phoenix_chronicles.screen.variant_editor.quest_variants"));
         this.parent = parent;
         this.questNode = questNode;
         this.variants.addAll(questNode.getVariants());
@@ -92,17 +92,19 @@ public class VariantEditorScreen extends Screen {
     protected void rebuildWidgets() {
         clearWidgets();
 
-        addRenderableWidget(Button.builder(Component.literal("§7‹ Done"), b -> {
+        addRenderableWidget(Button.builder(Component.translatable("phoenix_chronicles.ui.done_2"), b -> {
             flushToQuestNode();
             if (minecraft != null) minecraft.setScreen(parent);
         }).bounds(vw / 2 - 40, vh - FOOTER_H + (FOOTER_H - 14) / 2, 80, 14)
-                .tooltip(Tooltip.create(Component.literal("Save changes and return to quest editor"))).build());
+                .tooltip(Tooltip.create(Component.translatable("phoenix_chronicles.ui.save_changes_and_return_to")))
+                .build());
 
-        addRenderableWidget(Button.builder(Component.literal("§a+ Add Variant"), b -> {
-            variants.add(new QuestNode.QuestVariant(""));
-            selected = variants.size() - 1;
-            rebuildWidgets();
-        }).bounds(MARGIN, listTop - 18, 110, 14).build());
+        addRenderableWidget(
+                Button.builder(Component.translatable("phoenix_chronicles.screen.variant_editor.add_variant"), b -> {
+                    variants.add(new QuestNode.QuestVariant(""));
+                    selected = variants.size() - 1;
+                    rebuildWidgets();
+                }).bounds(MARGIN, listTop - 18, 110, 14).build());
 
         if (selected < 0 || selected >= variants.size()) {
             conditionBox = titleBox = subtitleBox = descBox = null;
@@ -117,7 +119,7 @@ public class VariantEditorScreen extends Screen {
 
         conditionBox = new EditBox(font, fx, fy, fw, FIELD_H, Component.empty());
         conditionBox.setMaxLength(160);
-        conditionBox.setHint(Component.literal("§8condition: e.g. config:pack_mode=expert"));
+        conditionBox.setHint(Component.translatable("phoenix_chronicles.ui.condition_e_g_config_pack"));
         conditionBox.setValue(v.condition);
         conditionBox.setResponder(s -> v.condition = s);
         addRenderableWidget(conditionBox);
@@ -125,7 +127,8 @@ public class VariantEditorScreen extends Screen {
 
         titleBox = new EditBox(font, fx, fy, fw, FIELD_H, Component.empty());
         titleBox.setMaxLength(160);
-        titleBox.setHint(Component.literal("§8title override: blank = inherit base title"));
+        titleBox.setHint(
+                Component.translatable("phoenix_chronicles.screen.variant_editor.title_override_blank_inherit_base"));
         titleBox.setValue(v.title != null ? v.title : "");
         titleBox.setResponder(s -> v.title = s.isBlank() ? null : s);
         addRenderableWidget(titleBox);
@@ -133,7 +136,8 @@ public class VariantEditorScreen extends Screen {
 
         subtitleBox = new EditBox(font, fx, fy, fw, FIELD_H, Component.empty());
         subtitleBox.setMaxLength(256);
-        subtitleBox.setHint(Component.literal("§8subtitle override: blank = inherit base subtitle"));
+        subtitleBox.setHint(Component
+                .translatable("phoenix_chronicles.screen.variant_editor.subtitle_override_blank_inherit_base"));
         subtitleBox.setValue(v.subtitle != null ? v.subtitle : "");
         subtitleBox.setResponder(s -> v.subtitle = s.isBlank() ? null : s);
         addRenderableWidget(subtitleBox);
@@ -141,24 +145,29 @@ public class VariantEditorScreen extends Screen {
 
         descBox = new EditBox(font, fx, fy, fw, FIELD_H, Component.empty());
         descBox.setMaxLength(512);
-        descBox.setHint(Component.literal("§8description override: blank = inherit base description"));
+        descBox.setHint(Component
+                .translatable("phoenix_chronicles.screen.variant_editor.description_override_blank_inherit_base"));
         descBox.setValue(v.description != null ? v.description : "");
         descBox.setResponder(s -> v.description = s.isBlank() ? null : s);
         addRenderableWidget(descBox);
         fy += FIELD_H + FIELD_GAP;
 
         int visIdx = indexOfVisibility(v.visibility);
-        String visLabel = v.visibility == null ? "§8Visibility: Inherit" : "§7Visibility: " + v.visibility.name();
+        String visLabel = v.visibility == null ?
+                ChroniclesUIKit.str("phoenix_chronicles.screen.variant_editor.visibility_inherit") :
+                ChroniclesUIKit.str("phoenix_chronicles.screen.variant_editor.visibility", v.visibility.name());
         addRenderableWidget(Button.builder(Component.literal(visLabel), b -> {
             v.visibility = VIS_CYCLE[(visIdx + 1) % VIS_CYCLE.length];
             rebuildWidgets();
         }).bounds(fx, fy, (fw - FIELD_GAP) / 2, FIELD_H)
                 .tooltip(Tooltip
-                        .create(Component.literal("Cycle: Inherit → Normal → Hidden → Mystery → Disabled")))
+                        .create(Component.translatable(
+                                "phoenix_chronicles.screen.variant_editor.cycle_inherit_normal_hidden_mystery")))
                 .build());
 
         String taskRewardLabel = (v.tasks != null || v.rewards != null) ?
-                "§eEdit Tasks/Rewards… §8(overridden)" : "§7Edit Tasks/Rewards…";
+                ChroniclesUIKit.str("phoenix_chronicles.screen.variant_editor.edit_tasks_rewards_overridden") :
+                ChroniclesUIKit.str("phoenix_chronicles.screen.variant_editor.edit_tasks_rewards");
         addRenderableWidget(Button.builder(Component.literal(taskRewardLabel), b -> {
 
             flushToQuestNode();
@@ -167,13 +176,16 @@ public class VariantEditorScreen extends Screen {
         fy += FIELD_H + FIELD_GAP;
 
         if (v.tasks != null || v.rewards != null) {
-            addRenderableWidget(Button.builder(Component.literal("§cClear task/reward override"), b -> {
-                v.tasks = null;
-                v.rewards = null;
-                rebuildWidgets();
-            }).bounds(fx, fy, fw, FIELD_H)
+            addRenderableWidget(Button.builder(
+                    Component.translatable("phoenix_chronicles.screen.variant_editor.clear_task_reward_override"),
+                    b -> {
+                        v.tasks = null;
+                        v.rewards = null;
+                        rebuildWidgets();
+                    }).bounds(fx, fy, fw, FIELD_H)
                     .tooltip(Tooltip.create(Component.literal(
-                            "Revert this variant's tasks/rewards back to inheriting the quest's base list")))
+                            ChroniclesUIKit
+                                    .str("phoenix_chronicles.screen.variant_editor.revert_this_variant_s_tasks"))))
                     .build());
         }
     }
@@ -210,12 +222,16 @@ public class VariantEditorScreen extends Screen {
         g.fill(0, 0, vw, HEADER_H, C_HEADER);
         g.fill(0, 0, vw, 2, C_ACCENT);
         g.fill(0, HEADER_H - 1, vw, HEADER_H, C_BORDER);
-        g.drawCenteredString(font, "§fQuest Variants  §8: §7" + questNode.getId().getPath(),
+        g.drawCenteredString(font,
+                ChroniclesUIKit.str("phoenix_chronicles.screen.variant_editor.quest_variants_2",
+                        questNode.getId().getPath()),
                 vw / 2, (HEADER_H - 8) / 2, C_TEXT);
 
         g.fill(0, HEADER_H, vw, listTop - 1, C_PANEL);
         g.fill(0, listTop - 1, vw, listTop, C_BORDER);
-        g.drawString(font, "§8VARIANTS  §7" + variants.size() + "  §8(first matching condition wins)",
+        g.drawString(font,
+                ChroniclesUIKit.str("phoenix_chronicles.screen.variant_editor.variants_first_matching_condition_wins",
+                        variants.size()),
                 MARGIN + 120, HEADER_H + 3, C_TEXT_FAINT, false);
 
         int formPanelTop = formTop - 6;
@@ -225,10 +241,13 @@ public class VariantEditorScreen extends Screen {
             g.fill(MARGIN, formPanelTop + 2, vw - MARGIN, vh - FOOTER_H - 2, C_FORM_BG);
             drawBorder(g, MARGIN, formPanelTop + 2, vw - MARGIN * 2, vh - FOOTER_H - 2 - (formPanelTop + 2),
                     C_BORDER);
-            g.drawString(font, "§8EDITING VARIANT " + (selected + 1), MARGIN + 6, formPanelTop + 6, C_TEXT_FAINT,
+            g.drawString(font,
+                    ChroniclesUIKit.str("phoenix_chronicles.screen.variant_editor.editing_variant", (selected + 1)),
+                    MARGIN + 6, formPanelTop + 6, C_TEXT_FAINT,
                     false);
         } else {
-            g.drawCenteredString(font, "§8Add a variant, or select one below to edit it.",
+            g.drawCenteredString(font,
+                    ChroniclesUIKit.str("phoenix_chronicles.screen.variant_editor.add_a_variant_or_select"),
                     vw / 2, formPanelTop + 20, C_TEXT_FAINT);
         }
 
@@ -245,7 +264,9 @@ public class VariantEditorScreen extends Screen {
             else if (hov) g.fill(MARGIN, ty, vw - MARGIN, ty + ROW_H, C_ROW_HOVER);
             g.fill(MARGIN, ty + 2, MARGIN + 2, ty + ROW_H - 2, C_ACCENT);
 
-            String cond = v.condition.isBlank() ? "§c(no condition set)" : "§7" + v.condition;
+            String cond = v.condition.isBlank() ?
+                    ChroniclesUIKit.str("phoenix_chronicles.screen.variant_editor.no_condition_set") :
+                    "§7" + v.condition;
             String summary = variantSummary(v);
             int textX = MARGIN + 8;
             int maxW = vw - MARGIN - textX - 40;
@@ -262,7 +283,8 @@ public class VariantEditorScreen extends Screen {
             ty += ROW_H;
         }
         if (variants.isEmpty())
-            g.drawString(font, "§8No variants yet: this quest behaves identically in every pack mode.",
+            g.drawString(font,
+                    ChroniclesUIKit.str("phoenix_chronicles.screen.variant_editor.no_variants_yet_this_quest"),
                     MARGIN + 8, listTop + 4, C_TEXT_FAINT, false);
 
         super.render(g, mx, my, partial);

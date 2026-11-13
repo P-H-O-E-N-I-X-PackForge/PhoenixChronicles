@@ -81,7 +81,7 @@ public class FilterTokenEditorScreen extends Screen {
     private boolean modSuggestOpen = false;
 
     public FilterTokenEditorScreen(@Nullable Screen parent, ItemStack heldStack) {
-        super(Component.literal("Configure Filter"));
+        super(Component.translatable("phoenix_chronicles.screen.filter_token_editor.configure_filter"));
         this.parent = parent;
         this.heldStack = heldStack;
         this.fluidMode = heldStack.getItem() instanceof FluidFilterTokenItem;
@@ -138,44 +138,54 @@ public class FilterTokenEditorScreen extends Screen {
         int by = panelTop + HEADER_H + 4;
 
         if (fluidMode) {
-            addRenderableWidget(Button.builder(Component.literal("§3+ Fluid"), b -> {
+            addRenderableWidget(Button.builder(Component.translatable("phoenix_chronicles.ui.fluid"), b -> {
                 if (minecraft != null) minecraft.setScreen(new FluidPickerScreen(this, fluidId -> {
                     ResourceLocation id = ResourceLocation.parse(fluidId);
                     entries.add(new Entry(FluidFilters.exact(id)));
                 }));
             }).bounds(bx, by, 60, 14).build());
         } else {
-            addRenderableWidget(Button.builder(Component.literal("§e+ Item"), b -> {
-                if (minecraft != null) minecraft.setScreen(new ItemPickerScreen(this, stack -> {
-                    Item item = stack.getItem();
-                    entries.add(new Entry(ItemFilters.exact(item)));
-                }));
-            }).bounds(bx, by, 60, 14).build());
+            addRenderableWidget(
+                    Button.builder(Component.translatable("phoenix_chronicles.screen.filter_token_editor.item"), b -> {
+                        if (minecraft != null) minecraft.setScreen(new ItemPickerScreen(this, stack -> {
+                            Item item = stack.getItem();
+                            entries.add(new Entry(ItemFilters.exact(item)));
+                        }));
+                    }).bounds(bx, by, 60, 14).build());
         }
 
         tagBox = new EditBox(font, bx + 64, by, 110, 14, Component.empty());
         tagBox.setMaxLength(96);
-        tagBox.setHint(Component.literal(fluidMode ? "§8tag e.g. forge:milk" : "§8tag e.g. forge:ingots"));
+        tagBox.setHint(Component.literal(
+                fluidMode ? ChroniclesUIKit.str("phoenix_chronicles.screen.filter_token_editor.tag_e_g_forge_milk") :
+                        ChroniclesUIKit.str("phoenix_chronicles.screen.filter_token_editor.tag_e_g_forge_ingots")));
         addRenderableWidget(tagBox);
-        addRenderableWidget(Button.builder(Component.literal("§d+ Tag"), b -> addTagEntry())
+        addRenderableWidget(Button
+                .builder(Component.translatable("phoenix_chronicles.screen.filter_token_editor.tag"),
+                        b -> addTagEntry())
                 .bounds(bx + 178, by, 44, 14)
-                .tooltip(Tooltip.create(Component.literal("Add an item/fluid tag as a match rule")))
+                .tooltip(Tooltip.create(
+                        Component.translatable("phoenix_chronicles.screen.filter_token_editor.add_an_item_fluid_tag")))
                 .build());
 
         int by2 = by + 18;
         modBox = new EditBox(font, bx, by2, 110, 14, Component.empty());
         modBox.setMaxLength(64);
-        modBox.setHint(Component.literal("§8mod id e.g. create"));
+        modBox.setHint(Component.translatable("phoenix_chronicles.screen.filter_token_editor.mod_id_e_g_create"));
         modBox.setResponder(this::updateModSuggestions);
         addRenderableWidget(modBox);
-        addRenderableWidget(Button.builder(Component.literal("§b+ Mod"), b -> addModEntry())
+        addRenderableWidget(Button
+                .builder(Component.translatable("phoenix_chronicles.screen.filter_token_editor.mod"),
+                        b -> addModEntry())
                 .bounds(bx + 114, by2, 44, 14)
-                .tooltip(Tooltip.create(Component.literal("Match every item/fluid registered by a mod")))
+                .tooltip(Tooltip.create(Component.translatable(
+                        "phoenix_chronicles.screen.filter_token_editor.match_every_item_fluid_registered")))
                 .build());
 
         int by3 = by2 + 18;
         addRenderableWidget(Button.builder(
-                Component.literal(mode == Mode.AND ? "§6AND" : "§2OR"),
+                Component.literal(mode == Mode.AND ?
+                        ChroniclesUIKit.str("phoenix_chronicles.screen.filter_token_editor.and") : "§2OR"),
                 b -> {
                     mode = mode == Mode.AND ? Mode.OR : Mode.AND;
                     rebuildModeButton();
@@ -188,18 +198,21 @@ public class FilterTokenEditorScreen extends Screen {
                 .build());
 
         addRenderableWidget(Button.builder(
-                Component.literal(invert ? "§cNOT: ON" : "§8NOT: off"),
+                Component.literal(invert ? ChroniclesUIKit.str("phoenix_chronicles.screen.filter_token_editor.not_on") :
+                        ChroniclesUIKit.str("phoenix_chronicles.screen.filter_token_editor.not_off")),
                 b -> {
                     invert = !invert;
                     rebuildModeButton();
                 }).bounds(bx + 48, by3, 76, 14)
-                .tooltip(Tooltip.create(Component.literal("Invert the whole combined filter")))
+                .tooltip(Tooltip.create(Component.translatable(
+                        "phoenix_chronicles.screen.filter_token_editor.invert_the_whole_combined_filter")))
                 .build());
 
         int footerY = panelTop + PANEL_H - FOOTER_H;
-        addRenderableWidget(Button.builder(Component.literal("§a✔ Save"), b -> confirm())
+        addRenderableWidget(Button
+                .builder(Component.translatable("phoenix_chronicles.screen.filter_token_editor.save"), b -> confirm())
                 .bounds(panelLeft + PANEL_W - 60, footerY + 5, 56, 14).build());
-        addRenderableWidget(Button.builder(Component.literal("§7Cancel"), b -> {
+        addRenderableWidget(Button.builder(Component.translatable("phoenix_chronicles.ui.cancel"), b -> {
             if (minecraft != null) minecraft.setScreen(parent);
         }).bounds(panelLeft + 4, footerY + 5, 56, 14).build());
     }
@@ -288,12 +301,15 @@ public class FilterTokenEditorScreen extends Screen {
         g.fill(panelLeft, panelTop, panelLeft + PANEL_W, panelTop + HEADER_H, ChroniclesThemePalette.HEADER);
         g.fill(panelLeft, panelTop + HEADER_H - 1, panelLeft + PANEL_W, panelTop + HEADER_H,
                 ChroniclesThemePalette.BORDER);
-        String title = fluidMode ? "§3Configure Fluid Filter" : "§eConfigure Item Filter";
+        String title = fluidMode ?
+                ChroniclesUIKit.str("phoenix_chronicles.screen.filter_token_editor.configure_fluid_filter") :
+                ChroniclesUIKit.str("phoenix_chronicles.screen.filter_token_editor.configure_item_filter");
         g.drawCenteredString(font, title, panelLeft + PANEL_W / 2, panelTop + 7, ChroniclesThemePalette.TEXT);
 
         super.render(g, mx, my, partial);
 
-        g.drawString(font, "§8Rules  (" + entries.size() + ")", panelLeft + 4, listTop - 10,
+        g.drawString(font, ChroniclesUIKit.str("phoenix_chronicles.screen.filter_token_editor.rules", entries.size()),
+                panelLeft + 4, listTop - 10,
                 ChroniclesThemePalette.TEXT_FAINT, false);
 
         int rowsTop = listTop;
@@ -323,7 +339,8 @@ public class FilterTokenEditorScreen extends Screen {
             if (hov) g.drawString(font, "§c×", panelLeft + PANEL_W - 14, ry + 5, 0xFFFF5555, false);
         }
         if (entries.isEmpty())
-            g.drawString(font, "§8No rules yet. Add an item/tag/mod above.", panelLeft + 4, rowsTop + 4,
+            g.drawString(font, ChroniclesUIKit.str("phoenix_chronicles.screen.filter_token_editor.no_rules_yet_add_an"),
+                    panelLeft + 4, rowsTop + 4,
                     ChroniclesThemePalette.TEXT_FAINT, false);
         g.disableScissor();
 

@@ -15,11 +15,6 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.function.Consumer;
 
-/**
- * Asks how to paste the copied category tree: an optional condition for the pasted root, an optional find/replace
- * applied to the conditions (enable_if) of the pasted subcategories and quests, so a copy can be pointed at a
- * different flag, and whether to copy the chapters and quests inside too.
- */
 public class PasteCategoryScreen extends Screen {
 
     private static final int PANEL_W = 240;
@@ -41,10 +36,9 @@ public class PasteCategoryScreen extends Screen {
     private EditBox rootBox, findBox, replaceBox;
     private int panelLeft, panelTop;
 
-    /** @param destCategoryId category to paste inside, or null for the top level */
     public PasteCategoryScreen(Screen parent, @Nullable String destCategoryId,
                                Consumer<CategoryContentCopier.Result> onDone) {
-        super(Component.literal("Paste Category"));
+        super(Component.translatable("phoenix_chronicles.screen.paste_category.paste_category"));
         this.parent = parent;
         this.destCategoryId = destCategoryId;
         this.onDone = onDone;
@@ -59,7 +53,7 @@ public class PasteCategoryScreen extends Screen {
 
         rootBox = new EditBox(font, fx, panelTop + 34, fw, FIELD_H, Component.empty());
         rootBox.setMaxLength(200);
-        rootBox.setHint(Component.literal("(keep the copied condition)"));
+        rootBox.setHint(Component.translatable("phoenix_chronicles.screen.paste_category.keep_the_copied_condition"));
         rootBox.setValue(rootCondition);
         rootBox.setResponder(v -> rootCondition = v);
         addRenderableWidget(rootBox);
@@ -67,14 +61,14 @@ public class PasteCategoryScreen extends Screen {
         int half = (fw - 6) / 2;
         findBox = new EditBox(font, fx, panelTop + 66, half, FIELD_H, Component.empty());
         findBox.setMaxLength(100);
-        findBox.setHint(Component.literal("find"));
+        findBox.setHint(Component.translatable("phoenix_chronicles.screen.paste_category.find"));
         findBox.setValue(find);
         findBox.setResponder(v -> find = v);
         addRenderableWidget(findBox);
 
         replaceBox = new EditBox(font, fx + half + 6, panelTop + 66, half, FIELD_H, Component.empty());
         replaceBox.setMaxLength(100);
-        replaceBox.setHint(Component.literal("replace with"));
+        replaceBox.setHint(Component.translatable("phoenix_chronicles.screen.paste_category.replace_with"));
         replaceBox.setValue(replace);
         replaceBox.setResponder(v -> replace = v);
         addRenderableWidget(replaceBox);
@@ -89,8 +83,9 @@ public class PasteCategoryScreen extends Screen {
         addRenderableWidget(contentButton);
 
         int btnY = panelTop + PANEL_H - 10 - 18;
-        addRenderableWidget(Button.builder(Component.literal("Paste"), b -> paste())
-                .bounds(fx, btnY, half, 18).build());
+        addRenderableWidget(
+                Button.builder(Component.translatable("phoenix_chronicles.screen.paste_category.paste"), b -> paste())
+                        .bounds(fx, btnY, half, 18).build());
         addRenderableWidget(Button.builder(Component.translatable("phoenix_chronicles.ui.cancel"), b -> close())
                 .bounds(fx + half + 6, btnY, half, 18).build());
     }
@@ -123,14 +118,17 @@ public class PasteCategoryScreen extends Screen {
         g.pose().translate(0f, 0f, 300f);
 
         ChroniclesUIKit.drawModalChrome(g, font, width, height, panelLeft, panelTop, PANEL_W, PANEL_H, 22,
-                "§bPaste \"" + CategoryRegistry.clipboardLabel() + "\" (" + CategoryRegistry.clipboardSize() + ")",
+                ChroniclesUIKit.str("phoenix_chronicles.screen.paste_category.paste_2",
+                        CategoryRegistry.clipboardLabel(), CategoryRegistry.clipboardSize()),
                 ChroniclesThemePalette.PANEL, ChroniclesThemePalette.HEADER, ACCENT, ChroniclesThemePalette.TEXT);
 
-        g.drawString(font, "§8Condition (enable_if) for the pasted root", panelLeft + MARGIN, panelTop + 24,
+        g.drawString(font, ChroniclesUIKit.str("phoenix_chronicles.screen.paste_category.condition_enable_if_for_the"),
+                panelLeft + MARGIN, panelTop + 24,
                 ChroniclesThemePalette.TEXT_FAINT, false);
-        g.drawString(font, "§8Replace text in the other pasted conditions", panelLeft + MARGIN, panelTop + 56,
+        g.drawString(font, ChroniclesUIKit.str("phoenix_chronicles.screen.paste_category.replace_text_in_the_other"),
+                panelLeft + MARGIN, panelTop + 56,
                 ChroniclesThemePalette.TEXT_FAINT, false);
-        g.drawString(font, "§8Links to quests outside the copy keep pointing at the originals",
+        g.drawString(font, ChroniclesUIKit.str("phoenix_chronicles.screen.paste_category.links_to_quests_outside_the"),
                 panelLeft + MARGIN, panelTop + 106, ChroniclesThemePalette.TEXT_FAINT, false);
 
         g.flush();

@@ -4,6 +4,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
 import net.phoenixvine.chronicles.PhoenixChronicles;
 import net.phoenixvine.chronicles.client.event.ChronicleKeyBindings;
+import net.phoenixvine.chronicles.client.render.ChroniclesUIKit;
 import net.phoenixvine.chronicles.client.screen.ChronicleOverviewScreen;
 import net.phoenixvine.chronicles.client.screen.RewardTableSimulatorScreen;
 import net.phoenixvine.chronicles.client.screen.widgets.SidebarPanel;
@@ -469,12 +470,16 @@ public final class ScreenClickSmokeTest {
 
         if (passCount == total) {
             PhoenixChronicles.LOGGER.info("PHOENIX_SMOKE_TEST_RESULT: PASS ({} / {})", passCount, total);
-            screen.setFeedback("§aSmoke test: %d/%d passed", passCount, total);
+            screen.setFeedback(
+                    ChroniclesUIKit.label("phoenix_chronicles.screen.screen_click_smoke_test.smoke_test_d_d_passed"),
+                    passCount, total);
         } else {
             String failureSummary = String.join(", ", failureLabels);
             PhoenixChronicles.LOGGER.error("PHOENIX_SMOKE_TEST_RESULT: FAIL ({} / {} passed) - failures: {}",
                     passCount, total, failureSummary);
-            screen.setFeedback("§cSmoke test: %d/%d FAILED: see log", total - passCount, total);
+            screen.setFeedback(
+                    ChroniclesUIKit.label("phoenix_chronicles.screen.screen_click_smoke_test.smoke_test_d_d_failed"),
+                    total - passCount, total);
         }
     }
 }

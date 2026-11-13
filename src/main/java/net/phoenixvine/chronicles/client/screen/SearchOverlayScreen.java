@@ -4,6 +4,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
+import net.phoenixvine.chronicles.client.render.ChroniclesUIKit;
 import net.phoenixvine.chronicles.client.util.ChapterConfig;
 import net.phoenixvine.chronicles.common.codec.QuestChroniclesSettings;
 import net.phoenixvine.chronicles.common.model.QuestNode;
@@ -130,7 +131,8 @@ public class SearchOverlayScreen extends Screen {
         searchBox.render(g, mx, my, partial);
 
         g.fill(panX + panW - 32, panY + 12, panX + panW - 14, panY + 26, 0x22FFFFFF);
-        g.drawCenteredString(font, "§8ESC", panX + panW - 23, panY + 16, C_TEXT_FAINT);
+        g.drawCenteredString(font, ChroniclesUIKit.str("phoenix_chronicles.screen.search_overlay.esc"),
+                panX + panW - 23, panY + 16, C_TEXT_FAINT);
 
         int cy = panY + searchRowH;
 
@@ -144,7 +146,10 @@ public class SearchOverlayScreen extends Screen {
             int bg = sel ? (C_SEL_ACCENT & 0x00FFFFFF | 0x44000000) : (hov ? 0x22FFFFFF : 0x11FFFFFF);
             g.fill(cpx, cpy, cpx + cpw, cpy + cph, bg);
             if (sel) g.fill(cpx, cpy + cph - 1, cpx + cpw, cpy + cph, C_SEL_ACCENT);
-            g.drawString(font, sel ? "§aAll" : "§8All", cpx + 5, cpy + 3, C_TEXT_DIM, false);
+            g.drawString(font,
+                    sel ? ChroniclesUIKit.str("phoenix_chronicles.screen.search_overlay.all") :
+                            ChroniclesUIKit.str("phoenix_chronicles.screen.search_overlay.all_2"),
+                    cpx + 5, cpy + 3, C_TEXT_DIM, false);
             cpx += cpw + 4;
         }
         for (String cat : cats) {

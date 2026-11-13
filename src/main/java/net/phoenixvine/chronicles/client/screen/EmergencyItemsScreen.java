@@ -61,7 +61,7 @@ public class EmergencyItemsScreen extends Screen {
     private EditBox cooldownBox;
 
     public EmergencyItemsScreen(Screen parent, QuestNode node, Supplier<String> chapterSupplier) {
-        super(Component.literal("Emergency Items"));
+        super(Component.translatable("phoenix_chronicles.screen.emergency.title"));
         this.parent = parent;
         this.node = node;
         this.chapterSupplier = chapterSupplier;
@@ -130,33 +130,40 @@ public class EmergencyItemsScreen extends Screen {
         int tabY = panelY + HEADER_H + 3;
         int tabW = (PANEL_W - 24) / 3;
         Button questTab = Button.builder(
-                Component.literal(scope == Scope.QUEST ? "§f▸ This Quest" : "§7This Quest"),
+                Component.literal(scope == Scope.QUEST ?
+                        ChroniclesUIKit.str("phoenix_chronicles.screen.emergency_items.this_quest") :
+                        ChroniclesUIKit.str("phoenix_chronicles.screen.emergency_items.this_quest_2")),
                 b -> setScope(Scope.QUEST))
                 .bounds(panelX + 6, tabY, tabW, 16)
                 .tooltip(Tooltip.create(Component.literal(
-                        "Claimable while this quest is active.")))
+                        ChroniclesUIKit
+                                .str("phoenix_chronicles.screen.emergency_items.claimable_while_this_quest_is"))))
                 .build();
         questTab.active = scope != Scope.QUEST && node != null;
         addRenderableWidget(questTab);
 
         Button chapterTab = Button.builder(
-                Component.literal(scope == Scope.CHAPTER ? "§f▸ Chapter" : "§7Chapter"),
+                Component.literal(scope == Scope.CHAPTER ?
+                        ChroniclesUIKit.str("phoenix_chronicles.screen.emergency_items.chapter") :
+                        ChroniclesUIKit.str("phoenix_chronicles.screen.emergency_items.chapter_2")),
                 b -> setScope(Scope.CHAPTER))
                 .bounds(panelX + 12 + tabW, tabY, tabW, 16)
-                .tooltip(Tooltip.create(Component.literal(hasChapter ?
-                        "Claimable from the emergency screen any time, even if every quest in " + chapter() +
-                                " is locked." :
-                        "Pick a chapter for this quest first.")))
+                .tooltip(Tooltip.create(Component.literal(hasChapter ? ChroniclesUIKit.str(
+                        "phoenix_chronicles.screen.emergency_items.claimable_from_the_emergency_screen", chapter()) :
+                        ChroniclesUIKit.str("phoenix_chronicles.screen.emergency_items.pick_a_chapter_for_this"))))
                 .build();
         chapterTab.active = hasChapter && scope != Scope.CHAPTER;
         addRenderableWidget(chapterTab);
 
         Button questbookTab = Button.builder(
-                Component.literal(scope == Scope.QUESTBOOK ? "§f▸ Questbook" : "§7Questbook"),
+                Component.literal(scope == Scope.QUESTBOOK ?
+                        ChroniclesUIKit.str("phoenix_chronicles.screen.emergency_items.questbook") :
+                        ChroniclesUIKit.str("phoenix_chronicles.screen.emergency_items.questbook_2")),
                 b -> setScope(Scope.QUESTBOOK))
                 .bounds(panelX + 18 + tabW * 2, tabY, tabW, 16)
                 .tooltip(Tooltip.create(Component.literal(
-                        "Claimable from the emergency screen any time, whatever chapter the player is in.")))
+                        ChroniclesUIKit.str(
+                                "phoenix_chronicles.screen.emergency_items.claimable_from_the_emergency_screen_2"))))
                 .build();
         questbookTab.active = scope != Scope.QUESTBOOK;
         addRenderableWidget(questbookTab);
@@ -179,28 +186,29 @@ public class EmergencyItemsScreen extends Screen {
                 persist();
                 init();
             }).bounds(panelX + PANEL_W - 20, y, 14, 16)
-                    .tooltip(Tooltip.create(Component.literal("Remove")))
+                    .tooltip(Tooltip.create(Component.translatable("phoenix_chronicles.screen.emergency_items.remove")))
                     .build());
         }
 
         int editY = listTop + VISIBLE_ROWS * ROW_H + 3;
-        addRenderableWidget(Button.builder(Component.literal("§a✎ Edit Rewards…"), b -> {
-            if (minecraft == null) return;
-            String label = switch (scope) {
-                case CHAPTER -> chapter() + " (chapter)";
-                case QUESTBOOK -> "entire questbook";
-                case QUEST -> node != null ? node.getId().getPath() : "";
-            };
-            minecraft.setScreen(new TaskRewardEditorScreen(this, scope == Scope.QUEST ? node : null,
-                    new ArrayList<>(kit().getRewards()), updated -> {
-                        kit().setRewards(updated);
-                        persist();
-                    }, label));
-        }).bounds(panelX + 6, editY, PANEL_W - 12, 16)
-                .tooltip(Tooltip.create(Component.literal(
-                        "Add items, fluids, XP, commands, loot tables and more.\n" +
-                                "Choice boxes aren't available here.")))
-                .build());
+        addRenderableWidget(
+                Button.builder(Component.translatable("phoenix_chronicles.screen.emergency_items.edit_rewards"), b -> {
+                    if (minecraft == null) return;
+                    String label = switch (scope) {
+                        case CHAPTER -> chapter() + " (chapter)";
+                        case QUESTBOOK -> "entire questbook";
+                        case QUEST -> node != null ? node.getId().getPath() : "";
+                    };
+                    minecraft.setScreen(new TaskRewardEditorScreen(this, scope == Scope.QUEST ? node : null,
+                            new ArrayList<>(kit().getRewards()), updated -> {
+                                kit().setRewards(updated);
+                                persist();
+                            }, label));
+                }).bounds(panelX + 6, editY, PANEL_W - 12, 16)
+                        .tooltip(Tooltip.create(Component.literal(
+                                "Add items, fluids, XP, commands, loot tables and more.\n" +
+                                        "Choice boxes aren't available here.")))
+                        .build());
 
         int timerY = editY + 22;
         addRenderableWidget(Button.builder(Component.literal(modeLabel(kit.getRepeat())), b -> {
@@ -220,7 +228,7 @@ public class EmergencyItemsScreen extends Screen {
 
         cooldownBox = new EditBox(font, panelX + 6, timerY + 32, 110, 16, Component.empty());
         cooldownBox.setMaxLength(24);
-        cooldownBox.setHint(Component.literal("§8inherit"));
+        cooldownBox.setHint(Component.translatable("phoenix_chronicles.screen.emergency_items.inherit"));
         cooldownBox.setValue(kit.getCooldownSeconds() >= 0 ?
                 QuestProgressTracker.formatDuration(kit.getCooldownSeconds() * 1000L) : "");
         cooldownBox.setResponder(text -> {
@@ -234,22 +242,23 @@ public class EmergencyItemsScreen extends Screen {
         addRenderableWidget(cooldownBox);
 
         int footY = panelY + panelH - FOOTER_H + 5;
-        addRenderableWidget(Button.builder(Component.literal("§cClear Rewards"), b -> {
-            kit().setRewards(List.of());
-            persist();
-            scroll = 0;
-            init();
-        }).bounds(panelX + 6, footY, 90, 16).build());
-        addRenderableWidget(Button.builder(Component.literal("§fDone"), b -> onClose())
+        addRenderableWidget(
+                Button.builder(Component.translatable("phoenix_chronicles.screen.emergency_items.clear_rewards"), b -> {
+                    kit().setRewards(List.of());
+                    persist();
+                    scroll = 0;
+                    init();
+                }).bounds(panelX + 6, footY, 90, 16).build());
+        addRenderableWidget(Button.builder(Component.translatable("phoenix_chronicles.ui.done"), b -> onClose())
                 .bounds(panelX + PANEL_W - 66, footY, 60, 16).build());
     }
 
     private static String modeLabel(EmergencyKit.Repeat repeat) {
-        return "§8Claims: §7" + switch (repeat) {
+        return ChroniclesUIKit.str("phoenix_chronicles.screen.emergency_items.claims", switch (repeat) {
             case INHERIT -> "Inherit";
             case ONCE -> "One use";
             case REPEATABLE -> "Repeatable";
-        } + " §8▾";
+        });
     }
 
     static int parseSeconds(String text) {
@@ -347,9 +356,12 @@ public class EmergencyItemsScreen extends Screen {
 
         int timerY = listTop + VISIBLE_ROWS * ROW_H + 3 + 22;
         g.fill(panelX + 6, timerY - 3, panelX + PANEL_W - 6, timerY - 2, ChroniclesThemePalette.BORDER);
-        g.drawString(font, "§8Timer", panelX + 6, timerY + 2, ChroniclesThemePalette.TEXT_FAINT, false);
-        g.drawString(font, "§8Cooldown", panelX + 122, timerY + 36, ChroniclesThemePalette.TEXT_FAINT, false);
-        g.drawString(font, ChroniclesUIKit.fitText(font, "§7Now: §f" + effectiveSummary(), PANEL_W - 12),
+        g.drawString(font, ChroniclesUIKit.str("phoenix_chronicles.screen.emergency_items.timer"), panelX + 6,
+                timerY + 2, ChroniclesThemePalette.TEXT_FAINT, false);
+        g.drawString(font, ChroniclesUIKit.str("phoenix_chronicles.screen.emergency_items.cooldown"), panelX + 122,
+                timerY + 36, ChroniclesThemePalette.TEXT_FAINT, false);
+        g.drawString(font, ChroniclesUIKit.fitText(font,
+                ChroniclesUIKit.str("phoenix_chronicles.screen.emergency_items.now", effectiveSummary()), PANEL_W - 12),
                 panelX + 6, timerY + 52, ChroniclesThemePalette.TEXT, false);
 
         super.render(g, mouseX, mouseY, partialTick);

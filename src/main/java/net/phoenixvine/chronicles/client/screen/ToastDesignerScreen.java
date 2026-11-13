@@ -95,7 +95,7 @@ public class ToastDesignerScreen extends Screen {
     private int iconScaleY;
 
     public ToastDesignerScreen(Screen parent, QuestNode node) {
-        super(Component.literal("Toast Designer"));
+        super(Component.translatable("phoenix_chronicles.screen.toast_designer.toast_designer"));
         this.parent = parent;
         this.node = node;
         QuestToastConfig existing = QuestToastConfig.getOrNull(node.getId().toString());
@@ -122,14 +122,16 @@ public class ToastDesignerScreen extends Screen {
         int y = 30;
 
         addRenderableWidget(Button.builder(Component.literal(previewType ==
-                QuestToastManager.ToastType.COMPLETED ? "§6Previewing: Complete" : "§bPreviewing: Unlock"),
+                QuestToastManager.ToastType.COMPLETED ?
+                        ChroniclesUIKit.str("phoenix_chronicles.screen.toast_designer.previewing_complete") :
+                        ChroniclesUIKit.str("phoenix_chronicles.screen.toast_designer.previewing_unlock")),
                 b -> {
                     previewType = previewType == QuestToastManager.ToastType.COMPLETED ?
                             QuestToastManager.ToastType.UNLOCKED : QuestToastManager.ToastType.COMPLETED;
                     previewToast = QuestToastManager.makePreviewToast(node, previewType);
                 }).bounds(fx, y, fw, FIELD_H)
                 .tooltip(net.minecraft.client.gui.components.Tooltip.create(
-                        Component.literal("Click to switch which toast text the live preview shows")))
+                        Component.translatable("phoenix_chronicles.screen.toast_designer.click_to_switch_which_toast")))
                 .build());
         y += STRIDE + 6;
 
@@ -175,15 +177,18 @@ public class ToastDesignerScreen extends Screen {
             }
         }
 
-        addRenderableWidget(Button.builder(Component.literal("§aSave"), b -> save())
+        addRenderableWidget(Button.builder(Component.translatable("phoenix_chronicles.ui.save"), b -> save())
                 .bounds(fx, saveY, half, 18).build());
-        addRenderableWidget(Button.builder(Component.literal("§7Cancel"), b -> closeDesigner())
+        addRenderableWidget(Button.builder(Component.translatable("phoenix_chronicles.ui.cancel"), b -> closeDesigner())
                 .bounds(fx + half + 6, saveY, half, 18).build());
         if (hadExistingConfig) {
-            addRenderableWidget(Button.builder(Component.literal("§cReset to default style"), b -> {
-                QuestToastConfig.remove(node.getId().toString());
-                closeDesigner();
-            }).bounds(fx, saveY + 22, fw, 16).build());
+            addRenderableWidget(Button
+                    .builder(Component.translatable("phoenix_chronicles.screen.toast_designer.reset_to_default_style"),
+                            b -> {
+                                QuestToastConfig.remove(node.getId().toString());
+                                closeDesigner();
+                            })
+                    .bounds(fx, saveY + 22, fw, 16).build());
         }
     }
 
@@ -266,8 +271,11 @@ public class ToastDesignerScreen extends Screen {
 
         boldY = y;
         addRenderableWidget(Button.builder(
-                Component.literal(selected != Elem.ICON ? "§7Bold: " + (elemOf(selected).bold ? "§aOn" : "§8Off") :
-                        "§8(no bold for icon)"),
+                Component.literal(selected != Elem.ICON ?
+                        ChroniclesUIKit.str("phoenix_chronicles.screen.toast_designer.bold",
+                                (elemOf(selected).bold ? "§aOn" :
+                                        ChroniclesUIKit.str("phoenix_chronicles.screen.toast_designer.off"))) :
+                        ChroniclesUIKit.str("phoenix_chronicles.screen.toast_designer.no_bold_for_icon")),
                 b -> {
                     if (selected == Elem.ICON) return;
                     elemOf(selected).bold = !elemOf(selected).bold;
@@ -276,39 +284,42 @@ public class ToastDesignerScreen extends Screen {
                 }).bounds(fx, y, fw, FIELD_H).build());
         y += STRIDE + 10;
 
-        addRenderableWidget(Button.builder(Component.literal("§7↺ Reset " + elemPlainLabel(selected)), b -> {
-            switch (selected) {
-                case ICON -> cfg.icon = QuestToastConfig.defaultIcon();
-                case TITLE -> cfg.title = QuestToastConfig.defaultTitle();
-                case LABEL -> cfg.label = QuestToastConfig.defaultLabel();
-            }
-            setFeedback(elemPlainLabel(selected) + " reset to default");
-            rebuildFields();
-        }).bounds(fx, y, fw, FIELD_H)
-                .tooltip(net.minecraft.client.gui.components.Tooltip.create(Component.literal(
-                        "Restores just the currently-selected element (" + elemPlainLabel(selected) +
-                                ") to its default position/scale/color - leaves the other two and the " +
-                                "background untouched")))
+        addRenderableWidget(Button.builder(
+                Component.translatable("phoenix_chronicles.screen.toast_designer.reset", elemPlainLabel(selected)),
+                b -> {
+                    switch (selected) {
+                        case ICON -> cfg.icon = QuestToastConfig.defaultIcon();
+                        case TITLE -> cfg.title = QuestToastConfig.defaultTitle();
+                        case LABEL -> cfg.label = QuestToastConfig.defaultLabel();
+                    }
+                    setFeedback(ChroniclesUIKit.str("phoenix_chronicles.screen.toast_designer.reset_to_default",
+                            elemPlainLabel(selected)));
+                    rebuildFields();
+                }).bounds(fx, y, fw, FIELD_H)
+                .tooltip(net.minecraft.client.gui.components.Tooltip.create(Component.translatable(
+                        "phoenix_chronicles.screen.toast_designer.restores_just_the_currently_selected",
+                        elemPlainLabel(selected))))
                 .build());
     }
 
     private void initIconsTab(int fx, int fw, int y) {
         int iconBtnW = (fw - 8) / 3;
-        addRenderableWidget(Button.builder(Component.literal("§7+ Item"), b -> {
+        addRenderableWidget(Button.builder(Component.translatable("phoenix_chronicles.ui.item"), b -> {
             if (minecraft != null) minecraft.setScreen(new ItemPickerScreen(this, stack -> {
                 ResourceLocation id = BuiltInRegistries.ITEM.getKey(stack.getItem());
                 if (id != null) addIconEntry(QuestGroup.IconKind.ITEM, id.toString());
             }));
         }).bounds(fx, y, iconBtnW, FIELD_H).build());
-        addRenderableWidget(Button.builder(Component.literal("§3+ Fluid"), b -> {
+        addRenderableWidget(Button.builder(Component.translatable("phoenix_chronicles.ui.fluid"), b -> {
             if (minecraft != null) minecraft.setScreen(new FluidPickerScreen(this,
                     fluidId -> addIconEntry(QuestGroup.IconKind.FLUID, fluidId)));
         }).bounds(fx + iconBtnW + 4, y, iconBtnW, FIELD_H).build());
 
-        addRenderableWidget(Button.builder(Component.literal("§d+ Tex"), b -> {
-            if (minecraft != null) minecraft.setScreen(new TextureBrowserScreen(this,
-                    texId -> addIconEntry(QuestGroup.IconKind.TEXTURE, texId)));
-        }).bounds(fx + (iconBtnW + 4) * 2, y, iconBtnW, FIELD_H).build());
+        addRenderableWidget(
+                Button.builder(Component.translatable("phoenix_chronicles.screen.toast_designer.tex"), b -> {
+                    if (minecraft != null) minecraft.setScreen(new TextureBrowserScreen(this,
+                            texId -> addIconEntry(QuestGroup.IconKind.TEXTURE, texId)));
+                }).bounds(fx + (iconBtnW + 4) * 2, y, iconBtnW, FIELD_H).build());
         y += FIELD_H + 8;
         iconSetY = y;
         y += 10;
@@ -328,11 +339,14 @@ public class ToastDesignerScreen extends Screen {
             });
             addRenderableWidget(iconScaleBox);
             y += STRIDE + 8;
-            addRenderableWidget(Button.builder(Component.literal("§c✕ Remove selected icon"), b -> {
-                cfg.icons.remove(selectedIconIndex);
-                selectedIconIndex = -1;
-                rebuildFields();
-            }).bounds(fx, y, fw, FIELD_H).build());
+            addRenderableWidget(Button
+                    .builder(Component.translatable("phoenix_chronicles.screen.toast_designer.remove_selected_icon"),
+                            b -> {
+                                cfg.icons.remove(selectedIconIndex);
+                                selectedIconIndex = -1;
+                                rebuildFields();
+                            })
+                    .bounds(fx, y, fw, FIELD_H).build());
         }
     }
 
@@ -365,14 +379,15 @@ public class ToastDesignerScreen extends Screen {
         addRenderableWidget(bgPadYBox);
         y += STRIDE + 8;
 
-        addRenderableWidget(Button.builder(Component.literal("§7⊡ Fit to elements now"), b -> {
-            fitBackgroundToElements();
-            setFeedback("Background fit to current elements");
-            rebuildFields();
-        }).bounds(fx, y, fw, FIELD_H)
+        addRenderableWidget(Button
+                .builder(Component.translatable("phoenix_chronicles.screen.toast_designer.fit_to_elements_now"), b -> {
+                    fitBackgroundToElements();
+                    setFeedback(ChroniclesUIKit
+                            .str("phoenix_chronicles.screen.toast_designer.background_fit_to_current_elements"));
+                    rebuildFields();
+                }).bounds(fx, y, fw, FIELD_H)
                 .tooltip(net.minecraft.client.gui.components.Tooltip.create(Component.literal(
-                        "One-time snap to snugly wrap the icon/title/label's CURRENT positions - " +
-                                "the background never auto-follows them, this is the only way to resync it")))
+                        ChroniclesUIKit.str("phoenix_chronicles.screen.toast_designer.one_time_snap_to_snugly"))))
                 .build());
         y += STRIDE + 10;
 
@@ -380,7 +395,7 @@ public class ToastDesignerScreen extends Screen {
             phantasiaY = y;
             phantasiaIdBox = new EditBox(font, fx, y + 11, fw, FIELD_H, Component.empty());
             phantasiaIdBox.setMaxLength(128);
-            phantasiaIdBox.setHint(Component.literal("§8Phantasia machine id (optional)"));
+            phantasiaIdBox.setHint(Component.translatable("phoenix_chronicles.ui.phantasia_machine_id_optional"));
             phantasiaIdBox.setValue(cfg.phantasiaMachineId);
             phantasiaIdBox.setResponder(v -> cfg.phantasiaMachineId = v);
             addRenderableWidget(phantasiaIdBox);
@@ -450,31 +465,42 @@ public class ToastDesignerScreen extends Screen {
 
     private void initPresetsTab(int fx, int fw, int y) {
         int presetHalfW = (fw - 6) / 2;
-        addRenderableWidget(Button.builder(Component.literal("§7⎘ Copy design"), b -> {
-            toastClipboard = cfg.copy();
-            setFeedback("Design copied");
-        }).bounds(fx, y, presetHalfW, FIELD_H).build());
+        addRenderableWidget(
+                Button.builder(Component.translatable("phoenix_chronicles.screen.toast_designer.copy_design"), b -> {
+                    toastClipboard = cfg.copy();
+                    setFeedback(ChroniclesUIKit.str("phoenix_chronicles.screen.toast_designer.design_copied"));
+                }).bounds(fx, y, presetHalfW, FIELD_H).build());
         addRenderableWidget(Button.builder(
-                Component.literal(toastClipboard != null ? "§7⎗ Paste design" : "§8⎗ Paste (none copied)"), b -> {
+                Component.literal(toastClipboard != null ?
+                        ChroniclesUIKit.str("phoenix_chronicles.screen.toast_designer.paste_design") :
+                        ChroniclesUIKit.str("phoenix_chronicles.screen.toast_designer.paste_none_copied")),
+                b -> {
                     if (toastClipboard != null) {
                         cfg = toastClipboard.copy();
-                        setFeedback("Design pasted");
+                        setFeedback(ChroniclesUIKit.str("phoenix_chronicles.screen.toast_designer.design_pasted"));
                         rebuildFields();
                     }
                 }).bounds(fx + presetHalfW + 6, y, presetHalfW, FIELD_H).build());
         y += STRIDE + 8;
 
         presetY = y;
-        addRenderableWidget(Button.builder(Component.literal("§7Save as preset…"), b -> {
-            if (minecraft != null) minecraft.setScreen(new QuestTextInputScreen(this, "Preset Name", "", 32, name -> {
-                if (name != null && !name.isBlank()) {
-                    QuestToastPresetRegistry.put(name.trim(), cfg.copy());
-                    setFeedback("Saved preset '" + name.trim() + "'");
-                }
-            }));
-        }).bounds(fx, y, presetHalfW, FIELD_H).build());
-        addRenderableWidget(Button.builder(Component.literal("§7Load preset ▾"),
-                b -> presetDropOpen = !presetDropOpen).bounds(fx + presetHalfW + 6, y, presetHalfW, FIELD_H).build());
+        addRenderableWidget(
+                Button.builder(Component.translatable("phoenix_chronicles.screen.toast_designer.save_as_preset"), b -> {
+                    if (minecraft != null)
+                        minecraft.setScreen(new QuestTextInputScreen(this,
+                                ChroniclesUIKit.str("phoenix_chronicles.screen.toast_designer.preset_name"), "", 32,
+                                name -> {
+                                    if (name != null && !name.isBlank()) {
+                                        QuestToastPresetRegistry.put(name.trim(), cfg.copy());
+                                        setFeedback(ChroniclesUIKit.str(
+                                                "phoenix_chronicles.screen.toast_designer.saved_preset", name.trim()));
+                                    }
+                                }));
+                }).bounds(fx, y, presetHalfW, FIELD_H).build());
+        addRenderableWidget(Button
+                .builder(Component.translatable("phoenix_chronicles.screen.toast_designer.load_preset"),
+                        b -> presetDropOpen = !presetDropOpen)
+                .bounds(fx + presetHalfW + 6, y, presetHalfW, FIELD_H).build());
     }
 
     private void rebuildFields() {
@@ -556,7 +582,8 @@ public class ToastDesignerScreen extends Screen {
         int px = vw - PANEL_W;
         g.fill(px, 0, vw, vh, ChroniclesThemePalette.PANEL);
         g.fill(px, 0, px + 1, vh, ChroniclesThemePalette.BORDER);
-        g.drawCenteredString(font, "§eToast Designer", px + PANEL_W / 2, 8, ChroniclesThemePalette.TEXT);
+        g.drawCenteredString(font, ChroniclesUIKit.str("phoenix_chronicles.screen.toast_designer.toast_designer_2"),
+                px + PANEL_W / 2, 8, ChroniclesThemePalette.TEXT);
         g.drawString(font, "§8" + shortTitle(), px + MARGIN, 18, ChroniclesThemePalette.TEXT_FAINT, false);
 
         int fx = px + MARGIN;
@@ -565,24 +592,35 @@ public class ToastDesignerScreen extends Screen {
         g.enableScissor(px, contentTop, vw, contentBottom);
         switch (activeTab) {
             case ELEMENT -> {
-                g.drawString(font, "§8Position (% X, Y)", fx, positionY, ChroniclesThemePalette.TEXT_FAINT);
-                g.drawString(font, "§8Scale", fx, scaleY, ChroniclesThemePalette.TEXT_FAINT);
-                g.drawString(font, "§8Text Color", fx, colorY, ChroniclesThemePalette.TEXT_FAINT);
+                g.drawString(font, ChroniclesUIKit.label("phoenix_chronicles.screen.toast_designer.position_x_y"), fx,
+                        positionY, ChroniclesThemePalette.TEXT_FAINT);
+                g.drawString(font, ChroniclesUIKit.str("phoenix_chronicles.screen.toast_designer.scale"), fx, scaleY,
+                        ChroniclesThemePalette.TEXT_FAINT);
+                g.drawString(font, ChroniclesUIKit.str("phoenix_chronicles.screen.toast_designer.text_color"), fx,
+                        colorY, ChroniclesThemePalette.TEXT_FAINT);
             }
             case ICONS -> {
-                g.drawString(font, "§8Icon Set §7(overrides icon)", fx, iconSetY - 9,
+                g.drawString(font,
+                        ChroniclesUIKit.str("phoenix_chronicles.screen.toast_designer.icon_set_overrides_icon"), fx,
+                        iconSetY - 9,
                         ChroniclesThemePalette.TEXT_FAINT);
                 renderIconStrip(g, mx, my, fx, iconStripY);
                 if (selectedIconIndex >= 0 && selectedIconIndex < cfg.icons.size()) {
-                    g.drawString(font, "§8Scale (selected icon)", fx, iconScaleY, ChroniclesThemePalette.TEXT_FAINT);
+                    g.drawString(font,
+                            ChroniclesUIKit.str("phoenix_chronicles.screen.toast_designer.scale_selected_icon"), fx,
+                            iconScaleY, ChroniclesThemePalette.TEXT_FAINT);
                 }
             }
             case BACKGROUND -> {
-                g.drawString(font, "§8Background size (W × H)", fx, sizeY, ChroniclesThemePalette.TEXT_FAINT);
+                g.drawString(font, ChroniclesUIKit.str("phoenix_chronicles.screen.toast_designer.background_size_w_h"),
+                        fx, sizeY, ChroniclesThemePalette.TEXT_FAINT);
                 if (PHANTASIA) {
-                    g.drawString(font, "§8Phantasia §7(optional)", fx, phantasiaY, ChroniclesThemePalette.TEXT_FAINT);
+                    g.drawString(font,
+                            ChroniclesUIKit.str("phoenix_chronicles.screen.toast_designer.phantasia_optional"), fx,
+                            phantasiaY, ChroniclesThemePalette.TEXT_FAINT);
                 }
-                g.drawString(font, "§8Background / Accent", fx, bgColorY, ChroniclesThemePalette.TEXT_FAINT);
+                g.drawString(font, ChroniclesUIKit.str("phoenix_chronicles.screen.toast_designer.background_accent"),
+                        fx, bgColorY, ChroniclesThemePalette.TEXT_FAINT);
             }
             case PRESETS -> {
 
@@ -599,7 +637,8 @@ public class ToastDesignerScreen extends Screen {
         } else {
 
             List<net.minecraft.util.FormattedCharSequence> hintLines = font
-                    .split(Component.literal("§8Drag elements in the preview to move them"), fw);
+                    .split(Component
+                            .translatable("phoenix_chronicles.screen.toast_designer.drag_elements_in_the_preview"), fw);
             int hy = hintY;
             for (net.minecraft.util.FormattedCharSequence line : hintLines) {
                 g.drawString(font, line, fx, hy, ChroniclesThemePalette.TEXT_FAINT, false);
@@ -619,7 +658,8 @@ public class ToastDesignerScreen extends Screen {
                 int dy = presetY + FIELD_H;
                 g.fill(dx, dy, dx + dw, dy + ROW_H, ChroniclesThemePalette.PANEL);
                 ChroniclesUIKit.drawBorder(g, dx, dy, dw, ROW_H, ChroniclesThemePalette.BORDER);
-                g.drawString(font, "§8(no presets saved yet)", dx + 4, dy + 4, ChroniclesThemePalette.TEXT_FAINT,
+                g.drawString(font, ChroniclesUIKit.str("phoenix_chronicles.screen.toast_designer.no_presets_saved_yet"),
+                        dx + 4, dy + 4, ChroniclesThemePalette.TEXT_FAINT,
                         false);
             } else {
                 ChroniclesUIKit.drawDropdown(g, font, names, s -> s, -1, dx, presetY + FIELD_H, dw, ROW_H,
@@ -642,7 +682,9 @@ public class ToastDesignerScreen extends Screen {
         hoveredIconIndex = -1;
         hoveredRemoveIconIndex = -1;
         if (cfg.icons.isEmpty()) {
-            g.drawString(font, "§8(none: auto quest icon used)", x, y + 4, ChroniclesThemePalette.TEXT_FAINT, false);
+            g.drawString(font,
+                    ChroniclesUIKit.str("phoenix_chronicles.screen.toast_designer.none_auto_quest_icon_used"), x, y + 4,
+                    ChroniclesThemePalette.TEXT_FAINT, false);
             return;
         }
         int ix = x;
@@ -788,7 +830,8 @@ public class ToastDesignerScreen extends Screen {
                         QuestToastConfig preset = QuestToastPresetRegistry.getOrNull(names.get(i));
                         if (preset != null) {
                             cfg = preset.copy();
-                            setFeedback("Loaded preset '" + names.get(i) + "'");
+                            setFeedback(ChroniclesUIKit.str("phoenix_chronicles.screen.toast_designer.loaded_preset",
+                                    names.get(i)));
                             rebuildFields();
                         }
                         presetDropOpen = false;

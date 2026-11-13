@@ -6,6 +6,7 @@ import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.network.chat.Component;
+import net.phoenixvine.chronicles.client.render.ChroniclesUIKit;
 import net.phoenixvine.chronicles.client.render.background.BackgroundRenderUtil;
 import net.phoenixvine.chronicles.client.render.shader.DynamicShaderManager;
 import net.phoenixvine.wiki.theme.PhoenixTheme;
@@ -75,15 +76,17 @@ public class ShaderPickerScreen extends Screen {
 
         g.fill(0, 0, width, HEADER_H, C_PANEL);
         g.fill(0, HEADER_H - 1, width, HEADER_H, C_BORDER);
-        g.drawCenteredString(font, "§fShader Browser", width / 2, 6, C_TEXT);
-        g.drawString(font, "§8Search:", width / 2 - 100 - font.width("Search: "), HEADER_H / 2 - 3, C_FAINT, false);
+        g.drawCenteredString(font, ChroniclesUIKit.str("phoenix_chronicles.screen.shader_picker.shader_browser"),
+                width / 2, 6, C_TEXT);
+        g.drawString(font, ChroniclesUIKit.str("phoenix_chronicles.ui.search"),
+                width / 2 - 100 - font.width("Search: "), HEADER_H / 2 - 3, C_FAINT, false);
 
         int fy = height - FOOTER_H;
         g.fill(0, fy, width, height, C_PANEL);
         g.fill(0, fy, width, fy + 1, C_BORDER);
-        g.drawString(font, "§8" + filtered.size() +
-                " Shaders  ·  LMB to select  ·  RMB to copy id  ·  live preview, so a broken" +
-                " shader shows §c⚠",
+        g.drawString(font,
+                ChroniclesUIKit.str("phoenix_chronicles.screen.shader_picker.shaders_lmb_to_select_rmb",
+                        filtered.size()),
                 8, fy + 10, C_FAINT, false);
 
         g.enableScissor(0, HEADER_H, width, fy);
@@ -143,7 +146,8 @@ public class ShaderPickerScreen extends Screen {
         g.disableScissor();
 
         if (filtered.isEmpty()) {
-            g.drawCenteredString(font, "§8No .frag files in config/phoenix_chronicles/shaders/",
+            g.drawCenteredString(font,
+                    ChroniclesUIKit.str("phoenix_chronicles.screen.shader_picker.no_frag_files_in_config"),
                     width / 2, HEADER_H + 20, C_FAINT);
         }
 

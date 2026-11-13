@@ -2,7 +2,7 @@ package net.phoenixvine.chronicles.integration.conflux;
 
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
-import net.phoenix.core.api.ConfluxApi;
+import net.phoenix.conflux.api.ConfluxApi;
 
 final class ConfluxBridge {
 

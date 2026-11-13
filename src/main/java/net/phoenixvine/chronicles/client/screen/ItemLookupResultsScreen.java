@@ -9,6 +9,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.phoenixvine.chronicles.client.render.ChroniclesUIKit;
 import net.phoenixvine.chronicles.client.util.ChapterConfig;
 import net.phoenixvine.chronicles.client.util.HiddenParts;
 import net.phoenixvine.chronicles.common.model.QuestNode;
@@ -80,7 +81,10 @@ public class ItemLookupResultsScreen extends Screen {
         g.fill(0, HEADER_H - 1, width, HEADER_H, border);
 
         String itemName = lookupStack.getHoverName().getString();
-        g.drawCenteredString(font, "§f" + itemName + " §8: §7used by " + matches.size() + " quest(s)", width / 2,
+        g.drawCenteredString(font,
+                ChroniclesUIKit.str("phoenix_chronicles.screen.item_lookup_results.used_by_quest_s", itemName,
+                        matches.size()),
+                width / 2,
                 10, text);
 
         g.fill(0, height - FOOTER_H, width, height, header);
@@ -133,7 +137,8 @@ public class ItemLookupResultsScreen extends Screen {
         g.disableScissor();
 
         if (matches.isEmpty()) {
-            g.drawCenteredString(font, "§8No matches.", width / 2, (listTop() + listBottom()) / 2, textDim);
+            g.drawCenteredString(font, ChroniclesUIKit.str("phoenix_chronicles.screen.item_lookup_results.no_matches"),
+                    width / 2, (listTop() + listBottom()) / 2, textDim);
         }
 
         super.render(g, mx, my, partial);

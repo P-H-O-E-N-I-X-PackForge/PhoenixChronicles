@@ -102,10 +102,12 @@ public class NewChapterScreen extends Screen {
         g.pose().translate(0f, 0f, 300f);
 
         ChroniclesUIKit.drawModalChrome(g, font, width, height, panelLeft, panelTop, PANEL_W, PANEL_H, 22,
-                "§bNew Chapter", ChroniclesThemePalette.PANEL, ChroniclesThemePalette.HEADER,
+                ChroniclesUIKit.str("phoenix_chronicles.screen.new_chapter.new_chapter"), ChroniclesThemePalette.PANEL,
+                ChroniclesThemePalette.HEADER,
                 ACCENT, ChroniclesThemePalette.TEXT);
 
-        g.drawString(font, "§8Chapter name", panelLeft + MARGIN, panelTop + 24, ChroniclesThemePalette.TEXT_FAINT,
+        g.drawString(font, ChroniclesUIKit.str("phoenix_chronicles.screen.new_chapter.chapter_name"),
+                panelLeft + MARGIN, panelTop + 24, ChroniclesThemePalette.TEXT_FAINT,
                 false);
 
         g.flush();

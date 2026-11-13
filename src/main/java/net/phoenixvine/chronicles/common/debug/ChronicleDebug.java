@@ -8,11 +8,6 @@ import net.phoenixvine.chronicles.common.model.QuestTask;
 
 import java.util.List;
 
-/**
- * Quest debugging. {@code /chronicles debug <quest>} watches one quest: every time its tasks are evaluated (and
- * whenever its state changes) the result is written to the server log, with the reason an item task did or did not
- * match. {@code /chronicles diagnose <quest>} prints the same picture once, to chat and the log.
- */
 public final class ChronicleDebug {
 
     private ChronicleDebug() {}
@@ -36,7 +31,6 @@ public final class ChronicleDebug {
         PhoenixChronicles.LOGGER.info("[Chronicles debug] " + message, args);
     }
 
-    /** One line per task: how it evaluates for this player right now, and why. */
     public static List<String> describeTasks(Player player, QuestNode node) {
         List<String> out = new java.util.ArrayList<>();
         List<QuestTask> tasks = node.getEffectiveTasks(player.getServer(), player);

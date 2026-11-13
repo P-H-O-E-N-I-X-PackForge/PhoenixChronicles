@@ -1039,23 +1039,37 @@ public class DependencyLineRenderer {
         boolean isCosmetic = childNode.isPrereqCosmetic(lineCtxParentId);
 
         String cycleLabel;
-        if (isForbidden) cycleLabel = "§aType: Forbidden  →  Required";
-        else if (!isRequired) cycleLabel = "§cType: Optional  →  Forbidden";
-        else cycleLabel = "§eType: Required  →  Optional";
+        if (isForbidden) cycleLabel = ChroniclesUIKit
+                .str("phoenix_chronicles.screen.dependency_line_renderer.type_forbidden_required");
+        else if (!isRequired) cycleLabel = ChroniclesUIKit
+                .str("phoenix_chronicles.screen.dependency_line_renderer.type_optional_forbidden");
+        else cycleLabel = ChroniclesUIKit
+                .str("phoenix_chronicles.screen.dependency_line_renderer.type_required_optional");
 
-        String linkLabel = isLink ? "§7Unmark as link" : "§dMark as link";
-        String cosmeticLabel = isCosmetic ? "§7Unmark as cosmetic-only" : "§6Mark as cosmetic-only (no gate)";
+        String linkLabel = isLink ?
+                ChroniclesUIKit.str("phoenix_chronicles.screen.dependency_line_renderer.unmark_as_link") :
+                ChroniclesUIKit.str("phoenix_chronicles.screen.dependency_line_renderer.mark_as_link");
+        String cosmeticLabel = isCosmetic ?
+                ChroniclesUIKit.str("phoenix_chronicles.screen.dependency_line_renderer.unmark_as_cosmetic_only") :
+                ChroniclesUIKit.str("phoenix_chronicles.screen.dependency_line_renderer.mark_as_cosmetic_only_no");
         boolean childHidesLines = childNode.isHideDepLine();
-        String hideLabel = childHidesLines ? "§aShow dep lines: " + childNode.getTitle().getString() :
-                "§8Hide dep lines: " + childNode.getTitle().getString();
+        String hideLabel = childHidesLines ?
+                ChroniclesUIKit.str("phoenix_chronicles.screen.dependency_line_renderer.show_dep_lines",
+                        childNode.getTitle().getString()) :
+                ChroniclesUIKit.str("phoenix_chronicles.screen.dependency_line_renderer.hide_dep_lines",
+                        childNode.getTitle().getString());
 
-        String shapeLabel = "§7Line shape: §f" + lineOverrideLabel(childNode.getPrereqLineShape(lineCtxParentId));
-        String visualLabel = "§7Line style: §f" + lineOverrideLabel(childNode.getPrereqLineVisual(lineCtxParentId));
-        String speedLabel = "§7Dot speed: §f" + lineOverrideLabel(childNode.getPrereqLineSpeed(lineCtxParentId));
-        String arrowLabel = "§7Arrow: §f" + arrowOverrideLabel(childNode.getPrereqLineArrow(lineCtxParentId));
+        String shapeLabel = ChroniclesUIKit.str("phoenix_chronicles.screen.dependency_line_renderer.line_shape_2",
+                lineOverrideLabel(childNode.getPrereqLineShape(lineCtxParentId)));
+        String visualLabel = ChroniclesUIKit.str("phoenix_chronicles.screen.dependency_line_renderer.line_style_2",
+                lineOverrideLabel(childNode.getPrereqLineVisual(lineCtxParentId)));
+        String speedLabel = ChroniclesUIKit.str("phoenix_chronicles.screen.dependency_line_renderer.dot_speed_2",
+                lineOverrideLabel(childNode.getPrereqLineSpeed(lineCtxParentId)));
+        String arrowLabel = ChroniclesUIKit.str("phoenix_chronicles.screen.dependency_line_renderer.arrow_2",
+                arrowOverrideLabel(childNode.getPrereqLineArrow(lineCtxParentId)));
 
         String[] labels = {
-                "§cRemove connection",
+                ChroniclesUIKit.str("phoenix_chronicles.screen.dependency_line_renderer.remove_connection"),
                 cycleLabel,
                 linkLabel,
                 cosmeticLabel,
@@ -1064,7 +1078,7 @@ public class DependencyLineRenderer {
                 visualLabel,
                 speedLabel,
                 arrowLabel,
-                "§bDependency line settings…"
+                ChroniclesUIKit.str("phoenix_chronicles.screen.dependency_line_renderer.dependency_line_settings")
         };
         int menuW = 210, itemH = 14, pad = 4;
         int menuH = pad + labels.length * itemH + pad;
@@ -1094,11 +1108,13 @@ public class DependencyLineRenderer {
     }
 
     private static String lineOverrideLabel(Enum<?> override) {
-        return override == null ? "§8Inherit" : override.name();
+        return override == null ? ChroniclesUIKit.str("phoenix_chronicles.screen.dependency_line_renderer.inherit") :
+                override.name();
     }
 
     private static String arrowOverrideLabel(Boolean override) {
-        return override == null ? "§8Inherit" : (override ? "ON" : "OFF");
+        return override == null ? ChroniclesUIKit.str("phoenix_chronicles.screen.dependency_line_renderer.inherit") :
+                (override ? "ON" : "OFF");
     }
 
     private static Boolean cycleArrowOverride(Boolean current) {
@@ -1159,27 +1175,31 @@ public class DependencyLineRenderer {
             QuestFileSaver.updateNodePrerequisites(childNode);
             requestRebuild.run();
             feedback.accept(
-                    "Removed: " + parentNode.getTitle().getString() + " → " + childNode.getTitle().getString());
-            pushUndo.push("Undo: dependency connection restored", () -> {
-                childNode.addPrerequisite(parentNode);
-                if (wasChild) parentNode.addChild(childNode);
-                childNode.setPrereqRequired(lineCtxParentId, oldRequired);
-                childNode.setPrereqForbidden(lineCtxParentId, oldForbidden);
-                childNode.setPrereqLink(lineCtxParentId, oldLink);
-                childNode.setPrereqCosmetic(lineCtxParentId, oldCosmetic);
-                childNode.setPrereqLineShape(lineCtxParentId, oldShape);
-                childNode.setPrereqLineVisual(lineCtxParentId, oldVisual);
-                childNode.setPrereqLineSpeed(lineCtxParentId, oldSpeed);
-                childNode.setPrereqLineArrow(lineCtxParentId, oldArrow);
-                childNode.setPrereqLineStyleId(lineCtxParentId, oldStyleId);
-                QuestFileSaver.updateNodePrerequisites(childNode);
-                requestRebuild.run();
-            }, () -> {
-                childNode.removePrerequisite(parentNode);
-                parentNode.removeChild(childNode);
-                QuestFileSaver.updateNodePrerequisites(childNode);
-                requestRebuild.run();
-            });
+                    ChroniclesUIKit.str("phoenix_chronicles.screen.dependency_line_renderer.removed",
+                            parentNode.getTitle().getString(), childNode.getTitle().getString()));
+            pushUndo.push(
+                    ChroniclesUIKit.str(
+                            "phoenix_chronicles.screen.dependency_line_renderer.undo_dependency_connection_restored"),
+                    () -> {
+                        childNode.addPrerequisite(parentNode);
+                        if (wasChild) parentNode.addChild(childNode);
+                        childNode.setPrereqRequired(lineCtxParentId, oldRequired);
+                        childNode.setPrereqForbidden(lineCtxParentId, oldForbidden);
+                        childNode.setPrereqLink(lineCtxParentId, oldLink);
+                        childNode.setPrereqCosmetic(lineCtxParentId, oldCosmetic);
+                        childNode.setPrereqLineShape(lineCtxParentId, oldShape);
+                        childNode.setPrereqLineVisual(lineCtxParentId, oldVisual);
+                        childNode.setPrereqLineSpeed(lineCtxParentId, oldSpeed);
+                        childNode.setPrereqLineArrow(lineCtxParentId, oldArrow);
+                        childNode.setPrereqLineStyleId(lineCtxParentId, oldStyleId);
+                        QuestFileSaver.updateNodePrerequisites(childNode);
+                        requestRebuild.run();
+                    }, () -> {
+                        childNode.removePrerequisite(parentNode);
+                        parentNode.removeChild(childNode);
+                        QuestFileSaver.updateNodePrerequisites(childNode);
+                        requestRebuild.run();
+                    });
         } else if (idx == 1) {
 
             boolean oldRequired = isRequired;
@@ -1187,79 +1207,98 @@ public class DependencyLineRenderer {
             if (isForbidden) {
                 childNode.setPrereqForbidden(lineCtxParentId, false);
                 childNode.setPrereqRequired(lineCtxParentId, true);
-                feedback.accept("Prereq type: Required");
+                feedback.accept(
+                        ChroniclesUIKit.str("phoenix_chronicles.screen.dependency_line_renderer.prereq_type_required"));
             } else if (!isRequired) {
                 childNode.setPrereqForbidden(lineCtxParentId, true);
-                feedback.accept("Prereq type: Forbidden (must NOT be completed)");
+                feedback.accept(ChroniclesUIKit
+                        .str("phoenix_chronicles.screen.dependency_line_renderer.prereq_type_forbidden_must_not"));
             } else {
                 childNode.setPrereqRequired(lineCtxParentId, false);
-                feedback.accept("Prereq type: Optional");
+                feedback.accept(
+                        ChroniclesUIKit.str("phoenix_chronicles.screen.dependency_line_renderer.prereq_type_optional"));
             }
             boolean newRequired = childNode.isPrereqRequired(lineCtxParentId);
             boolean newForbidden = childNode.isPrereqForbidden(lineCtxParentId);
             QuestFileSaver.updateNodePrerequisites(childNode);
             requestRebuild.run();
-            pushUndo.push("Undo: prereq type reverted", () -> {
-                childNode.setPrereqRequired(lineCtxParentId, oldRequired);
-                childNode.setPrereqForbidden(lineCtxParentId, oldForbidden);
-                QuestFileSaver.updateNodePrerequisites(childNode);
-                requestRebuild.run();
-            }, () -> {
-                childNode.setPrereqRequired(lineCtxParentId, newRequired);
-                childNode.setPrereqForbidden(lineCtxParentId, newForbidden);
-                QuestFileSaver.updateNodePrerequisites(childNode);
-                requestRebuild.run();
-            });
+            pushUndo.push(
+                    ChroniclesUIKit.str("phoenix_chronicles.screen.dependency_line_renderer.undo_prereq_type_reverted"),
+                    () -> {
+                        childNode.setPrereqRequired(lineCtxParentId, oldRequired);
+                        childNode.setPrereqForbidden(lineCtxParentId, oldForbidden);
+                        QuestFileSaver.updateNodePrerequisites(childNode);
+                        requestRebuild.run();
+                    }, () -> {
+                        childNode.setPrereqRequired(lineCtxParentId, newRequired);
+                        childNode.setPrereqForbidden(lineCtxParentId, newForbidden);
+                        QuestFileSaver.updateNodePrerequisites(childNode);
+                        requestRebuild.run();
+                    });
         } else if (idx == 2) {
 
             boolean oldLink = isLink;
             childNode.setPrereqLink(lineCtxParentId, !isLink);
             QuestFileSaver.updateNodePrerequisites(childNode);
             requestRebuild.run();
-            feedback.accept(isLink ? "Unmarked as link" : "Marked as link");
-            pushUndo.push("Undo: link mark reverted", () -> {
-                childNode.setPrereqLink(lineCtxParentId, oldLink);
-                QuestFileSaver.updateNodePrerequisites(childNode);
-                requestRebuild.run();
-            }, () -> {
-                childNode.setPrereqLink(lineCtxParentId, !oldLink);
-                QuestFileSaver.updateNodePrerequisites(childNode);
-                requestRebuild.run();
-            });
+            feedback.accept(isLink ?
+                    ChroniclesUIKit.str("phoenix_chronicles.screen.dependency_line_renderer.unmarked_as_link") :
+                    ChroniclesUIKit.str("phoenix_chronicles.screen.dependency_line_renderer.marked_as_link"));
+            pushUndo.push(
+                    ChroniclesUIKit.str("phoenix_chronicles.screen.dependency_line_renderer.undo_link_mark_reverted"),
+                    () -> {
+                        childNode.setPrereqLink(lineCtxParentId, oldLink);
+                        QuestFileSaver.updateNodePrerequisites(childNode);
+                        requestRebuild.run();
+                    }, () -> {
+                        childNode.setPrereqLink(lineCtxParentId, !oldLink);
+                        QuestFileSaver.updateNodePrerequisites(childNode);
+                        requestRebuild.run();
+                    });
         } else if (idx == 3) {
 
             boolean oldCosmetic = isCosmetic;
             childNode.setPrereqCosmetic(lineCtxParentId, !isCosmetic);
             QuestFileSaver.updateNodePrerequisites(childNode);
             requestRebuild.run();
-            feedback.accept(isCosmetic ? "Unmarked as cosmetic-only (now gates unlock)" :
-                    "Marked as cosmetic-only (no longer gates unlock)");
-            pushUndo.push("Undo: cosmetic mark reverted", () -> {
-                childNode.setPrereqCosmetic(lineCtxParentId, oldCosmetic);
-                QuestFileSaver.updateNodePrerequisites(childNode);
-                requestRebuild.run();
-            }, () -> {
-                childNode.setPrereqCosmetic(lineCtxParentId, !oldCosmetic);
-                QuestFileSaver.updateNodePrerequisites(childNode);
-                requestRebuild.run();
-            });
+            feedback.accept(isCosmetic ?
+                    ChroniclesUIKit
+                            .str("phoenix_chronicles.screen.dependency_line_renderer.unmarked_as_cosmetic_only_now") :
+                    ChroniclesUIKit
+                            .str("phoenix_chronicles.screen.dependency_line_renderer.marked_as_cosmetic_only_no"));
+            pushUndo.push(ChroniclesUIKit
+                    .str("phoenix_chronicles.screen.dependency_line_renderer.undo_cosmetic_mark_reverted"), () -> {
+                        childNode.setPrereqCosmetic(lineCtxParentId, oldCosmetic);
+                        QuestFileSaver.updateNodePrerequisites(childNode);
+                        requestRebuild.run();
+                    }, () -> {
+                        childNode.setPrereqCosmetic(lineCtxParentId, !oldCosmetic);
+                        QuestFileSaver.updateNodePrerequisites(childNode);
+                        requestRebuild.run();
+                    });
         } else if (idx == 4) {
 
             boolean oldHide = childNode.isHideDepLine();
             childNode.setHideDepLine(!oldHide);
             QuestFileSaver.updateHideDepLine(childNode);
             requestRebuild.run();
-            feedback.accept(childNode.isHideDepLine() ? "Dep lines hidden: " + childNode.getTitle().getString() :
-                    "Dep lines shown: " + childNode.getTitle().getString());
-            pushUndo.push("Undo: dep line visibility reverted", () -> {
-                childNode.setHideDepLine(oldHide);
-                QuestFileSaver.updateHideDepLine(childNode);
-                requestRebuild.run();
-            }, () -> {
-                childNode.setHideDepLine(!oldHide);
-                QuestFileSaver.updateHideDepLine(childNode);
-                requestRebuild.run();
-            });
+            feedback.accept(childNode.isHideDepLine() ?
+                    ChroniclesUIKit.str("phoenix_chronicles.screen.dependency_line_renderer.dep_lines_hidden",
+                            childNode.getTitle().getString()) :
+                    ChroniclesUIKit.str("phoenix_chronicles.screen.dependency_line_renderer.dep_lines_shown",
+                            childNode.getTitle().getString()));
+            pushUndo.push(
+                    ChroniclesUIKit.str(
+                            "phoenix_chronicles.screen.dependency_line_renderer.undo_dep_line_visibility_reverted"),
+                    () -> {
+                        childNode.setHideDepLine(oldHide);
+                        QuestFileSaver.updateHideDepLine(childNode);
+                        requestRebuild.run();
+                    }, () -> {
+                        childNode.setHideDepLine(!oldHide);
+                        QuestFileSaver.updateHideDepLine(childNode);
+                        requestRebuild.run();
+                    });
         } else if (idx == 5) {
 
             var oldShape = childNode.getPrereqLineShape(lineCtxParentId);
@@ -1267,16 +1306,19 @@ public class DependencyLineRenderer {
             childNode.setPrereqLineShape(lineCtxParentId, next);
             QuestFileSaver.updateNodePrerequisites(childNode);
             requestRebuild.run();
-            feedback.accept("Line shape: " + lineOverrideLabel(next));
-            pushUndo.push("Undo: line shape reverted", () -> {
-                childNode.setPrereqLineShape(lineCtxParentId, oldShape);
-                QuestFileSaver.updateNodePrerequisites(childNode);
-                requestRebuild.run();
-            }, () -> {
-                childNode.setPrereqLineShape(lineCtxParentId, next);
-                QuestFileSaver.updateNodePrerequisites(childNode);
-                requestRebuild.run();
-            });
+            feedback.accept(ChroniclesUIKit.str("phoenix_chronicles.screen.dependency_line_renderer.line_shape",
+                    lineOverrideLabel(next)));
+            pushUndo.push(
+                    ChroniclesUIKit.str("phoenix_chronicles.screen.dependency_line_renderer.undo_line_shape_reverted"),
+                    () -> {
+                        childNode.setPrereqLineShape(lineCtxParentId, oldShape);
+                        QuestFileSaver.updateNodePrerequisites(childNode);
+                        requestRebuild.run();
+                    }, () -> {
+                        childNode.setPrereqLineShape(lineCtxParentId, next);
+                        QuestFileSaver.updateNodePrerequisites(childNode);
+                        requestRebuild.run();
+                    });
         } else if (idx == 6) {
 
             var oldVisual = childNode.getPrereqLineVisual(lineCtxParentId);
@@ -1284,16 +1326,19 @@ public class DependencyLineRenderer {
             childNode.setPrereqLineVisual(lineCtxParentId, next);
             QuestFileSaver.updateNodePrerequisites(childNode);
             requestRebuild.run();
-            feedback.accept("Line style: " + lineOverrideLabel(next));
-            pushUndo.push("Undo: line style reverted", () -> {
-                childNode.setPrereqLineVisual(lineCtxParentId, oldVisual);
-                QuestFileSaver.updateNodePrerequisites(childNode);
-                requestRebuild.run();
-            }, () -> {
-                childNode.setPrereqLineVisual(lineCtxParentId, next);
-                QuestFileSaver.updateNodePrerequisites(childNode);
-                requestRebuild.run();
-            });
+            feedback.accept(ChroniclesUIKit.str("phoenix_chronicles.screen.dependency_line_renderer.line_style",
+                    lineOverrideLabel(next)));
+            pushUndo.push(
+                    ChroniclesUIKit.str("phoenix_chronicles.screen.dependency_line_renderer.undo_line_style_reverted"),
+                    () -> {
+                        childNode.setPrereqLineVisual(lineCtxParentId, oldVisual);
+                        QuestFileSaver.updateNodePrerequisites(childNode);
+                        requestRebuild.run();
+                    }, () -> {
+                        childNode.setPrereqLineVisual(lineCtxParentId, next);
+                        QuestFileSaver.updateNodePrerequisites(childNode);
+                        requestRebuild.run();
+                    });
         } else if (idx == 7) {
 
             var oldSpeed = childNode.getPrereqLineSpeed(lineCtxParentId);
@@ -1301,16 +1346,19 @@ public class DependencyLineRenderer {
             childNode.setPrereqLineSpeed(lineCtxParentId, next);
             QuestFileSaver.updateNodePrerequisites(childNode);
             requestRebuild.run();
-            feedback.accept("Dot speed: " + lineOverrideLabel(next));
-            pushUndo.push("Undo: dot speed reverted", () -> {
-                childNode.setPrereqLineSpeed(lineCtxParentId, oldSpeed);
-                QuestFileSaver.updateNodePrerequisites(childNode);
-                requestRebuild.run();
-            }, () -> {
-                childNode.setPrereqLineSpeed(lineCtxParentId, next);
-                QuestFileSaver.updateNodePrerequisites(childNode);
-                requestRebuild.run();
-            });
+            feedback.accept(ChroniclesUIKit.str("phoenix_chronicles.screen.dependency_line_renderer.dot_speed",
+                    lineOverrideLabel(next)));
+            pushUndo.push(
+                    ChroniclesUIKit.str("phoenix_chronicles.screen.dependency_line_renderer.undo_dot_speed_reverted"),
+                    () -> {
+                        childNode.setPrereqLineSpeed(lineCtxParentId, oldSpeed);
+                        QuestFileSaver.updateNodePrerequisites(childNode);
+                        requestRebuild.run();
+                    }, () -> {
+                        childNode.setPrereqLineSpeed(lineCtxParentId, next);
+                        QuestFileSaver.updateNodePrerequisites(childNode);
+                        requestRebuild.run();
+                    });
         } else if (idx == 8) {
 
             Boolean oldArrow = childNode.getPrereqLineArrow(lineCtxParentId);
@@ -1318,16 +1366,18 @@ public class DependencyLineRenderer {
             childNode.setPrereqLineArrow(lineCtxParentId, next);
             QuestFileSaver.updateNodePrerequisites(childNode);
             requestRebuild.run();
-            feedback.accept("Arrow: " + arrowOverrideLabel(next));
-            pushUndo.push("Undo: arrow setting reverted", () -> {
-                childNode.setPrereqLineArrow(lineCtxParentId, oldArrow);
-                QuestFileSaver.updateNodePrerequisites(childNode);
-                requestRebuild.run();
-            }, () -> {
-                childNode.setPrereqLineArrow(lineCtxParentId, next);
-                QuestFileSaver.updateNodePrerequisites(childNode);
-                requestRebuild.run();
-            });
+            feedback.accept(ChroniclesUIKit.str("phoenix_chronicles.screen.dependency_line_renderer.arrow",
+                    arrowOverrideLabel(next)));
+            pushUndo.push(ChroniclesUIKit
+                    .str("phoenix_chronicles.screen.dependency_line_renderer.undo_arrow_setting_reverted"), () -> {
+                        childNode.setPrereqLineArrow(lineCtxParentId, oldArrow);
+                        QuestFileSaver.updateNodePrerequisites(childNode);
+                        requestRebuild.run();
+                    }, () -> {
+                        childNode.setPrereqLineArrow(lineCtxParentId, next);
+                        QuestFileSaver.updateNodePrerequisites(childNode);
+                        requestRebuild.run();
+                    });
         } else if (idx == 9) {
 
             openLineSettings.accept(parentNode);

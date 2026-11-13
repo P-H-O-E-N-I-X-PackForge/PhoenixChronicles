@@ -1,5 +1,7 @@
 package net.phoenixvine.chronicles.client.screen.utils;
 
+import net.phoenixvine.chronicles.client.render.ChroniclesUIKit;
+
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.function.Consumer;
@@ -26,7 +28,7 @@ public class UndoRedoManager {
 
     public void undo() {
         if (undoStack.isEmpty()) {
-            feedback.accept("Nothing to undo");
+            feedback.accept(ChroniclesUIKit.str("phoenix_chronicles.screen.undo_redo_manager.nothing_to_undo"));
             return;
         }
         Entry entry = undoStack.pop();
@@ -36,7 +38,7 @@ public class UndoRedoManager {
 
     public void redo() {
         if (redoStack.isEmpty()) {
-            feedback.accept("Nothing to redo");
+            feedback.accept(ChroniclesUIKit.str("phoenix_chronicles.screen.undo_redo_manager.nothing_to_redo"));
             return;
         }
         Entry entry = redoStack.pop();

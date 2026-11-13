@@ -243,7 +243,8 @@ public class ItemPickerScreen extends Screen {
         g.fill(panelLeft, panelTop, panelLeft + PANEL_W, panelTop + HEADER_H, ChroniclesThemePalette.HEADER);
         g.fill(panelLeft, panelTop + HEADER_H - 1, panelLeft + PANEL_W, panelTop + HEADER_H,
                 ChroniclesThemePalette.BORDER);
-        g.drawCenteredString(font, "§fPick Item", panelLeft + PANEL_W / 2, panelTop + 7, ChroniclesThemePalette.TEXT);
+        g.drawCenteredString(font, ChroniclesUIKit.str("phoenix_chronicles.screen.item_picker.pick_item"),
+                panelLeft + PANEL_W / 2, panelTop + 7, ChroniclesThemePalette.TEXT);
 
         int tabY = panelTop + HEADER_H + 2;
         int tabW = 60;
@@ -260,11 +261,12 @@ public class ItemPickerScreen extends Screen {
 
         int labelX = panelLeft + 62;
         int labelMaxW = (panelLeft + PANEL_W - 56 - 4) - labelX;
-        String countLabel = "§8" + displayItems.size() + " items";
+        String countLabel = ChroniclesUIKit.str("phoenix_chronicles.screen.item_picker.items", displayItems.size());
         if (!multiSelected.isEmpty()) {
             countLabel += "  §9" + multiSelected.size() + " selected";
 
-            String withHint = countLabel + " §8(right-click to toggle)";
+            String withHint = ChroniclesUIKit.str("phoenix_chronicles.screen.item_picker.right_click_to_toggle",
+                    countLabel);
             if (font.width(withHint.replaceAll("§.", "")) <= labelMaxW) countLabel = withHint;
         }
         if (font.width(countLabel.replaceAll("§.", "")) > labelMaxW) {

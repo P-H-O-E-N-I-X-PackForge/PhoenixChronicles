@@ -40,7 +40,8 @@ final class EditorRewardForm {
 
         String rewardTypeTooltip = RewardFormTypes.get(screen.rewardType).tooltip();
         screen.addWidgetBridge(Button.builder(
-                ChroniclesUIKit.lit("§8Type: §7" + RewardFormTypes.get(screen.rewardType).label() + " §8▾"),
+                ChroniclesUIKit.tr("phoenix_chronicles.screen.editor_reward_form.type",
+                        RewardFormTypes.get(screen.rewardType).label()),
                 b -> {
                     screen.rewardTypeDropOpen = !screen.rewardTypeDropOpen;
                     screen.taskTypeDropOpen = false;
@@ -87,19 +88,22 @@ final class EditorRewardForm {
                         ChroniclesUIKit.lit(TaskRewardEditorScreen.HIDE_TOOLTIP.formatted("quest is completed"))))
                 .build());
         screen.addWidgetBridge(Button.builder(
-                ChroniclesUIKit.lit(screen.editingRewardIndex >= 0 ? "§b✎ Update Reward" : "§a✔ Add Reward"),
+                ChroniclesUIKit.lit(screen.editingRewardIndex >= 0 ?
+                        ChroniclesUIKit.str("phoenix_chronicles.screen.editor_reward_form.update_reward") :
+                        ChroniclesUIKit.str("phoenix_chronicles.screen.editor_reward_form.add_reward")),
                 b -> commitRewardFromForm())
                 .bounds(rx + screen.colW - 80, screen.formBottom - TaskRewardEditorScreen.FIELD_H - 4, 80,
                         TaskRewardEditorScreen.FIELD_H)
                 .tooltip(Tooltip.create(ChroniclesUIKit.lit(screen.editingRewardIndex >= 0 ?
-                        "Save changes to this reward (right-click it again to cancel)" :
-                        "Add this reward to the quest (Ctrl+Z to undo)")))
+                        ChroniclesUIKit
+                                .str("phoenix_chronicles.screen.editor_reward_form.save_changes_to_this_reward") :
+                        ChroniclesUIKit.str("phoenix_chronicles.screen.editor_reward_form.add_this_reward_to_the"))))
                 .build());
     }
 
     private void buildItemRewardInputs(int rx, int rfy, String rCountVal) {
         String itemLabel = rewardPickedItem != null ? "§f" + rewardPickedItem.getHoverName().getString() :
-                "§8Pick Item";
+                ChroniclesUIKit.str("phoenix_chronicles.screen.editor_reward_form.pick_item");
         screen.addWidgetBridge(Button.builder(ChroniclesUIKit.lit(itemLabel), b -> {
             if (Minecraft.getInstance() != null)
                 Minecraft.getInstance().setScreen(new ItemPickerScreen(screen, stack -> {
@@ -108,11 +112,12 @@ final class EditorRewardForm {
                 }).withBulk(this::bulkAddItemRewards));
         }).bounds(rx, rfy, screen.colW - 44, TaskRewardEditorScreen.FIELD_H)
                 .tooltip(Tooltip.create(ChroniclesUIKit.lit(
-                        "Pick an item. Right-click several in the picker to add one reward per item at once.")))
+                        ChroniclesUIKit.str("phoenix_chronicles.screen.editor_reward_form.pick_an_item_right_click"))))
                 .build());
         screen.rewardCountBox = new EditBox(Minecraft.getInstance().font, rx + screen.colW - 42, rfy, 42,
                 TaskRewardEditorScreen.FIELD_H, Component.empty());
-        screen.setHintFitted(screen.rewardCountBox, "§8Qty");
+        screen.setHintFitted(screen.rewardCountBox,
+                ChroniclesUIKit.str("phoenix_chronicles.screen.editor_reward_form.qty"));
         screen.rewardCountBox.setMaxLength(4);
         screen.rewardCountBox.setValue(rCountVal);
         screen.addWidgetBridge(screen.rewardCountBox);
@@ -125,7 +130,8 @@ final class EditorRewardForm {
     private void buildFluidRewardInputs(int rx, int rfy, String rCountVal, String rCommandVal) {
         screen.rewardCommandBox = new EditBox(Minecraft.getInstance().font, rx, rfy, screen.colW - 62,
                 TaskRewardEditorScreen.FIELD_H, Component.empty());
-        screen.setHintFitted(screen.rewardCommandBox, "§8Fluid id  (e.g. gtceu:oxygen)");
+        screen.setHintFitted(screen.rewardCommandBox,
+                ChroniclesUIKit.str("phoenix_chronicles.screen.editor_reward_form.fluid_id_e_g_gtceu"));
         screen.rewardCommandBox.setMaxLength(128);
         screen.rewardCommandBox.setValue(rCommandVal);
         screen.addWidgetBridge(screen.rewardCommandBox);
@@ -139,7 +145,8 @@ final class EditorRewardForm {
                     screen.rebuildWidgets();
                 }));
         }).bounds(rx + screen.colW - 60, rfy, 16, TaskRewardEditorScreen.FIELD_H)
-                .tooltip(Tooltip.create(ChroniclesUIKit.lit("Pick a fluid")))
+                .tooltip(
+                        Tooltip.create(ChroniclesUIKit.tr("phoenix_chronicles.screen.editor_reward_form.pick_a_fluid")))
                 .build());
         screen.rewardCountBox = new EditBox(Minecraft.getInstance().font, rx + screen.colW - 42, rfy, 42,
                 TaskRewardEditorScreen.FIELD_H, Component.empty());
@@ -151,7 +158,9 @@ final class EditorRewardForm {
         if (AE2Compat.isAvailable()) {
             screen.addWidgetBridge(rewardAe2Button(rx, rfy, screen.colW, "fluid"));
         } else {
-            screen.addWidgetBridge(Button.builder(ChroniclesUIKit.lit("§8No AE2: whole buckets only"), b -> {})
+            screen.addWidgetBridge(Button
+                    .builder(ChroniclesUIKit
+                            .tr("phoenix_chronicles.screen.editor_reward_form.no_ae2_whole_buckets_only"), b -> {})
                     .bounds(rx, rfy, screen.colW, TaskRewardEditorScreen.FIELD_H)
                     .tooltip(Tooltip.create(ChroniclesUIKit.lit(
                             "Without Applied Energistics 2 installed, fluid rewards are delivered as whole\n" +
@@ -163,7 +172,8 @@ final class EditorRewardForm {
     private void buildXpRewardInputs(int rx, int rfy, String rCountVal) {
         screen.rewardCountBox = new EditBox(Minecraft.getInstance().font, rx, rfy, screen.colW,
                 TaskRewardEditorScreen.FIELD_H, Component.empty());
-        screen.setHintFitted(screen.rewardCountBox, "§8XP levels to award");
+        screen.setHintFitted(screen.rewardCountBox,
+                ChroniclesUIKit.str("phoenix_chronicles.screen.editor_reward_form.xp_levels_to_award"));
         screen.rewardCountBox.setMaxLength(5);
         screen.rewardCountBox.setValue(rCountVal);
         screen.addWidgetBridge(screen.rewardCountBox);
@@ -172,14 +182,16 @@ final class EditorRewardForm {
     private void buildScriptEventRewardInputs(int rx, int rfy, String rCommandVal, String rEventDataVal) {
         screen.rewardCommandBox = new EditBox(Minecraft.getInstance().font, rx, rfy, screen.colW,
                 TaskRewardEditorScreen.FIELD_H, Component.empty());
-        screen.setHintFitted(screen.rewardCommandBox, "§8Event ID  (e.g. unlock_end)");
+        screen.setHintFitted(screen.rewardCommandBox,
+                ChroniclesUIKit.str("phoenix_chronicles.screen.editor_reward_form.event_id_e_g_unlock"));
         screen.rewardCommandBox.setMaxLength(128);
         screen.rewardCommandBox.setValue(rCommandVal);
         screen.addWidgetBridge(screen.rewardCommandBox);
         rfy += TaskRewardEditorScreen.FIELD_H + TaskRewardEditorScreen.FIELD_GAP;
         screen.rewardEventDataBox = new EditBox(Minecraft.getInstance().font, rx, rfy, screen.colW,
                 TaskRewardEditorScreen.FIELD_H, Component.empty());
-        screen.setHintFitted(screen.rewardEventDataBox, "§8NBT data  {key:\"val\"}  (optional)");
+        screen.setHintFitted(screen.rewardEventDataBox,
+                ChroniclesUIKit.str("phoenix_chronicles.screen.editor_reward_form.nbt_data_key_val_optional"));
         screen.rewardEventDataBox.setMaxLength(256);
         screen.rewardEventDataBox.setValue(rEventDataVal);
         screen.addWidgetBridge(screen.rewardEventDataBox);
@@ -197,7 +209,8 @@ final class EditorRewardForm {
             if (Minecraft.getInstance() != null && !tid.isEmpty())
                 Minecraft.getInstance().setScreen(new RewardTableSimulatorScreen(screen, tid));
         }).bounds(rx + screen.colW - 18, rfy, 18, TaskRewardEditorScreen.FIELD_H)
-                .tooltip(Tooltip.create(ChroniclesUIKit.lit("Simulate 1000 rolls against this table")))
+                .tooltip(Tooltip.create(ChroniclesUIKit
+                        .tr("phoenix_chronicles.screen.editor_reward_form.simulate_1000_rolls_against_this")))
                 .build());
     }
 
@@ -213,23 +226,27 @@ final class EditorRewardForm {
             if (Minecraft.getInstance() != null && !tid.isEmpty())
                 Minecraft.getInstance().setScreen(new RewardTableSimulatorScreen(screen, tid));
         }).bounds(rx + screen.colW - 18, rfy, 18, TaskRewardEditorScreen.FIELD_H)
-                .tooltip(Tooltip.create(ChroniclesUIKit.lit("Simulate 1000 rolls against this table")))
+                .tooltip(Tooltip.create(ChroniclesUIKit
+                        .tr("phoenix_chronicles.screen.editor_reward_form.simulate_1000_rolls_against_this")))
                 .build());
         rfy += TaskRewardEditorScreen.FIELD_H + TaskRewardEditorScreen.FIELD_GAP;
 
         screen.addWidgetBridge(
-                Button.builder(ChroniclesUIKit.lit("§a✔ Save Option"), b -> commitBoxOptionEdit())
+                Button.builder(ChroniclesUIKit.tr("phoenix_chronicles.screen.editor_reward_form.save_option"),
+                        b -> commitBoxOptionEdit())
                         .bounds(rx, rfy, screen.colW / 2 - 2, TaskRewardEditorScreen.FIELD_H)
-                        .tooltip(Tooltip.create(ChroniclesUIKit.lit("Save changes to this option")))
+                        .tooltip(Tooltip.create(ChroniclesUIKit
+                                .tr("phoenix_chronicles.screen.editor_reward_form.save_changes_to_this_option")))
                         .build());
-        screen.addWidgetBridge(Button.builder(ChroniclesUIKit.lit("§7Cancel"), b -> cancelBoxOptionEdit())
-                .bounds(rx + screen.colW / 2 + 2, rfy, screen.colW / 2 - 2, TaskRewardEditorScreen.FIELD_H)
-                .build());
+        screen.addWidgetBridge(
+                Button.builder(ChroniclesUIKit.tr("phoenix_chronicles.ui.cancel"), b -> cancelBoxOptionEdit())
+                        .bounds(rx + screen.colW / 2 + 2, rfy, screen.colW / 2 - 2, TaskRewardEditorScreen.FIELD_H)
+                        .build());
     }
 
     private void buildItemOptionEditor(int rx, int rfy, String boCountVal, String boNbtVal) {
-        String itemLabel = boxOptionPickedItem != null ?
-                "§f" + boxOptionPickedItem.getHoverName().getString() : "§8Pick Item";
+        String itemLabel = boxOptionPickedItem != null ? "§f" + boxOptionPickedItem.getHoverName().getString() :
+                ChroniclesUIKit.str("phoenix_chronicles.screen.editor_reward_form.pick_item");
         screen.addWidgetBridge(Button.builder(ChroniclesUIKit.lit(itemLabel), b -> {
             if (Minecraft.getInstance() != null)
                 Minecraft.getInstance().setScreen(new ItemPickerScreen(screen, stack -> {
@@ -239,7 +256,8 @@ final class EditorRewardForm {
         }).bounds(rx, rfy, screen.colW - 44, TaskRewardEditorScreen.FIELD_H).build());
         screen.boxOptionCountBox = new EditBox(Minecraft.getInstance().font, rx + screen.colW - 42, rfy, 42,
                 TaskRewardEditorScreen.FIELD_H, Component.empty());
-        screen.setHintFitted(screen.boxOptionCountBox, "§8Qty");
+        screen.setHintFitted(screen.boxOptionCountBox,
+                ChroniclesUIKit.str("phoenix_chronicles.screen.editor_reward_form.qty"));
         screen.boxOptionCountBox.setMaxLength(4);
         screen.boxOptionCountBox.setValue(boCountVal);
         screen.addWidgetBridge(screen.boxOptionCountBox);
@@ -247,29 +265,33 @@ final class EditorRewardForm {
 
         screen.boxOptionNbtBox = new EditBox(Minecraft.getInstance().font, rx, rfy, screen.colW,
                 TaskRewardEditorScreen.FIELD_H, Component.empty());
-        screen.setHintFitted(screen.boxOptionNbtBox, "§8NBT  {display:{Name:'...'}}  (optional)");
+        screen.setHintFitted(screen.boxOptionNbtBox,
+                ChroniclesUIKit.str("phoenix_chronicles.screen.editor_reward_form.nbt_display_name_optional"));
         screen.boxOptionNbtBox.setMaxLength(256);
         screen.boxOptionNbtBox.setValue(boNbtVal);
         screen.addWidgetBridge(screen.boxOptionNbtBox);
         rfy += TaskRewardEditorScreen.FIELD_H + TaskRewardEditorScreen.FIELD_GAP;
 
-        screen.addWidgetBridge(Button.builder(ChroniclesUIKit.lit("§a✔ Save Option"), b -> commitBoxOptionEdit())
+        screen.addWidgetBridge(Button
+                .builder(ChroniclesUIKit.tr("phoenix_chronicles.screen.editor_reward_form.save_option"),
+                        b -> commitBoxOptionEdit())
                 .bounds(rx, rfy, screen.colW / 2 - 2, TaskRewardEditorScreen.FIELD_H)
-                .tooltip(Tooltip.create(ChroniclesUIKit.lit("Save changes to this option")))
+                .tooltip(Tooltip.create(
+                        ChroniclesUIKit.tr("phoenix_chronicles.screen.editor_reward_form.save_changes_to_this_option")))
                 .build());
-        screen.addWidgetBridge(Button.builder(ChroniclesUIKit.lit("§7Cancel"), b -> cancelBoxOptionEdit())
-                .bounds(rx + screen.colW / 2 + 2, rfy, screen.colW / 2 - 2, TaskRewardEditorScreen.FIELD_H)
-                .build());
+        screen.addWidgetBridge(
+                Button.builder(ChroniclesUIKit.tr("phoenix_chronicles.ui.cancel"), b -> cancelBoxOptionEdit())
+                        .bounds(rx + screen.colW / 2 + 2, rfy, screen.colW / 2 - 2, TaskRewardEditorScreen.FIELD_H)
+                        .build());
     }
 
     private void buildChoiceBoxInputs(int rx, int rfy) {
         screen.addWidgetBridge(Button.builder(
-                ChroniclesUIKit.lit("§8Mode: §7" +
-                        (switch (boxMode) {
-                            case LOOTBOX -> "Lootbox";
-                            case ALL -> "All";
-                            default -> "Menu";
-                        }) + " §8▾"),
+                ChroniclesUIKit.tr("phoenix_chronicles.screen.editor_reward_form.mode", (switch (boxMode) {
+                    case LOOTBOX -> "Lootbox";
+                    case ALL -> "All";
+                    default -> "Menu";
+                })),
                 b -> {
                     boxMode = switch (boxMode) {
                         case MENU -> QuestReward.ChoiceBoxReward.Mode.LOOTBOX;
@@ -287,41 +309,47 @@ final class EditorRewardForm {
                                 "Lootbox: player clicks the box and the server grants a random option.\n" +
                                 "All: every option is granted when the quest is claimed.")))
                 .build());
-        screen.addWidgetBridge(Button.builder(ChroniclesUIKit.lit("§a+ Item"), b -> {
-            if (Minecraft.getInstance() != null)
-                Minecraft.getInstance().setScreen(new ItemPickerScreen(screen, stack -> {
-                    screen.boxOptions
-                            .add(new QuestReward.ItemReward(stack.getItem(), Math.max(1, stack.getCount())));
-                    screen.rebuildWidgets();
-                }));
-        }).bounds(
-                rx + screen.colW - TaskRewardEditorScreen.CHOICE_ADD_ITEM_W -
-                        TaskRewardEditorScreen.CHOICE_ADD_TABLE_W - 2,
-                rfy, TaskRewardEditorScreen.CHOICE_ADD_ITEM_W, TaskRewardEditorScreen.FIELD_H)
-                .tooltip(Tooltip.create(ChroniclesUIKit.lit(
-                        "Add an item option to this choice box (right-click an option to edit its qty/NBT)")))
-                .build());
-        screen.addWidgetBridge(Button.builder(ChroniclesUIKit.lit("§6+ Table"), b -> {
-            screen.boxOptions.add(new QuestReward.RewardTableReward(""));
-            startEditingBoxOption(screen.boxOptions.size() - 1);
-        }).bounds(rx + screen.colW - TaskRewardEditorScreen.CHOICE_ADD_TABLE_W, rfy,
-                TaskRewardEditorScreen.CHOICE_ADD_TABLE_W, TaskRewardEditorScreen.FIELD_H)
-                .tooltip(Tooltip.create(ChroniclesUIKit.lit(
-                        "Add a reward table option: picking it rolls that table (right-click it to change the table)")))
-                .build());
+        screen.addWidgetBridge(
+                Button.builder(ChroniclesUIKit.tr("phoenix_chronicles.screen.editor_reward_form.item"), b -> {
+                    if (Minecraft.getInstance() != null)
+                        Minecraft.getInstance().setScreen(new ItemPickerScreen(screen, stack -> {
+                            screen.boxOptions
+                                    .add(new QuestReward.ItemReward(stack.getItem(), Math.max(1, stack.getCount())));
+                            screen.rebuildWidgets();
+                        }));
+                }).bounds(
+                        rx + screen.colW - TaskRewardEditorScreen.CHOICE_ADD_ITEM_W -
+                                TaskRewardEditorScreen.CHOICE_ADD_TABLE_W - 2,
+                        rfy, TaskRewardEditorScreen.CHOICE_ADD_ITEM_W, TaskRewardEditorScreen.FIELD_H)
+                        .tooltip(Tooltip.create(ChroniclesUIKit.lit(
+                                ChroniclesUIKit
+                                        .str("phoenix_chronicles.screen.editor_reward_form.add_an_item_option_to"))))
+                        .build());
+        screen.addWidgetBridge(
+                Button.builder(ChroniclesUIKit.tr("phoenix_chronicles.screen.editor_reward_form.table"), b -> {
+                    screen.boxOptions.add(new QuestReward.RewardTableReward(""));
+                    startEditingBoxOption(screen.boxOptions.size() - 1);
+                }).bounds(rx + screen.colW - TaskRewardEditorScreen.CHOICE_ADD_TABLE_W, rfy,
+                        TaskRewardEditorScreen.CHOICE_ADD_TABLE_W, TaskRewardEditorScreen.FIELD_H)
+                        .tooltip(Tooltip.create(ChroniclesUIKit.lit(
+                                ChroniclesUIKit.str(
+                                        "phoenix_chronicles.screen.editor_reward_form.add_a_reward_table_option"))))
+                        .build());
         rfy += TaskRewardEditorScreen.FIELD_H + TaskRewardEditorScreen.FIELD_GAP;
 
         if (boxMode == QuestReward.ChoiceBoxReward.Mode.LOOTBOX && !screen.boxOptions.isEmpty()) {
-            screen.addWidgetBridge(Button.builder(ChroniclesUIKit.lit("🎲 Simulate rolls"), b -> {
-                java.util.List<QuestReward.WeightedReward> weighted = screen.boxOptions.stream()
-                        .map(r -> new QuestReward.WeightedReward(r, 1)).toList();
-                RewardTable preview = new RewardTable("preview", "Lootbox preview", weighted, 1);
-                if (Minecraft.getInstance() != null)
-                    Minecraft.getInstance().setScreen(new RewardTableSimulatorScreen(screen, preview));
-            }).bounds(rx, rfy, screen.colW, TaskRewardEditorScreen.FIELD_H)
+            screen.addWidgetBridge(Button
+                    .builder(ChroniclesUIKit.tr("phoenix_chronicles.screen.editor_reward_form.simulate_rolls"), b -> {
+                        java.util.List<QuestReward.WeightedReward> weighted = screen.boxOptions.stream()
+                                .map(r -> new QuestReward.WeightedReward(r, 1)).toList();
+                        RewardTable preview = new RewardTable("preview", "Lootbox preview", weighted, 1);
+                        if (Minecraft.getInstance() != null)
+                            Minecraft.getInstance().setScreen(new RewardTableSimulatorScreen(screen, preview));
+                    }).bounds(rx, rfy, screen.colW, TaskRewardEditorScreen.FIELD_H)
                     .tooltip(Tooltip.create(
                             ChroniclesUIKit
-                                    .lit("Roll this lootbox many times to see how often each option comes up")))
+                                    .lit(ChroniclesUIKit.str(
+                                            "phoenix_chronicles.screen.editor_reward_form.roll_this_lootbox_many_times"))))
                     .build());
             rfy += TaskRewardEditorScreen.FIELD_H + TaskRewardEditorScreen.FIELD_GAP;
         }
@@ -342,7 +370,8 @@ final class EditorRewardForm {
         externalEntryAtBuild = externalEntry;
         screen.rewardCommandBox = new EditBox(Minecraft.getInstance().font, rx, rfy, screen.colW - 20,
                 TaskRewardEditorScreen.FIELD_H, Component.empty());
-        screen.setHintFitted(screen.rewardCommandBox, "§8Registered external reward id");
+        screen.setHintFitted(screen.rewardCommandBox,
+                ChroniclesUIKit.str("phoenix_chronicles.screen.editor_reward_form.registered_external_reward_id"));
         screen.rewardCommandBox.setMaxLength(128);
         screen.rewardCommandBox.setValue(rCommandVal);
         screen.rewardCommandBox.setResponder(v -> {
@@ -364,14 +393,18 @@ final class EditorRewardForm {
             }
             if (Minecraft.getInstance() != null && !ids.isEmpty()) {
                 Minecraft.getInstance()
-                        .setScreen(new RegistryIdPickerScreen(screen, "Pick external reward", ids, id -> {
-                            screen.pendingRewardCommand = id.toString();
-                            screen.forcePendingRewardValues = true;
-                            screen.rebuildWidgets();
-                        }));
+                        .setScreen(new RegistryIdPickerScreen(screen,
+                                ChroniclesUIKit
+                                        .str("phoenix_chronicles.screen.editor_reward_form.pick_external_reward"),
+                                ids, id -> {
+                                    screen.pendingRewardCommand = id.toString();
+                                    screen.forcePendingRewardValues = true;
+                                    screen.rebuildWidgets();
+                                }));
             }
         }).bounds(rx + screen.colW - 18, rfy, 18, TaskRewardEditorScreen.FIELD_H)
-                .tooltip(Tooltip.create(ChroniclesUIKit.lit("Browse registered external reward types")))
+                .tooltip(Tooltip.create(ChroniclesUIKit
+                        .tr("phoenix_chronicles.screen.editor_reward_form.browse_registered_external_reward_types")))
                 .build());
         rfy += TaskRewardEditorScreen.FIELD_H + TaskRewardEditorScreen.FIELD_GAP;
 
@@ -400,7 +433,8 @@ final class EditorRewardForm {
         } else {
             screen.rewardEventDataBox = new EditBox(Minecraft.getInstance().font, rx, rfy, screen.colW,
                     TaskRewardEditorScreen.FIELD_H, Component.empty());
-            screen.setHintFitted(screen.rewardEventDataBox, "§8NBT data  {key:\"val\"}  (optional)");
+            screen.setHintFitted(screen.rewardEventDataBox,
+                    ChroniclesUIKit.str("phoenix_chronicles.screen.editor_reward_form.nbt_data_key_val_optional"));
             screen.rewardEventDataBox.setMaxLength(256);
             screen.rewardEventDataBox.setValue(rEventDataVal);
             screen.addWidgetBridge(screen.rewardEventDataBox);
@@ -410,7 +444,8 @@ final class EditorRewardForm {
     private void buildOpenScreenInputs(int rx, int rfy, String rCommandVal) {
         screen.rewardCommandBox = new EditBox(Minecraft.getInstance().font, rx, rfy, screen.colW - 20,
                 TaskRewardEditorScreen.FIELD_H, Component.empty());
-        screen.setHintFitted(screen.rewardCommandBox, "§8Registered external screen id");
+        screen.setHintFitted(screen.rewardCommandBox,
+                ChroniclesUIKit.str("phoenix_chronicles.screen.editor_reward_form.registered_external_screen_id"));
         screen.rewardCommandBox.setMaxLength(128);
         screen.rewardCommandBox.setValue(rCommandVal);
         screen.addWidgetBridge(screen.rewardCommandBox);
@@ -419,23 +454,24 @@ final class EditorRewardForm {
                     .registeredIds();
             if (Minecraft.getInstance() != null && !ids.isEmpty()) {
                 Minecraft.getInstance()
-                        .setScreen(new RegistryIdPickerScreen(screen, "Pick external screen", ids, id -> {
-                            screen.pendingRewardCommand = id.toString();
-                            screen.forcePendingRewardValues = true;
-                            screen.rebuildWidgets();
-                        }));
+                        .setScreen(new RegistryIdPickerScreen(screen,
+                                ChroniclesUIKit.str("phoenix_chronicles.ui.pick_external_screen"), ids, id -> {
+                                    screen.pendingRewardCommand = id.toString();
+                                    screen.forcePendingRewardValues = true;
+                                    screen.rebuildWidgets();
+                                }));
             }
         }).bounds(rx + screen.colW - 18, rfy, 18, TaskRewardEditorScreen.FIELD_H)
-                .tooltip(Tooltip.create(ChroniclesUIKit.lit("Browse registered external screens")))
+                .tooltip(Tooltip.create(ChroniclesUIKit.tr("phoenix_chronicles.ui.browse_registered_external_screens")))
                 .build());
     }
 
     private void buildTextRewardInputs(int rx, int rfy, String rCommandVal) {
         String hint = screen.rewardType.equals("loot_table") ?
-                "§8Loot table id  (e.g. minecraft:chests/simple_dungeon)" :
+                ChroniclesUIKit.str("phoenix_chronicles.screen.editor_reward_form.loot_table_id_e_g") :
                 screen.rewardType.equals("quest_action") ?
-                        "§8Quest id  (e.g. my_quest or phoenix_chronicles:my_quest)" :
-                        "§8/give {p} …";
+                        ChroniclesUIKit.str("phoenix_chronicles.screen.editor_reward_form.quest_id_e_g_my") :
+                        ChroniclesUIKit.str("phoenix_chronicles.screen.editor_reward_form.give_p");
         boolean questPicker = screen.rewardType.equals("quest_action");
         screen.rewardCommandBox = new EditBox(Minecraft.getInstance().font, rx, rfy,
                 questPicker ? screen.colW - 22 : screen.colW, TaskRewardEditorScreen.FIELD_H,
@@ -458,7 +494,8 @@ final class EditorRewardForm {
                 }
             }).bounds(rx + screen.colW - 18, rfy, 18, TaskRewardEditorScreen.FIELD_H)
                     .tooltip(Tooltip.create(ChroniclesUIKit.lit(
-                            "Pick a quest (starts in this quest's chapter; use the dropdown for others)")))
+                            ChroniclesUIKit
+                                    .str("phoenix_chronicles.screen.editor_reward_form.pick_a_quest_starts_in"))))
                     .build());
         }
         if (screen.rewardType.equals("command")) {
@@ -473,7 +510,8 @@ final class EditorRewardForm {
     private Button rewardQuestActionButton(int x, int y, int w) {
         boolean complete = rewardQuestAction == QuestReward.QuestActionReward.Action.COMPLETE;
         return Button.builder(
-                ChroniclesUIKit.lit("§7Action: §f" + (complete ? "Complete quest" : "Reset progress")),
+                ChroniclesUIKit.tr("phoenix_chronicles.screen.editor_reward_form.action",
+                        (complete ? "Complete quest" : "Reset progress")),
                 b -> {
                     if (screen.rewardCommandBox != null)
                         screen.pendingRewardCommand = screen.rewardCommandBox.getValue();
@@ -491,7 +529,8 @@ final class EditorRewardForm {
 
     private Button rewardPermButton(int x, int y, int w) {
         return Button.builder(
-                ChroniclesUIKit.lit("§7Runs as: §f" + screen.permLabel(rewardPermLevel)),
+                ChroniclesUIKit.tr("phoenix_chronicles.screen.editor_reward_form.runs_as",
+                        screen.permLabel(rewardPermLevel)),
                 b -> {
                     if (screen.rewardCommandBox != null)
                         screen.pendingRewardCommand = screen.rewardCommandBox.getValue();
@@ -510,7 +549,9 @@ final class EditorRewardForm {
 
     private Button rewardAe2Button(int x, int y, int w, String what) {
         return Button.builder(
-                ChroniclesUIKit.lit(rewardPushAe2 ? "§bAE2: push to network" : "§8AE2: off (inventory)"),
+                ChroniclesUIKit.lit(rewardPushAe2 ?
+                        ChroniclesUIKit.str("phoenix_chronicles.screen.editor_reward_form.ae2_push_to_network") :
+                        ChroniclesUIKit.str("phoenix_chronicles.screen.editor_reward_form.ae2_off_inventory")),
                 b -> {
                     if (screen.rewardCountBox != null) screen.pendingRewardCount = screen.rewardCountBox.getValue();
                     if (screen.rewardCommandBox != null)
@@ -743,7 +784,8 @@ final class EditorRewardForm {
         screen.boxOptionRowRects.clear();
         if (screen.boxOptions.isEmpty()) {
             ChroniclesUIKit.drawString(g, Minecraft.getInstance().font,
-                    "§8No options yet - use §7+ Item §8or §7+ Table", screen.boxOptionsListX,
+                    ChroniclesUIKit.str("phoenix_chronicles.screen.editor_reward_form.no_options_yet_use_item"),
+                    screen.boxOptionsListX,
                     screen.boxOptionsListY,
                     screen.C_TEXT_FAINT,
                     false);

@@ -4,6 +4,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.phoenixvine.chronicles.client.registry.ChroniclesLangPack;
 import net.phoenixvine.chronicles.client.render.*;
+import net.phoenixvine.chronicles.client.render.ChroniclesUIKit;
 import net.phoenixvine.chronicles.client.screen.utils.*;
 import net.phoenixvine.chronicles.client.screen.widgets.*;
 import net.phoenixvine.chronicles.common.model.*;
@@ -107,7 +108,8 @@ final class OverviewSidebar {
                         screen.rebuild();
                     } else if (row.locked()) {
 
-                        screen.setFeedback("§7Locked. Complete a quest in the parent chapter first");
+                        screen.setFeedback(ChroniclesUIKit
+                                .str("phoenix_chronicles.screen.overview_sidebar.locked_complete_a_quest_in"));
                     } else {
                         screen.selectedChapter = row.id();
                         screen.editorState.selectedNode = null;
@@ -132,7 +134,8 @@ final class OverviewSidebar {
             LangEditorScreen.writeEnUsJson(base);
 
             ChroniclesLangPack.reload();
-            screen.setFeedback("§aExported lang/en_us.json");
+            screen.setFeedback(
+                    ChroniclesUIKit.str("phoenix_chronicles.screen.overview_sidebar.exported_lang_en_us_json"));
             return true;
         }
         return false;
@@ -231,7 +234,8 @@ final class OverviewSidebar {
             Minecraft.getInstance().setScreen(new NewChapterScreen(screen, id -> {
                 screen.selectedChapter = id;
                 screen.rebuild();
-                screen.setFeedback("Chapter '%s' created", screen.friendly(id));
+                screen.setFeedback(ChroniclesUIKit.label("phoenix_chronicles.screen.overview_sidebar.chapter_created"),
+                        screen.friendly(id));
             }));
         }
     }

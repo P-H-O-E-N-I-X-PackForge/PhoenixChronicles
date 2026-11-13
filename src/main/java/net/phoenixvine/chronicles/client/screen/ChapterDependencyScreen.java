@@ -44,7 +44,7 @@ public class ChapterDependencyScreen extends Screen {
 
     public ChapterDependencyScreen(Screen parent, String ownChapter, Set<String> chapters, Set<String> categories,
                                    BiConsumer<Set<String>, Set<String>> onDone) {
-        super(Component.literal("Chapter Dependencies"));
+        super(Component.translatable("phoenix_chronicles.screen.chapter_dependency.chapter_dependencies"));
         this.parent = parent;
         this.chapters = new LinkedHashSet<>(chapters);
         this.categories = new LinkedHashSet<>(categories);
@@ -92,16 +92,18 @@ public class ChapterDependencyScreen extends Screen {
         panelX = width / 2 - PANEL_W / 2;
         panelY = height / 2 - PANEL_H / 2;
         int footY = panelY + PANEL_H - FOOTER_H + 5;
-        addRenderableWidget(Button.builder(Component.literal("§cClear"), b -> {
-            chapters.clear();
-            categories.clear();
-        }).bounds(panelX + 6, footY, 60, 16).build());
-        addRenderableWidget(Button.builder(Component.literal("§7Cancel"), b -> close())
+        addRenderableWidget(
+                Button.builder(Component.translatable("phoenix_chronicles.screen.chapter_dependency.clear"), b -> {
+                    chapters.clear();
+                    categories.clear();
+                }).bounds(panelX + 6, footY, 60, 16).build());
+        addRenderableWidget(Button.builder(Component.translatable("phoenix_chronicles.ui.cancel"), b -> close())
                 .bounds(panelX + PANEL_W - 132, footY, 60, 16).build());
-        addRenderableWidget(Button.builder(Component.literal("§aDone"), b -> {
-            onDone.accept(chapters, categories);
-            close();
-        }).bounds(panelX + PANEL_W - 66, footY, 60, 16).build());
+        addRenderableWidget(
+                Button.builder(Component.translatable("phoenix_chronicles.screen.chapter_dependency.done"), b -> {
+                    onDone.accept(chapters, categories);
+                    close();
+                }).bounds(panelX + PANEL_W - 66, footY, 60, 16).build());
     }
 
     private void close() {
@@ -122,10 +124,12 @@ public class ChapterDependencyScreen extends Screen {
         ChroniclesUIKit.drawModalChrome(g, font, width, height, panelX, panelY, PANEL_W, PANEL_H, HEADER_H,
                 "Chapter Dependencies");
         g.drawString(font, ChroniclesUIKit.fitText(font,
-                "§7Locked until every picked chapter is complete,", PANEL_W - 12), panelX + 6,
+                ChroniclesUIKit.str("phoenix_chronicles.screen.chapter_dependency.locked_until_every_picked_chapter"),
+                PANEL_W - 12), panelX + 6,
                 panelY + HEADER_H + 3, ChroniclesThemePalette.TEXT_DIM, false);
         g.drawString(font, ChroniclesUIKit.fitText(font,
-                "§7on top of this quest's own prerequisites.", PANEL_W - 12), panelX + 6,
+                ChroniclesUIKit.str("phoenix_chronicles.screen.chapter_dependency.on_top_of_this_quest"), PANEL_W - 12),
+                panelX + 6,
                 panelY + HEADER_H + 13, ChroniclesThemePalette.TEXT_DIM, false);
 
         int top = listTop();

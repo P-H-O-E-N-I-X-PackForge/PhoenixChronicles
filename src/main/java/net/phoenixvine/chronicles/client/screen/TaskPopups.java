@@ -45,11 +45,14 @@ final class TaskPopups {
 
         int ry = popupY + padTop;
         if (contentRows == 0) {
-            ChroniclesUIKit.drawString(g, Minecraft.getInstance().font, "§8(no connections)", popupX + padW, ry + 2,
+            ChroniclesUIKit.drawString(g, Minecraft.getInstance().font,
+                    ChroniclesUIKit.str("phoenix_chronicles.screen.task_popups.no_connections"), popupX + padW, ry + 2,
                     screen.C_TEXT_FAINT, false);
         } else {
-            ry = renderUsesPopupSection(g, popupX, ry, innerW, padW, rowH, "§8Requires:", requires, mx, my);
-            ry = renderUsesPopupSection(g, popupX, ry, innerW, padW, rowH, "§8Unlocks:", unlocks, mx, my);
+            ry = renderUsesPopupSection(g, popupX, ry, innerW, padW, rowH,
+                    ChroniclesUIKit.str("phoenix_chronicles.screen.node_renderer.requires"), requires, mx, my);
+            ry = renderUsesPopupSection(g, popupX, ry, innerW, padW, rowH,
+                    ChroniclesUIKit.str("phoenix_chronicles.screen.task_popups.unlocks"), unlocks, mx, my);
         }
         g.pose().popPose();
     }
@@ -101,7 +104,8 @@ final class TaskPopups {
         g.fill(0, 0, screen.width, screen.height, 0x99000000);
         g.fill(popupX, popupY, popupX + innerW, popupY + popupH, 0xF00A0A0E);
         screen.drawBorder(g, popupX, popupY, innerW, popupH);
-        ChroniclesUIKit.drawCenteredString(g, Minecraft.getInstance().font, "§6Choose your reward", popupX + innerW / 2,
+        ChroniclesUIKit.drawCenteredString(g, Minecraft.getInstance().font,
+                ChroniclesUIKit.str("phoenix_chronicles.screen.task_popups.choose_your_reward"), popupX + innerW / 2,
                 popupY + 8, screen.C_TEXT);
 
         int ry = popupY + padTop;

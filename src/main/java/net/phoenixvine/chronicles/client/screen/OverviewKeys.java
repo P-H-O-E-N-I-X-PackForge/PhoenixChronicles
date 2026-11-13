@@ -5,6 +5,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.phoenixvine.chronicles.client.event.ChronicleKeyBindings;
 import net.phoenixvine.chronicles.client.profiler.FrameProfiler;
 import net.phoenixvine.chronicles.client.render.*;
+import net.phoenixvine.chronicles.client.render.ChroniclesUIKit;
 import net.phoenixvine.chronicles.client.screen.utils.*;
 import net.phoenixvine.chronicles.client.screen.widgets.*;
 import net.phoenixvine.chronicles.common.codec.QuestChroniclesSettings;
@@ -50,8 +51,10 @@ final class OverviewKeys {
                 screen.depLineRenderer.refreshEdgeEndpoints(screen.nodeSizeEditMode.getId(), screen::nodeCenterForLine,
                         screen.posZoom(),
                         QuestChroniclesSettings.get());
-                screen.setFeedback("Size: %dpx  (scroll to resize - shift/ctrl for finer steps, drag to move, " +
-                        "right-click/Esc to finish)", screen.nodeSizeEditMode.getNodePixelSize());
+                screen.setFeedback(
+                        ChroniclesUIKit
+                                .label("phoenix_chronicles.screen.overview_edit_modes.size_dpx_scroll_to_resize"),
+                        screen.nodeSizeEditMode.getNodePixelSize());
             } catch (NumberFormatException ignored) {}
             screen.nodeSizeTypedBuffer = null;
             return true;
@@ -71,11 +74,13 @@ final class OverviewKeys {
                     }
                 }
                 screen.editorState.bulkDragOrigPositions = null;
-                screen.setFeedback("Move cancelled (%d quests)", count);
+                screen.setFeedback(
+                        ChroniclesUIKit.label("phoenix_chronicles.screen.overview_keys.move_cancelled_d_quests"),
+                        count);
             } else {
                 screen.editorState.draggedNode.setCustomPosition(screen.dragOrigX, screen.dragOrigY);
                 screen.saveNodeToDisk(screen.editorState.draggedNode);
-                screen.setFeedback("Move cancelled");
+                screen.setFeedback(ChroniclesUIKit.str("phoenix_chronicles.screen.overview_keys.move_cancelled"));
             }
             screen.editorState.draggedNode = null;
             screen.pickupPlaceActive = false;
@@ -95,7 +100,9 @@ final class OverviewKeys {
 
         if (key == 80 && ctrl && (mods & 1) == 0) {
             FrameProfiler.setEnabled(!FrameProfiler.isEnabled());
-            screen.setFeedback(FrameProfiler.isEnabled() ? "§aProfiler ON" : "§7Profiler OFF");
+            screen.setFeedback(FrameProfiler.isEnabled() ?
+                    ChroniclesUIKit.str("phoenix_chronicles.screen.overview_keys.profiler_on") :
+                    ChroniclesUIKit.str("phoenix_chronicles.screen.overview_keys.profiler_off"));
             return true;
         }
 
@@ -106,7 +113,8 @@ final class OverviewKeys {
                         new C2STogglePinPacket(screen.lastHoveredNodeId));
                 QuestNode hovered = QuestTreeRegistry.getQuest(screen.lastHoveredNodeId);
                 boolean nowPinned = screen.playerData.isPinned(screen.lastHoveredNodeId);
-                String pinPrefix = nowPinned ? "§dPinned" : "§7Unpinned";
+                String pinPrefix = nowPinned ? ChroniclesUIKit.str("phoenix_chronicles.screen.overview_keys.pinned") :
+                        ChroniclesUIKit.str("phoenix_chronicles.screen.overview_keys.unpinned");
                 if (hovered != null) {
                     screen.setFeedback("%s: %s", pinPrefix,
                             hovered.getEffectiveTitleRaw(Minecraft.getInstance().getSingleplayerServer(),
@@ -125,7 +133,9 @@ final class OverviewKeys {
             s.setLineStyle(
                     nowSpline ? QuestChroniclesSettings.LineStyle.STRAIGHT : QuestChroniclesSettings.LineStyle.SPLINE);
             s.save();
-            screen.setFeedback("Line style: %s", nowSpline ? "Straight" : "Spline");
+            screen.setFeedback(ChroniclesUIKit.label("phoenix_chronicles.screen.dependency_line_renderer.line_style"),
+                    nowSpline ? ChroniclesUIKit.str("phoenix_chronicles.screen.overview_keys.straight") :
+                            ChroniclesUIKit.str("phoenix_chronicles.screen.overview_keys.spline"));
             return true;
         }
         return false;
@@ -161,18 +171,18 @@ final class OverviewKeys {
         }
         if (screen.pictureEditMode != null) {
             screen.editModes.finalizePictureEdit();
-            screen.setFeedback("Picture edit finished  (Ctrl+Z to undo the whole edit)");
+            screen.setFeedback(ChroniclesUIKit.str("phoenix_chronicles.ui.picture_edit_finished_ctrl_z"));
             return true;
         }
         if (screen.nodeSizeEditMode != null) {
             screen.editModes.finalizeNodeSizeEdit();
-            screen.setFeedback("Node resize finished  (Ctrl+Z to undo the whole edit)");
+            screen.setFeedback(ChroniclesUIKit.str("phoenix_chronicles.ui.node_resize_finished_ctrl_z"));
             screen.softRebuild();
             return true;
         }
         if (screen.editorState.activeTool != GraphEditorState.EditorTool.SELECT) {
             screen.editorState.activeTool = GraphEditorState.EditorTool.SELECT;
-            screen.setFeedback("Select mode");
+            screen.setFeedback(ChroniclesUIKit.str("phoenix_chronicles.screen.overview_keys.select_mode"));
             return true;
         }
         return false;

@@ -11,18 +11,12 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
-/** Rewrites a quest file's tag so it can be saved as a copy: new ids, and links re-pointed at other copies. */
 public final class QuestCopyTransform {
 
     private static final String NS = "phoenix_chronicles";
 
     private QuestCopyTransform() {}
 
-    /**
-     * @param questMap    old quest path id (lower case) -> new quest path id, for every quest being copied
-     * @param chapterMap  old chapter id (upper case) -> new chapter id
-     * @param categoryMap old category id -> new category id
-     */
     public static void apply(CompoundTag tag, String newId, String newChapter, Map<String, String> questMap,
                              Map<String, String> chapterMap, Map<String, String> categoryMap,
                              @Nullable String find, @Nullable String replace) {

@@ -11,6 +11,7 @@ import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
 import net.phoenixvine.chronicles.common.model.QuestNode;
 import net.phoenixvine.chronicles.common.model.QuestReward;
+import net.phoenixvine.chronicles.common.util.ChroniclesLang;
 import net.phoenixvine.chronicles.common.util.ItemData;
 import net.phoenixvine.chronicles.integration.ae2.AE2Compat;
 
@@ -71,8 +72,8 @@ public final class QuestRewardDisplay {
                 int shown = 0;
                 for (QuestReward opt : box.getOptions()) {
                     if (shown++ >= MAX_LISTED_OPTIONS) {
-                        tip.add(Component.literal("§8… and " + (box.getOptions().size() - MAX_LISTED_OPTIONS) +
-                                " more"));
+                        tip.add(ChroniclesLang.tr("phoenix_chronicles.quest_reward_display.and_more",
+                                (box.getOptions().size() - MAX_LISTED_OPTIONS)));
                         break;
                     }
                     tip.add(Component.literal("§7• ").append(opt.getSummary()));
@@ -100,6 +101,6 @@ public final class QuestRewardDisplay {
 
     private static List<Component> ae2Note(boolean pushToAe2) {
         if (!pushToAe2 || !AE2Compat.isAvailable()) return List.of();
-        return List.of(Component.literal("§bDelivered to your linked AE2 network when available"));
+        return List.of(ChroniclesLang.tr("phoenix_chronicles.quest_reward_display.delivered_to_your_linked_ae2"));
     }
 }

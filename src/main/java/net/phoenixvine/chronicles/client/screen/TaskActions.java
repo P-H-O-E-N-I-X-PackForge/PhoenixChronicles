@@ -5,6 +5,7 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.phoenixvine.chronicles.client.render.ChroniclesUIKit;
 import net.phoenixvine.chronicles.client.render.EmiReturnScreenFix;
 import net.phoenixvine.chronicles.common.codec.QuestChroniclesSettings;
 import net.phoenixvine.chronicles.common.model.*;
@@ -102,7 +103,8 @@ final class TaskActions {
             return;
         }
         if (target == null) {
-            overview.setFeedback("§cBroken quest link: %s", raw);
+            overview.setFeedback(ChroniclesUIKit.label("phoenix_chronicles.screen.task_actions.broken_quest_link"),
+                    raw);
             return;
         }
         if (target == screen.node) return;

@@ -1,6 +1,7 @@
 package net.phoenixvine.chronicles.client.screen.taskform;
 
 import net.minecraft.resources.ResourceLocation;
+import net.phoenixvine.chronicles.client.render.ChroniclesUIKit;
 import net.phoenixvine.chronicles.common.model.QuestTask;
 
 import org.jetbrains.annotations.Nullable;
@@ -36,16 +37,16 @@ public final class TaskFormType {
 
     boolean needsTarget = false;
     boolean targetOptional = false;
-    String targetHint = "§8Target id";
+    String targetHint = "phoenix_chronicles.task_form.target_id";
     int maxTargetLength = 160;
     TargetPicker targetPicker = TargetPicker.NONE;
 
     boolean needsSecond = false;
-    String secondHint = "§8Secondary value";
+    String secondHint = "phoenix_chronicles.task_form.secondary_value";
     SecondPicker secondPicker = SecondPicker.NONE;
 
     boolean needsCount = false;
-    String countHint = "§8Count";
+    String countHint = "phoenix_chronicles.task_form.count";
 
     boolean nbtBox = false;
     boolean showConsume = false;
@@ -95,7 +96,7 @@ public final class TaskFormType {
     }
 
     public String targetHint() {
-        return targetHint;
+        return ChroniclesUIKit.label(targetHint);
     }
 
     public int maxTargetLength() {
@@ -111,7 +112,7 @@ public final class TaskFormType {
     }
 
     public String secondHint() {
-        return secondHint;
+        return ChroniclesUIKit.label(secondHint);
     }
 
     public SecondPicker secondPicker() {
@@ -123,7 +124,7 @@ public final class TaskFormType {
     }
 
     public String countHint() {
-        return countHint;
+        return ChroniclesUIKit.label(countHint);
     }
 
     public boolean hasNbtBox() {

@@ -7,6 +7,7 @@ import net.minecraft.util.StringUtil;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.phoenixvine.chronicles.client.render.*;
+import net.phoenixvine.chronicles.client.render.ChroniclesUIKit;
 import net.phoenixvine.chronicles.client.screen.utils.*;
 import net.phoenixvine.chronicles.client.screen.widgets.*;
 import net.phoenixvine.chronicles.client.util.ChapterConfig;
@@ -209,7 +210,8 @@ final class OverviewHeader {
         g.fill(0, 0, screen.width, ChronicleOverviewScreen.TOOLBAR_Y, screen.palette.header);
         g.fill(0, ChronicleOverviewScreen.TOOLBAR_Y - 1, screen.width, ChronicleOverviewScreen.TOOLBAR_Y,
                 screen.palette.border);
-        String titlePrefix = screen.testMode ? "§c⏵ PLAYER  §8⟫  §7" : "§8Chronicles  §8⟫  §7";
+        String titlePrefix = screen.testMode ? ChroniclesUIKit.str("phoenix_chronicles.screen.overview_header.player") :
+                ChroniclesUIKit.str("phoenix_chronicles.screen.overview_header.chronicles");
 
         int pillReserve = screen.font().width(Math.round(screen.zoom * 100) + "%") + 10;
         if (screen.unclaimedRewardCount() > 0)
@@ -231,7 +233,8 @@ final class OverviewHeader {
             g.fill(cl, ChronicleOverviewScreen.TOOLBAR_Y - 1, cr, ChronicleOverviewScreen.TOOLBAR_Y, 0xFFCC2222);
         if (screen.pictureEditMode != null) {
             g.fill(cl, ChronicleOverviewScreen.TOOLBAR_Y - 1, cr, ChronicleOverviewScreen.TOOLBAR_Y, 0xFFFFCC33);
-            String hint = "§e🖼 Editing picture. Scroll to resize, Alt+scroll to rotate (shift = fine), drag to move, right-click/Esc to finish";
+            String hint = ChroniclesUIKit
+                    .str("phoenix_chronicles.screen.overview_header.editing_picture_scroll_to_resize");
             ChroniclesUIKit.drawCenteredString(g, screen.font(), hint, (cl + cr) / 2, 7, 0xFFFFEEAA);
         }
 
@@ -255,7 +258,9 @@ final class OverviewHeader {
             ChroniclesUIKit.drawString(g, screen.font(), claimLabel, cpx, cpy + 3, screen.palette.textDim, false);
             if (claimHov) {
                 screen.pendingDeferredDraws.add(() -> g.renderTooltip(screen.font(),
-                        ChroniclesUIKit.lit("§7" + unclaimedCount + " quest(s) with unclaimed rewards - click to open"),
+                        ChroniclesUIKit.tr(
+                                "phoenix_chronicles.screen.overview_header.quest_s_with_unclaimed_rewards",
+                                unclaimedCount),
                         mx, my));
             }
             zx = cpx;
@@ -275,10 +280,10 @@ final class OverviewHeader {
                     false);
             if (emergencyHov) {
                 String tip = anyReady ?
-                        "§7" + emergency.ready() + " quest(s) with emergency items ready - click to open" :
-                        "§7Emergency items ready again in " +
-                                QuestProgressTracker.formatDuration(emergency.soonestCooldownMs()) +
-                                " - click to open";
+                        ChroniclesUIKit.str("phoenix_chronicles.screen.overview_header.quest_s_with_emergency_items",
+                                emergency.ready()) :
+                        ChroniclesUIKit.str("phoenix_chronicles.screen.overview_header.emergency_items_ready_again_in",
+                                QuestProgressTracker.formatDuration(emergency.soonestCooldownMs()));
                 screen.pendingDeferredDraws.add(() -> g.renderTooltip(screen.font(), ChroniclesUIKit.lit(tip), mx, my));
             }
             zx = epx;
@@ -296,14 +301,17 @@ final class OverviewHeader {
                     false);
             if (autoHov) {
                 screen.pendingDeferredDraws.add(() -> g.renderTooltip(screen.font(), ChroniclesUIKit.lit(autoOn ?
-                        "§7Auto-claim is on - click to choose what it claims" :
-                        "§7Auto-claim is off - click to set it up"), mx, my));
+                        ChroniclesUIKit.str("phoenix_chronicles.screen.overview_header.auto_claim_is_on_click") :
+                        ChroniclesUIKit.str("phoenix_chronicles.screen.overview_header.auto_claim_is_off_click")), mx,
+                        my));
             }
             zx = apx;
         }
 
-        String gridLabel = !screen.gridSnapEnabled ? "§8Grid: §c§loff" :
-                (screen.gridSnap == 1) ? "§8Grid: §afree" : "§8Grid: §7" + screen.gridSnap;
+        String gridLabel = !screen.gridSnapEnabled ?
+                ChroniclesUIKit.str("phoenix_chronicles.screen.overview_header.grid_off") :
+                (screen.gridSnap == 1) ? ChroniclesUIKit.str("phoenix_chronicles.screen.overview_header.grid_free") :
+                        ChroniclesUIKit.str("phoenix_chronicles.screen.overview_header.grid", screen.gridSnap);
         int gw = screen.font().width(StringUtil.stripColor(gridLabel));
         int gpx = zx - gw - 18, gpy = 3;
         boolean gridHov = mx >= gpx - 3 && mx < gpx + gw + 5 && my >= gpy && my < gpy + 13;
@@ -312,12 +320,15 @@ final class OverviewHeader {
         if (gridHov) {
 
             screen.pendingDeferredDraws.add(() -> g.renderTooltip(screen.font(),
-                    ChroniclesUIKit.lit("§7Click to cycle canvas snap grid size"), mx, my));
+                    ChroniclesUIKit.tr("phoenix_chronicles.screen.overview_header.click_to_cycle_canvas_snap"), mx,
+                    my));
         }
 
         if (screen.isDevMode) {
-            String sgLabel = screen.editorState.subgraphMode ? "§b⊛ Subgraph: " + screen.subgraphNodes.size() :
-                    "§8⊛ Subgraph";
+            String sgLabel = screen.editorState.subgraphMode ?
+                    ChroniclesUIKit.str("phoenix_chronicles.screen.overview_header.subgraph",
+                            screen.subgraphNodes.size()) :
+                    ChroniclesUIKit.str("phoenix_chronicles.screen.overview_header.subgraph_2");
             int sgw = screen.font().width(StringUtil.stripColor(sgLabel));
             int sgx = gpx - sgw - 18, sgy = 3;
             boolean sgHov = mx >= sgx - 3 && mx < sgx + sgw + 5 && my >= sgy && my < sgy + 13;
@@ -326,12 +337,14 @@ final class OverviewHeader {
             ChroniclesUIKit.drawString(g, screen.font(), sgLabel, sgx, sgy + 3, screen.palette.textDim, false);
             if (sgHov) {
                 screen.pendingDeferredDraws.add(() -> g.renderComponentTooltip(screen.font(), List.of(
-                        ChroniclesUIKit.lit("§b⊛ Subgraph mode"),
-                        ChroniclesUIKit.lit("§7Dims every quest that isn't an ancestor or"),
-                        ChroniclesUIKit.lit("§7descendant of the currently selected one,"),
-                        ChroniclesUIKit.lit("§7isolating just its dependency chain."),
-                        ChroniclesUIKit.lit("§8Click a quest to select it, then click this"),
-                        ChroniclesUIKit.lit("§8pill (or press G) to toggle it on/off.")), mx, my));
+                        ChroniclesUIKit.tr("phoenix_chronicles.screen.overview_header.subgraph_mode"),
+                        ChroniclesUIKit.tr("phoenix_chronicles.screen.overview_header.dims_every_quest_that_isn"),
+                        ChroniclesUIKit
+                                .tr("phoenix_chronicles.screen.overview_header.descendant_of_the_currently_selected"),
+                        ChroniclesUIKit
+                                .tr("phoenix_chronicles.screen.overview_header.isolating_just_its_dependency_chain"),
+                        ChroniclesUIKit.tr("phoenix_chronicles.screen.overview_header.click_a_quest_to_select"),
+                        ChroniclesUIKit.tr("phoenix_chronicles.screen.overview_header.pill_or_press_g_to")), mx, my));
             }
 
         }

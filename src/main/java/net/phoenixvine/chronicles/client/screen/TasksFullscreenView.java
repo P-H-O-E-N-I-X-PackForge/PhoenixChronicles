@@ -449,7 +449,7 @@ final class TasksFullscreenView {
                 g.fill(dx, fsDescBoxY, dx + 2, fsDescBoxY + 1, dashColor);
                 g.fill(dx, fsDescBoxY + fsDescBoxH - 1, dx + 2, fsDescBoxY + fsDescBoxH, dashColor);
             }
-            String hint = "§7✎ click to edit";
+            String hint = ChroniclesUIKit.str("phoenix_chronicles.screen.tasks_fullscreen_view.click_to_edit");
             ChroniclesUIKit.drawString(g, Minecraft.getInstance().font, hint,
                     fsDescBoxX + fsDescBoxW - Minecraft.getInstance().font.width(hint) - 2, fsDescBoxY - 9,
                     hoveredFsDescBox ? screen.C_ACTIVE : screen.C_TEXT_FAINT, false);
@@ -475,7 +475,8 @@ final class TasksFullscreenView {
                 .resolveConditionals(
                         descBlocks);
         if (screen.isEditMode && descRaw.isEmpty() && descBlocks.isEmpty()) {
-            ChroniclesUIKit.drawString(g, Minecraft.getInstance().font, "§8Click to add a description", x, y,
+            ChroniclesUIKit.drawString(g, Minecraft.getInstance().font,
+                    ChroniclesUIKit.str("phoenix_chronicles.ui.click_to_add_a_description"), x, y,
                     screen.C_TEXT_FAINT, false);
         }
 
@@ -582,7 +583,9 @@ final class TasksFullscreenView {
         int cy = y - screen.inspectorScrollY + 4;
         int viewBot = y + h;
         if (screen.lineFullyVisible(cy, y, viewBot))
-            ChroniclesUIKit.drawString(g, Minecraft.getInstance().font, "§8Chapter:", x + m, cy, screen.C_TEXT_FAINT,
+            ChroniclesUIKit.drawString(g, Minecraft.getInstance().font,
+                    ChroniclesUIKit.str("phoenix_chronicles.screen.tasks_fullscreen_view.chapter"), x + m, cy,
+                    screen.C_TEXT_FAINT,
                     false);
         if (screen.lineFullyVisible(cy + 10, y, viewBot))
             ChroniclesUIKit.drawString(g, Minecraft.getInstance().font,
@@ -591,7 +594,9 @@ final class TasksFullscreenView {
                     screen.C_TEXT, false);
         cy += 24;
         if (screen.lineFullyVisible(cy, y, viewBot))
-            ChroniclesUIKit.drawString(g, Minecraft.getInstance().font, "§8Visibility:", x + m, cy, screen.C_TEXT_FAINT,
+            ChroniclesUIKit.drawString(g, Minecraft.getInstance().font,
+                    ChroniclesUIKit.str("phoenix_chronicles.screen.tasks_fullscreen_view.visibility"), x + m, cy,
+                    screen.C_TEXT_FAINT,
                     false);
         if (screen.lineFullyVisible(cy + 10, y, viewBot))
             ChroniclesUIKit.drawString(g, Minecraft.getInstance().font,
@@ -636,7 +641,8 @@ final class TasksFullscreenView {
         int viewBot = y + h;
         if (tasks.isEmpty() && prereqs.isEmpty() && dependents.isEmpty()) {
             if (screen.lineFullyVisible(cy, y, viewBot))
-                ChroniclesUIKit.drawString(g, Minecraft.getInstance().font, "§8(none)", x + m, cy, screen.C_TEXT_FAINT,
+                ChroniclesUIKit.drawString(g, Minecraft.getInstance().font,
+                        ChroniclesUIKit.str("phoenix_chronicles.ui.none"), x + m, cy, screen.C_TEXT_FAINT,
                         false);
             if (screen.isEditMode) {
                 int addY = screen.lineFullyVisible(cy, y, viewBot) ? cy + 12 : cy;
@@ -681,7 +687,8 @@ final class TasksFullscreenView {
             if (screen.lineFullyVisible(cy, y, viewBot)) g.fill(x + m, cy, x + w - m, cy + 1, screen.C_BORDER);
             cy += 8;
             if (screen.lineFullyVisible(cy, y, viewBot))
-                ChroniclesUIKit.drawString(g, Minecraft.getInstance().font, "§8PREREQUISITES:", x + m, cy,
+                ChroniclesUIKit.drawString(g, Minecraft.getInstance().font,
+                        ChroniclesUIKit.str("phoenix_chronicles.screen.tasks_fullscreen_view.prerequisites"), x + m, cy,
                         screen.C_TEXT_FAINT, false);
             cy += 12;
             for (QuestNode req : prereqs) {
@@ -714,7 +721,8 @@ final class TasksFullscreenView {
             if (screen.lineFullyVisible(cy, y, viewBot)) g.fill(x + m, cy, x + w - m, cy + 1, screen.C_BORDER);
             cy += 8;
             if (screen.lineFullyVisible(cy, y, viewBot))
-                ChroniclesUIKit.drawString(g, Minecraft.getInstance().font, "§8UNLOCKS:", x + m, cy,
+                ChroniclesUIKit.drawString(g, Minecraft.getInstance().font,
+                        ChroniclesUIKit.str("phoenix_chronicles.screen.tasks_fullscreen_view.unlocks"), x + m, cy,
                         screen.C_TEXT_FAINT, false);
             cy += 12;
             for (QuestNode dep : dependents) {
@@ -750,14 +758,17 @@ final class TasksFullscreenView {
         screen.drawBorder(g, x, y, w, h);
 
         int m = 6;
-        ChroniclesUIKit.drawString(g, Minecraft.getInstance().font, "§8Rewards", x + m, y + 5, screen.C_TEXT_FAINT,
+        ChroniclesUIKit.drawString(g, Minecraft.getInstance().font,
+                ChroniclesUIKit.str("phoenix_chronicles.screen.tasks_fullscreen_view.rewards"), x + m, y + 5,
+                screen.C_TEXT_FAINT,
                 false);
         g.fill(x + m, y + 15, x + w - m, y + 16, screen.C_BORDER);
 
         List<QuestReward> rewards = screen.content.effectiveRewards();
         int cy = y + 21;
         if (rewards.isEmpty()) {
-            ChroniclesUIKit.drawString(g, Minecraft.getInstance().font, "§8(none)", x + m, cy, screen.C_TEXT_FAINT,
+            ChroniclesUIKit.drawString(g, Minecraft.getInstance().font,
+                    ChroniclesUIKit.str("phoenix_chronicles.ui.none"), x + m, cy, screen.C_TEXT_FAINT,
                     false);
             if (screen.isEditMode) {
                 int addY = cy + 12;
@@ -769,8 +780,10 @@ final class TasksFullscreenView {
         }
 
         if (screen.node.isRewardChoice()) {
-            String choiceHdr = screen.node.getRewardChoiceCount() == 1 ? "§6Pick 1 reward:" :
-                    "§6Pick " + screen.node.getRewardChoiceCount() + " rewards:";
+            String choiceHdr = screen.node.getRewardChoiceCount() == 1 ?
+                    ChroniclesUIKit.str("phoenix_chronicles.screen.tasks_fullscreen_view.pick_1_reward") :
+                    ChroniclesUIKit.str("phoenix_chronicles.screen.tasks_fullscreen_view.pick_rewards",
+                            screen.node.getRewardChoiceCount());
             ChroniclesUIKit.drawString(g, Minecraft.getInstance().font, choiceHdr, x + m, cy, screen.C_TEXT, false);
             cy += 12;
         }
@@ -874,23 +887,30 @@ final class TasksFullscreenView {
         if (canClaim) {
             int btnW = 140, btnX = (screen.width - btnW) / 2, btnY = footerY + 2;
             if (screen.node.isRewardChoice()) {
-                String msg = screen.node.getRewardChoiceCount() == 1 ? "§6Pick a reward ↑" :
-                        "§6Pick " + screen.node.getRewardChoiceCount() + " rewards ↑";
+                String msg = screen.node.getRewardChoiceCount() == 1 ?
+                        ChroniclesUIKit.str("phoenix_chronicles.screen.tasks_fullscreen_view.pick_a_reward") :
+                        ChroniclesUIKit.str("phoenix_chronicles.screen.tasks_fullscreen_view.pick_rewards_2",
+                                screen.node.getRewardChoiceCount());
                 ChroniclesUIKit.drawCenteredString(g, Minecraft.getInstance().font, msg, screen.width / 2, btnY + 6,
                         screen.C_TEXT);
             } else {
                 boolean hov = mx >= btnX && mx < btnX + btnW && my >= btnY && my < btnY + 18;
                 g.fill(btnX, btnY, btnX + btnW, btnY + 18, hov ? 0xFF2A4A2A : 0xFF1A2A1A);
                 g.fill(btnX, btnY, btnX + btnW, btnY + 1, hov ? screen.C_DONE : 0xFF333333);
-                ChroniclesUIKit.drawCenteredString(g, Minecraft.getInstance().font, "§a✓ Claim Rewards",
+                ChroniclesUIKit.drawCenteredString(g, Minecraft.getInstance().font,
+                        ChroniclesUIKit.str("phoenix_chronicles.ui.claim_rewards"),
                         btnX + btnW / 2, btnY + 6,
                         hov ? screen.C_DONE : screen.C_TEXT);
             }
         } else if (screen.rewardsClaimed()) {
-            ChroniclesUIKit.drawCenteredString(g, Minecraft.getInstance().font, "§8Rewards claimed", screen.width / 2,
+            ChroniclesUIKit.drawCenteredString(g, Minecraft.getInstance().font,
+                    ChroniclesUIKit.str("phoenix_chronicles.screen.tasks_fullscreen_view.rewards_claimed"),
+                    screen.width / 2,
                     footerY + 10, screen.C_TEXT_FAINT);
         } else {
-            String footerMsg = screen.width < 220 ? "§8Complete tasks first" : "§8Complete all tasks to claim rewards";
+            String footerMsg = screen.width < 220 ?
+                    ChroniclesUIKit.str("phoenix_chronicles.screen.tasks_fullscreen_view.complete_tasks_first") :
+                    ChroniclesUIKit.str("phoenix_chronicles.screen.tasks_fullscreen_view.complete_all_tasks_to_claim");
             ChroniclesUIKit.drawCenteredString(g, Minecraft.getInstance().font, footerMsg, screen.width / 2,
                     footerY + 10, screen.C_TEXT_FAINT);
         }
@@ -1144,15 +1164,16 @@ final class TasksFullscreenView {
 
     private boolean clickDescriptionBox() {
         if (!(hoveredFsDescBox && screen.isEditMode && Minecraft.getInstance() != null)) return false;
-        Minecraft.getInstance().setScreen(new QuestTextInputScreen(screen, "Description",
-                screen.descriptions.currentFullDescriptionRaw(), 8192,
-                v -> {
-                    screen.node.setDescription(Component.literal(v));
-                    liveDescOverride = v;
-                    richSpansPage = -1;
-                    QuestFileSaver.saveOneQuestToDisk(screen.node);
-                    LangSyncScheduler.markDirty();
-                }));
+        Minecraft.getInstance()
+                .setScreen(new QuestTextInputScreen(screen, ChroniclesUIKit.str("phoenix_chronicles.ui.description"),
+                        screen.descriptions.currentFullDescriptionRaw(), 8192,
+                        v -> {
+                            screen.node.setDescription(Component.literal(v));
+                            liveDescOverride = v;
+                            richSpansPage = -1;
+                            QuestFileSaver.saveOneQuestToDisk(screen.node);
+                            LangSyncScheduler.markDirty();
+                        }));
         return true;
     }
 

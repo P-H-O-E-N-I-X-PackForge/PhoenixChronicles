@@ -3,6 +3,7 @@ package net.phoenixvine.chronicles.client.screen.widgets;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.resources.ResourceLocation;
+import net.phoenixvine.chronicles.client.render.ChroniclesUIKit;
 import net.phoenixvine.chronicles.client.screen.ChronicleOverviewScreen;
 import net.phoenixvine.chronicles.client.screen.TextureBrowserScreen;
 import net.phoenixvine.chronicles.client.screen.utils.BulkOpsPanelState;
@@ -72,8 +73,10 @@ public class BulkOpsPanel {
         g.fill(bx, by + bh - 1, bx + bw, by + bh, state.colorBorderLit());
         g.fill(bx, by, bx + 2, by + bh, 0xFF00DDFF);
 
-        g.drawString(font, "§b" + n + " selected", bx + 6, by + 4, 0xFF00DDFF);
-        g.drawString(font, "§8Ctrl+click to toggle  ·  Esc to clear", bx + 6, by + 14, ctx.colorTextFaint());
+        g.drawString(font, ChroniclesUIKit.str("phoenix_chronicles.screen.bulk_ops_panel.selected", n), bx + 6, by + 4,
+                0xFF00DDFF);
+        g.drawString(font, ChroniclesUIKit.str("phoenix_chronicles.screen.bulk_ops_panel.ctrl_click_to_toggle_esc"),
+                bx + 6, by + 14, ctx.colorTextFaint());
 
         int slotW = 14, startX = bx + 6, slotY = by + 24;
         for (int i = 0; i < SHAPE_GLYPHS.length; i++) {
@@ -85,12 +88,13 @@ public class BulkOpsPanel {
         int actX = startX + SHAPE_GLYPHS.length * (slotW + 2) + 8;
         boolean catHov = mx >= actX && mx < actX + 58 && my >= slotY && my < slotY + 12;
         if (catHov || moveCatOpen) g.fill(actX, slotY, actX + 58, slotY + 12, 0xFF222233);
-        g.drawString(font, "§7Move cat ▸", actX, slotY + 2,
+        g.drawString(font, ChroniclesUIKit.str("phoenix_chronicles.screen.bulk_ops_panel.move_cat"), actX, slotY + 2,
                 (catHov || moveCatOpen) ? 0xFFCCCCFF : ctx.colorTextDim());
         int delX = actX + 62;
         boolean delHov = mx >= delX && mx < delX + 44 && my >= slotY && my < slotY + 12;
         if (delHov) g.fill(delX, slotY, delX + 44, slotY + 12, 0xFF221212);
-        g.drawString(font, "§cDel all", delX, slotY + 2, delHov ? 0xFFFF5555 : ChronicleOverviewScreen.C_CTX_DANGER);
+        g.drawString(font, ChroniclesUIKit.str("phoenix_chronicles.screen.bulk_ops_panel.del_all"), delX, slotY + 2,
+                delHov ? 0xFFFF5555 : ChronicleOverviewScreen.C_CTX_DANGER);
 
         int sizeSlotW = 50, sizeStartX = bx + 6, sizeSlotY = slotY + ROW_H;
         for (int i = 0; i < SIZE_LABELS.length; i++) {
@@ -193,26 +197,28 @@ public class BulkOpsPanel {
                 state.saveNodeShapeTextureToDisk(n);
             }
         }
-        ctx.setFeedback("Shape → CUSTOM for %d quests", targets.size());
+        ctx.setFeedback(ChroniclesUIKit.label("phoenix_chronicles.screen.bulk_ops_panel.shape_custom_for_d_quests"),
+                targets.size());
         state.rebuild();
-        ctx.pushUndo("Undo: " + oldShapes.size() + " quest shapes reverted", () -> {
-            for (Map.Entry<QuestNode, String> e : oldShapes.entrySet()) {
-                QuestNode n = e.getKey();
-                n.setShapeType(e.getValue());
-                n.setShapeTexture(oldTextures.get(n));
-                state.saveNodeShapeToDisk(n, e.getValue());
-                state.saveNodeShapeTextureToDisk(n);
-            }
-            state.rebuild();
-        }, () -> {
-            for (QuestNode n : oldShapes.keySet()) {
-                n.setShapeType("CUSTOM");
-                n.setShapeTexture(texture);
-                state.saveNodeShapeToDisk(n, "CUSTOM");
-                state.saveNodeShapeTextureToDisk(n);
-            }
-            state.rebuild();
-        });
+        ctx.pushUndo(ChroniclesUIKit.str("phoenix_chronicles.screen.bulk_ops_panel.undo_quest_shapes_reverted",
+                oldShapes.size()), () -> {
+                    for (Map.Entry<QuestNode, String> e : oldShapes.entrySet()) {
+                        QuestNode n = e.getKey();
+                        n.setShapeType(e.getValue());
+                        n.setShapeTexture(oldTextures.get(n));
+                        state.saveNodeShapeToDisk(n, e.getValue());
+                        state.saveNodeShapeTextureToDisk(n);
+                    }
+                    state.rebuild();
+                }, () -> {
+                    for (QuestNode n : oldShapes.keySet()) {
+                        n.setShapeType("CUSTOM");
+                        n.setShapeTexture(texture);
+                        state.saveNodeShapeToDisk(n, "CUSTOM");
+                        state.saveNodeShapeTextureToDisk(n);
+                    }
+                    state.rebuild();
+                });
     }
 
     private void applyShapeToSelection(String newShape) {
@@ -226,21 +232,23 @@ public class BulkOpsPanel {
                 state.saveNodeShapeToDisk(n, newShape);
             }
         }
-        ctx.setFeedback("Shape → %s for %d quests", newShape, editorState.multiSelection.size());
+        ctx.setFeedback(ChroniclesUIKit.label("phoenix_chronicles.screen.bulk_ops_panel.shape_for_d_quests"), newShape,
+                editorState.multiSelection.size());
         state.rebuild();
-        ctx.pushUndo("Undo: " + oldShapes.size() + " quest shapes reverted", () -> {
-            for (Map.Entry<QuestNode, String> e : oldShapes.entrySet()) {
-                e.getKey().setShapeType(e.getValue());
-                state.saveNodeShapeToDisk(e.getKey(), e.getValue());
-            }
-            state.rebuild();
-        }, () -> {
-            for (QuestNode n : oldShapes.keySet()) {
-                n.setShapeType(newShape);
-                state.saveNodeShapeToDisk(n, newShape);
-            }
-            state.rebuild();
-        });
+        ctx.pushUndo(ChroniclesUIKit.str("phoenix_chronicles.screen.bulk_ops_panel.undo_quest_shapes_reverted",
+                oldShapes.size()), () -> {
+                    for (Map.Entry<QuestNode, String> e : oldShapes.entrySet()) {
+                        e.getKey().setShapeType(e.getValue());
+                        state.saveNodeShapeToDisk(e.getKey(), e.getValue());
+                    }
+                    state.rebuild();
+                }, () -> {
+                    for (QuestNode n : oldShapes.keySet()) {
+                        n.setShapeType(newShape);
+                        state.saveNodeShapeToDisk(n, newShape);
+                    }
+                    state.rebuild();
+                });
     }
 
     private boolean clickSizeSlot(double mx, double my, int sizeStartX, int sizeSlotY) {
@@ -280,15 +288,17 @@ public class BulkOpsPanel {
             newSizes.put(n, sizeOf(n));
             QuestFileSaver.saveOneQuestToDisk(n, false);
         }
-        ctx.setFeedback("Size → %s for %d quests", label, editorState.multiSelection.size());
+        ctx.setFeedback(ChroniclesUIKit.label("phoenix_chronicles.screen.bulk_ops_panel.size_for_d_quests"), label,
+                editorState.multiSelection.size());
         state.rebuild();
-        ctx.pushUndo("Undo: " + oldSizes.size() + " quest sizes reverted", () -> {
-            oldSizes.forEach(BulkOpsPanel::applySize);
-            state.rebuild();
-        }, () -> {
-            newSizes.forEach(BulkOpsPanel::applySize);
-            state.rebuild();
-        });
+        ctx.pushUndo(ChroniclesUIKit.str("phoenix_chronicles.screen.bulk_ops_panel.undo_quest_sizes_reverted",
+                oldSizes.size()), () -> {
+                    oldSizes.forEach(BulkOpsPanel::applySize);
+                    state.rebuild();
+                }, () -> {
+                    newSizes.forEach(BulkOpsPanel::applySize);
+                    state.rebuild();
+                });
     }
 
     private boolean clickMoveChapterRow(double mx, double my, int subX, int sizeSlotY) {
@@ -317,20 +327,22 @@ public class BulkOpsPanel {
             }
         }
         moveCatOpen = false;
-        ctx.setFeedback("Moved %d quests to %s", editorState.multiSelection.size(), ctx.friendly(newCat));
-        ctx.pushUndo("Undo: " + oldChapters.size() + " quests moved back", () -> {
-            for (Map.Entry<QuestNode, String> e : oldChapters.entrySet()) {
-                e.getKey().setChapter(e.getValue());
-                state.saveNodeChapterToDisk(e.getKey(), e.getValue());
-            }
-            state.rebuild();
-        }, () -> {
-            for (QuestNode n : oldChapters.keySet()) {
-                n.setChapter(newCat);
-                state.saveNodeChapterToDisk(n, newCat);
-            }
-            state.rebuild();
-        });
+        ctx.setFeedback(ChroniclesUIKit.label("phoenix_chronicles.screen.bulk_ops_panel.moved_d_quests_to"),
+                editorState.multiSelection.size(), ctx.friendly(newCat));
+        ctx.pushUndo(ChroniclesUIKit.str("phoenix_chronicles.screen.bulk_ops_panel.undo_quests_moved_back",
+                oldChapters.size()), () -> {
+                    for (Map.Entry<QuestNode, String> e : oldChapters.entrySet()) {
+                        e.getKey().setChapter(e.getValue());
+                        state.saveNodeChapterToDisk(e.getKey(), e.getValue());
+                    }
+                    state.rebuild();
+                }, () -> {
+                    for (QuestNode n : oldChapters.keySet()) {
+                        n.setChapter(newCat);
+                        state.saveNodeChapterToDisk(n, newCat);
+                    }
+                    state.rebuild();
+                });
         state.rebuild();
     }
 
@@ -350,19 +362,20 @@ public class BulkOpsPanel {
         }
         editorState.multiSelection.clear();
         state.rebuild();
-        ctx.setFeedback("Deleted %d quests", count);
-        ctx.pushUndo("Undo: " + savedContent.size() + " quests restored", () -> {
-            for (Map.Entry<QuestNode, String> e : savedContent.entrySet()) {
-                QuestFileSaver.restoreRawSnbt(e.getKey(), e.getValue());
-                QuestFileLoader.loadOneFromDisk(savedPaths.get(e.getKey()));
-            }
-            state.rebuild();
-        }, () -> {
-            for (QuestNode n : savedContent.keySet()) {
-                QuestTreeRegistry.removeQuest(n.getId());
-                state.deleteQuestFiles(n);
-            }
-            state.rebuild();
-        });
+        ctx.setFeedback(ChroniclesUIKit.label("phoenix_chronicles.screen.bulk_ops_panel.deleted_d_quests"), count);
+        ctx.pushUndo(ChroniclesUIKit.str("phoenix_chronicles.screen.bulk_ops_panel.undo_quests_restored",
+                savedContent.size()), () -> {
+                    for (Map.Entry<QuestNode, String> e : savedContent.entrySet()) {
+                        QuestFileSaver.restoreRawSnbt(e.getKey(), e.getValue());
+                        QuestFileLoader.loadOneFromDisk(savedPaths.get(e.getKey()));
+                    }
+                    state.rebuild();
+                }, () -> {
+                    for (QuestNode n : savedContent.keySet()) {
+                        QuestTreeRegistry.removeQuest(n.getId());
+                        state.deleteQuestFiles(n);
+                    }
+                    state.rebuild();
+                });
     }
 }

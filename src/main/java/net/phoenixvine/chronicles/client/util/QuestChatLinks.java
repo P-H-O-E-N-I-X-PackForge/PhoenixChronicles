@@ -23,8 +23,10 @@ public final class QuestChatLinks {
                 .withStyle(s -> s.withColor(ChatFormatting.AQUA).withUnderlined(true)
                         .withClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, command))
                         .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT,
-                                Component.literal("Click to put the command in the chat box, then press Enter"))));
-        mc.gui.getChat().addMessage(Component.literal("Quest link copied - paste it in chat to share: ")
-                .withStyle(ChatFormatting.GRAY).append(link));
+                                Component.translatable(
+                                        "phoenix_chronicles.screen.quest_chat_links.click_to_put_the_command"))));
+        mc.gui.getChat().addMessage(
+                Component.translatable("phoenix_chronicles.screen.quest_chat_links.quest_link_copied_paste_it")
+                        .withStyle(ChatFormatting.GRAY).append(link));
     }
 }

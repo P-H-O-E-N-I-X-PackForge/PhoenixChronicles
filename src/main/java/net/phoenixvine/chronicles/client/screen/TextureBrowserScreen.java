@@ -6,6 +6,7 @@ import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.phoenixvine.chronicles.client.render.ChroniclesUIKit;
 import net.phoenixvine.chronicles.client.util.AnimatedTexture;
 import net.phoenixvine.chronicles.client.util.CustomTextureCache;
 import net.phoenixvine.wiki.theme.PhoenixTheme;
@@ -81,13 +82,17 @@ public class TextureBrowserScreen extends Screen {
 
         g.fill(0, 0, width, HEADER_H, C_PANEL);
         g.fill(0, HEADER_H - 1, width, HEADER_H, C_BORDER);
-        g.drawCenteredString(font, "§fTexture Browser", width / 2, 6, C_TEXT);
-        g.drawString(font, "§8Search:", width / 2 - 100 - font.width("Search: "), HEADER_H / 2 - 3, C_FAINT, false);
+        g.drawCenteredString(font, ChroniclesUIKit.str("phoenix_chronicles.screen.texture_browser.texture_browser"),
+                width / 2, 6, C_TEXT);
+        g.drawString(font, ChroniclesUIKit.str("phoenix_chronicles.ui.search"),
+                width / 2 - 100 - font.width("Search: "), HEADER_H / 2 - 3, C_FAINT, false);
 
         int fy = height - FOOTER_H;
         g.fill(0, fy, width, height, C_PANEL);
         g.fill(0, fy, width, fy + 1, C_BORDER);
-        g.drawString(font, "§8" + filtered.size() + " Textures  ·  LMB to select  ·  RMB to copy path",
+        g.drawString(font,
+                ChroniclesUIKit.str("phoenix_chronicles.screen.texture_browser.textures_lmb_to_select_rmb",
+                        filtered.size()),
                 8, fy + 10, C_FAINT, false);
 
         g.enableScissor(0, HEADER_H, width, fy);

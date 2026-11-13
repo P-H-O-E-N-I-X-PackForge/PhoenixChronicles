@@ -3,6 +3,7 @@ package net.phoenixvine.chronicles.client.screen.utils;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
 import net.phoenixvine.chronicles.capability.PlayerQuestData;
+import net.phoenixvine.chronicles.client.render.ChroniclesUIKit;
 import net.phoenixvine.chronicles.client.screen.*;
 import net.phoenixvine.chronicles.client.util.BackgroundPictureConfig;
 import net.phoenixvine.chronicles.client.util.CustomTextureCache;
@@ -75,7 +76,9 @@ public class NodeContextMenuBuilder {
     }
 
     private void addNewQuestItems(List<ChronicleOverviewScreen.CtxItem> items) {
-        items.add(new ChronicleOverviewScreen.CtxItem("+ New quest", "§a", false, false,
+        items.add(new ChronicleOverviewScreen.CtxItem(
+                ChroniclesUIKit.str("phoenix_chronicles.screen.node_context_menu_builder.new_quest"), "§a", false,
+                false,
                 () -> {
                     state.setCtxOpen(false);
                     int cl = ctx.sidebarW();
@@ -85,7 +88,9 @@ public class NodeContextMenuBuilder {
                     Minecraft.getInstance().setScreen(
                             new QuestCreatorScreen(state.thisScreen(), canvasX, canvasY, ctx.selectedChapter()));
                 }));
-        items.add(new ChronicleOverviewScreen.CtxItem("🔗 Link quest here…", "§b", false, false,
+        items.add(new ChronicleOverviewScreen.CtxItem(
+                ChroniclesUIKit.str("phoenix_chronicles.screen.node_context_menu_builder.link_quest_here"), "§b", false,
+                false,
                 () -> {
                     state.setCtxOpen(false);
                     int cl = ctx.sidebarW();
@@ -99,7 +104,9 @@ public class NodeContextMenuBuilder {
 
     private void addDependencyLinesItem(List<ChronicleOverviewScreen.CtxItem> items) {
         final String cat = ctx.selectedChapter();
-        items.add(new ChronicleOverviewScreen.CtxItem("Dependency Lines", "§b", false, false,
+        items.add(new ChronicleOverviewScreen.CtxItem(
+                ChroniclesUIKit.str("phoenix_chronicles.screen.node_context_menu_builder.dependency_lines"), "§b",
+                false, false,
                 () -> {
                     state.setCtxOpen(false);
                     Minecraft.getInstance().setScreen(new DepLineSettingsScreen(state.thisScreen(), cat));
@@ -108,12 +115,16 @@ public class NodeContextMenuBuilder {
 
     private void addMultiSelectItems(List<ChronicleOverviewScreen.CtxItem> items) {
         items.add(ChronicleOverviewScreen.CtxItem.sep());
-        items.add(new ChronicleOverviewScreen.CtxItem("→ Chain selected (left→right)", "§b", false, false,
+        items.add(new ChronicleOverviewScreen.CtxItem(
+                ChroniclesUIKit.str("phoenix_chronicles.screen.node_context_menu_builder.chain_selected_left_right"),
+                "§b", false, false,
                 () -> {
                     state.setCtxOpen(false);
                     state.chainMultiSelection();
                 }));
-        items.add(new ChronicleOverviewScreen.CtxItem("★ Fan from leftmost", "§b", false, false,
+        items.add(new ChronicleOverviewScreen.CtxItem(
+                ChroniclesUIKit.str("phoenix_chronicles.screen.node_context_menu_builder.fan_from_leftmost"), "§b",
+                false, false,
                 () -> {
                     state.setCtxOpen(false);
                     state.fanFromLeftmost();
@@ -121,7 +132,8 @@ public class NodeContextMenuBuilder {
     }
 
     private void addPasteItem(List<ChronicleOverviewScreen.CtxItem> items) {
-        String label = editorState.questClipboard != null ? "⎘ Paste quest" : "⎘ Paste quest §8(clipboard)";
+        String label = editorState.questClipboard != null ? "⎘ Paste quest" :
+                ChroniclesUIKit.str("phoenix_chronicles.screen.node_context_menu_builder.paste_quest_clipboard");
         items.add(new ChronicleOverviewScreen.CtxItem(label, "§7", false, false,
                 () -> {
                     state.setCtxOpen(false);
@@ -132,7 +144,10 @@ public class NodeContextMenuBuilder {
     private void addPlayerModeAndGridItems(List<ChronicleOverviewScreen.CtxItem> items) {
         items.add(ChronicleOverviewScreen.CtxItem.sep());
         items.add(new ChronicleOverviewScreen.CtxItem(
-                (state.testMode() ? "§c⏵ Exit Player Mode" : "⏵ Enter Player Mode"), "§7", false, false,
+                (state.testMode() ?
+                        ChroniclesUIKit.str("phoenix_chronicles.screen.node_context_menu_builder.exit_player_mode") :
+                        ChroniclesUIKit.str("phoenix_chronicles.screen.node_context_menu_builder.enter_player_mode")),
+                "§7", false, false,
                 () -> {
                     state.setCtxOpen(false);
                     state.setTestMode(!state.testMode());
@@ -140,7 +155,9 @@ public class NodeContextMenuBuilder {
                     rebuildScreen();
                 }));
         if (state.testMode()) {
-            items.add(new ChronicleOverviewScreen.CtxItem("↺ Reset Player Mode Data", "§7", false, false,
+            items.add(new ChronicleOverviewScreen.CtxItem(
+                    ChroniclesUIKit.str("phoenix_chronicles.screen.node_context_menu_builder.reset_player_mode_data"),
+                    "§7", false, false,
                     () -> {
                         state.setCtxOpen(false);
                         state.setTestModeData(new PlayerQuestData());
@@ -148,7 +165,10 @@ public class NodeContextMenuBuilder {
                     }));
         }
         items.add(new ChronicleOverviewScreen.CtxItem(
-                (editorState.subgraphMode ? "§b⊛ Exit subgraph" : "⊛ Subgraph mode"), "§7", false, false,
+                (editorState.subgraphMode ?
+                        ChroniclesUIKit.str("phoenix_chronicles.screen.node_context_menu_builder.exit_subgraph") :
+                        ChroniclesUIKit.str("phoenix_chronicles.screen.node_context_menu_builder.subgraph_mode")),
+                "§7", false, false,
                 () -> {
                     state.setCtxOpen(false);
                     editorState.subgraphMode = !editorState.subgraphMode;
@@ -158,19 +178,28 @@ public class NodeContextMenuBuilder {
                     }
                 }));
         items.add(new ChronicleOverviewScreen.CtxItem(
-                (state.statsPanelOpen() ? "§b∑ Hide stats" : "∑ Show stats"), "§7", false, false,
+                (state.statsPanelOpen() ?
+                        ChroniclesUIKit.str("phoenix_chronicles.screen.node_context_menu_builder.hide_stats") :
+                        ChroniclesUIKit.str("phoenix_chronicles.screen.node_context_menu_builder.show_stats")),
+                "§7", false, false,
                 () -> {
                     state.setCtxOpen(false);
                     state.toggleStatsPanel();
                 }));
 
         items.add(new ChronicleOverviewScreen.CtxItem(
-                (state.gridSnapEnabled() ? "⊞ Grid Snap: ON" : "§7⊞ Grid Snap: OFF"), "§7", false, false,
+                (state.gridSnapEnabled() ?
+                        ChroniclesUIKit.str("phoenix_chronicles.screen.node_context_menu_builder.grid_snap_on") :
+                        ChroniclesUIKit.str("phoenix_chronicles.screen.node_context_menu_builder.grid_snap_off")),
+                "§7", false, false,
                 () -> {
                     state.setCtxOpen(false);
                     state.setGridSnapEnabled(!state.gridSnapEnabled());
                 }));
-        items.add(new ChronicleOverviewScreen.CtxItem("⊞ Show Grid: " + state.gridDisplayMode().label, "§7",
+        items.add(new ChronicleOverviewScreen.CtxItem(
+                ChroniclesUIKit.str("phoenix_chronicles.screen.node_context_menu_builder.show_grid",
+                        state.gridDisplayMode().label),
+                "§7",
                 false, false,
                 () -> {
                     state.setCtxOpen(false);
@@ -180,7 +209,9 @@ public class NodeContextMenuBuilder {
 
     private void addChapterToolItems(List<ChronicleOverviewScreen.CtxItem> items) {
         int cl = ctx.sidebarW();
-        items.add(new ChronicleOverviewScreen.CtxItem("+ New group here", "§b", false, false,
+        items.add(new ChronicleOverviewScreen.CtxItem(
+                ChroniclesUIKit.str("phoenix_chronicles.screen.node_context_menu_builder.new_group_here"), "§b", false,
+                false,
                 () -> {
                     state.setCtxOpen(false);
                     int lx = (int) ((ctxState.ctxX() - cl - state.viewOffX()) / ctx.posZoom());
@@ -189,13 +220,17 @@ public class NodeContextMenuBuilder {
                     Minecraft.getInstance().setScreen(
                             new QuestGroupEditorScreen(state.thisScreen(), ctx.selectedChapter(), null, lx, ly));
                 }));
-        items.add(new ChronicleOverviewScreen.CtxItem("Edit chapter theme…", "§d", false, false,
+        items.add(new ChronicleOverviewScreen.CtxItem(
+                ChroniclesUIKit.str("phoenix_chronicles.screen.node_context_menu_builder.edit_chapter_theme"), "§d",
+                false, false,
                 () -> {
                     state.setCtxOpen(false);
                     Minecraft.getInstance()
                             .setScreen(new CanvasThemeScreen(state.thisScreen(), ctx.selectedChapter()));
                 }));
-        items.add(new ChronicleOverviewScreen.CtxItem("🖼 Add picture…", "§d", false, false,
+        items.add(new ChronicleOverviewScreen.CtxItem(
+                ChroniclesUIKit.str("phoenix_chronicles.screen.node_context_menu_builder.add_picture"), "§d", false,
+                false,
                 () -> {
                     state.setCtxOpen(false);
                     final float px = (ctxState.ctxX() - cl - state.viewOffX()) / ctx.posZoom();
@@ -222,16 +257,21 @@ public class NodeContextMenuBuilder {
                             pic.h = nativeSz[1] * scale;
                         }
                         BackgroundPictureConfig.add(cat, pic);
-                        ctx.setFeedback("Picture placed: shift+drag to move, right-click to remove");
+                        ctx.setFeedback(ChroniclesUIKit.str(
+                                "phoenix_chronicles.screen.node_context_menu_builder.picture_placed_shift_drag_to"));
                     }));
                 }));
         items.add(ChronicleOverviewScreen.CtxItem.sep());
-        items.add(new ChronicleOverviewScreen.CtxItem("⊞ Auto-arrange chapter", "§e", false, false,
+        items.add(new ChronicleOverviewScreen.CtxItem(
+                ChroniclesUIKit.str("phoenix_chronicles.screen.node_context_menu_builder.auto_arrange_chapter"), "§e",
+                false, false,
                 () -> {
                     state.setCtxOpen(false);
                     state.autoArrangeChapter();
                 }));
-        items.add(new ChronicleOverviewScreen.CtxItem("↻ Rotate chapter 90°", "§e", false, false,
+        items.add(new ChronicleOverviewScreen.CtxItem(
+                ChroniclesUIKit.str("phoenix_chronicles.screen.node_context_menu_builder.rotate_chapter_90"), "§e",
+                false, false,
                 () -> {
                     state.setCtxOpen(false);
                     state.rotateChapter90();
@@ -241,19 +281,24 @@ public class NodeContextMenuBuilder {
     private void addGroupItems(List<ChronicleOverviewScreen.CtxItem> items, QuestGroup group) {
         items.add(ChronicleOverviewScreen.CtxItem.sep());
         QuestGroup grp = group;
-        items.add(new ChronicleOverviewScreen.CtxItem("Edit group…", "§b", false, false,
+        items.add(new ChronicleOverviewScreen.CtxItem(
+                ChroniclesUIKit.str("phoenix_chronicles.screen.node_context_menu_builder.edit_group"), "§b", false,
+                false,
                 () -> {
                     state.setCtxOpen(false);
                     Minecraft.getInstance().setScreen(new QuestGroupEditorScreen(state.thisScreen(),
                             ctx.selectedChapter(), grp, grp.getX(), grp.getY()));
                 }));
-        items.add(new ChronicleOverviewScreen.CtxItem("Delete group", "§c", false, true,
+        items.add(new ChronicleOverviewScreen.CtxItem(
+                ChroniclesUIKit.str("phoenix_chronicles.screen.node_context_menu_builder.delete_group"), "§c", false,
+                true,
                 () -> {
                     QuestGroupManager.remove(grp.getId());
                     QuestGroupManager.save(state.groupsConfigPath());
                     state.setCtxOpen(false);
                     state.setCtxGroup(null);
-                    ctx.setFeedback("Group deleted");
+                    ctx.setFeedback(
+                            ChroniclesUIKit.str("phoenix_chronicles.screen.node_context_menu_builder.group_deleted"));
                 }));
     }
 
@@ -275,7 +320,9 @@ public class NodeContextMenuBuilder {
     private void addLoreItems(List<ChronicleOverviewScreen.CtxItem> items, QuestNode node) {
         String archiveQuestId = node.getId().toString();
         if (ArchiveLoreCompat.hasLoreFor(archiveQuestId)) {
-            items.add(new ChronicleOverviewScreen.CtxItem("📖 View Lore", "§d", false, false,
+            items.add(new ChronicleOverviewScreen.CtxItem(
+                    ChroniclesUIKit.str("phoenix_chronicles.screen.node_context_menu_builder.view_lore"), "§d", false,
+                    false,
                     () -> {
                         state.setCtxOpen(false);
                         ArchiveLoreCompat.openLoreFor(state.thisScreen(), archiveQuestId);
@@ -288,7 +335,8 @@ public class NodeContextMenuBuilder {
         QuestNode ctxLinkTarget = state.resolveLinkTarget(node);
         if (node.isLinkStub() && ctxLinkTarget != null) {
             final QuestNode jumpTarget = ctxLinkTarget;
-            items.add(new ChronicleOverviewScreen.CtxItem("🔗 Jump to linked quest", "§b", false, false,
+            items.add(new ChronicleOverviewScreen.CtxItem(
+                    ChroniclesUIKit.str("phoenix_chronicles.ui.jump_to_linked_quest"), "§b", false, false,
                     () -> {
                         state.setCtxOpen(false);
                         state.navigateToNode(jumpTarget);
@@ -301,7 +349,10 @@ public class NodeContextMenuBuilder {
         if (!node.getChildren().isEmpty()) {
             boolean nowCollapsed = ChronicleOverviewScreen.collapsedSubtreeRoots.contains(node.getId());
             items.add(new ChronicleOverviewScreen.CtxItem(
-                    nowCollapsed ? "▶ Expand Subtree" : "▼ Collapse Subtree", "§7", false, false,
+                    nowCollapsed ?
+                            ChroniclesUIKit.str("phoenix_chronicles.screen.node_context_menu_builder.expand_subtree") :
+                            ChroniclesUIKit.str("phoenix_chronicles.screen.node_context_menu_builder.collapse_subtree"),
+                    "§7", false, false,
                     () -> {
                         final QuestNode target = node;
                         state.setCtxOpen(false);
@@ -311,52 +362,65 @@ public class NodeContextMenuBuilder {
     }
 
     private void addNodeEditItems(List<ChronicleOverviewScreen.CtxItem> items, QuestNode node) {
-        items.add(new ChronicleOverviewScreen.CtxItem("Edit Quest", "§7", false, false,
+        items.add(new ChronicleOverviewScreen.CtxItem(
+                ChroniclesUIKit.str("phoenix_chronicles.screen.quest_creator.edit_quest"), "§7", false, false,
                 () -> {
                     state.setCtxOpen(false);
                     Minecraft.getInstance().setScreen(new QuestCreatorScreen(state.thisScreen(), node));
                 }));
-        items.add(new ChronicleOverviewScreen.CtxItem("Edit Texts...", "§d", false, false,
+        items.add(new ChronicleOverviewScreen.CtxItem(
+                ChroniclesUIKit.str("phoenix_chronicles.screen.node_context_menu_builder.edit_texts"), "§d", false,
+                false,
                 () -> {
                     final QuestNode target = node;
                     state.setCtxOpen(false);
                     Minecraft.getInstance().setScreen(new LangEditorScreen(state.thisScreen(), target));
                 }));
-        items.add(new ChronicleOverviewScreen.CtxItem("Design Pop-Up", "§6", false, false,
+        items.add(new ChronicleOverviewScreen.CtxItem(
+                ChroniclesUIKit.str("phoenix_chronicles.screen.node_context_menu_builder.design_pop_up"), "§6", false,
+                false,
                 () -> {
                     final QuestNode target = node;
                     state.setCtxOpen(false);
                     Minecraft.getInstance().setScreen(new ToastDesignerScreen(state.thisScreen(), target));
                 }));
-        items.add(new ChronicleOverviewScreen.CtxItem("Set Icon…", "§7", false, false,
+        items.add(new ChronicleOverviewScreen.CtxItem(
+                ChroniclesUIKit.str("phoenix_chronicles.screen.node_context_menu_builder.set_icon"), "§7", false, false,
                 () -> {
                     final QuestNode target = node;
                     state.setCtxOpen(false);
                     Minecraft.getInstance().setScreen(new SetIconScreen(state.thisScreen(), target));
                 }));
-        items.add(new ChronicleOverviewScreen.CtxItem("Resize (scroll + drag)…", "§7", false, false,
+        items.add(new ChronicleOverviewScreen.CtxItem(ChroniclesUIKit.str("phoenix_chronicles.ui.resize_scroll_drag"),
+                "§7", false, false,
                 () -> {
 
                     node.setSizeOverridePx(node.getNodePixelSize());
                     state.setNodeSizeEditMode(node);
                     state.setNodeSizeDragAccX(0);
                     state.setNodeSizeDragAccY(0);
-                    ctx.setFeedback("§eScroll to resize, drag to move - right-click or Esc to finish");
+                    ctx.setFeedback(ChroniclesUIKit.str("phoenix_chronicles.ui.scroll_to_resize_drag_to"));
                     state.setCtxOpen(false);
                 }));
         items.add(ChronicleOverviewScreen.CtxItem.sep());
 
-        items.add(new ChronicleOverviewScreen.CtxItem("Move to Chapter  ▸", "§7", false, false, () -> {}));
+        items.add(new ChronicleOverviewScreen.CtxItem(ChroniclesUIKit.str("phoenix_chronicles.ui.move_to_chapter"),
+                "§7", false, false, () -> {}));
         items.add(ChronicleOverviewScreen.CtxItem.sep());
-        items.add(new ChronicleOverviewScreen.CtxItem("Shift + drag to move", "§8", false, false,
+        items.add(new ChronicleOverviewScreen.CtxItem(
+                ChroniclesUIKit.str("phoenix_chronicles.screen.node_context_menu_builder.shift_drag_to_move"), "§8",
+                false, false,
                 () -> {
                     state.setCtxOpen(false);
-                    ctx.setFeedback("Shift-click and drag the node");
+                    ctx.setFeedback(ChroniclesUIKit
+                            .str("phoenix_chronicles.screen.node_context_menu_builder.shift_click_and_drag_the"));
                 }));
     }
 
     private void addNodeDependencyLinesItem(List<ChronicleOverviewScreen.CtxItem> items, QuestNode node) {
-        items.add(new ChronicleOverviewScreen.CtxItem("Dependency Lines", "§b", false, false,
+        items.add(new ChronicleOverviewScreen.CtxItem(
+                ChroniclesUIKit.str("phoenix_chronicles.screen.node_context_menu_builder.dependency_lines"), "§b",
+                false, false,
                 () -> {
                     state.setCtxOpen(false);
                     final String cat = ctx.selectedChapter();
@@ -373,12 +437,16 @@ public class NodeContextMenuBuilder {
     }
 
     private void addCopyAndDuplicateItems(List<ChronicleOverviewScreen.CtxItem> items, QuestNode node) {
-        items.add(new ChronicleOverviewScreen.CtxItem("Copy Quest §8(Ctrl+C)", "§7", false, false,
+        items.add(new ChronicleOverviewScreen.CtxItem(
+                ChroniclesUIKit.str("phoenix_chronicles.screen.node_context_menu_builder.copy_quest_ctrl_c"), "§7",
+                false, false,
                 () -> {
                     state.setCtxOpen(false);
                     state.questCopy(node);
                 }));
-        items.add(new ChronicleOverviewScreen.CtxItem("Duplicate Quest §8(Ctrl+D)", "§b", false, false,
+        items.add(new ChronicleOverviewScreen.CtxItem(
+                ChroniclesUIKit.str("phoenix_chronicles.screen.node_context_menu_builder.duplicate_quest_ctrl_d"), "§b",
+                false, false,
                 () -> {
                     state.setCtxOpen(false);
                     state.duplicateQuest(node);
@@ -386,7 +454,9 @@ public class NodeContextMenuBuilder {
     }
 
     private void addForceCompleteItem(List<ChronicleOverviewScreen.CtxItem> items, QuestNode node) {
-        items.add(new ChronicleOverviewScreen.CtxItem("Force Complete Quest", "§e", false, false,
+        items.add(new ChronicleOverviewScreen.CtxItem(
+                ChroniclesUIKit.str("phoenix_chronicles.screen.node_context_menu_builder.force_complete_quest"), "§e",
+                false, false,
                 () -> {
                     final QuestNode target = node;
                     state.setCtxOpen(false);
@@ -396,30 +466,37 @@ public class NodeContextMenuBuilder {
                         QuestState preState = state.playerData() != null ?
                                 state.playerData().getQuestState(target.getId(), QuestState.LOCKED) :
                                 QuestState.LOCKED;
-                        ctx.pushUndo("Undo: force-complete reverted", () -> {
-                            Minecraft mc2 = Minecraft.getInstance();
-                            if (mc2.player == null) return;
-                            String cmd = switch (preState) {
-                                case UNLOCKED -> "chronicles unlock " + target.getId().getPath();
-                                case ACTIVE -> "chronicles active " + target.getId().getPath();
-                                default -> "chronicles reset " + target.getId().getPath();
-                            };
-                            mc2.player.connection.sendCommand(cmd);
-                        }, () -> {
-                            Minecraft mc2 = Minecraft.getInstance();
-                            if (mc2.player == null) return;
-                            mc2.player.connection
-                                    .sendCommand("chronicles complete " + target.getId().getPath());
-                        });
+                        ctx.pushUndo(ChroniclesUIKit.str(
+                                "phoenix_chronicles.screen.node_context_menu_builder.undo_force_complete_reverted"),
+                                () -> {
+                                    Minecraft mc2 = Minecraft.getInstance();
+                                    if (mc2.player == null) return;
+                                    String cmd = switch (preState) {
+                                        case UNLOCKED -> "chronicles unlock " + target.getId().getPath();
+                                        case ACTIVE -> "chronicles active " + target.getId().getPath();
+                                        default -> "chronicles reset " + target.getId().getPath();
+                                    };
+                                    mc2.player.connection.sendCommand(cmd);
+                                }, () -> {
+                                    Minecraft mc2 = Minecraft.getInstance();
+                                    if (mc2.player == null) return;
+                                    mc2.player.connection
+                                            .sendCommand("chronicles complete " + target.getId().getPath());
+                                });
 
                         mc.player.connection.sendCommand("chronicles complete " + target.getId().getPath());
-                        ctx.setFeedbackDone("Force-completed: %s", target.getTitle().getString());
+                        ctx.setFeedbackDone(
+                                ChroniclesUIKit
+                                        .label("phoenix_chronicles.screen.node_context_menu_builder.force_completed"),
+                                target.getTitle().getString());
                     }
                 }));
     }
 
     private void addResetProgressItem(List<ChronicleOverviewScreen.CtxItem> items, QuestNode node) {
-        items.add(new ChronicleOverviewScreen.CtxItem("Reset Progress", "§7", false, false,
+        items.add(new ChronicleOverviewScreen.CtxItem(
+                ChroniclesUIKit.str("phoenix_chronicles.screen.node_context_menu_builder.reset_progress"), "§7", false,
+                false,
                 () -> {
                     final QuestNode target = node;
                     state.setCtxOpen(false);
@@ -427,34 +504,41 @@ public class NodeContextMenuBuilder {
                     if (mc.player != null) {
 
                         mc.player.connection.sendCommand("chronicles reset " + target.getId().getPath());
-                        ctx.setFeedback("Progress reset: %s", target.getTitle().getString());
+                        ctx.setFeedback(
+                                ChroniclesUIKit
+                                        .label("phoenix_chronicles.screen.node_context_menu_builder.progress_reset"),
+                                target.getTitle().getString());
                     }
                 }));
     }
 
     private void addDeleteQuestItem(List<ChronicleOverviewScreen.CtxItem> items, QuestNode node) {
-        items.add(new ChronicleOverviewScreen.CtxItem("Delete Quest", "§c", false, true,
+        items.add(new ChronicleOverviewScreen.CtxItem(
+                ChroniclesUIKit.str("phoenix_chronicles.screen.node_context_menu_builder.delete_quest"), "§c", false,
+                true,
                 () -> {
                     final QuestNode deleted = node;
 
                     final String savedContent = QuestFileSaver.readRawSnbt(deleted);
                     final Path savedSnbtPath = QuestFileSaver.getQuestSnbtPath(deleted);
-                    ctx.pushUndo("Undo: quest restored", () -> {
+                    ctx.pushUndo(ChroniclesUIKit
+                            .str("phoenix_chronicles.screen.node_context_menu_builder.undo_quest_restored"), () -> {
 
-                        QuestFileSaver.restoreRawSnbt(deleted, savedContent);
-                        QuestFileLoader.loadOneFromDisk(savedSnbtPath);
-                        rebuildScreen();
-                    }, () -> {
-                        QuestTreeRegistry.removeQuest(deleted.getId());
-                        state.deleteQuestFiles(deleted);
-                        rebuildScreen();
-                    });
+                                QuestFileSaver.restoreRawSnbt(deleted, savedContent);
+                                QuestFileLoader.loadOneFromDisk(savedSnbtPath);
+                                rebuildScreen();
+                            }, () -> {
+                                QuestTreeRegistry.removeQuest(deleted.getId());
+                                state.deleteQuestFiles(deleted);
+                                rebuildScreen();
+                            });
                     QuestTreeRegistry.removeQuest(deleted.getId());
                     state.deleteQuestFiles(deleted);
                     if (editorState.selectedNode == deleted) editorState.selectedNode = null;
                     state.setCtxOpen(false);
                     rebuildScreen();
-                    ctx.setFeedbackDone("Quest deleted");
+                    ctx.setFeedbackDone(
+                            ChroniclesUIKit.str("phoenix_chronicles.screen.node_context_menu_builder.quest_deleted"));
                 }));
     }
 

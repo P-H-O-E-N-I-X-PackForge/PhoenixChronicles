@@ -88,11 +88,12 @@ final class EditorTaskForm {
 
     private void addTypeDropdown(int x, int y) {
         PhoenixTaskRegistry.TaskEntry curMeta = getTaskMeta(screen.taskType);
-        String typeTooltip = curMeta != null && curMeta.editorTooltip() != null ?
-                curMeta.editorTooltip().split("\n")[0] : "Choose the type of task to add";
+        String typeTooltip = curMeta != null && ChroniclesUIKit.label(curMeta.editorTooltip()) != null ?
+                ChroniclesUIKit.label(curMeta.editorTooltip()).split("\n")[0] : "Choose the type of task to add";
         screen.addWidgetBridge(Button.builder(
                 ChroniclesUIKit
-                        .lit("§8Type: §7" + (curMeta != null ? curMeta.editorLabel() : screen.taskType) + " §8▾"),
+                        .lit(ChroniclesUIKit.str("phoenix_chronicles.screen.editor_reward_form.type",
+                                (curMeta != null ? ChroniclesUIKit.label(curMeta.editorLabel()) : screen.taskType))),
                 b -> {
                     screen.taskTypeDropOpen = !screen.taskTypeDropOpen;
                     screen.taskTypeDropScroll = 0;
@@ -105,7 +106,8 @@ final class EditorTaskForm {
     private void addDescriptionBox(int x, int y, String value) {
         screen.taskDescBox = new CodeEditBox(Minecraft.getInstance().font, x, y, screen.colW,
                 TaskRewardEditorScreen.FIELD_H, Component.empty());
-        screen.setHintFitted(screen.taskDescBox, "§8Task label shown to player");
+        screen.setHintFitted(screen.taskDescBox,
+                ChroniclesUIKit.str("phoenix_chronicles.screen.editor_task_form.task_label_shown_to_player"));
         screen.taskDescBox.setMaxLength(128);
         screen.taskDescBox.setValue(value);
         screen.addWidgetBridge(screen.taskDescBox);
@@ -155,8 +157,7 @@ final class EditorTaskForm {
                 }).withBulk(this::bulkAddItemTasks));
         }).bounds(buttonX, y, 16, TaskRewardEditorScreen.FIELD_H)
                 .tooltip(Tooltip.create(ChroniclesUIKit.lit(
-                        "Pick an item. Right-click several in the picker to add one task per item at once " +
-                                "(uses the count / consume / optional settings below).")))
+                        ChroniclesUIKit.str("phoenix_chronicles.screen.editor_task_form.pick_an_item_right_click"))))
                 .build());
     }
 
@@ -171,7 +172,8 @@ final class EditorTaskForm {
                     screen.taskTargetBox.setValue(cur.isEmpty() ? id.toString() : cur + ";" + id);
                 }));
         }).bounds(buttonX, y, 16, TaskRewardEditorScreen.FIELD_H)
-                .tooltip(Tooltip.create(ChroniclesUIKit.lit("Add another item to the ANY-match list")))
+                .tooltip(Tooltip.create(
+                        ChroniclesUIKit.tr("phoenix_chronicles.screen.editor_task_form.add_another_item_to_the")))
                 .build());
     }
 
@@ -193,7 +195,8 @@ final class EditorTaskForm {
                     screen.taskTargetBox.setValue(cur.isEmpty() ? fluidId : cur + ";" + fluidId);
                 }));
         }).bounds(buttonX, y, 16, TaskRewardEditorScreen.FIELD_H)
-                .tooltip(Tooltip.create(ChroniclesUIKit.lit("Add another fluid to the ANY-match list")))
+                .tooltip(Tooltip.create(
+                        ChroniclesUIKit.tr("phoenix_chronicles.screen.editor_task_form.add_another_fluid_to_the")))
                 .build());
     }
 
@@ -208,7 +211,7 @@ final class EditorTaskForm {
                 }));
         }).bounds(buttonX, y, 16, TaskRewardEditorScreen.FIELD_H)
                 .tooltip(Tooltip.create(
-                        ChroniclesUIKit.lit("Browse items - picking one uses its block form")))
+                        ChroniclesUIKit.tr("phoenix_chronicles.screen.editor_task_form.browse_items_picking_one_uses")))
                 .build());
     }
 
@@ -229,9 +232,11 @@ final class EditorTaskForm {
             java.util.Collection<ResourceLocation> ids = form.registryIds();
             if (Minecraft.getInstance() != null && ids != null) {
                 Minecraft.getInstance()
-                        .setScreen(new RegistryIdPickerScreen(screen, "Pick " + screen.taskType, ids, id -> {
-                            if (screen.taskTargetBox != null) screen.taskTargetBox.setValue(id.toString());
-                        }));
+                        .setScreen(new RegistryIdPickerScreen(screen,
+                                ChroniclesUIKit.str("phoenix_chronicles.screen.editor_task_form.pick", screen.taskType),
+                                ids, id -> {
+                                    if (screen.taskTargetBox != null) screen.taskTargetBox.setValue(id.toString());
+                                }));
             }
         }).bounds(buttonX, y, 16, TaskRewardEditorScreen.FIELD_H).build());
     }
@@ -239,13 +244,16 @@ final class EditorTaskForm {
     private void addRecipeTypePickerButton(int buttonX, int y) {
         screen.addWidgetBridge(Button.builder(ChroniclesUIKit.lit("§7⊞"), b -> {
             if (Minecraft.getInstance() != null) {
-                Minecraft.getInstance().setScreen(new RegistryIdPickerScreen(screen, "Pick recipe type",
-                        net.minecraft.core.registries.BuiltInRegistries.RECIPE_TYPE.keySet(), id -> {
-                            if (screen.taskTargetBox != null) screen.taskTargetBox.setValue(id.toString());
-                        }));
+                Minecraft.getInstance()
+                        .setScreen(new RegistryIdPickerScreen(screen,
+                                ChroniclesUIKit.str("phoenix_chronicles.screen.editor_task_form.pick_recipe_type"),
+                                net.minecraft.core.registries.BuiltInRegistries.RECIPE_TYPE.keySet(), id -> {
+                                    if (screen.taskTargetBox != null) screen.taskTargetBox.setValue(id.toString());
+                                }));
             }
         }).bounds(buttonX, y, 16, TaskRewardEditorScreen.FIELD_H)
-                .tooltip(Tooltip.create(ChroniclesUIKit.lit("Browse recipe types, including every machine")))
+                .tooltip(Tooltip.create(ChroniclesUIKit
+                        .tr("phoenix_chronicles.screen.editor_task_form.browse_recipe_types_including_every")))
                 .build());
     }
 
@@ -257,7 +265,8 @@ final class EditorTaskForm {
             int idx = java.util.Arrays.asList(options).indexOf(cur);
             screen.taskTargetBox.setValue(options[(idx + 1) % options.length]);
         }).bounds(buttonX, y, 16, TaskRewardEditorScreen.FIELD_H)
-                .tooltip(Tooltip.create(ChroniclesUIKit.lit("Cycle FE / EU / ANY")))
+                .tooltip(Tooltip
+                        .create(ChroniclesUIKit.tr("phoenix_chronicles.screen.editor_task_form.cycle_fe_eu_any")))
                 .build());
     }
 
@@ -292,7 +301,8 @@ final class EditorTaskForm {
     private void addNbtBox(int x, int y, String value) {
         screen.taskNbtBox = new EditBox(Minecraft.getInstance().font, x, y, screen.colW,
                 TaskRewardEditorScreen.FIELD_H, Component.empty());
-        screen.setHintFitted(screen.taskNbtBox, "§8NBT filter (optional)");
+        screen.setHintFitted(screen.taskNbtBox,
+                ChroniclesUIKit.str("phoenix_chronicles.screen.editor_task_form.nbt_filter_optional"));
         screen.taskNbtBox.setMaxLength(512);
         screen.taskNbtBox.setTooltip(net.minecraft.client.gui.components.Tooltip.create(
                 ChroniclesUIKit.lit(
@@ -330,12 +340,14 @@ final class EditorTaskForm {
     private void addModeToggleButton(int x, int y, String value) {
         String curMode = value.trim().equalsIgnoreCase("RIGHT_CLICK") ? "RIGHT_CLICK" : "PLACE";
         screen.taskSecondaryBox.setValue(curMode);
-        screen.addWidgetBridge(Button.builder(ChroniclesUIKit.lit("§fMode: §e" + curMode), b -> {
-            String next = screen.taskSecondaryBox.getValue().equalsIgnoreCase("PLACE") ? "RIGHT_CLICK" :
-                    "PLACE";
-            screen.taskSecondaryBox.setValue(next);
-            b.setMessage(ChroniclesUIKit.lit("§fMode: §e" + next));
-        }).bounds(x, y, screen.colW, TaskRewardEditorScreen.FIELD_H)
+        screen.addWidgetBridge(Button.builder(
+                ChroniclesUIKit.tr("phoenix_chronicles.screen.editor_task_form.mode", curMode),
+                b -> {
+                    String next = screen.taskSecondaryBox.getValue().equalsIgnoreCase("PLACE") ? "RIGHT_CLICK" :
+                            "PLACE";
+                    screen.taskSecondaryBox.setValue(next);
+                    b.setMessage(ChroniclesUIKit.tr("phoenix_chronicles.screen.editor_task_form.mode", next));
+                }).bounds(x, y, screen.colW, TaskRewardEditorScreen.FIELD_H)
                 .tooltip(Tooltip.create(ChroniclesUIKit.lit(
                         "PLACE: the player places the block.\nRIGHT_CLICK: the player right-clicks it.\n" +
                                 "Click to switch.")))
@@ -348,9 +360,10 @@ final class EditorTaskForm {
             java.util.Collection<ResourceLocation> ids = Minecraft.getInstance().getConnection().levels()
                     .stream()
                     .map(k -> k.location()).toList();
-            Minecraft.getInstance().setScreen(new RegistryIdPickerScreen(screen, "Pick dimension", ids, id -> {
-                if (screen.taskSecondaryBox != null) screen.taskSecondaryBox.setValue(id.toString());
-            }));
+            Minecraft.getInstance().setScreen(new RegistryIdPickerScreen(screen,
+                    ChroniclesUIKit.str("phoenix_chronicles.screen.editor_task_form.pick_dimension"), ids, id -> {
+                        if (screen.taskSecondaryBox != null) screen.taskSecondaryBox.setValue(id.toString());
+                    }));
         }).bounds(buttonX, y, 16, TaskRewardEditorScreen.FIELD_H).build());
     }
 
@@ -368,12 +381,15 @@ final class EditorTaskForm {
                 if (wantedType == null || wantedType.equals(typeKey)) ids.add(recipe.id());
             }
             Minecraft.getInstance().setScreen(new RegistryIdPickerScreen(screen,
-                    wantedType != null ? "Pick " + wantedType + " recipe" : "Pick recipe", ids, id -> {
+                    wantedType != null ?
+                            ChroniclesUIKit.str("phoenix_chronicles.screen.editor_task_form.pick_recipe", wantedType) :
+                            ChroniclesUIKit.str("phoenix_chronicles.screen.editor_task_form.pick_recipe_2"),
+                    ids, id -> {
                         if (screen.taskSecondaryBox != null) screen.taskSecondaryBox.setValue(id.toString());
                     }));
         }).bounds(buttonX, y, 16, TaskRewardEditorScreen.FIELD_H)
                 .tooltip(Tooltip.create(ChroniclesUIKit.lit(
-                        "Browse the recipes of the type above (fill the type in first to narrow the list)")))
+                        ChroniclesUIKit.str("phoenix_chronicles.screen.editor_task_form.browse_the_recipes_of_the"))))
                 .build());
     }
 
@@ -385,7 +401,8 @@ final class EditorTaskForm {
             int idx = java.util.Arrays.asList(options).indexOf(cur);
             screen.taskSecondaryBox.setValue(options[(idx + 1) % options.length]);
         }).bounds(buttonX, y, 16, TaskRewardEditorScreen.FIELD_H)
-                .tooltip(Tooltip.create(ChroniclesUIKit.lit("Cycle INVENTORY / HELD / BLOCK / ALL")))
+                .tooltip(Tooltip.create(ChroniclesUIKit
+                        .tr("phoenix_chronicles.screen.editor_task_form.cycle_inventory_held_block_all")))
                 .build());
     }
 
@@ -458,12 +475,15 @@ final class EditorTaskForm {
     }
 
     private Button.Builder consumeButton() {
-        return Button.builder(ChroniclesUIKit.lit(taskConsume ? "§aConsume" : "§8Consume"), b -> {
-            taskConsume = !taskConsume;
-            screen.rebuildWidgets();
-        }).tooltip(Tooltip.create(ChroniclesUIKit.lit(
-                "Item tasks: the player clicks the task to hand the items in (shop style).\n" +
-                        "Other types: taken when rewards are claimed.")));
+        return Button.builder(ChroniclesUIKit
+                .lit(taskConsume ? ChroniclesUIKit.str("phoenix_chronicles.screen.editor_task_form.consume") :
+                        ChroniclesUIKit.str("phoenix_chronicles.screen.editor_task_form.consume_2")),
+                b -> {
+                    taskConsume = !taskConsume;
+                    screen.rebuildWidgets();
+                }).tooltip(Tooltip.create(ChroniclesUIKit.lit(
+                        "Item tasks: the player clicks the task to hand the items in (shop style).\n" +
+                                "Other types: taken when rewards are claimed.")));
     }
 
     private Button.Builder ae2Button() {
@@ -494,20 +514,31 @@ final class EditorTaskForm {
     }
 
     private Button.Builder stickyButton() {
-        return Button.builder(ChroniclesUIKit.lit(taskSticky ? "§bSticky" : "§8Sticky"), b -> {
-            taskSticky = !taskSticky;
-            screen.rebuildWidgets();
-        }).tooltip(Tooltip.create(ChroniclesUIKit.lit(
-                "ON (default): once satisfied, stays satisfied - placing/using the item\n" +
-                        "later won't un-complete this task.\n" +
-                        "OFF: re-checked live - task un-completes if you stop holding enough.")));
+        return Button
+                .builder(
+                        ChroniclesUIKit.lit(
+                                taskSticky ? ChroniclesUIKit.str("phoenix_chronicles.screen.editor_task_form.sticky") :
+                                        ChroniclesUIKit.str("phoenix_chronicles.screen.editor_task_form.sticky_2")),
+                        b -> {
+                            taskSticky = !taskSticky;
+                            screen.rebuildWidgets();
+                        })
+                .tooltip(Tooltip.create(ChroniclesUIKit.lit(
+                        "ON (default): once satisfied, stays satisfied - placing/using the item\n" +
+                                "later won't un-complete this task.\n" +
+                                "OFF: re-checked live - task un-completes if you stop holding enough.")));
     }
 
     private Button.Builder optionalButton() {
-        return Button.builder(ChroniclesUIKit.lit(taskOptional ? "§eOptional" : "§8Optional"), b -> {
-            taskOptional = !taskOptional;
-            screen.rebuildWidgets();
-        }).tooltip(Tooltip.create(ChroniclesUIKit.lit("Task is optional: won't block quest completion")));
+        return Button.builder(ChroniclesUIKit
+                .lit(taskOptional ? ChroniclesUIKit.str("phoenix_chronicles.screen.editor_task_form.optional") :
+                        ChroniclesUIKit.str("phoenix_chronicles.screen.editor_task_form.optional_2")),
+                b -> {
+                    taskOptional = !taskOptional;
+                    screen.rebuildWidgets();
+                }).tooltip(Tooltip
+                        .create(ChroniclesUIKit
+                                .tr("phoenix_chronicles.screen.editor_task_form.task_is_optional_won_t")));
     }
 
     private Button.Builder hideButton() {
@@ -520,10 +551,18 @@ final class EditorTaskForm {
 
     private Button.Builder submitButton() {
         boolean editing = screen.editingTaskIndex >= 0;
-        return Button.builder(ChroniclesUIKit.lit(editing ? "§b✎ Update" : "§a✔ Add"), b -> commitTaskFromForm())
+        return Button
+                .builder(
+                        ChroniclesUIKit.lit(
+                                editing ? ChroniclesUIKit.str("phoenix_chronicles.screen.editor_task_form.update") :
+                                        ChroniclesUIKit.str("phoenix_chronicles.screen.editor_task_form.add")),
+                        b -> commitTaskFromForm())
                 .tooltip(Tooltip.create(
-                        ChroniclesUIKit.lit(editing ? "Save changes to this task (right-click it again to cancel)" :
-                                "Add this task to the quest (Ctrl+Z to undo)")));
+                        ChroniclesUIKit.lit(editing ?
+                                ChroniclesUIKit
+                                        .str("phoenix_chronicles.screen.editor_task_form.save_changes_to_this_task") :
+                                ChroniclesUIKit
+                                        .str("phoenix_chronicles.screen.editor_task_form.add_this_task_to_the"))));
     }
 
     private boolean applyPickedItemFilter(ItemStack stack) {

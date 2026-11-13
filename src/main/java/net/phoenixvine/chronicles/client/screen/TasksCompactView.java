@@ -289,7 +289,8 @@ final class TasksCompactView {
 
             int dy = cy + 4;
             if (fittedDesc == 0 && screen.isEditMode) {
-                ChroniclesUIKit.drawString(g, Minecraft.getInstance().font, "§8Click to add a description",
+                ChroniclesUIKit.drawString(g, Minecraft.getInstance().font,
+                        ChroniclesUIKit.str("phoenix_chronicles.ui.click_to_add_a_description"),
                         cardX + QuestTasksScreen.CARD_PAD, dy, screen.C_TEXT_FAINT,
                         false);
             }
@@ -319,13 +320,15 @@ final class TasksCompactView {
             g.disableScissor();
 
             if (maxScrollLine > 0) {
-                String hint = screen.compactDescScrollLine < maxScrollLine ? "§7▼ scroll for more" : "§7▲ scroll up";
+                String hint = screen.compactDescScrollLine < maxScrollLine ?
+                        ChroniclesUIKit.str("phoenix_chronicles.screen.tasks_compact_view.scroll_for_more") :
+                        ChroniclesUIKit.str("phoenix_chronicles.screen.tasks_compact_view.scroll_up");
                 ChroniclesUIKit.drawString(g, Minecraft.getInstance().font, hint,
                         cardX + cardW() - Minecraft.getInstance().font.width(hint) - QuestTasksScreen.CARD_PAD - 2,
                         cy + descH - 11,
                         screen.C_TEXT_FAINT, false);
             } else if (screen.isEditMode) {
-                String hint = "§7✎ edit";
+                String hint = ChroniclesUIKit.str("phoenix_chronicles.screen.tasks_compact_view.edit");
                 ChroniclesUIKit.drawString(g, Minecraft.getInstance().font, hint,
                         cardX + cardW() - Minecraft.getInstance().font.width(hint) - QuestTasksScreen.CARD_PAD - 2,
                         cy + descH - 11,
@@ -434,14 +437,18 @@ final class TasksCompactView {
             boolean hov = mx >= btnX && mx < btnX + btnW && my >= btnY && my < btnY + h - 2;
             g.fill(btnX, btnY, btnX + btnW, btnY + h - 2, hov ? 0xFF2A4A2A : 0xFF1A2A1A);
             g.fill(btnX, btnY, btnX + btnW, btnY + 1, hov ? screen.C_DONE : 0xFF333333);
-            ChroniclesUIKit.drawCenteredString(g, Minecraft.getInstance().font, "§a✓ Claim Rewards", btnX + btnW / 2,
+            ChroniclesUIKit.drawCenteredString(g, Minecraft.getInstance().font,
+                    ChroniclesUIKit.str("phoenix_chronicles.ui.claim_rewards"), btnX + btnW / 2,
                     btnY + 4,
                     hov ? screen.C_DONE : screen.C_TEXT);
         } else if (screen.rewardsClaimed()) {
-            ChroniclesUIKit.drawCenteredString(g, Minecraft.getInstance().font, "§8Rewards Claimed", cardX + cardW / 2,
+            ChroniclesUIKit.drawCenteredString(g, Minecraft.getInstance().font,
+                    ChroniclesUIKit.str("phoenix_chronicles.screen.tasks_compact_view.rewards_claimed"),
+                    cardX + cardW / 2,
                     cy + 5, screen.C_TEXT_FAINT);
         } else {
-            ChroniclesUIKit.drawCenteredString(g, Minecraft.getInstance().font, "§8Complete Tasks to Claim",
+            ChroniclesUIKit.drawCenteredString(g, Minecraft.getInstance().font,
+                    ChroniclesUIKit.str("phoenix_chronicles.screen.tasks_compact_view.complete_tasks_to_claim"),
                     cardX + cardW / 2, cy + 5,
                     screen.C_TEXT_FAINT);
         }
@@ -595,15 +602,16 @@ final class TasksCompactView {
         }
 
         if (hoveredDescBox && screen.isEditMode && Minecraft.getInstance() != null) {
-            Minecraft.getInstance().setScreen(new QuestTextInputScreen(screen, "Description",
-                    screen.descriptions.currentFullDescriptionRaw(), 8192,
-                    v -> {
-                        screen.node.setDescription(Component.literal(v));
-                        screen.fullscreen.liveDescOverride = v;
-                        screen.fullscreen.richSpansPage = -1;
-                        QuestFileSaver.saveOneQuestToDisk(screen.node);
-                        LangSyncScheduler.markDirty();
-                    }));
+            Minecraft.getInstance().setScreen(
+                    new QuestTextInputScreen(screen, ChroniclesUIKit.str("phoenix_chronicles.ui.description"),
+                            screen.descriptions.currentFullDescriptionRaw(), 8192,
+                            v -> {
+                                screen.node.setDescription(Component.literal(v));
+                                screen.fullscreen.liveDescOverride = v;
+                                screen.fullscreen.richSpansPage = -1;
+                                QuestFileSaver.saveOneQuestToDisk(screen.node);
+                                LangSyncScheduler.markDirty();
+                            }));
             return true;
         }
 

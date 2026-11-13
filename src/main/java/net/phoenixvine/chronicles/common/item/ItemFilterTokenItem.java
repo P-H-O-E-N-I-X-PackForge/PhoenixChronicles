@@ -14,6 +14,7 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 import net.phoenixvine.chronicles.common.filter.IItemFilter;
 import net.phoenixvine.chronicles.common.filter.ItemFilters;
+import net.phoenixvine.chronicles.common.util.ChroniclesLang;
 import net.phoenixvine.chronicles.common.util.ItemData;
 
 import org.jetbrains.annotations.Nullable;
@@ -50,22 +51,25 @@ public class ItemFilterTokenItem extends Item {
     @Override
     public Component getName(ItemStack stack) {
         IItemFilter filter = getFilter(stack);
-        if (filter == null) return Component.literal("§eUnconfigured Item Filter");
-        return Component.literal("§eFilter: §f" + filter.describe());
+        if (filter == null)
+            return ChroniclesLang.tr("phoenix_chronicles.item_filter_token_item.unconfigured_item_filter");
+        return ChroniclesLang.tr("phoenix_chronicles.item_filter_token_item.filter", filter.describe());
     }
 
     @Override
     public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> lines, TooltipFlag flag) {
         IItemFilter filter = getFilter(stack);
         if (filter == null) {
-            lines.add(Component.literal("§7Right-click to configure this filter.").withStyle(ChatFormatting.ITALIC));
+            lines.add(ChroniclesLang.tr("phoenix_chronicles.fluid_filter_token_item.right_click_to_configure_this")
+                    .withStyle(ChatFormatting.ITALIC));
             return;
         }
-        lines.add(Component.literal("§8Matches: §7" + filter.describe()));
-        lines.add(Component.literal("§7Right-click to edit").withStyle(ChatFormatting.ITALIC));
-        lines.add(Component.literal("§7Shift + Right-click to clear").withStyle(ChatFormatting.ITALIC));
-        lines.add(Component
-                .literal("§7Hold in the Tasks & Rewards editor to apply to a filter_item task")
+        lines.add(ChroniclesLang.tr("phoenix_chronicles.fluid_filter_token_item.matches", filter.describe()));
+        lines.add(ChroniclesLang.tr("phoenix_chronicles.fluid_filter_token_item.right_click_to_edit")
+                .withStyle(ChatFormatting.ITALIC));
+        lines.add(ChroniclesLang.tr("phoenix_chronicles.fluid_filter_token_item.shift_right_click_to_clear")
+                .withStyle(ChatFormatting.ITALIC));
+        lines.add(ChroniclesLang.tr("phoenix_chronicles.item_filter_token_item.hold_in_the_tasks_rewards")
                 .withStyle(ChatFormatting.ITALIC));
     }
 

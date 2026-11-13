@@ -125,7 +125,7 @@ public class EmergencyClaimScreen extends Screen {
     }
 
     private String modeLine() {
-        return "§8Quest items need that quest active; chapter and questbook items are always here.";
+        return ChroniclesUIKit.str("phoenix_chronicles.screen.emergency_claim.quest_items_need_that_quest");
     }
 
     private static String frequencyTag(ResourceLocation id) {
@@ -145,8 +145,11 @@ public class EmergencyClaimScreen extends Screen {
         g.fill(0, 0, width, HEADER_H, header);
         g.fill(0, HEADER_H - 1, width, HEADER_H, border);
         long ready = rows.stream().filter(r -> r.availability().state() == ClientEmergencyState.State.READY).count();
-        g.drawString(font, ChroniclesUIKit.fitText(font, "§6⚠ §fEmergency Items  §8: §7" + ready + " ready",
-                width - MARGIN * 2), MARGIN, 10, text, false);
+        g.drawString(font,
+                ChroniclesUIKit.fitText(font,
+                        ChroniclesUIKit.str("phoenix_chronicles.screen.emergency_claim.emergency_items_ready", ready),
+                        width - MARGIN * 2),
+                MARGIN, 10, text, false);
         g.drawString(font, ChroniclesUIKit.fitText(font, modeLine(), width - MARGIN * 2), MARGIN, HEADER_H + 4,
                 textFaint, false);
 
@@ -155,7 +158,9 @@ public class EmergencyClaimScreen extends Screen {
 
         List<Component> hoveredTip = List.of();
         if (rows.isEmpty()) {
-            g.drawCenteredString(font, "§8No emergency items are available right now.", width / 2,
+            g.drawCenteredString(font,
+                    ChroniclesUIKit.str("phoenix_chronicles.screen.emergency_claim.no_emergency_items_are_available"),
+                    width / 2,
                     (listTop() + listBottom()) / 2, textFaint);
         } else {
             g.enableScissor(0, listTop(), width, listBottom());
@@ -201,7 +206,8 @@ public class EmergencyClaimScreen extends Screen {
         int iy = ty + 14;
         int maxIconX = actionX - 8 - ICON_SZ;
         if (row.rewards().isEmpty()) {
-            g.drawString(font, "§8Fallback rewards", ix, iy + 4, textDim, false);
+            g.drawString(font, ChroniclesUIKit.str("phoenix_chronicles.screen.emergency_claim.fallback_rewards"), ix,
+                    iy + 4, textDim, false);
         }
         for (QuestReward reward : row.rewards()) {
             if (ix > maxIconX) {
@@ -246,14 +252,19 @@ public class EmergencyClaimScreen extends Screen {
             case READY -> {
                 if (pendingClaims.containsKey(row.id())) {
                     g.fill(x, y, x + ACTION_W, y + h, 0xFF16161C);
-                    g.drawCenteredString(font, "§7Claiming...", x + ACTION_W / 2, y + (h - 8) / 2, 0xFFAAAABB);
+                    g.drawCenteredString(font,
+                            ChroniclesUIKit.str("phoenix_chronicles.screen.emergency_claim.claiming"), x + ACTION_W / 2,
+                            y + (h - 8) / 2, 0xFFAAAABB);
                     return;
                 }
                 boolean armed = isArmed(row.id());
                 boolean hov = mx >= x && mx < x + ACTION_W && my >= y && my < y + h;
                 g.fill(x, y, x + ACTION_W, y + h, armed ? 0xFF6B4C1F : hov ? 0xFF4A3A18 : 0xFF2A2214);
                 g.fill(x, y, x + ACTION_W, y + 1, COL_READY);
-                g.drawCenteredString(font, armed ? "§eClick to confirm" : "§6Claim", x + ACTION_W / 2,
+                g.drawCenteredString(font,
+                        armed ? ChroniclesUIKit.str("phoenix_chronicles.screen.emergency_claim.click_to_confirm") :
+                                ChroniclesUIKit.str("phoenix_chronicles.screen.emergency_claim.claim"),
+                        x + ACTION_W / 2,
                         y + (h - 8) / 2, 0xFFFFD27A);
             }
             case COOLDOWN -> {
@@ -266,7 +277,8 @@ public class EmergencyClaimScreen extends Screen {
             }
             case USED -> {
                 g.fill(x, y, x + ACTION_W, y + h, 0xFF16161C);
-                g.drawCenteredString(font, "§8Used", x + ACTION_W / 2, y + (h - 8) / 2, 0xFF666677);
+                g.drawCenteredString(font, ChroniclesUIKit.str("phoenix_chronicles.screen.emergency_claim.used"),
+                        x + ACTION_W / 2, y + (h - 8) / 2, 0xFF666677);
             }
         }
     }

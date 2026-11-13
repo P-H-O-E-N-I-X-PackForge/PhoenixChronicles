@@ -71,7 +71,7 @@ public final class TaskFormTypes {
         TaskFormType form = new TaskFormType(typeId, ExternalTriggerTask.class);
         form.generic = true;
         if (entry == null) {
-            form.target("§8Target id", TargetPicker.NONE);
+            form.target("phoenix_chronicles.task_form.target_id", TargetPicker.NONE);
             form.canCreate = false;
             return form;
         }
@@ -86,8 +86,9 @@ public final class TaskFormTypes {
             }
         }
         if (entry.fields().isEmpty() || targetLabel != null)
-            form.target(targetLabel != null ? targetLabel : "§8Target id", TargetPicker.NONE);
-        if (countLabel != null) form.count("§8" + countLabel);
+            form.target(targetLabel != null ? targetLabel : "phoenix_chronicles.task_form.target_id",
+                    TargetPicker.NONE);
+        if (countLabel != null) form.count("phoenix_chronicles.task_form.text" + countLabel);
         return form;
     }
 
@@ -567,136 +568,137 @@ public final class TaskFormTypes {
 
     static {
         TaskFormType killEntity = define("kill_entity", KillEntityTask.class);
-        killEntity.target("§8Entity id, list, or #tag  (e.g. minecraft:zombie, #minecraft:skeletons)",
+        killEntity.target("phoenix_chronicles.task_form.entity_id_list_or_tag",
                 TargetPicker.ENTITY);
-        killEntity.count("§8Count");
+        killEntity.count("phoenix_chronicles.task_form.count");
         killEntity.showConsume = true;
 
         TaskFormType itemCheck = define("item_check", ItemRequirementTask.class);
-        itemCheck.target("§8Item id  (e.g. minecraft:iron_ingot)", TargetPicker.ITEM);
-        itemCheck.count("§8Count");
+        itemCheck.target("phoenix_chronicles.task_form.item_id_e_g_minecraft", TargetPicker.ITEM);
+        itemCheck.count("phoenix_chronicles.task_form.count");
         itemCheck.nbtBox = true;
         itemCheck.showConsume = true;
         itemCheck.showSticky = true;
         itemCheck.showAe2 = true;
 
         TaskFormType craftItem = define("craft_item", CraftItemTask.class);
-        craftItem.target("§8Item id  (e.g. minecraft:iron_ingot)", TargetPicker.ITEM);
-        craftItem.count("§8Count");
+        craftItem.target("phoenix_chronicles.task_form.item_id_e_g_minecraft", TargetPicker.ITEM);
+        craftItem.count("phoenix_chronicles.task_form.count");
         craftItem.showConsume = true;
 
         TaskFormType recipe = define("recipe", RecipeTask.class);
-        recipe.target("§8Recipe type  (e.g. gtceu:macerator, minecraft:smelting)", TargetPicker.RECIPE_TYPE);
-        recipe.second("§8Specific recipe id  (optional, any recipe of the type if empty)", SecondPicker.RECIPE);
-        recipe.count("§8Count");
+        recipe.target("phoenix_chronicles.task_form.recipe_type_e_g_gtceu", TargetPicker.RECIPE_TYPE);
+        recipe.second("phoenix_chronicles.task_form.specific_recipe_id_optional_any", SecondPicker.RECIPE);
+        recipe.count("phoenix_chronicles.task_form.count");
 
         TaskFormType multiblock = define("gt_multiblock", MultiblockFormedTask.class);
-        multiblock.target("§8Controller id  (e.g. gtceu:electric_blast_furnace, or * for any)", TargetPicker.STRING);
-        multiblock.count("§8Times formed");
+        multiblock.target("phoenix_chronicles.task_form.controller_id_e_g_gtceu", TargetPicker.STRING);
+        multiblock.count("phoenix_chronicles.task_form.times_formed");
 
         TaskFormType experience = define("experience", ExperienceTask.class);
-        experience.count("§8XP level");
+        experience.count("phoenix_chronicles.task_form.xp_level");
 
         TaskFormType locationTerminal = define("location_terminal", LocationOrTerminalTask.class);
-        locationTerminal.target("§8Terminal id", TargetPicker.NONE);
+        locationTerminal.target("phoenix_chronicles.task_form.terminal_id", TargetPicker.NONE);
         locationTerminal.showConsume = true;
 
         TaskFormType advancement = define("advancement", AdvancementTask.class);
-        advancement.target("§8Advancement id", TargetPicker.REGISTRY);
+        advancement.target("phoenix_chronicles.task_form.advancement_id", TargetPicker.REGISTRY);
 
         TaskFormType blockInteract = define("block_interact", BlockInteractTask.class);
-        blockInteract.target("§8Block id", TargetPicker.BLOCK);
-        blockInteract.second("§8PLACE or RIGHT_CLICK", SecondPicker.MODE_TOGGLE);
-        blockInteract.count("§8Count");
+        blockInteract.target("phoenix_chronicles.task_form.block_id", TargetPicker.BLOCK);
+        blockInteract.second("phoenix_chronicles.task_form.place_or_right_click", SecondPicker.MODE_TOGGLE);
+        blockInteract.count("phoenix_chronicles.task_form.count");
         blockInteract.showConsume = true;
 
         TaskFormType blockBreak = define("block_break", BlockBreakTask.class);
-        blockBreak.target("§8Block ID", TargetPicker.BLOCK);
-        blockBreak.count("§8Count");
+        blockBreak.target("phoenix_chronicles.task_form.block_id_2", TargetPicker.BLOCK);
+        blockBreak.count("phoenix_chronicles.task_form.count");
 
         TaskFormType enchantment = define("enchantment", EnchantmentTask.class);
-        enchantment.target("§8Enchantment ID", TargetPicker.REGISTRY);
-        enchantment.count("§8Min Level");
+        enchantment.target("phoenix_chronicles.task_form.enchantment_id", TargetPicker.REGISTRY);
+        enchantment.count("phoenix_chronicles.task_form.min_level");
 
         TaskFormType fluidCheck = define("fluid_check", FluidRequirementTask.class);
-        fluidCheck.target("§8Fluid id", TargetPicker.FLUID);
-        fluidCheck.count("§8mB amount");
+        fluidCheck.target("phoenix_chronicles.task_form.fluid_id", TargetPicker.FLUID);
+        fluidCheck.count("phoenix_chronicles.task_form.mb_amount");
         fluidCheck.showConsume = true;
         fluidCheck.showSticky = true;
         fluidCheck.showAe2 = true;
         fluidCheck.showBlock = true;
 
         TaskFormType stat = define("stat", StatTrackerTask.class);
-        stat.target("§8Stat id  (e.g. minecraft:jump)", TargetPicker.REGISTRY);
-        stat.second("§8Secondary value", SecondPicker.NONE);
-        stat.count("§8Target value");
+        stat.target("phoenix_chronicles.task_form.stat_id_e_g_minecraft", TargetPicker.REGISTRY);
+        stat.second("phoenix_chronicles.task_form.secondary_value", SecondPicker.NONE);
+        stat.count("phoenix_chronicles.task_form.target_value");
         stat.showConsume = true;
 
         TaskFormType dimension = define("dimension", DimensionTask.class);
-        dimension.second("§8Dimension id  (e.g. minecraft:the_nether)", SecondPicker.DIMENSION);
+        dimension.second("phoenix_chronicles.task_form.dimension_id_e_g_minecraft", SecondPicker.DIMENSION);
 
         TaskFormType biome = define("biome", BiomeTask.class);
-        biome.target("§8Biome id, list, or #tag  (e.g. minecraft:plains, #minecraft:is_forest)",
+        biome.target("phoenix_chronicles.task_form.biome_id_list_or_tag",
                 TargetPicker.REGISTRY);
 
         TaskFormType structure = define("structure", StructureTask.class);
-        structure.target("§8Structure id, list, or #tag  (e.g. minecraft:village_plains, #minecraft:village)",
+        structure.target("phoenix_chronicles.task_form.structure_id_list_or_tag",
                 TargetPicker.REGISTRY);
 
         define("checkmark", CheckmarkTask.class);
 
         TaskFormType timer = define("timer", TimerTask.class);
-        timer.count("§8Duration (seconds)");
+        timer.count("phoenix_chronicles.task_form.duration_seconds");
 
         TaskFormType tagItem = define("tag_item", TagItemTask.class);
-        tagItem.target("§8Item tag  (e.g. c:ores/iron)", TargetPicker.REGISTRY);
-        tagItem.count("§8Count");
+        tagItem.target("phoenix_chronicles.task_form.item_tag_e_g_c", TargetPicker.REGISTRY);
+        tagItem.count("phoenix_chronicles.task_form.count");
         tagItem.showSticky = true;
 
         TaskFormType info = define("info", InfoTask.class);
-        info.target("§8Body text shown to the player", TargetPicker.NONE);
+        info.target("phoenix_chronicles.task_form.body_text_shown_to_the", TargetPicker.NONE);
         info.targetOptional = true;
         info.maxTargetLength = 512;
 
         TaskFormType externalTrigger = define("external_trigger", ExternalTriggerTask.class);
-        externalTrigger.target("§8Trigger id", TargetPicker.STRING);
-        externalTrigger.count("§8Times fired");
+        externalTrigger.target("phoenix_chronicles.task_form.trigger_id", TargetPicker.STRING);
+        externalTrigger.count("phoenix_chronicles.task_form.times_fired");
 
         TaskFormType viewMachine = define("view_machine", ViewMachineTask.class);
-        viewMachine.target("§8Machine id  (Phantasia multiblock definition id)", TargetPicker.STRING);
-        viewMachine.count("§8Min seconds");
+        viewMachine.target("phoenix_chronicles.task_form.machine_id_phantasia_multiblock_definiti",
+                TargetPicker.STRING);
+        viewMachine.count("phoenix_chronicles.task_form.min_seconds");
 
         TaskFormType viewScene = define("view_scene", ViewSceneTask.class);
-        viewScene.target("§8Scene id  (Phantasia scene definition id)", TargetPicker.STRING);
-        viewScene.count("§8Min seconds");
+        viewScene.target("phoenix_chronicles.task_form.scene_id_phantasia_scene_definition", TargetPicker.STRING);
+        viewScene.count("phoenix_chronicles.task_form.min_seconds");
 
         TaskFormType viewGuide = define("view_guide", ViewGuideTask.class);
-        viewGuide.target("§8Guide id  (Phantasia guide definition id)", TargetPicker.STRING);
+        viewGuide.target("phoenix_chronicles.task_form.guide_id_phantasia_guide_definition", TargetPicker.STRING);
 
         TaskFormType archiveEntry = define("archive_entry", ArchiveEntryTask.class);
-        archiveEntry.target("§8Archive entry id  (e.g. phoenix_archive:log_001)", TargetPicker.STRING);
+        archiveEntry.target("phoenix_chronicles.task_form.archive_entry_id_e_g", TargetPicker.STRING);
 
         TaskFormType screenOpened = define("screen_opened", ScreenOpenedTask.class);
-        screenOpened.target("§8Screen id  (empty = any screen set on this quest)", TargetPicker.REGISTRY);
+        screenOpened.target("phoenix_chronicles.task_form.screen_id_empty_any_screen", TargetPicker.REGISTRY);
         screenOpened.targetOptional = true;
 
         TaskFormType energy = define("energy_check", EnergyStorageTask.class);
-        energy.target("§8FE / EU / ANY", TargetPicker.ENERGY_TYPE);
-        energy.second("§8INVENTORY / HELD / BLOCK / ALL", SecondPicker.ENERGY_SOURCE);
-        energy.count("§8FE required");
+        energy.target("phoenix_chronicles.task_form.fe_eu_any", TargetPicker.ENERGY_TYPE);
+        energy.second("phoenix_chronicles.task_form.inventory_held_block_all", SecondPicker.ENERGY_SOURCE);
+        energy.count("phoenix_chronicles.task_form.fe_required");
         energy.showSticky = true;
 
         TaskFormType filterItem = define("filter_item", FilterItemTask.class);
-        filterItem.target("§8Item id(s), semicolon-separated: ANY match  (e.g. wire;cable)", TargetPicker.ITEM_LIST);
-        filterItem.count("§8Count");
+        filterItem.target("phoenix_chronicles.task_form.item_id_s_semicolon_separated", TargetPicker.ITEM_LIST);
+        filterItem.count("phoenix_chronicles.task_form.count");
         filterItem.showConsume = true;
         filterItem.showSticky = true;
         filterItem.showAe2 = true;
 
         TaskFormType filterFluid = define("filter_fluid", FilterFluidTask.class);
-        filterFluid.target("§8Fluid id(s), semicolon-separated: ANY match  (e.g. water;lava)",
+        filterFluid.target("phoenix_chronicles.task_form.fluid_id_s_semicolon_separated",
                 TargetPicker.FLUID_LIST);
-        filterFluid.count("§8Amount (mB)");
+        filterFluid.count("phoenix_chronicles.task_form.amount_mb");
         filterFluid.showConsume = true;
         filterFluid.showSticky = true;
         filterFluid.showAe2 = true;

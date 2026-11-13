@@ -9,7 +9,7 @@ import org.jetbrains.annotations.NotNull;
 
 public final class ConfluxCompat {
 
-    public static final String PHOENIXCORE_MOD_ID = "phoenixcore";
+    public static final String PHOENIXCORE_MOD_ID = "phoenixconflux";
 
     private static Boolean available;
 
@@ -21,7 +21,7 @@ public final class ConfluxCompat {
     public static boolean isUnlocked(Player player, ResourceLocation nodeId) {
         if (!isAvailable()) return false;
         if (player instanceof ServerPlayer sp) return ConfluxBridge.isUnlocked(sp, nodeId);
-        // a client sees the research the server sent it
+        
         return player != null && player.level().isClientSide() && ConfluxBridge.clientIsUnlocked(nodeId);
     }
 
@@ -31,7 +31,6 @@ public final class ConfluxCompat {
         return player != null && player.level().isClientSide() && ConfluxBridge.clientHasFlag(flag);
     }
 
-    /** The discipline the player's Conflux team chose, or null. */
     public static String discipline(Player player) {
         if (!isAvailable() || player == null) return null;
         if (player instanceof ServerPlayer sp) return ConfluxBridge.discipline(sp);

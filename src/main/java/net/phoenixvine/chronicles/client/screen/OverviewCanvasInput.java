@@ -6,6 +6,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.phoenixvine.chronicles.client.event.ChronicleKeyBindings;
 import net.phoenixvine.chronicles.client.render.*;
+import net.phoenixvine.chronicles.client.render.ChroniclesUIKit;
 import net.phoenixvine.chronicles.client.screen.utils.*;
 import net.phoenixvine.chronicles.client.screen.widgets.*;
 import net.phoenixvine.chronicles.client.util.BackgroundPictureConfig;
@@ -107,7 +108,8 @@ final class OverviewCanvasInput {
             screen.pickupPlaceActive = false;
             screen.dragForceSnap = false;
             screen.softRebuild();
-            if (!wasBulk) screen.setFeedback("Placed");
+            if (!wasBulk)
+                screen.setFeedback(ChroniclesUIKit.str("phoenix_chronicles.screen.overview_canvas_input.placed"));
             return true;
         }
         return false;
@@ -121,7 +123,8 @@ final class OverviewCanvasInput {
             screen.middleDragPickupActive = false;
             screen.dragForceSnap = false;
             screen.softRebuild();
-            if (!wasBulk) screen.setFeedback("Placed");
+            if (!wasBulk)
+                screen.setFeedback(ChroniclesUIKit.str("phoenix_chronicles.screen.overview_canvas_input.placed"));
             return true;
         }
         return false;
@@ -292,29 +295,32 @@ final class OverviewCanvasInput {
             n++;
         } while (QuestTreeRegistry.getAllQuests().containsKey(questId));
 
-        QuestNode node = new QuestNode(questId, Component.literal("New Quest"), Component.literal(""));
+        QuestNode node = new QuestNode(questId, Component.translatable("phoenix_chronicles.ui.new_quest"),
+                Component.literal(""));
         node.setChapter(screen.selectedChapter);
         node.setCustomPosition(canvasX, canvasY);
 
         QuestTreeRegistry.injectDynamicQuestNode(node, null);
         QuestFileSaver.saveOneQuestToDisk(node, false);
         screen.rebuild();
-        screen.setFeedback("Placed quest -- click again to place more");
+        screen.setFeedback(
+                ChroniclesUIKit.str("phoenix_chronicles.screen.overview_canvas_input.placed_quest_click_again_to"));
 
         ResourceLocation placedId = questId;
 
         screen.editorState.multiSelection.add(placedId);
-        screen.pushUndo("Undo: quest placed", () -> {
-            QuestTreeRegistry.removeQuest(placedId);
-            QuestFileSaver.deleteQuestFiles(node);
-            screen.editorState.multiSelection.remove(placedId);
-            screen.rebuild();
-        }, () -> {
-            QuestTreeRegistry.injectDynamicQuestNode(node, null);
-            QuestFileSaver.saveOneQuestToDisk(node, false);
-            screen.editorState.multiSelection.add(placedId);
-            screen.rebuild();
-        });
+        screen.pushUndo(ChroniclesUIKit.str("phoenix_chronicles.screen.overview_canvas_input.undo_quest_placed"),
+                () -> {
+                    QuestTreeRegistry.removeQuest(placedId);
+                    QuestFileSaver.deleteQuestFiles(node);
+                    screen.editorState.multiSelection.remove(placedId);
+                    screen.rebuild();
+                }, () -> {
+                    QuestTreeRegistry.injectDynamicQuestNode(node, null);
+                    QuestFileSaver.saveOneQuestToDisk(node, false);
+                    screen.editorState.multiSelection.add(placedId);
+                    screen.rebuild();
+                });
     }
 
     boolean tryHandleLeftButtonDragMove(double mx, double my, double dx, double dy) {
@@ -372,29 +378,37 @@ final class OverviewCanvasInput {
                         target.addPrerequisite(src);
                         target.setPrereqLink(src.getId(), true);
                         screen.saveNodePrereqsToDisk(target);
-                        screen.setFeedback("§aLinked: %s → prereq of %s", src.getId().getPath(),
+                        screen.setFeedback(
+                                ChroniclesUIKit
+                                        .label("phoenix_chronicles.screen.overview_canvas_input.linked_prereq_of"),
+                                src.getId().getPath(),
                                 target.getId().getPath());
                         screen.buildLineCache();
                         screen.rebuild();
                         QuestNode undoTarget = target;
                         QuestNode undoSrc = src;
-                        screen.pushUndo("Undo: dependency link removed", () -> {
-                            undoTarget.removePrerequisite(undoSrc);
-                            undoTarget.setPrereqLink(undoSrc.getId(), false);
-                            screen.saveNodePrereqsToDisk(undoTarget);
-                            screen.buildLineCache();
-                            screen.rebuild();
-                        }, () -> {
-                            undoTarget.addPrerequisite(undoSrc);
-                            undoTarget.setPrereqLink(undoSrc.getId(), true);
-                            screen.saveNodePrereqsToDisk(undoTarget);
-                            screen.buildLineCache();
-                            screen.rebuild();
-                        });
+                        screen.pushUndo(
+                                ChroniclesUIKit.str(
+                                        "phoenix_chronicles.screen.overview_canvas_input.undo_dependency_link_removed"),
+                                () -> {
+                                    undoTarget.removePrerequisite(undoSrc);
+                                    undoTarget.setPrereqLink(undoSrc.getId(), false);
+                                    screen.saveNodePrereqsToDisk(undoTarget);
+                                    screen.buildLineCache();
+                                    screen.rebuild();
+                                }, () -> {
+                                    undoTarget.addPrerequisite(undoSrc);
+                                    undoTarget.setPrereqLink(undoSrc.getId(), true);
+                                    screen.saveNodePrereqsToDisk(undoTarget);
+                                    screen.buildLineCache();
+                                    screen.rebuild();
+                                });
                     } else if (target != null && src.getPrerequisites().contains(target)) {
-                        screen.setFeedback("§cCan't link. Would create a dependency cycle");
+                        screen.setFeedback(ChroniclesUIKit
+                                .str("phoenix_chronicles.screen.overview_canvas_input.can_t_link_would_create"));
                     } else if (target != null && target.getPrerequisites().contains(src)) {
-                        screen.setFeedback("§eAlready a prerequisite");
+                        screen.setFeedback(ChroniclesUIKit
+                                .str("phoenix_chronicles.screen.overview_canvas_input.already_a_prerequisite"));
                     }
                     return true;
                 }
@@ -416,15 +430,17 @@ final class OverviewCanvasInput {
             float startX = pictureDragStartX, startY = pictureDragStartY;
             float endX = movedPic.x, endY = movedPic.y;
             if (startX != endX || startY != endY) {
-                screen.pushUndo("Undo: picture moved back", () -> {
-                    movedPic.x = startX;
-                    movedPic.y = startY;
-                    BackgroundPictureConfig.save();
-                }, () -> {
-                    movedPic.x = endX;
-                    movedPic.y = endY;
-                    BackgroundPictureConfig.save();
-                });
+                screen.pushUndo(
+                        ChroniclesUIKit.str("phoenix_chronicles.screen.overview_canvas_input.undo_picture_moved_back"),
+                        () -> {
+                            movedPic.x = startX;
+                            movedPic.y = startY;
+                            BackgroundPictureConfig.save();
+                        }, () -> {
+                            movedPic.x = endX;
+                            movedPic.y = endY;
+                            BackgroundPictureConfig.save();
+                        });
             }
             draggedPicture = null;
             return true;

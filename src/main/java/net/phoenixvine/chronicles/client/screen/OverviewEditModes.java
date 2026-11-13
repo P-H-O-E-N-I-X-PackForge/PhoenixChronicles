@@ -2,6 +2,7 @@ package net.phoenixvine.chronicles.client.screen;
 
 import net.minecraft.client.gui.screens.Screen;
 import net.phoenixvine.chronicles.client.render.*;
+import net.phoenixvine.chronicles.client.render.ChroniclesUIKit;
 import net.phoenixvine.chronicles.client.screen.utils.*;
 import net.phoenixvine.chronicles.client.screen.widgets.*;
 import net.phoenixvine.chronicles.client.util.BackgroundPictureConfig;
@@ -28,8 +29,9 @@ final class OverviewEditModes {
             int newPx = Math.round(screen.nodeSizeEditMode.getNodePixelSize() * factor);
             screen.nodeSizeEditMode.setSizeOverridePx(newPx);
             screen.dragController.refreshNodeScreenPos(screen.nodeSizeEditMode);
-            screen.setFeedback("Size: %dpx  (scroll to resize - shift/ctrl for finer steps, drag to move, " +
-                    "right-click/Esc to finish)", screen.nodeSizeEditMode.getNodePixelSize());
+            screen.setFeedback(
+                    ChroniclesUIKit.label("phoenix_chronicles.screen.overview_edit_modes.size_dpx_scroll_to_resize"),
+                    screen.nodeSizeEditMode.getNodePixelSize());
             return true;
         }
         return false;
@@ -57,7 +59,7 @@ final class OverviewEditModes {
         if (screen.nodeSizeEditMode != null) {
             if (btn == 1) {
                 finalizeNodeSizeEdit();
-                screen.setFeedback("Node resize finished  (Ctrl+Z to undo the whole edit)");
+                screen.setFeedback(ChroniclesUIKit.str("phoenix_chronicles.ui.node_resize_finished_ctrl_z"));
                 screen.softRebuild();
             }
             return true;
@@ -69,7 +71,7 @@ final class OverviewEditModes {
         if (screen.pictureEditMode != null) {
             if (btn == 1) {
                 finalizePictureEdit();
-                screen.setFeedback("Picture edit finished  (Ctrl+Z to undo the whole edit)");
+                screen.setFeedback(ChroniclesUIKit.str("phoenix_chronicles.ui.picture_edit_finished_ctrl_z"));
             }
             return true;
         }
@@ -127,19 +129,21 @@ final class OverviewEditModes {
         float endX = pic.x, endY = pic.y, endW = pic.w, endH = pic.h;
         BackgroundPictureConfig.save();
         if (startX != endX || startY != endY || startW != endW || startH != endH) {
-            screen.pushUndo("Undo: picture edit reverted", () -> {
-                pic.x = startX;
-                pic.y = startY;
-                pic.w = startW;
-                pic.h = startH;
-                BackgroundPictureConfig.save();
-            }, () -> {
-                pic.x = endX;
-                pic.y = endY;
-                pic.w = endW;
-                pic.h = endH;
-                BackgroundPictureConfig.save();
-            });
+            screen.pushUndo(
+                    ChroniclesUIKit.str("phoenix_chronicles.screen.overview_edit_modes.undo_picture_edit_reverted"),
+                    () -> {
+                        pic.x = startX;
+                        pic.y = startY;
+                        pic.w = startW;
+                        pic.h = startH;
+                        BackgroundPictureConfig.save();
+                    }, () -> {
+                        pic.x = endX;
+                        pic.y = endY;
+                        pic.w = endW;
+                        pic.h = endH;
+                        BackgroundPictureConfig.save();
+                    });
         }
         screen.pictureEditMode = null;
     }
@@ -154,19 +158,21 @@ final class OverviewEditModes {
 
         QuestFileSaver.saveOneQuestToDisk(node, false);
         if (startOverridePx != endOverridePx || startX != endX || startY != endY) {
-            screen.pushUndo("Undo: node resize reverted", () -> {
-                node.setNodeSize(startSize);
-                if (startOverridePx > 0) node.setSizeOverridePx(startOverridePx);
-                node.setCustomPosition(startX, startY);
-                QuestFileSaver.saveOneQuestToDisk(node, false);
-                screen.softRebuild();
-            }, () -> {
-                node.setNodeSize(startSize);
-                if (endOverridePx > 0) node.setSizeOverridePx(endOverridePx);
-                node.setCustomPosition(endX, endY);
-                QuestFileSaver.saveOneQuestToDisk(node, false);
-                screen.softRebuild();
-            });
+            screen.pushUndo(
+                    ChroniclesUIKit.str("phoenix_chronicles.screen.overview_edit_modes.undo_node_resize_reverted"),
+                    () -> {
+                        node.setNodeSize(startSize);
+                        if (startOverridePx > 0) node.setSizeOverridePx(startOverridePx);
+                        node.setCustomPosition(startX, startY);
+                        QuestFileSaver.saveOneQuestToDisk(node, false);
+                        screen.softRebuild();
+                    }, () -> {
+                        node.setNodeSize(startSize);
+                        if (endOverridePx > 0) node.setSizeOverridePx(endOverridePx);
+                        node.setCustomPosition(endX, endY);
+                        QuestFileSaver.saveOneQuestToDisk(node, false);
+                        screen.softRebuild();
+                    });
         }
         screen.nodeSizeEditMode = null;
         screen.nodeSizeTypedBuffer = null;

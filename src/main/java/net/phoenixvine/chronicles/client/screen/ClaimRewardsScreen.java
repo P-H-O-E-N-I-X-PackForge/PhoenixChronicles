@@ -54,9 +54,10 @@ public class ClaimRewardsScreen extends Screen {
                     net.neoforged.neoforge.network.PacketDistributor.sendToServer(new C2SClaimAllRewardsPacket());
                 }).bounds(MARGIN, height - FOOTER_H + 6, 110, 18).build());
 
-        addRenderableWidget(Button.builder(Component.literal("§e⚡ Auto-claim…"), b -> {
-            if (minecraft != null) minecraft.setScreen(new AutoClaimSettingsScreen(this));
-        }).bounds(MARGIN + 116, height - FOOTER_H + 6, 100, 18).build());
+        addRenderableWidget(
+                Button.builder(Component.translatable("phoenix_chronicles.screen.claim_rewards.auto_claim"), b -> {
+                    if (minecraft != null) minecraft.setScreen(new AutoClaimSettingsScreen(this));
+                }).bounds(MARGIN + 116, height - FOOTER_H + 6, 100, 18).build());
 
         addRenderableWidget(Button.builder(Component.translatable("phoenix_chronicles.ui.back"), b -> {
             if (minecraft != null) minecraft.setScreen(parent);
@@ -144,14 +145,17 @@ public class ClaimRewardsScreen extends Screen {
         g.fill(0, 0, width, height, bg);
         g.fill(0, 0, width, HEADER_H, header);
         g.fill(0, HEADER_H - 1, width, HEADER_H, border);
-        String headerText = "§f🎁 Unclaimed Rewards  §8: §7" + unclaimed.size() + " quest(s)";
+        String headerText = ChroniclesUIKit.str("phoenix_chronicles.screen.claim_rewards.unclaimed_rewards_quest_s",
+                unclaimed.size());
         g.drawString(font, ChroniclesUIKit.fitText(font, headerText, width - MARGIN * 2), MARGIN, 10, text, false);
 
         g.fill(0, height - FOOTER_H, width, height, header);
         g.fill(0, height - FOOTER_H, width, height - FOOTER_H + 1, border);
 
         if (unclaimed.isEmpty()) {
-            g.drawCenteredString(font, "§8Nothing to claim right now.", width / 2, (listTop() + listBottom()) / 2,
+            g.drawCenteredString(font,
+                    ChroniclesUIKit.str("phoenix_chronicles.screen.claim_rewards.nothing_to_claim_right_now"),
+                    width / 2, (listTop() + listBottom()) / 2,
                     textFaint);
         } else {
             g.enableScissor(0, listTop(), width, listBottom());
@@ -183,10 +187,12 @@ public class ClaimRewardsScreen extends Screen {
                     boolean btnHov = mx >= btnX && mx < btnX + 52 && my >= ty + 4 && my < ty + ROW_H - 4;
                     if (row.pendingBoxOnly()) {
                         g.fill(btnX, ty + 4, btnX + 52, ty + ROW_H - 4, btnHov ? 0xFF6B4C8F : 0xFF473262);
-                        g.drawCenteredString(font, "§dOpen", btnX + 26, ty + (ROW_H - 8) / 2, 0xFFDDAAFF);
+                        g.drawCenteredString(font, ChroniclesUIKit.str("phoenix_chronicles.screen.claim_rewards.open"),
+                                btnX + 26, ty + (ROW_H - 8) / 2, 0xFFDDAAFF);
                     } else {
                         g.fill(btnX, ty + 4, btnX + 52, ty + ROW_H - 4, btnHov ? 0xFF2C6644 : 0xFF1C4430);
-                        g.drawCenteredString(font, "§aClaim", btnX + 26, ty + (ROW_H - 8) / 2, 0xFF88FFAA);
+                        g.drawCenteredString(font, ChroniclesUIKit.str("phoenix_chronicles.screen.claim_rewards.claim"),
+                                btnX + 26, ty + (ROW_H - 8) / 2, 0xFF88FFAA);
                     }
                 }
                 ty += ROW_H;

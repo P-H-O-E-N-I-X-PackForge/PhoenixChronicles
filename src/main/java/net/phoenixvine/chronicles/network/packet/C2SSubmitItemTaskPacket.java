@@ -1,7 +1,6 @@
 package net.phoenixvine.chronicles.network.packet;
 
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.network.chat.Component;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
@@ -14,6 +13,7 @@ import net.phoenixvine.chronicles.common.model.QuestTask;
 import net.phoenixvine.chronicles.common.registry.QuestTreeRegistry;
 import net.phoenixvine.chronicles.common.tasks.ItemRequirementTask;
 import net.phoenixvine.chronicles.common.tracker.QuestProgressTracker;
+import net.phoenixvine.chronicles.common.util.ChroniclesLang;
 
 public class C2SSubmitItemTaskPacket implements CustomPacketPayload {
 
@@ -64,10 +64,11 @@ public class C2SSubmitItemTaskPacket implements CustomPacketPayload {
             if (!itemTask.submit(player)) {
                 ItemStack shown = itemTask.getItem() != null ? itemTask.getItem().getDefaultInstance() :
                         ItemStack.EMPTY;
-                player.sendSystemMessage(Component.literal("§cYou need " + itemTask.getRequiredCount() + "x ")
-                        .append(shown.isEmpty() ? Component.literal("the required item") : shown.getHoverName()
-                                .copy().withStyle(s -> s.withColor(0xFF5555)))
-                        .append(Component.literal("§c to hand this in.")));
+                player.sendSystemMessage(ChroniclesLang.tr("phoenix_chronicles.c2_s_submit_item_task_packet.you_need_x",
+                        itemTask.getRequiredCount(),
+                        shown.isEmpty() ?
+                                ChroniclesLang.tr("phoenix_chronicles.c2_s_submit_item_task_packet.the_required_item") :
+                                shown.getHoverName().copy().withStyle(s -> s.withColor(0xFF5555))));
                 return;
             }
 

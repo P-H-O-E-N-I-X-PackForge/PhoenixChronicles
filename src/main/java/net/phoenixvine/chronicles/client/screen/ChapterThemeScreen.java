@@ -102,7 +102,7 @@ public class ChapterThemeScreen extends Screen {
     private static final ChapterConfig.BgStyle[] STYLES = ChapterConfig.BgStyle.values();
 
     public ChapterThemeScreen(Screen parent, String chapter) {
-        super(Component.literal("Chapter Settings"));
+        super(Component.translatable("phoenix_chronicles.screen.chapter_theme.chapter_settings"));
         this.parent = parent;
         this.chapter = chapter;
 
@@ -271,7 +271,7 @@ public class ChapterThemeScreen extends Screen {
 
     private void addIconButton(int fx, int fw) {
         int iconPreviewW = FIELD_H + 4;
-        addRenderableWidget(Button.builder(Component.literal("§7Change Icon"),
+        addRenderableWidget(Button.builder(Component.translatable("phoenix_chronicles.ui.change_icon"),
                 b -> {
                     if (minecraft != null) minecraft.setScreen(new ItemPickerScreen(this, stack -> {
                         cachedIcon = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(stack.getItem())
@@ -284,7 +284,8 @@ public class ChapterThemeScreen extends Screen {
     private void addNameColorBox(int fx, int fw) {
         nameColorBox = new EditBox(font, fx, rowTop(ROW_NAME_COLOR) + 11, fw, FIELD_H, Component.empty());
         nameColorBox.setMaxLength(7);
-        nameColorBox.setTooltip(Tooltip.create(Component.literal("#RRGGBB  (empty = use canvas accent color)")));
+        nameColorBox.setTooltip(Tooltip.create(
+                Component.translatable("phoenix_chronicles.screen.chapter_theme.rrggbb_empty_use_canvas_accent")));
         nameColorBox.setValue(cachedNameColor != 0 ? ChroniclesUIKit.formatHexColor(cachedNameColor) : "");
         nameColorBox.setResponder(v -> cachedNameColor = ChroniclesUIKit.parseHexColor(v, 0));
         addRenderableWidget(nameColorBox);
@@ -292,14 +293,15 @@ public class ChapterThemeScreen extends Screen {
 
     private void addCategoryAndParentButtons(int fx, int fw) {
         addRenderableWidget(Button.builder(
-                Component.literal("§8Category: §7" + categoryLabel(cachedCategoryId) + " §8▾"),
+                Component.literal(ChroniclesUIKit.str("phoenix_chronicles.screen.chapter_theme.category",
+                        categoryLabel(cachedCategoryId))),
                 b -> categoryDropOpen = !categoryDropOpen).bounds(fx, rowTop(ROW_CATEGORY), fw, FIELD_H).build());
 
         String parentLabel = cachedParentChapter.isEmpty() ? "(none)" :
                 (parent instanceof ChronicleOverviewScreen cos ? cos.friendly(cachedParentChapter) :
                         cachedParentChapter);
         addRenderableWidget(Button.builder(
-                Component.literal("§8Parent Chapter: §7" + parentLabel + " §8▾"),
+                Component.translatable("phoenix_chronicles.screen.chapter_theme.parent_chapter", parentLabel),
                 b -> parentDropOpen = !parentDropOpen).bounds(fx, rowTop(ROW_PARENT), fw, FIELD_H).build());
     }
 
@@ -308,11 +310,12 @@ public class ChapterThemeScreen extends Screen {
         sidebarShaderBox = new EditBox(font, fx, sidebarShaderRowY + 11, fw - BROWSE_W - BROWSE_GAP, FIELD_H,
                 Component.empty());
         sidebarShaderBox.setMaxLength(64);
-        sidebarShaderBox.setTooltip(Tooltip.create(Component.literal("shader id  (empty = none)")));
+        sidebarShaderBox.setTooltip(
+                Tooltip.create(Component.translatable("phoenix_chronicles.screen.chapter_theme.shader_id_empty_none")));
         sidebarShaderBox.setValue(cachedSidebarShaderId);
         sidebarShaderBox.setResponder(v -> cachedSidebarShaderId = v.trim());
         addRenderableWidget(sidebarShaderBox);
-        addRenderableWidget(Button.builder(Component.literal("Browse…"), b -> {
+        addRenderableWidget(Button.builder(Component.translatable("phoenix_chronicles.ui.browse"), b -> {
             if (minecraft != null)
                 minecraft.setScreen(new ShaderPickerScreen(this, id -> {
                     cachedSidebarShaderId = id;
@@ -328,17 +331,19 @@ public class ChapterThemeScreen extends Screen {
                 Component.empty());
         unlockSoundBox.setMaxLength(128);
         unlockSoundBox
-                .setTooltip(Tooltip.create(ChroniclesUIKit.lit("sound event id  (empty = quest/global default)")));
+                .setTooltip(Tooltip.create(
+                        ChroniclesUIKit.tr("phoenix_chronicles.screen.chapter_theme.sound_event_id_empty_quest")));
         unlockSoundBox.setValue(cachedUnlockSoundId);
         unlockSoundBox.setResponder(v -> cachedUnlockSoundId = v.trim());
         addRenderableWidget(unlockSoundBox);
-        addRenderableWidget(Button.builder(ChroniclesUIKit.lit("Browse…"), b -> {
+        addRenderableWidget(Button.builder(ChroniclesUIKit.tr("phoenix_chronicles.ui.browse"), b -> {
             if (minecraft != null) {
-                minecraft.setScreen(new RegistryIdPickerScreen(this, "Pick unlock sound",
-                        net.minecraft.core.registries.BuiltInRegistries.SOUND_EVENT.keySet(), id -> {
-                            cachedUnlockSoundId = id.toString();
-                            unlockSoundBox.setValue(cachedUnlockSoundId);
-                        }));
+                minecraft.setScreen(
+                        new RegistryIdPickerScreen(this, ChroniclesUIKit.str("phoenix_chronicles.ui.pick_unlock_sound"),
+                                net.minecraft.core.registries.BuiltInRegistries.SOUND_EVENT.keySet(), id -> {
+                                    cachedUnlockSoundId = id.toString();
+                                    unlockSoundBox.setValue(cachedUnlockSoundId);
+                                }));
             }
         }).bounds(fx + fw - BROWSE_W, unlockSoundRowY + 11, BROWSE_W, FIELD_H).build());
     }
@@ -349,13 +354,15 @@ public class ChapterThemeScreen extends Screen {
                 Component.empty());
         completeSoundBox.setMaxLength(128);
         completeSoundBox
-                .setTooltip(Tooltip.create(ChroniclesUIKit.lit("sound event id  (empty = quest/global default)")));
+                .setTooltip(Tooltip.create(
+                        ChroniclesUIKit.tr("phoenix_chronicles.screen.chapter_theme.sound_event_id_empty_quest")));
         completeSoundBox.setValue(cachedCompleteSoundId);
         completeSoundBox.setResponder(v -> cachedCompleteSoundId = v.trim());
         addRenderableWidget(completeSoundBox);
-        addRenderableWidget(Button.builder(ChroniclesUIKit.lit("Browse…"), b -> {
+        addRenderableWidget(Button.builder(ChroniclesUIKit.tr("phoenix_chronicles.ui.browse"), b -> {
             if (minecraft != null) {
-                minecraft.setScreen(new RegistryIdPickerScreen(this, "Pick complete sound",
+                minecraft.setScreen(new RegistryIdPickerScreen(this,
+                        ChroniclesUIKit.str("phoenix_chronicles.ui.pick_complete_sound"),
                         net.minecraft.core.registries.BuiltInRegistries.SOUND_EVENT.keySet(), id -> {
                             cachedCompleteSoundId = id.toString();
                             completeSoundBox.setValue(cachedCompleteSoundId);
@@ -371,14 +378,16 @@ public class ChapterThemeScreen extends Screen {
         EditBox musicBox = new EditBox(font, fx, musicRowY + 11,
                 fw - BROWSE_W - BROWSE_GAP - (musicNumW + musicNumGap) * 2, FIELD_H, Component.empty());
         musicBox.setMaxLength(128);
-        musicBox.setTooltip(Tooltip.create(ChroniclesUIKit.lit("music sound event id  (empty = none)")));
+        musicBox.setTooltip(Tooltip
+                .create(ChroniclesUIKit.tr("phoenix_chronicles.screen.chapter_theme.music_sound_event_id_empty")));
         musicBox.setValue(cachedMusicId);
         musicBox.setResponder(v -> cachedMusicId = v.trim());
         addRenderableWidget(musicBox);
         int musicBrowseX = fx + fw - BROWSE_W - (musicNumW + musicNumGap) * 2;
-        addRenderableWidget(Button.builder(ChroniclesUIKit.lit("Browse…"), b -> {
+        addRenderableWidget(Button.builder(ChroniclesUIKit.tr("phoenix_chronicles.ui.browse"), b -> {
             if (minecraft != null) {
-                minecraft.setScreen(new RegistryIdPickerScreen(this, "Pick chapter music",
+                minecraft.setScreen(new RegistryIdPickerScreen(this,
+                        ChroniclesUIKit.str("phoenix_chronicles.screen.chapter_theme.pick_chapter_music"),
                         net.minecraft.core.registries.BuiltInRegistries.SOUND_EVENT.keySet(), id -> {
                             cachedMusicId = id.toString();
                             musicBox.setValue(cachedMusicId);
@@ -390,14 +399,14 @@ public class ChapterThemeScreen extends Screen {
         musicVolBox.setMaxLength(3);
         musicVolBox.setValue(cachedMusicVolumePct);
         musicVolBox.setResponder(v -> cachedMusicVolumePct = v.trim());
-        musicVolBox.setTooltip(Tooltip.create(ChroniclesUIKit.lit("Music volume, 0-100%")));
+        musicVolBox.setTooltip(Tooltip.create(ChroniclesUIKit.tr("phoenix_chronicles.ui.music_volume_0_100")));
         addRenderableWidget(musicVolBox);
         EditBox musicFadeBox = new EditBox(font, fx + fw - musicNumW, musicRowY + 11, musicNumW, FIELD_H,
                 Component.empty());
         musicFadeBox.setMaxLength(5);
         musicFadeBox.setValue(cachedMusicFadeSec);
         musicFadeBox.setResponder(v -> cachedMusicFadeSec = v.trim());
-        musicFadeBox.setTooltip(Tooltip.create(ChroniclesUIKit.lit("Fade in / out time in seconds")));
+        musicFadeBox.setTooltip(Tooltip.create(ChroniclesUIKit.tr("phoenix_chronicles.ui.fade_in_out_time_in")));
         addRenderableWidget(musicFadeBox);
     }
 
@@ -426,7 +435,8 @@ public class ChapterThemeScreen extends Screen {
 
                 EditBox condBox = new EditBox(font, fx, currentY, fw - removeW - 4, FIELD_H, Component.empty());
                 condBox.setMaxLength(128);
-                condBox.setTooltip(Tooltip.create(Component.literal("condition: e.g. config:pack_mode=expert")));
+                condBox.setTooltip(Tooltip.create(
+                        Component.translatable("phoenix_chronicles.screen.chapter_theme.condition_e_g_config_pack")));
                 condBox.setValue(ov.condition);
                 condBox.setResponder(v -> overrides.get(idx).condition = v.trim());
                 addRenderableWidget(condBox);
@@ -443,7 +453,7 @@ public class ChapterThemeScreen extends Screen {
 
                 overrideStyleButtonY.put(idx, currentY);
                 addRenderableWidget(Button.builder(
-                        Component.literal("§8Style: §7" + ov.style.name() + " §8▾"),
+                        Component.literal(ChroniclesUIKit.str("phoenix_chronicles.ui.style", ov.style.name())),
                         b -> openOverrideStyleDropdown = (openOverrideStyleDropdown == idx) ? -1 : idx)
                         .bounds(fx, currentY, fw, FIELD_H).build());
 
@@ -451,7 +461,8 @@ public class ChapterThemeScreen extends Screen {
 
                 EditBox texBox = new EditBox(font, fx, currentY, fw, FIELD_H, Component.empty());
                 texBox.setMaxLength(256);
-                texBox.setTooltip(Tooltip.create(Component.literal("modid:texture.png  (CUSTOM only)")));
+                texBox.setTooltip(Tooltip.create(Component
+                        .translatable("phoenix_chronicles.screen.chapter_theme.modid_texture_png_custom_only")));
                 texBox.setValue(ov.texture);
                 texBox.setResponder(v -> overrides.get(idx).texture = v.trim());
                 addRenderableWidget(texBox);
@@ -461,7 +472,8 @@ public class ChapterThemeScreen extends Screen {
 
                 EditBox shBox = new EditBox(font, fx, currentY, fw, FIELD_H, Component.empty());
                 shBox.setMaxLength(64);
-                shBox.setTooltip(Tooltip.create(Component.literal("shader id  (SHADER only)")));
+                shBox.setTooltip(Tooltip.create(
+                        Component.translatable("phoenix_chronicles.screen.chapter_theme.shader_id_shader_only")));
                 shBox.setValue(ov.shaderId);
                 shBox.setResponder(v -> overrides.get(idx).shaderId = v.trim());
                 addRenderableWidget(shBox);
@@ -470,12 +482,15 @@ public class ChapterThemeScreen extends Screen {
                 currentY += FIELD_H + ADV_ROW_GAP;
             }
 
-            addRenderableWidget(Button.builder(Component.literal("§7+ Add Background Override"), b -> {
-                overrides.add(new ChapterConfig.CanvasOverride());
-                advScrollRow = maxAdvScrollRow();
-                clearWidgets();
-                init();
-            }).bounds(fx, currentY, fw, FIELD_H).build());
+            addRenderableWidget(Button
+                    .builder(Component.translatable("phoenix_chronicles.screen.chapter_theme.add_background_override"),
+                            b -> {
+                                overrides.add(new ChapterConfig.CanvasOverride());
+                                advScrollRow = maxAdvScrollRow();
+                                clearWidgets();
+                                init();
+                            })
+                    .bounds(fx, currentY, fw, FIELD_H).build());
             currentY += FIELD_H;
         } else {
             openOverrideStyleDropdown = -1;
@@ -487,7 +502,8 @@ public class ChapterThemeScreen extends Screen {
         int emergencyCount = net.phoenixvine.chronicles.common.registry.ChapterEmergencyItems.get(chapter)
                 .getRewards().size();
         addRenderableWidget(Button.builder(
-                Component.literal("§6⚠ §fEmergency Items" + (emergencyCount > 0 ? " §7(" + emergencyCount + ")" : "")),
+                Component.literal(ChroniclesUIKit.str("phoenix_chronicles.screen.chapter_theme.emergency_items",
+                        (emergencyCount > 0 ? " §7(" + emergencyCount + ")" : ""))),
                 b -> {
                     if (minecraft != null) minecraft.setScreen(new EmergencyItemsScreen(this, chapter));
                 })
@@ -505,11 +521,13 @@ public class ChapterThemeScreen extends Screen {
             int questCount = cos.chapterQuestCount(chapter);
             String label;
             if (questCount == 0) {
-                label = "§cDelete Chapter";
+                label = ChroniclesUIKit.str("phoenix_chronicles.screen.chapter_theme.delete_chapter");
             } else if (deleteConfirmArmed) {
-                label = "§c§lClick again to delete " + questCount + " quest(s)";
+                label = ChroniclesUIKit.str("phoenix_chronicles.screen.chapter_theme.click_again_to_delete_quest",
+                        questCount);
             } else {
-                label = "§6Delete Chapter §7(" + questCount + " quests)";
+                label = ChroniclesUIKit.str("phoenix_chronicles.screen.chapter_theme.delete_chapter_quests",
+                        questCount);
             }
             addRenderableWidget(Button.builder(Component.literal(label),
                     b -> {
@@ -529,9 +547,9 @@ public class ChapterThemeScreen extends Screen {
 
     private void addSaveAndCancelButtons(int fx, int fw, int currentY) {
         int half = (fw - 6) / 2;
-        addRenderableWidget(Button.builder(Component.literal("§aSave"), b -> save())
+        addRenderableWidget(Button.builder(Component.translatable("phoenix_chronicles.ui.save"), b -> save())
                 .bounds(fx, currentY, half, 18).build());
-        addRenderableWidget(Button.builder(Component.literal("§7Cancel"),
+        addRenderableWidget(Button.builder(Component.translatable("phoenix_chronicles.ui.cancel"),
                 b -> {
                     if (minecraft != null) minecraft.setScreen(parent);
                 })
@@ -637,13 +655,15 @@ public class ChapterThemeScreen extends Screen {
         g.pose().scale(uiScale, uiScale, 1f);
 
         ChroniclesUIKit.drawModalChrome(g, font, vw, vh, panelLeft, panelTop, PANEL_W, panelH, 22,
-                "§dChapter Settings: §7" + chapter, ChroniclesThemePalette.PANEL, ChroniclesThemePalette.HEADER,
+                ChroniclesUIKit.str("phoenix_chronicles.screen.chapter_theme.chapter_settings_2", chapter),
+                ChroniclesThemePalette.PANEL, ChroniclesThemePalette.HEADER,
                 ACCENT, ChroniclesThemePalette.TEXT);
 
         int fx = panelLeft + MARGIN;
         int fw = PANEL_W - MARGIN * 2;
 
-        g.drawString(font, "§8Display Name", fx, rowTop(ROW_NAME), ChroniclesThemePalette.TEXT_FAINT);
+        g.drawString(font, ChroniclesUIKit.str("phoenix_chronicles.ui.display_name"), fx, rowTop(ROW_NAME),
+                ChroniclesThemePalette.TEXT_FAINT);
 
         int iconRowY = rowTop(ROW_ICON);
         net.minecraft.world.item.Item iconItem = resolveIconPreview();
@@ -652,29 +672,36 @@ public class ChapterThemeScreen extends Screen {
 
         g.renderItem(new net.minecraft.world.item.ItemStack(iconItem), fx + 1, iconRowY + 1);
 
-        g.drawString(font, "§8Display Name Color", fx, rowTop(ROW_NAME_COLOR), ChroniclesThemePalette.TEXT_FAINT);
-
-        g.drawString(font, "§8Sidebar Row Shader", fx, rowTop(ROW_SIDEBAR_SHADER), ChroniclesThemePalette.TEXT_FAINT);
-        g.drawString(font, "§8Unlock Sound", fx, rowTop(ROW_UNLOCK_SOUND), ChroniclesThemePalette.TEXT_FAINT);
-        g.drawString(font, "§8Complete Sound", fx, rowTop(ROW_COMPLETE_SOUND), ChroniclesThemePalette.TEXT_FAINT);
-        g.drawString(font, "§8Chapter Music  §8(volume %  /  fade s)", fx, rowTop(ROW_MUSIC),
+        g.drawString(font, ChroniclesUIKit.str("phoenix_chronicles.ui.display_name_color"), fx, rowTop(ROW_NAME_COLOR),
                 ChroniclesThemePalette.TEXT_FAINT);
-        g.drawString(font, "§8Background Parallax %  §8(custom texture, 0 = fixed)", fx, rowTop(ROW_PARALLAX),
+
+        g.drawString(font, ChroniclesUIKit.str("phoenix_chronicles.screen.chapter_theme.sidebar_row_shader"), fx,
+                rowTop(ROW_SIDEBAR_SHADER), ChroniclesThemePalette.TEXT_FAINT);
+        g.drawString(font, ChroniclesUIKit.str("phoenix_chronicles.screen.chapter_theme.unlock_sound"), fx,
+                rowTop(ROW_UNLOCK_SOUND), ChroniclesThemePalette.TEXT_FAINT);
+        g.drawString(font, ChroniclesUIKit.str("phoenix_chronicles.screen.chapter_theme.complete_sound"), fx,
+                rowTop(ROW_COMPLETE_SOUND), ChroniclesThemePalette.TEXT_FAINT);
+        g.drawString(font, ChroniclesUIKit.label("phoenix_chronicles.screen.chapter_theme.chapter_music_volume_fade_s"),
+                fx, rowTop(ROW_MUSIC),
+                ChroniclesThemePalette.TEXT_FAINT);
+        g.drawString(font,
+                ChroniclesUIKit.label("phoenix_chronicles.screen.chapter_theme.background_parallax_custom_texture_0"),
+                fx, rowTop(ROW_PARALLAX),
                 ChroniclesThemePalette.TEXT_FAINT);
         ChroniclesUIKit.drawShaderWarning(g, font, sidebarShaderBox,
                 DynamicShaderManager.lastCompileFailed(cachedSidebarShaderId));
         if (sidebarShaderBox.isMouseOver(mx, my)) {
             List<Component> tip = new ArrayList<>();
-            tip.add(Component.literal("§7A .frag file's name (no extension) from"));
-            tip.add(Component.literal("§7config/phoenix_chronicles/shaders/"));
-            tip.add(Component.literal("§8(Independent of the canvas's own shader -- see the canvas's"));
-            tip.add(Component.literal("§8 own right-click \"Edit chapter theme…\" for that.)"));
+            tip.add(Component.translatable("phoenix_chronicles.ui.a_frag_file_s_name"));
+            tip.add(Component.translatable("phoenix_chronicles.ui.config_phoenix_chronicles_shaders"));
+            tip.add(Component.translatable("phoenix_chronicles.screen.chapter_theme.independent_of_the_canvas_s"));
+            tip.add(Component.translatable("phoenix_chronicles.screen.chapter_theme.own_right_click_edit_chapter"));
             if (DynamicShaderManager.lastCompileFailed(cachedSidebarShaderId)) {
-                tip.add(Component.literal("§c⚠ failed to compile -- check the log for the real error"));
+                tip.add(Component.translatable("phoenix_chronicles.ui.failed_to_compile_check_the"));
             }
             List<String> available = DynamicShaderManager.listAvailable();
             if (!available.isEmpty()) {
-                tip.add(Component.literal("§8Available: §7" + String.join(", ", available)));
+                tip.add(Component.translatable("phoenix_chronicles.ui.available", String.join(", ", available)));
             }
             g.renderComponentTooltip(font, tip, mx, my);
         }
@@ -688,16 +715,19 @@ public class ChapterThemeScreen extends Screen {
                 BackgroundRenderUtil.drawDynamicShaderQuad(g, shader, fx, previewY, fw, PREVIEW_H, t);
             } else if (DynamicShaderManager.lastCompileFailed(cachedSidebarShaderId)) {
                 g.fill(fx, previewY, fx + fw, previewY + PREVIEW_H, 0xFF0B0B0F);
-                g.drawCenteredString(font, "§c⚠ compile error", fx + fw / 2, previewY + (PREVIEW_H - 8) / 2,
+                g.drawCenteredString(font, ChroniclesUIKit.str("phoenix_chronicles.ui.compile_error"), fx + fw / 2,
+                        previewY + (PREVIEW_H - 8) / 2,
                         0xFFFF5555);
             } else {
                 g.fill(fx, previewY, fx + fw, previewY + PREVIEW_H, 0xFF0B0B0F);
-                g.drawCenteredString(font, "§8not found", fx + fw / 2, previewY + (PREVIEW_H - 8) / 2, 0xFF555566);
+                g.drawCenteredString(font, ChroniclesUIKit.str("phoenix_chronicles.ui.not_found"), fx + fw / 2,
+                        previewY + (PREVIEW_H - 8) / 2, 0xFF555566);
             }
         } else {
             int bg = (cachedNameColor != 0) ? (0xFF000000 | cachedNameColor) : 0xFF0B0B0F;
             g.fill(fx, previewY, fx + fw, previewY + PREVIEW_H, bg);
-            g.drawCenteredString(font, "§7preview", fx + fw / 2, previewY + (PREVIEW_H - 8) / 2, 0xFFAAAAAA);
+            g.drawCenteredString(font, ChroniclesUIKit.str("phoenix_chronicles.ui.preview"), fx + fw / 2,
+                    previewY + (PREVIEW_H - 8) / 2, 0xFFAAAAAA);
         }
 
         int advY = advancedToggleY();
@@ -718,21 +748,23 @@ public class ChapterThemeScreen extends Screen {
         for (EditBox condBox : overrideConditionBoxes) {
             if (condBox.isMouseOver(mx, my)) {
                 g.renderComponentTooltip(font, List.of(
-                        Component.literal("§7Evaluated the same way quest-variant conditions are:"),
-                        Component.literal("§7config:<file>#<key>=<value>, kjs:<key>=<value>,"),
-                        Component.literal("§7mod:<modid>, rule:<gamerule>=<value> -- \"!\" negates,"),
-                        Component.literal("§7\",\" is AND, \"|\" is OR."),
-                        Component.literal("§8First override (top to bottom) whose condition is true wins,"),
-                        Component.literal("§8with its whole style/texture/shader taking over as one unit;"),
-                        Component.literal("§8falls back to base background settings if none match or this"),
-                        Component.literal("§8list is empty.")), mx, my);
+                        Component.translatable("phoenix_chronicles.ui.evaluated_the_same_way_quest"),
+                        Component.translatable("phoenix_chronicles.ui.config_file_key_value_kjs"),
+                        Component.translatable("phoenix_chronicles.ui.mod_modid_rule_gamerule_value"),
+                        Component.translatable("phoenix_chronicles.ui.is_and_is_or"),
+                        Component.translatable("phoenix_chronicles.ui.first_override_top_to_bottom"),
+                        Component.translatable("phoenix_chronicles.ui.with_its_whole_style_texture"),
+                        Component.translatable("phoenix_chronicles.screen.chapter_theme.falls_back_to_base_background"),
+                        Component.translatable("phoenix_chronicles.ui.list_is_empty")), mx, my);
                 break;
             }
         }
         for (EditBox texBox : overrideTextureBoxes) {
             if (texBox.isMouseOver(mx, my)) {
-                g.renderComponentTooltip(font, List.of(Component.literal("§7modid:textures/gui/bg.png"),
-                        Component.literal("§8(this override's own Style must be CUSTOM)")), mx, my);
+                g.renderComponentTooltip(font,
+                        List.of(Component.translatable("phoenix_chronicles.ui.modid_textures_gui_bg_png"),
+                                Component.translatable("phoenix_chronicles.ui.this_override_s_own_style")),
+                        mx, my);
                 break;
             }
         }
@@ -742,10 +774,10 @@ public class ChapterThemeScreen extends Screen {
             ChroniclesUIKit.drawShaderWarning(g, font, shBox, DynamicShaderManager.lastCompileFailed(shaderId));
             if (shBox.isMouseOver(mx, my)) {
                 List<Component> tip = new ArrayList<>();
-                tip.add(Component.literal("§7A .frag file's name from config/phoenix_chronicles/shaders/"));
-                tip.add(Component.literal("§8(this override's own Style must be SHADER)"));
+                tip.add(Component.translatable("phoenix_chronicles.ui.a_frag_file_s_name_2"));
+                tip.add(Component.translatable("phoenix_chronicles.ui.this_override_s_own_style_2"));
                 if (DynamicShaderManager.lastCompileFailed(shaderId)) {
-                    tip.add(Component.literal("§c⚠ failed to compile -- check the log for the real error"));
+                    tip.add(Component.translatable("phoenix_chronicles.ui.failed_to_compile_check_the"));
                 }
                 g.renderComponentTooltip(font, tip, mx, my);
                 break;

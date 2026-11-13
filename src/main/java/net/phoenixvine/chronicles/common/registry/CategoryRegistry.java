@@ -29,7 +29,6 @@ public final class CategoryRegistry {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CategoryRegistry.class);
 
-    /** Most levels a category tree may have (top-level is level 0, so the deepest allowed level is MAX_DEPTH - 1). */
     public static final int MAX_DEPTH = 5;
     private static final int GUARD = 64;
 
@@ -38,10 +37,7 @@ public final class CategoryRegistry {
     private static final List<String> categoryOrder = new ArrayList<>();
     private static final List<String> standaloneOrder = new ArrayList<>();
     private static final List<String> topLevelOrder = new ArrayList<>();
-    /**
-     * Order of the items inside each category: chapter tokens ("S:NAME") and subcategory tokens ("C:id") mixed, so a
-     * folder can interleave its chapters and subfolders. Top-level order lives in topLevelOrder instead.
-     */
+    
     private static final Map<String, List<String>> itemOrder = new HashMap<>();
     private static final String CATEGORY_TOKEN_PREFIX = "C:";
     private static final String CHAPTER_TOKEN_PREFIX = "S:";
@@ -64,7 +60,6 @@ public final class CategoryRegistry {
         CATEGORIES.clear();
     }
 
-    /** Every category, flattened in tree order (each category is followed by its subcategories). */
     public static synchronized List<CategoryDefinition> getCategories() {
         List<CategoryDefinition> ordered = new ArrayList<>();
         Set<String> seen = new HashSet<>();
@@ -82,16 +77,12 @@ public final class CategoryRegistry {
         for (String child : childIds(id)) appendSubtree(child, out, seen, guard + 1);
     }
 
-    // ---- hierarchy -------------------------------------------------------------------------------------------
-
-    /** The parent id as far as it is usable: empty when there is none, it does not exist, or it points at itself. */
     private static String effectiveParent(CategoryDefinition c) {
         String p = c.parent();
         if (p == null || p.isEmpty() || p.equals(c.id()) || !CATEGORIES.containsKey(p)) return "";
         return p;
     }
 
-    /** Ids of the categories directly inside {@code parent} ("" = top level), in display order. */
     private static List<String> childIds(String parent) {
         List<String> kids = new ArrayList<>();
         for (CategoryDefinition c : CATEGORIES.values()) {
@@ -113,11 +104,6 @@ public final class CategoryRegistry {
         return token.startsWith(CHAPTER_TOKEN_PREFIX);
     }
 
-    /**
-     * Everything shown directly inside a category, in display order, as tokens: chapters ("S:NAME") and
-     * subcategories ("C:id") interleaved as the user arranged them. Anything not arranged yet comes last (chapters,
-     * then subcategories).
-     */
     public static synchronized List<String> folderItems(String categoryId) {
         CategoryDefinition c = CATEGORIES.get(categoryId);
         if (c == null) return new ArrayList<>();
@@ -143,10 +129,6 @@ public final class CategoryRegistry {
         return out;
     }
 
-    /**
-     * Puts an item (a chapter or subcategory token that already belongs to the category) at a position among the
-     * category's items: before {@code beforeToken}, or last when that is null or not found.
-     */
     public static synchronized void placeInFolder(String folderId, String token, @Nullable String beforeToken) {
         CategoryDefinition c = CATEGORIES.get(folderId);
         if (c == null) return;
@@ -157,7 +139,6 @@ public final class CategoryRegistry {
         items.add(idx, token);
         itemOrder.put(folderId, items);
 
-        // keep the chapter list in the category file in the same relative order
         List<String> chapters = new ArrayList<>();
         for (String t : items) {
             if (isChapterToken(t) && c.chapters().contains(tokenId(t))) chapters.add(tokenId(t));
@@ -171,7 +152,6 @@ public final class CategoryRegistry {
         saveUiState();
     }
 
-    /** Moves a chapter into {@code destCategory} (leaving whichever category it was in), before {@code beforeToken}. */
     public static synchronized void moveChapterTo(String chapter, String destCategory, @Nullable String beforeToken) {
         if (!CATEGORIES.containsKey(destCategory)) return;
         String upper = chapter.toUpperCase();
@@ -181,7 +161,6 @@ public final class CategoryRegistry {
         placeInFolder(destCategory, chapterToken(upper), beforeToken);
     }
 
-    /** The subcategories directly inside {@code parentId}, in display order. */
     public static synchronized List<CategoryDefinition> childrenOf(String parentId) {
         List<CategoryDefinition> out = new ArrayList<>();
         for (String id : childIds(parentId == null ? "" : parentId)) {
@@ -191,13 +170,11 @@ public final class CategoryRegistry {
         return out;
     }
 
-    /** Id of the category that contains {@code id}, or "" when it is top-level (or unknown). */
     public static synchronized String parentOf(String id) {
         CategoryDefinition c = CATEGORIES.get(id);
         return c == null ? "" : effectiveParent(c);
     }
 
-    /** 0 for a top-level category, 1 for a subcategory of one, and so on. */
     public static synchronized int depthOf(String id) {
         int depth = 0;
         String cur = parentOf(id);
@@ -208,7 +185,6 @@ public final class CategoryRegistry {
         return depth;
     }
 
-    /** The top-level category that {@code id} sits under (itself when it is top-level). */
     public static synchronized String rootOf(String id) {
         String cur = id;
         for (int i = 0; i < GUARD; i++) {
@@ -235,7 +211,6 @@ public final class CategoryRegistry {
         return height;
     }
 
-    /** Whether {@code id} (with everything inside it) may be moved into {@code newParent}. */
     public static synchronized boolean canNest(String id, String newParent) {
         if (id == null || newParent == null || id.equals(newParent)) return false;
         if (!CATEGORIES.containsKey(id) || !CATEGORIES.containsKey(newParent)) return false;
@@ -243,7 +218,6 @@ public final class CategoryRegistry {
         return depthOf(newParent) + 1 + subtreeHeight(id, 0) < MAX_DEPTH;
     }
 
-    /** "Parent / Child / Grandchild" display name for pickers. */
     public static synchronized String pathLabel(String id) {
         CategoryDefinition c = CATEGORIES.get(id);
         if (c == null) return id;
@@ -258,7 +232,6 @@ public final class CategoryRegistry {
         return sb.toString();
     }
 
-    /** The chapters of a category plus the chapters of every category nested inside it. */
     public static synchronized List<String> chaptersIncludingDescendants(String id) {
         List<String> out = new ArrayList<>();
         collectChapters(id, out, new HashSet<>(), 0);
@@ -272,9 +245,6 @@ public final class CategoryRegistry {
         for (String child : childIds(id)) collectChapters(child, out, seen, guard + 1);
     }
 
-    /**
-     * Resets parents that point nowhere, at themselves, or round in a circle, so a hand-edited file cannot hang the UI.
-     */
     private static void sanitizeHierarchy() {
         for (CategoryDefinition c : new ArrayList<>(CATEGORIES.values())) {
             String p = c.parent();
@@ -298,12 +268,6 @@ public final class CategoryRegistry {
         return false;
     }
 
-    /**
-     * Moves a category into {@code newParent} (null or empty = top level), placing it before the item
-     * {@code beforeToken} (a chapter or category token inside that parent; null = last). A top-level move only
-     * changes the parent: position at the top level is set with {@link #moveTopLevel}. Returns false (changing
-     * nothing) when the move would create a loop or go too deep.
-     */
     public static synchronized boolean moveCategory(String id, @Nullable String newParent,
                                                     @Nullable String beforeToken) {
         CategoryDefinition c = CATEGORIES.get(id);
@@ -332,16 +296,12 @@ public final class CategoryRegistry {
         return true;
     }
 
-    // ---- copy / paste ------------------------------------------------------------------------------------------
-
-    /** A copied category tree: its look, condition and subcategories (chapters are not part of a copy). */
     public record CategorySnapshot(String id, String displayName, int color, String icon, int nameColor,
                                    String enableIf, List<String> chapters, List<String> items,
                                    List<CategorySnapshot> children) {}
 
     private static CategorySnapshot clipboard = null;
 
-    /** Copies a category and everything nested in it (structure, themes, conditions, which chapters sit where). */
     public static synchronized boolean copyCategory(String id) {
         CategorySnapshot snap = snapshotOf(id, 0);
         clipboard = snap;
@@ -365,12 +325,10 @@ public final class CategoryRegistry {
         return clipboard != null;
     }
 
-    /** Display name of the copied root category, or "" when nothing is copied. */
     public static synchronized String clipboardLabel() {
         return clipboard == null ? "" : clipboard.displayName();
     }
 
-    /** Every chapter in the copied tree, in display order (a chapter appears once). */
     public static synchronized List<String> clipboardChapters() {
         List<String> out = new ArrayList<>();
         if (clipboard != null) collectSnapshotChapters(clipboard, out);
@@ -391,7 +349,6 @@ public final class CategoryRegistry {
         for (String ch : n.chapters()) if (!out.contains(ch)) out.add(ch);
     }
 
-    /** How many categories (root included) the clipboard holds. */
     public static synchronized int clipboardSize() {
         return clipboard == null ? 0 : countNodes(clipboard);
     }
@@ -408,7 +365,6 @@ public final class CategoryRegistry {
         return h;
     }
 
-    /** Whether the clipboard fits inside {@code parentId} (null or "" = top level) without going too deep. */
     public static synchronized boolean canPasteInto(@Nullable String parentId) {
         if (clipboard == null) return false;
         String parent = parentId == null ? "" : parentId;
@@ -416,23 +372,12 @@ public final class CategoryRegistry {
         return CATEGORIES.containsKey(parent) && depthOf(parent) + 1 + snapshotHeight(clipboard) < MAX_DEPTH;
     }
 
-    /**
-     * Pastes the copied tree as new categories inside {@code parentId} (null or "" = top level), with fresh ids.
-     * {@code rootCondition}, when not blank, becomes the pasted root's enable_if; {@code find} (when not empty) is
-     * replaced by {@code replace} in every other pasted enable_if. Returns the new root's id, or null when nothing
-     * was pasted.
-     */
     public static synchronized @Nullable String pasteCategory(@Nullable String parentId,
                                                               @Nullable String rootCondition, @Nullable String find,
                                                               @Nullable String replace) {
         return pasteCategory(parentId, rootCondition, find, replace, null, null);
     }
 
-    /**
-     * As above, and also places chapters in the pasted categories: {@code chapterMap} maps each copied chapter id to
-     * the new chapter id that takes its place (a chapter missing from the map is left out; a null map pastes no
-     * chapters). {@code categoryMapOut}, when given, receives old category id -> new category id.
-     */
     public static synchronized @Nullable String pasteCategory(@Nullable String parentId,
                                                               @Nullable String rootCondition, @Nullable String find,
                                                               @Nullable String replace,
@@ -491,7 +436,6 @@ public final class CategoryRegistry {
             childIdMap.put(child.id(), newChild);
         }
 
-        // keep the original interleaving of chapters and subfolders
         List<String> items = new ArrayList<>();
         for (String token : node.items()) {
             if (isChapterToken(token)) {
@@ -506,8 +450,6 @@ public final class CategoryRegistry {
         return id;
     }
 
-    // ---- collapse / lookup -----------------------------------------------------------------------------------
-
     public static synchronized boolean isCollapsed(String categoryId) {
         return collapsed.contains(categoryId);
     }
@@ -516,7 +458,6 @@ public final class CategoryRegistry {
         if (!collapsed.remove(categoryId)) collapsed.add(categoryId);
     }
 
-    /** The category a chapter is directly in (not its ancestors). */
     @Nullable
     public static synchronized CategoryDefinition categoryFor(String chapter) {
         String upper = chapter.toUpperCase();
@@ -557,7 +498,6 @@ public final class CategoryRegistry {
         return token.substring(CATEGORY_TOKEN_PREFIX.length());
     }
 
-    /** Top-level order: top-level categories and standalone chapters. Nested categories are not listed here. */
     public static synchronized List<String> resolveTopLevel(List<String> standaloneChapters) {
         Set<String> valid = new HashSet<>();
         List<String> categoryTokens = new ArrayList<>();
@@ -649,7 +589,6 @@ public final class CategoryRegistry {
         addCategory(id, label, null);
     }
 
-    /** Creates a category, nested inside {@code parent} when that is given, exists, and is not already too deep. */
     public static synchronized void addCategory(String id, String label, @Nullable String parent) {
         if (CATEGORIES.containsKey(id)) return;
         String p = parent == null ? "" : parent;
@@ -662,10 +601,6 @@ public final class CategoryRegistry {
         writeCategory(category);
     }
 
-    /**
-     * Deletes a category. Its chapters become uncategorized; its subcategories move up into its parent (or to the
-     * top level), keeping their place.
-     */
     public static synchronized void removeCategory(String id) {
         CategoryDefinition removed = CATEGORIES.get(id);
         String grand = removed == null ? "" : effectiveParent(removed);
@@ -743,10 +678,6 @@ public final class CategoryRegistry {
         writeCategory(updated);
     }
 
-    /**
-     * Whether the player can see the category (and so its chapters): its enable_if, and the enable_if of every
-     * category it is nested inside, must all be true for them.
-     */
     public static boolean isEnabledFor(@Nullable CategoryDefinition category,
                                        @Nullable net.minecraft.world.entity.player.Player player) {
         if (category == null) return true;
@@ -813,7 +744,7 @@ public final class CategoryRegistry {
                 ListTag l = root.getList("topLevelOrder", Tag.TAG_STRING);
                 for (int i = 0; i < l.size(); i++) topLevelOrder.add(l.getString(i));
             }
-            if (root.contains("childOrder")) { // older format: subcategory ids only
+            if (root.contains("childOrder")) { 
                 ListTag l = root.getList("childOrder", Tag.TAG_COMPOUND);
                 for (int i = 0; i < l.size(); i++) {
                     CompoundTag entry = l.getCompound(i);

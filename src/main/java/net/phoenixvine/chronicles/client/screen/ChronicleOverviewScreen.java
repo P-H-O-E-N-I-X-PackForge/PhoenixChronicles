@@ -18,6 +18,7 @@ import net.phoenixvine.chronicles.client.profiler.FrameProfiler;
 import net.phoenixvine.chronicles.client.registry.ExternalScreenRegistry;
 import net.phoenixvine.chronicles.client.registry.SeenQuestTracker;
 import net.phoenixvine.chronicles.client.render.*;
+import net.phoenixvine.chronicles.client.render.ChroniclesUIKit;
 import net.phoenixvine.chronicles.client.screen.utils.*;
 import net.phoenixvine.chronicles.client.screen.widgets.*;
 import net.phoenixvine.chronicles.client.util.BackgroundPictureConfig;
@@ -310,7 +311,7 @@ public class ChronicleOverviewScreen extends Screen
     private final Screen parent;
 
     public ChronicleOverviewScreen(Screen parent) {
-        super(ChroniclesUIKit.lit("Chronicles"));
+        super(ChroniclesUIKit.tr("phoenix_chronicles.screen.chronicle_overview.chronicles"));
 
         this.parent = parent;
 
@@ -676,7 +677,8 @@ public class ChronicleOverviewScreen extends Screen
 
         QuestNode target = resolveLinkTarget(node);
         if (target == null) {
-            setFeedback("§cBroken link: %s", node.getLinkTarget());
+            setFeedback(ChroniclesUIKit.label("phoenix_chronicles.screen.chronicle_overview.broken_link"),
+                    node.getLinkTarget());
             return;
         }
 
@@ -1207,7 +1209,8 @@ public class ChronicleOverviewScreen extends Screen
                 int nsz = scaledNodeSize(nodeSizeEditMode);
                 ChroniclesUIKit.drawBorder(g, pos[0] - 2, pos[1] - 2, nsz + 4, nsz + 4, 0xFFFFCC33);
                 if (nodeSizeTypedBuffer != null) {
-                    String typed = "§f" + nodeSizeTypedBuffer + "§7px§8 (Enter to apply)";
+                    String typed = ChroniclesUIKit.str("phoenix_chronicles.screen.chronicle_overview.px_enter_to_apply",
+                            nodeSizeTypedBuffer);
                     ChroniclesUIKit.drawCenteredString(g, font, typed, pos[0] + nsz / 2, pos[1] - 12, 0xFFFFCC33);
                 }
             }
@@ -1306,7 +1309,9 @@ public class ChronicleOverviewScreen extends Screen
         if (srcPos == null) return;
         int sz2 = scaledNodeSize();
         int sx = srcPos[0] + sz2 / 2, sy = srcPos[1] + sz2 / 2;
-        ChroniclesUIKit.drawString(g, font, "§dRelease on a quest to link", sx - 50, sy - 14, 0xFFAA66FF, false);
+        ChroniclesUIKit.drawString(g, font,
+                ChroniclesUIKit.str("phoenix_chronicles.screen.chronicle_overview.release_on_a_quest_to"), sx - 50,
+                sy - 14, 0xFFAA66FF, false);
     }
 
     private void renderNodesAndDetails(GuiGraphics g, int mx, int my, int cl, int cr, int sz) {
@@ -1383,7 +1388,9 @@ public class ChronicleOverviewScreen extends Screen
                 g.fill(ux + sz + 2, uy - 2, ux + sz + 3, uy + sz + 2, (ringAlpha << 24) | 0x0088FF);
             }
             g.disableScissor();
-            ChroniclesUIKit.drawString(g, font, "§bUnlock path. §8Esc to clear", cl + 6, height - 10, 0xFF4488FF,
+            ChroniclesUIKit.drawString(g, font,
+                    ChroniclesUIKit.str("phoenix_chronicles.screen.chronicle_overview.unlock_path_esc_to_clear"),
+                    cl + 6, height - 10, 0xFF4488FF,
                     false);
         }
 
@@ -1425,26 +1432,34 @@ public class ChronicleOverviewScreen extends Screen
         g.pose().translate(0, 0, 400f);
         g.fill(px, py, px + panelW, py + panelH, 0xEE0D0D12);
         g.fill(px, py, px + panelW, py + 1, 0xFF00AA55);
-        ChroniclesUIKit.drawString(g, font, "§aProfiler §8(Ctrl+P close, Ctrl+Shift+P log now)", px + 5, py + 4,
+        ChroniclesUIKit.drawString(g, font,
+                ChroniclesUIKit.str("phoenix_chronicles.screen.chronicle_overview.profiler_ctrl_p_close_ctrl"), px + 5,
+                py + 4,
                 0xFFDDDDDD, false);
 
         Runtime rt = Runtime.getRuntime();
         long usedMb = (rt.totalMemory() - rt.freeMemory()) / (1024 * 1024);
         long maxMb = rt.maxMemory() / (1024 * 1024);
-        ChroniclesUIKit.drawString(g, font, "§8Heap: §7" + usedMb + "MB §8/ §7" + maxMb + "MB", px + 5, py + 15,
+        ChroniclesUIKit.drawString(g, font,
+                ChroniclesUIKit.str("phoenix_chronicles.screen.chronicle_overview.heap_mb_mb", usedMb, maxMb), px + 5,
+                py + 15,
                 0xFFAAAAAA, false);
 
         int gapY = py + 26;
         double gapAvg = FrameProfiler.wallClockGapAvgMs();
         double gapMax = FrameProfiler.wallClockGapMaxMs();
         int gapColor = gapMax > 50 ? 0xFFFF5555 : gapMax > 25 ? 0xFFFFAA33 : 0xFF7A9AAA;
-        ChroniclesUIKit.drawString(g, font, "§8Frame gap: §7" +
-                String.format("%.2fms (max %.2fms)", gapAvg, gapMax), px + 5, gapY, gapColor, false);
+        ChroniclesUIKit.drawString(g, font,
+                ChroniclesUIKit.str("phoenix_chronicles.screen.chronicle_overview.frame_gap",
+                        String.format("%.2fms (max %.2fms)", gapAvg, gapMax)),
+                px + 5, gapY, gapColor, false);
 
         long gcCount = FrameProfiler.gcCountThisWindow();
         long gcTimeMs = FrameProfiler.gcTimeMsThisWindow();
         int gcColor = gcTimeMs > 0 ? 0xFFFF5555 : 0xFF7A9AAA;
-        ChroniclesUIKit.drawString(g, font, "§8GC: §7" + gcCount + " collections, " + gcTimeMs + "ms",
+        ChroniclesUIKit.drawString(g, font,
+                ChroniclesUIKit.str("phoenix_chronicles.screen.chronicle_overview.gc_collections_ms", gcCount,
+                        gcTimeMs),
                 px + 5, gapY + rowH, gcColor, false);
 
         double localMax = sections.isEmpty() ? 1.0 : sections.get(0).getValue();
@@ -1459,7 +1474,8 @@ public class ChronicleOverviewScreen extends Screen
             g.fill(px + 5, y + 1, px + 5 + Math.max(1, barW), y + rowH - 2, barColor);
             ChroniclesUIKit.drawString(g, font, entry.getKey(), px + 5, y + 1, 0xFF888898, false);
 
-            String msStr = String.format("%.2f §8/ §7%.2fms", ms, worst);
+            String msStr = String.format(ChroniclesUIKit.label("phoenix_chronicles.screen.chronicle_overview.2f_2fms"),
+                    ms, worst);
             ChroniclesUIKit.drawString(g, font, msStr, px + panelW - font.width(StringUtil.stripColor(msStr)) - 5,
                     y + 1, 0xFFCCCCCC, false);
             y += rowH;
@@ -2038,7 +2054,7 @@ public class ChronicleOverviewScreen extends Screen
 
     @Override
     public void setFeedbackDone(String doneMsg, Object... args) {
-        setFeedback(doneMsg + "  (Ctrl+Z to undo)", args);
+        setFeedback(ChroniclesUIKit.str("phoenix_chronicles.screen.chronicle_overview.ctrl_z_to_undo", doneMsg), args);
     }
 
     void openLineSettingsFor(QuestNode parentNode) {

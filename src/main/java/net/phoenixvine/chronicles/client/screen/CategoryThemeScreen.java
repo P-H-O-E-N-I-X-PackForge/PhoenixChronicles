@@ -88,7 +88,7 @@ public class CategoryThemeScreen extends Screen {
     private int vw, vh;
 
     public CategoryThemeScreen(Screen parent, String categoryId) {
-        super(Component.literal("Category Theme"));
+        super(Component.translatable("phoenix_chronicles.screen.category_theme.category_theme"));
         this.parent = parent;
         this.categoryId = categoryId;
 
@@ -163,7 +163,7 @@ public class CategoryThemeScreen extends Screen {
         addRenderableWidget(nameBox);
 
         int iconPreviewW = FIELD_H + 4;
-        addRenderableWidget(Button.builder(Component.literal("§7Change Icon"),
+        addRenderableWidget(Button.builder(Component.translatable("phoenix_chronicles.ui.change_icon"),
                 b -> {
                     if (minecraft != null) minecraft.setScreen(new ItemPickerScreen(this, stack -> {
                         ResourceLocation key = BuiltInRegistries.ITEM.getKey(stack.getItem());
@@ -174,14 +174,15 @@ public class CategoryThemeScreen extends Screen {
 
         colorBox = new EditBox(font, fx, rowTop(ROW_COLOR) + 11, fw, FIELD_H, Component.empty());
         colorBox.setMaxLength(7);
-        colorBox.setHint(Component.literal("§8#RRGGBB  (empty = default)"));
+        colorBox.setHint(Component.translatable("phoenix_chronicles.ui.rrggbb_empty_default"));
         colorBox.setValue(cachedColor != 0 ? ChroniclesUIKit.formatHexColor(cachedColor) : "");
         colorBox.setResponder(v -> cachedColor = ChroniclesUIKit.parseHexColor(v, 0));
         addRenderableWidget(colorBox);
 
         nameColorBox = new EditBox(font, fx, rowTop(ROW_NAME_COLOR) + 11, fw, FIELD_H, Component.empty());
         nameColorBox.setMaxLength(7);
-        nameColorBox.setHint(Component.literal("§8#RRGGBB  (empty = use accent color)"));
+        nameColorBox.setHint(
+                Component.translatable("phoenix_chronicles.screen.category_theme.rrggbb_empty_use_accent_color"));
         nameColorBox.setValue(cachedNameColor != 0 ? ChroniclesUIKit.formatHexColor(cachedNameColor) : "");
         nameColorBox.setResponder(v -> cachedNameColor = ChroniclesUIKit.parseHexColor(v, 0));
         addRenderableWidget(nameColorBox);
@@ -191,11 +192,11 @@ public class CategoryThemeScreen extends Screen {
         int shaderRowY = rowTop(ROW_SHADER);
         shaderBox = new EditBox(font, fx, shaderRowY + 11, fw - browseW - browseGap, FIELD_H, Component.empty());
         shaderBox.setMaxLength(64);
-        shaderBox.setHint(Component.literal("§8shader id  (empty = none)"));
+        shaderBox.setHint(Component.translatable("phoenix_chronicles.ui.shader_id_empty_none"));
         shaderBox.setValue(cachedShaderId);
         shaderBox.setResponder(v -> cachedShaderId = v.trim());
         addRenderableWidget(shaderBox);
-        addRenderableWidget(Button.builder(Component.literal("Browse…"), b -> {
+        addRenderableWidget(Button.builder(Component.translatable("phoenix_chronicles.ui.browse"), b -> {
             if (minecraft != null)
                 minecraft.setScreen(new ShaderPickerScreen(this, id -> {
                     cachedShaderId = id;
@@ -217,7 +218,7 @@ public class CategoryThemeScreen extends Screen {
 
                 EditBox condBox = new EditBox(font, fx, oy, fw - removeW - 4, FIELD_H, Component.empty());
                 condBox.setMaxLength(128);
-                condBox.setHint(Component.literal("§8condition: e.g. config:pack_mode=expert"));
+                condBox.setHint(Component.translatable("phoenix_chronicles.ui.condition_e_g_config_pack"));
                 condBox.setValue(ov.condition);
                 condBox.setResponder(v -> overrides.get(idx).condition = v.trim());
                 addRenderableWidget(condBox);
@@ -233,7 +234,7 @@ public class CategoryThemeScreen extends Screen {
 
                 EditBox shBox = new EditBox(font, fx, oy, fw, FIELD_H, Component.empty());
                 shBox.setMaxLength(64);
-                shBox.setHint(Component.literal("§8shader id  (empty = none)"));
+                shBox.setHint(Component.translatable("phoenix_chronicles.ui.shader_id_empty_none"));
                 shBox.setValue(ov.shaderId);
                 shBox.setResponder(v -> overrides.get(idx).shaderId = v.trim());
                 addRenderableWidget(shBox);
@@ -242,7 +243,7 @@ public class CategoryThemeScreen extends Screen {
                 oy += FIELD_H + ADV_ROW_GAP;
             }
 
-            addRenderableWidget(Button.builder(Component.literal("§7+ Add Override"), b -> {
+            addRenderableWidget(Button.builder(Component.translatable("phoenix_chronicles.ui.add_override"), b -> {
                 overrides.add(new CategoryShaderConfig.CategoryOverride());
                 advScrollRow = maxAdvScrollRow();
                 clearWidgets();
@@ -252,9 +253,9 @@ public class CategoryThemeScreen extends Screen {
 
         int btnY = panelTop + panelH - 10 - 18;
         int half = (fw - 6) / 2;
-        addRenderableWidget(Button.builder(Component.literal("§aSave"), b -> save())
+        addRenderableWidget(Button.builder(Component.translatable("phoenix_chronicles.ui.save"), b -> save())
                 .bounds(fx, btnY, half, 18).build());
-        addRenderableWidget(Button.builder(Component.literal("§7Cancel"),
+        addRenderableWidget(Button.builder(Component.translatable("phoenix_chronicles.ui.cancel"),
                 b -> {
                     if (minecraft != null) minecraft.setScreen(parent);
                 })
@@ -298,35 +299,41 @@ public class CategoryThemeScreen extends Screen {
         g.pose().scale(uiScale, uiScale, 1f);
 
         ChroniclesUIKit.drawModalChrome(g, font, vw, vh, panelLeft, panelTop, PANEL_W, panelH, 22,
-                "§dCategory Theme: §7" + categoryId, ChroniclesThemePalette.PANEL, ChroniclesThemePalette.HEADER,
+                ChroniclesUIKit.str("phoenix_chronicles.screen.category_theme.category_theme_2", categoryId),
+                ChroniclesThemePalette.PANEL, ChroniclesThemePalette.HEADER,
                 ACCENT, ChroniclesThemePalette.TEXT);
 
         int fx = panelLeft + MARGIN;
         int fw = PANEL_W - MARGIN * 2;
 
-        g.drawString(font, "§8Display Name", fx, rowTop(ROW_NAME), ChroniclesThemePalette.TEXT_FAINT);
+        g.drawString(font, ChroniclesUIKit.str("phoenix_chronicles.ui.display_name"), fx, rowTop(ROW_NAME),
+                ChroniclesThemePalette.TEXT_FAINT);
 
         int iconRowY = rowTop(ROW_ICON);
         g.fill(fx, iconRowY, fx + FIELD_H + 4, iconRowY + FIELD_H + 4, 0xFF0B0B0F);
         ChroniclesUIKit.drawBorder(g, fx, iconRowY, FIELD_H + 4, FIELD_H + 4, 0xFF333344);
         g.renderItem(new ItemStack(resolveIconPreview()), fx + 1, iconRowY + 1);
 
-        g.drawString(font, "§8Accent Color", fx, rowTop(ROW_COLOR), ChroniclesThemePalette.TEXT_FAINT);
-        g.drawString(font, "§8Display Name Color", fx, rowTop(ROW_NAME_COLOR), ChroniclesThemePalette.TEXT_FAINT);
+        g.drawString(font, ChroniclesUIKit.str("phoenix_chronicles.screen.category_theme.accent_color"), fx,
+                rowTop(ROW_COLOR), ChroniclesThemePalette.TEXT_FAINT);
+        g.drawString(font, ChroniclesUIKit.str("phoenix_chronicles.ui.display_name_color"), fx, rowTop(ROW_NAME_COLOR),
+                ChroniclesThemePalette.TEXT_FAINT);
 
-        g.drawString(font, "§8Custom Shader (folder row background)", fx, rowTop(ROW_SHADER),
+        g.drawString(font,
+                ChroniclesUIKit.str("phoenix_chronicles.screen.category_theme.custom_shader_folder_row_background"), fx,
+                rowTop(ROW_SHADER),
                 ChroniclesThemePalette.TEXT_FAINT);
         ChroniclesUIKit.drawShaderWarning(g, font, shaderBox, DynamicShaderManager.lastCompileFailed(cachedShaderId));
         if (shaderBox.isMouseOver(mx, my)) {
             List<Component> tip = new ArrayList<>();
-            tip.add(Component.literal("§7A .frag file's name (no extension) from"));
-            tip.add(Component.literal("§7config/phoenix_chronicles/shaders/"));
+            tip.add(Component.translatable("phoenix_chronicles.ui.a_frag_file_s_name"));
+            tip.add(Component.translatable("phoenix_chronicles.ui.config_phoenix_chronicles_shaders"));
             if (DynamicShaderManager.lastCompileFailed(cachedShaderId)) {
-                tip.add(Component.literal("§c⚠ failed to compile -- check the log for the real error"));
+                tip.add(Component.translatable("phoenix_chronicles.ui.failed_to_compile_check_the"));
             }
             List<String> available = DynamicShaderManager.listAvailable();
             if (!available.isEmpty()) {
-                tip.add(Component.literal("§8Available: §7" + String.join(", ", available)));
+                tip.add(Component.translatable("phoenix_chronicles.ui.available", String.join(", ", available)));
             }
             g.renderComponentTooltip(font, tip, mx, my);
         }
@@ -340,15 +347,18 @@ public class CategoryThemeScreen extends Screen {
                 BackgroundRenderUtil.drawDynamicShaderQuad(g, shader, fx, previewY, fw, 24, t);
             } else if (DynamicShaderManager.lastCompileFailed(cachedShaderId)) {
                 g.fill(fx, previewY, fx + fw, previewY + 24, 0xFF0B0B0F);
-                g.drawCenteredString(font, "§c⚠ compile error", fx + fw / 2, previewY + 8, 0xFFFF5555);
+                g.drawCenteredString(font, ChroniclesUIKit.str("phoenix_chronicles.ui.compile_error"), fx + fw / 2,
+                        previewY + 8, 0xFFFF5555);
             } else {
                 g.fill(fx, previewY, fx + fw, previewY + 24, 0xFF0B0B0F);
-                g.drawCenteredString(font, "§8not found", fx + fw / 2, previewY + 8, 0xFF555566);
+                g.drawCenteredString(font, ChroniclesUIKit.str("phoenix_chronicles.ui.not_found"), fx + fw / 2,
+                        previewY + 8, 0xFF555566);
             }
         } else {
             int bg = (cachedColor != 0) ? (0xFF000000 | cachedColor) : 0xFF0B0B0F;
             g.fill(fx, previewY, fx + fw, previewY + 24, bg);
-            g.drawCenteredString(font, "§7preview", fx + fw / 2, previewY + 8, 0xFFAAAAAA);
+            g.drawCenteredString(font, ChroniclesUIKit.str("phoenix_chronicles.ui.preview"), fx + fw / 2, previewY + 8,
+                    0xFFAAAAAA);
         }
 
         int advY = advancedToggleY();
@@ -369,13 +379,13 @@ public class CategoryThemeScreen extends Screen {
         for (EditBox condBox : overrideConditionBoxes) {
             if (condBox.isMouseOver(mx, my)) {
                 g.renderComponentTooltip(font, List.of(
-                        Component.literal("§7Evaluated the same way quest-variant conditions are:"),
-                        Component.literal("§7config:<file>#<key>=<value>, kjs:<key>=<value>,"),
-                        Component.literal("§7mod:<modid>, rule:<gamerule>=<value> -- \"!\" negates,"),
-                        Component.literal("§7\",\" is AND, \"|\" is OR."),
-                        Component.literal("§8First override (top to bottom) whose condition is true wins;"),
-                        Component.literal("§8falls back to the Custom Shader field above if none match or"),
-                        Component.literal("§8this list is empty.")), mx, my);
+                        Component.translatable("phoenix_chronicles.ui.evaluated_the_same_way_quest"),
+                        Component.translatable("phoenix_chronicles.ui.config_file_key_value_kjs"),
+                        Component.translatable("phoenix_chronicles.ui.mod_modid_rule_gamerule_value"),
+                        Component.translatable("phoenix_chronicles.ui.is_and_is_or"),
+                        Component.translatable("phoenix_chronicles.screen.category_theme.first_override_top_to_bottom"),
+                        Component.translatable("phoenix_chronicles.screen.category_theme.falls_back_to_the_custom"),
+                        Component.translatable("phoenix_chronicles.screen.category_theme.this_list_is_empty")), mx, my);
                 break;
             }
         }
@@ -385,9 +395,9 @@ public class CategoryThemeScreen extends Screen {
             ChroniclesUIKit.drawShaderWarning(g, font, shBox, DynamicShaderManager.lastCompileFailed(shaderId));
             if (shBox.isMouseOver(mx, my)) {
                 List<Component> tip = new ArrayList<>();
-                tip.add(Component.literal("§7A .frag file's name from config/phoenix_chronicles/shaders/"));
+                tip.add(Component.translatable("phoenix_chronicles.ui.a_frag_file_s_name_2"));
                 if (DynamicShaderManager.lastCompileFailed(shaderId)) {
-                    tip.add(Component.literal("§c⚠ failed to compile -- check the log for the real error"));
+                    tip.add(Component.translatable("phoenix_chronicles.ui.failed_to_compile_check_the"));
                 }
                 g.renderComponentTooltip(font, tip, mx, my);
                 break;

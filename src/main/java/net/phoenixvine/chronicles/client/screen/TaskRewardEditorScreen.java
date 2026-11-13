@@ -154,7 +154,6 @@ public class TaskRewardEditorScreen extends Screen {
 
     private final UndoRedoManager undoRedo = new UndoRedoManager(msg -> {});
 
-    /** The tasks and rewards as they were when the screen opened, to tell whether Escape would lose changes. */
     private String openedState = "";
 
     EditBox rewardEventDataBox;
@@ -164,7 +163,9 @@ public class TaskRewardEditorScreen extends Screen {
     }
 
     public TaskRewardEditorScreen(Screen parent, QuestNode questNode, @Nullable QuestNode.QuestVariant variantTarget) {
-        super(ChroniclesUIKit.lit(variantTarget != null ? "Tasks & Rewards (variant)" : "Tasks & Rewards"));
+        super(ChroniclesUIKit.lit(variantTarget != null ?
+                ChroniclesUIKit.str("phoenix_chronicles.screen.task_reward_editor.tasks_rewards_variant") :
+                ChroniclesUIKit.str("phoenix_chronicles.screen.task_reward_editor.tasks_rewards")));
         this.parent = parent;
         this.questNode = questNode;
         this.variantTarget = variantTarget;
@@ -183,7 +184,7 @@ public class TaskRewardEditorScreen extends Screen {
 
     public TaskRewardEditorScreen(Screen parent, @Nullable QuestNode questNode, List<QuestReward> emergencyRewards,
                                   Consumer<List<QuestReward>> sink, String label) {
-        super(ChroniclesUIKit.lit("Emergency Rewards"));
+        super(ChroniclesUIKit.tr("phoenix_chronicles.screen.task_reward_editor.emergency_rewards"));
         this.parent = parent;
         this.questNode = questNode;
         this.variantTarget = null;
@@ -238,7 +239,7 @@ public class TaskRewardEditorScreen extends Screen {
     }
 
     void setTableIdHint(EditBox box) {
-        box.setHint(ChroniclesUIKit.lit("§8Table ID"));
+        box.setHint(ChroniclesUIKit.tr("phoenix_chronicles.screen.task_reward_editor.table_id"));
         List<String> known = new ArrayList<>(RewardTableRegistry.getAll().keySet());
         Collections.sort(known);
         String text = known.isEmpty() ? "No reward tables are loaded yet.\n(config/phoenix_chronicles/reward_tables/)" :
@@ -275,12 +276,13 @@ public class TaskRewardEditorScreen extends Screen {
 
         clearWidgets();
 
-        addRenderableWidget(Button.builder(ChroniclesUIKit.lit("§7‹ Done"), b -> {
+        addRenderableWidget(Button.builder(ChroniclesUIKit.tr("phoenix_chronicles.ui.done_2"), b -> {
             flushToQuestNode();
             if (!emergencyMode) ChronicleOverviewScreen.invalidateNodeCachesUpChain(parent, questNode);
             if (minecraft != null) minecraft.setScreen(parent);
         }).bounds(vw / 2 - 40, vh - FOOTER_H + (FOOTER_H - 14) / 2, 80, 14)
-                .tooltip(Tooltip.create(ChroniclesUIKit.lit("Save changes and return to quest editor"))).build());
+                .tooltip(Tooltip.create(ChroniclesUIKit.tr("phoenix_chronicles.ui.save_changes_and_return_to")))
+                .build());
 
         taskForm.buildTaskForm(descVal, targetVal, secondVal, countVal, nbtVal);
         rewardForm.buildRewardForm(rCountVal, rCommandVal, rEventDataVal, boCountVal, boNbtVal, boTableVal);
@@ -295,7 +297,7 @@ public class TaskRewardEditorScreen extends Screen {
             case 1 -> "§dHide: amount";
             case 2 -> "§dHide: target";
             case 3 -> "§dHide: both";
-            default -> "§8Hide: off";
+            default -> ChroniclesUIKit.str("phoenix_chronicles.screen.task_reward_editor.hide_off");
         });
     }
 
@@ -447,9 +449,14 @@ public class TaskRewardEditorScreen extends Screen {
             case INFINITE -> "  §a[∞]";
             default -> "";
         };
-        String variantBadge = variantTarget != null ? "  §d[variant: " + variantTarget.condition + "]" : "";
-        String headerTitle = emergencyMode ? "§6⚠ §fEmergency Rewards  §8: §7" + emergencyLabel :
-                "§fTasks & Rewards  §8: §7" + questNode.getId().getPath() + repeatBadge + variantBadge;
+        String variantBadge = variantTarget != null ?
+                ChroniclesUIKit.str("phoenix_chronicles.screen.task_reward_editor.variant", variantTarget.condition) :
+                "";
+        String headerTitle = emergencyMode ?
+                ChroniclesUIKit.str("phoenix_chronicles.screen.task_reward_editor.emergency_rewards_2",
+                        emergencyLabel) :
+                ChroniclesUIKit.str("phoenix_chronicles.screen.task_reward_editor.tasks_rewards_2",
+                        questNode.getId().getPath(), repeatBadge, variantBadge);
         ChroniclesUIKit.drawCenteredString(g, font, headerTitle, vw / 2, (HEADER_H - 8) / 2, C_TEXT);
     }
 
@@ -458,23 +465,33 @@ public class TaskRewardEditorScreen extends Screen {
         g.fill(0, listTop - 1, vw, listTop, C_BORDER);
         String taskSubHeader;
         if (emergencyMode) {
-            taskSubHeader = "§6⚠ §8Emergency kit: no tasks, rewards only";
+            taskSubHeader = ChroniclesUIKit
+                    .str("phoenix_chronicles.screen.task_reward_editor.emergency_kit_no_tasks_rewards");
         } else if (tasks.isEmpty()) {
-            taskSubHeader = "§c⚠ No tasks: quest auto-completes on unlock";
+            taskSubHeader = ChroniclesUIKit
+                    .str("phoenix_chronicles.screen.task_reward_editor.no_tasks_quest_auto_completes");
         } else {
             long optCount = tasks.stream().filter(QuestTask::isOptional).count();
             long reqCount = tasks.size() - optCount;
-            taskSubHeader = "§8Tasks  §7" + reqCount + (optCount > 0 ? "  §8+  §e" + optCount + " opt" : "");
+            taskSubHeader = ChroniclesUIKit.str("phoenix_chronicles.screen.task_reward_editor.tasks", reqCount,
+                    (optCount > 0 ? ChroniclesUIKit.str("phoenix_chronicles.screen.task_reward_editor.opt", optCount) :
+                            ""));
         }
         ChroniclesUIKit.drawString(g, font, taskSubHeader, MARGIN + 4, HEADER_H + 6, C_TEXT_FAINT, false);
         if (copiedTaskNBT != null)
-            ChroniclesUIKit.drawString(g, font, "§b[Ctrl+V]", MARGIN + colW - font.width("[Ctrl+V]") - 4, HEADER_H + 6,
+            ChroniclesUIKit.drawString(g, font,
+                    ChroniclesUIKit.str("phoenix_chronicles.screen.task_reward_editor.ctrl_v"),
+                    MARGIN + colW - font.width("[Ctrl+V]") - 4, HEADER_H + 6,
                     0xFF55BBFF,
                     false);
-        ChroniclesUIKit.drawString(g, font, "§8Rewards  §7" + rewards.size(), splitX + 4, HEADER_H + 6, C_TEXT_FAINT,
+        ChroniclesUIKit.drawString(g, font,
+                ChroniclesUIKit.str("phoenix_chronicles.screen.task_reward_editor.rewards", rewards.size()), splitX + 4,
+                HEADER_H + 6, C_TEXT_FAINT,
                 false);
         if (copiedRewardNBT != null)
-            ChroniclesUIKit.drawString(g, font, "§b[Ctrl+V]", splitX + colW - font.width("[Ctrl+V]") - 4,
+            ChroniclesUIKit.drawString(g, font,
+                    ChroniclesUIKit.str("phoenix_chronicles.screen.task_reward_editor.ctrl_v"),
+                    splitX + colW - font.width("[Ctrl+V]") - 4,
                     HEADER_H + 6, 0xFF55BBFF, false);
 
         g.fill(splitX - COL_GAP / 2, HEADER_H, splitX - COL_GAP / 2 + 1, vh - FOOTER_H, C_SPLIT);
@@ -490,8 +507,11 @@ public class TaskRewardEditorScreen extends Screen {
         g.fill(splitX, formPanelTop + 2, splitX + colW, formBottom - 2, C_FORM_BG);
         drawBorder(g, splitX, formPanelTop + 2, colW, formBottom - 2 - (formPanelTop + 2), C_BORDER);
         ChroniclesUIKit.drawString(g, font,
-                emergencyMode ? "§8Emergency kit" :
-                        editingTaskIndex >= 0 ? "§b✎ Editing Task (right-click to cancel)" : "§8Add Task",
+                emergencyMode ? ChroniclesUIKit.str("phoenix_chronicles.screen.task_reward_editor.emergency_kit") :
+                        editingTaskIndex >= 0 ?
+                                ChroniclesUIKit.str(
+                                        "phoenix_chronicles.screen.task_reward_editor.editing_task_right_click_to") :
+                                ChroniclesUIKit.str("phoenix_chronicles.screen.task_reward_editor.add_task"),
                 MARGIN + 6, formPanelTop + 6, C_TEXT_FAINT, false);
         if (emergencyMode) {
             int helpY = formPanelTop + 20;
@@ -505,7 +525,10 @@ public class TaskRewardEditorScreen extends Screen {
             }
         }
         ChroniclesUIKit.drawString(g, font,
-                editingRewardIndex >= 0 ? "§b✎ Editing Reward (right-click to cancel)" : "§8Add Reward",
+                editingRewardIndex >= 0 ?
+                        ChroniclesUIKit
+                                .str("phoenix_chronicles.screen.task_reward_editor.editing_reward_right_click_to") :
+                        ChroniclesUIKit.str("phoenix_chronicles.screen.task_reward_editor.add_reward"),
                 splitX + 6, formPanelTop + 6, C_TEXT_FAINT, false);
 
         if (rewardType.equals("choice_box") && editingBoxOptionIndex < 0) rewardForm.renderBoxOptionsList(g, mx, my);
@@ -570,7 +593,9 @@ public class TaskRewardEditorScreen extends Screen {
         g.disableScissor();
         ChroniclesThemeRenderer.drawScrollbar(g, splitX - COL_GAP, listTop, listBottom, taskListScroll, taskTotalH);
         if (tasks.isEmpty())
-            ChroniclesUIKit.drawString(g, font, "§8No tasks yet: add one below.", MARGIN + 6, listTop + 5, C_TEXT_FAINT,
+            ChroniclesUIKit.drawString(g, font,
+                    ChroniclesUIKit.str("phoenix_chronicles.screen.task_reward_editor.no_tasks_yet_add_one"),
+                    MARGIN + 6, listTop + 5, C_TEXT_FAINT,
                     false);
     }
 
@@ -587,7 +612,9 @@ public class TaskRewardEditorScreen extends Screen {
         for (int pos = 0; pos < rewardDisplayOrder.size(); pos++) {
             if (pos == tableSectionStart) {
                 if (ry + ROW_HEADER_H > listTop && ry < listBottom) {
-                    ChroniclesUIKit.drawString(g, font, "§6⊞ §8Reward Tables", splitX + 5,
+                    ChroniclesUIKit.drawString(g, font,
+                            ChroniclesUIKit.str("phoenix_chronicles.screen.task_reward_editor.reward_tables"),
+                            splitX + 5,
                             ry + (ROW_HEADER_H / 2) - 4, C_TEXT_FAINT, false);
                     g.fill(splitX, ry + ROW_HEADER_H - 1, vw - MARGIN, ry + ROW_HEADER_H, C_BORDER);
                 }
@@ -639,7 +666,7 @@ public class TaskRewardEditorScreen extends Screen {
                     case FLUID -> "§8fluid";
                     case QUEST_ACTION -> "§8quest action";
                     case EXTERNAL -> "§8external";
-                    default -> "§8reward";
+                    default -> ChroniclesUIKit.str("phoenix_chronicles.screen.task_reward_editor.reward");
                 };
                 int rmaxW = (vw - MARGIN - (hov ? 16 : 6)) - rewardTextX - font.width(icon) - 4;
                 String rl = reward.getSummary().getString();
@@ -654,7 +681,9 @@ public class TaskRewardEditorScreen extends Screen {
         g.disableScissor();
         ChroniclesThemeRenderer.drawScrollbar(g, vw - MARGIN, listTop, listBottom, rewardListScroll, rewardTotalH);
         if (rewards.isEmpty())
-            ChroniclesUIKit.drawString(g, font, "§8No rewards yet: add one below.", splitX + 6, listTop + 5,
+            ChroniclesUIKit.drawString(g, font,
+                    ChroniclesUIKit.str("phoenix_chronicles.screen.task_reward_editor.no_rewards_yet_add_one"),
+                    splitX + 6, listTop + 5,
                     C_TEXT_FAINT, false);
     }
 
@@ -685,7 +714,8 @@ public class TaskRewardEditorScreen extends Screen {
                 g.fill(MARGIN + 1, dropRowY, MARGIN + colW - 1, dropRowY + rowH, 0xFF1E1E2A);
                 hoveredDropRow = i;
             }
-            ChroniclesUIKit.drawString(g, font, m.editorIcon() + " §7" + m.editorLabel(), MARGIN + 5, dropRowY + 3,
+            ChroniclesUIKit.drawString(g, font, m.editorIcon() + " §7" + ChroniclesUIKit.label(m.editorLabel()),
+                    MARGIN + 5, dropRowY + 3,
                     hov ? C_TEXT : C_TEXT_DIM, false);
         }
         g.disableScissor();
@@ -693,7 +723,8 @@ public class TaskRewardEditorScreen extends Screen {
 
         if (hoveredDropRow >= 0 && hoveredDropRow < editorTypes.size()) {
             PhoenixTaskRegistry.TaskEntry hm = editorTypes.get(hoveredDropRow);
-            String tooltip = hm.editorTooltip() != null ? hm.editorTooltip() : hm.editorLabel();
+            String tooltip = ChroniclesUIKit.label(hm.editorTooltip()) != null ?
+                    ChroniclesUIKit.label(hm.editorTooltip()) : ChroniclesUIKit.label(hm.editorLabel());
             int maxTipTextW = 220;
             String[] rawLines = tooltip.split("\n");
             List<net.minecraft.util.FormattedCharSequence> wrappedLines = new ArrayList<>();
@@ -1075,12 +1106,10 @@ public class TaskRewardEditorScreen extends Screen {
         return sb.toString();
     }
 
-    /** Whether closing now would lose something: a changed list, or a task or reward being edited. */
     private boolean hasUnsavedWork() {
         return editingTaskIndex >= 0 || editingRewardIndex >= 0 || !stateSnapshot().equals(openedState);
     }
 
-    /** Escape asks before throwing changes away; the Done button is what saves. */
     @Override
     public void onClose() {
         if (minecraft != null && hasUnsavedWork()) {
@@ -1090,10 +1119,12 @@ public class TaskRewardEditorScreen extends Screen {
                 } else {
                     minecraft.setScreen(this);
                 }
-            }, ChroniclesUIKit.lit("Discard changes?"),
+            }, ChroniclesUIKit.tr("phoenix_chronicles.screen.task_reward_editor.discard_changes"),
                     ChroniclesUIKit
-                            .lit("You have unsaved changes to this quest's tasks and rewards. Use Done to save them."),
-                    ChroniclesUIKit.lit("Discard"), ChroniclesUIKit.lit("Keep editing")));
+                            .lit(ChroniclesUIKit
+                                    .str("phoenix_chronicles.screen.task_reward_editor.you_have_unsaved_changes_to")),
+                    ChroniclesUIKit.tr("phoenix_chronicles.screen.task_reward_editor.discard"),
+                    ChroniclesUIKit.tr("phoenix_chronicles.screen.task_reward_editor.keep_editing")));
             return;
         }
         flushToQuestNode();

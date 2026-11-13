@@ -38,7 +38,7 @@ import java.util.function.Function;
 public class SidebarPanel {
 
     static final int SIDEBAR_CAT_ROW_H = 18;
-    /** Pixels each level of folder nesting shifts a row to the right. */
+    
     static final int SIDEBAR_FOLDER_INDENT = 6;
     private static final int SIDEBAR_FOLDER_ROW_H = 14;
     public static final int SIDEBAR_COLLAPSE_TOGGLE_H = 12;
@@ -297,13 +297,11 @@ public class SidebarPanel {
         return rows;
     }
 
-    /** Emits a folder row, its chapters, then its subfolders (each emitted the same way, one level deeper). */
     private int emitFolder(@NotNull List<SidebarRow> rows, @NotNull CategoryDefinition category, int depth, int y,
                            @NotNull List<String> cats, @NotNull Set<String> hasParent,
                            @NotNull Map<String, List<String>> childrenOf, @NotNull Function<String, String> friendly,
                            @NotNull Function<String, int[]> progressLookup) {
-        // a folder with a condition and nothing left to show in it (none of its chapters, nor those of its
-        // subfolders, is shown to this player)
+
         if (category.hasCondition() && !folderHasVisibleChapters(category.id(), cats, hasParent, 0)) return y;
 
         boolean collapsedFolder = CategoryRegistry.isCollapsed(category.id());
@@ -416,7 +414,7 @@ public class SidebarPanel {
         int h = target.height();
         if (target.isFolder()) {
             if (target.depth() == 0) {
-                // top-level folder
+                
                 if (!source.isFolder()) return rel < h * 0.3f ? DropZone.BEFORE : DropZone.INTO;
                 if (!CategoryRegistry.canNest(source.id(), target.id())) {
                     return rel < h / 2 ? DropZone.BEFORE : DropZone.AFTER;
@@ -425,8 +423,7 @@ public class SidebarPanel {
                 if (rel > h * 0.75f) return DropZone.AFTER;
                 return DropZone.INTO;
             }
-            // nested folder: top edge = before it, bottom edge = after it (only when closed or empty, since an
-            // open folder's own contents come right after its row), the middle drops inside
+
             if (source.isFolder() && !CategoryRegistry.canNest(source.id(), target.id())) {
                 return rel < h / 2 ? DropZone.BEFORE : DropZone.AFTER;
             }
@@ -435,21 +432,16 @@ public class SidebarPanel {
             if (rel > h * 0.75f && !openWithContents) return DropZone.AFTER;
             return DropZone.INTO;
         }
-        // a chapter row: drop before or after it, in whichever folder (or the top level) it sits in
+        
         return rel < h / 2 ? DropZone.BEFORE : DropZone.AFTER;
     }
 
-    /** The category a drop INTO this row would land in: the folder itself, or the folder a chapter row sits in. */
     private static @Nullable String destinationFolderOf(@NotNull SidebarRow target) {
         if (target.isFolder()) return target.id();
         CategoryDefinition owner = CategoryRegistry.categoryFor(target.id());
         return owner != null ? owner.id() : null;
     }
 
-    /**
-     * The category whose item list a BEFORE/AFTER drop beside this row edits: the parent of a nested folder, the
-     * folder a chapter sits in, or "" for the top level.
-     */
     private static @NotNull String containerOf(@NotNull SidebarRow target) {
         if (target.isFolder()) return CategoryRegistry.parentOf(target.id());
         CategoryDefinition owner = CategoryRegistry.categoryFor(target.id());
@@ -460,7 +452,6 @@ public class SidebarPanel {
         return row.isFolder() ? CategoryRegistry.categoryToken(row.id()) : CategoryRegistry.chapterToken(row.id());
     }
 
-    /** Whether dropping {@code source} on {@code target} in {@code zone} is allowed (no loops, not too deep). */
     public boolean canDrop(@NotNull SidebarRow source, @NotNull SidebarRow target, @NotNull DropZone zone) {
         if (!source.isFolder()) return true;
         if (zone == DropZone.INTO) {
@@ -503,33 +494,37 @@ public class SidebarPanel {
             if (target == null) {
                 CategoryRegistry.moveCategory(source.id(), null, null);
                 CategoryRegistry.moveTopLevel(sourceToken, null, standalone);
-                setFeedback.accept("Category reordered");
+                setFeedback.accept(ChroniclesUIKit.str("phoenix_chronicles.screen.sidebar_panel.category_reordered"));
             } else {
                 DropZone zone = dropZone(source, target, my);
                 String container = containerOf(target);
                 if (!canDrop(source, target, zone)) {
-                    setFeedback.accept("§cCan't move a category there");
+                    setFeedback.accept(
+                            ChroniclesUIKit.str("phoenix_chronicles.screen.sidebar_panel.can_t_move_a_category"));
                 } else if (zone == DropZone.INTO) {
                     String dest = destinationFolderOf(target);
                     if (dest != null && CategoryRegistry.moveCategory(source.id(), dest, null)) {
                         if (CategoryRegistry.isCollapsed(dest)) CategoryRegistry.toggleCollapsed(dest);
-                        setFeedback.accept("Moved " + source.label() + " into " + CategoryRegistry.pathLabel(dest));
+                        setFeedback.accept(ChroniclesUIKit.str("phoenix_chronicles.screen.sidebar_panel.moved_into",
+                                source.label(), CategoryRegistry.pathLabel(dest)));
                     }
                 } else if (!container.isEmpty()) {
-                    // beside an item inside a folder: take its place among that folder's chapters and subfolders
+                    
                     String targetToken = itemTokenOf(target);
                     String before = zone == DropZone.BEFORE ? targetToken :
                             tokenAfter(CategoryRegistry.folderItems(container), targetToken);
                     if (sourceToken.equals(before)) before = null;
                     CategoryRegistry.moveCategory(source.id(), container, before);
-                    setFeedback.accept("Category reordered");
+                    setFeedback
+                            .accept(ChroniclesUIKit.str("phoenix_chronicles.screen.sidebar_panel.category_reordered"));
                 } else {
                     CategoryRegistry.moveCategory(source.id(), null, null);
                     String targetToken = topLevelTokenFor(target);
                     String before = zone == DropZone.BEFORE ? targetToken :
                             tokenAfter(CategoryRegistry.resolveTopLevel(standalone), targetToken);
                     CategoryRegistry.moveTopLevel(sourceToken, before, standalone);
-                    setFeedback.accept("Category reordered");
+                    setFeedback
+                            .accept(ChroniclesUIKit.str("phoenix_chronicles.screen.sidebar_panel.category_reordered"));
                 }
             }
             CategoryRegistry.save();
@@ -543,16 +538,18 @@ public class SidebarPanel {
                 String dest = destinationFolderOf(target);
                 if (dest != null) {
                     CategoryRegistry.moveChapterTo(chap, dest, null);
-                    setFeedback.accept("Moved " + friendly.apply(chap) + " into " + CategoryRegistry.pathLabel(dest));
+                    setFeedback.accept(ChroniclesUIKit.str("phoenix_chronicles.screen.sidebar_panel.moved_into",
+                            friendly.apply(chap), CategoryRegistry.pathLabel(dest)));
                 }
             } else if (target != null && !container.isEmpty()) {
-                // beside an item inside a folder
+                
                 String targetToken = itemTokenOf(target);
                 String before = zone == DropZone.BEFORE ? targetToken :
                         tokenAfter(CategoryRegistry.folderItems(container), targetToken);
                 if (CategoryRegistry.chapterToken(chap).equals(before)) before = null;
                 CategoryRegistry.moveChapterTo(chap, container, before);
-                setFeedback.accept("Reordered " + friendly.apply(chap));
+                setFeedback.accept(
+                        ChroniclesUIKit.str("phoenix_chronicles.screen.sidebar_panel.reordered", friendly.apply(chap)));
             } else {
                 if (currentCategory != null) CategoryRegistry.removeChapterFromCategory(currentCategory.id(), chap);
 
@@ -567,8 +564,9 @@ public class SidebarPanel {
                 }
                 CategoryRegistry.moveTopLevel(CategoryRegistry.chapterToken(chap), before, withChapter);
                 setFeedback.accept(currentCategory != null ?
-                        "Removed " + friendly.apply(chap) + " from " + currentCategory.displayName() :
-                        "Reordered " + friendly.apply(chap));
+                        ChroniclesUIKit.str("phoenix_chronicles.screen.sidebar_panel.removed_from",
+                                friendly.apply(chap), currentCategory.displayName()) :
+                        ChroniclesUIKit.str("phoenix_chronicles.screen.sidebar_panel.reordered", friendly.apply(chap)));
             }
             CategoryRegistry.save();
         }
@@ -612,7 +610,8 @@ public class SidebarPanel {
                 g.pose().pushPose();
                 g.pose().translate(0f, 0f, 250f);
                 g.flush();
-                String tip = collapsed ? "§7Show sidebar" : "§7Collapse sidebar";
+                String tip = collapsed ? ChroniclesUIKit.str("phoenix_chronicles.screen.sidebar_panel.show_sidebar") :
+                        ChroniclesUIKit.str("phoenix_chronicles.screen.sidebar_panel.collapse_sidebar");
                 int ttW = font.width(tip) + 10;
                 int ttX = width() + 3, ttY = toggleY;
                 g.fill(ttX, ttY, ttX + ttW, ttY + 14, 0xFF1A1A24);
@@ -661,7 +660,8 @@ public class SidebarPanel {
 
         if (sidebarRows.isEmpty()) {
             g.drawCenteredString(font, "§8No", width() / 2, scrollTop + 10, colors.textFaint());
-            g.drawCenteredString(font, "§8chapters", width() / 2, scrollTop + 20, colors.textFaint());
+            g.drawCenteredString(font, ChroniclesUIKit.str("phoenix_chronicles.screen.sidebar_panel.chapters"),
+                    width() / 2, scrollTop + 20, colors.textFaint());
         }
 
         g.flush();
@@ -694,7 +694,7 @@ public class SidebarPanel {
         String line2 = null;
         if (!row.isFolder()) {
             int[] p = progressLookup.apply(row.id());
-            if (p[1] > 0) line2 = "§8" + p[0] + "/" + p[1] + " complete";
+            if (p[1] > 0) line2 = ChroniclesUIKit.str("phoenix_chronicles.screen.sidebar_panel.complete", p[0], p[1]);
         }
         int ttW = Math.max(font.width(line1), line2 != null ? font.width(line2) : 0) + 10;
         int ttH = line2 != null ? 24 : 14;
@@ -894,7 +894,8 @@ public class SidebarPanel {
             int ttX = visualWidth() + 3, ttY = y - 2;
             g.fill(ttX, ttY, ttX + ttW, ttY + 14, 0xFF1A1A24);
             ChroniclesUIKit.drawBorder(g, ttX, ttY, ttW, 14, colors.borderLit());
-            g.drawString(font, "§7New chapter", ttX + 5, ttY + 3, colors.textDim(), false);
+            g.drawString(font, ChroniclesUIKit.str("phoenix_chronicles.screen.sidebar_panel.new_chapter"), ttX + 5,
+                    ttY + 3, colors.textDim(), false);
         }
     }
 
@@ -933,17 +934,27 @@ public class SidebarPanel {
                 g.fill(ttX, ttY + ttH - 1, ttX + ttW, ttY + ttH, colors.border());
                 g.fill(ttX, ttY, ttX + 1, ttY + ttH, colors.border());
                 g.fill(ttX + ttW - 1, ttY, ttX + ttW, ttY + ttH, colors.border());
-                g.drawString(font, "§dUtilities", ttX + 5, ttY + 4, colors.text(), false);
-                g.drawString(font, "§8§oLeft-click§r§8: Edit all quest texts", ttX + 5, ttY + 14, colors.textDim(),
+                g.drawString(font, ChroniclesUIKit.str("phoenix_chronicles.screen.sidebar_panel.utilities"), ttX + 5,
+                        ttY + 4, colors.text(), false);
+                g.drawString(font,
+                        ChroniclesUIKit.str("phoenix_chronicles.screen.sidebar_panel.left_click_edit_all_quest"),
+                        ttX + 5, ttY + 14, colors.textDim(),
                         false);
                 if (devMode) {
-                    g.drawString(font, "§8§oRight-click§r§8: Export lang/en_us.json", ttX + 5, ttY + 24,
+                    g.drawString(font,
+                            ChroniclesUIKit.str("phoenix_chronicles.screen.sidebar_panel.right_click_export_lang_en"),
+                            ttX + 5, ttY + 24,
                             colors.textDim(), false);
-                    g.drawString(font, "§8§o[I]§r§8: Import FTB Quests chapter", ttX + 5, ttY + 34, colors.textDim(),
+                    g.drawString(font,
+                            ChroniclesUIKit.str("phoenix_chronicles.screen.sidebar_panel.i_import_ftb_quests_chapter"),
+                            ttX + 5, ttY + 34, colors.textDim(),
                             false);
-                    g.drawString(font, "§8(place .snbt in ftb_import/ folder)", ttX + 5, ttY + 44, colors.textFaint(),
+                    g.drawString(font,
+                            ChroniclesUIKit.str("phoenix_chronicles.screen.sidebar_panel.place_snbt_in_ftb_import"),
+                            ttX + 5, ttY + 44, colors.textFaint(),
                             false);
-                    g.drawString(font, "§8(pack's en_us.json also goes there)", ttX + 5, ttY + 54,
+                    g.drawString(font, ChroniclesUIKit.str("phoenix_chronicles.screen.sidebar_panel.pack_s_en_us_json"),
+                            ttX + 5, ttY + 54,
                             colors.textFaint(), false);
                 }
                 g.flush();

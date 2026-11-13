@@ -2,10 +2,6 @@ package net.phoenixvine.chronicles.common.model;
 
 import java.util.List;
 
-/**
- * A sidebar folder of chapters. Categories can be nested: {@code parent} is the id of the category this one sits
- * inside, or empty for a top-level category.
- */
 public record CategoryDefinition(String id, String displayName, List<String> chapters, int color, String icon,
                                  int nameColor, String enableIf, String parent) {
 
@@ -49,10 +45,6 @@ public record CategoryDefinition(String id, String displayName, List<String> cha
         return !parent.isEmpty();
     }
 
-    /**
-     * A flag expression (like a quest's enable_if): when it is false for the player, the category and its chapters
-     * (and any categories nested inside it) are hidden.
-     */
     public boolean hasCondition() {
         return enableIf != null && !enableIf.isBlank();
     }

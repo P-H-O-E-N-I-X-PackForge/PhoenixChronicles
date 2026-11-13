@@ -23,7 +23,7 @@ public class ChroniclesLangPack {
         event.addRepositorySource(consumer -> {
             Pack pack = Pack.readMetaAndCreate(
                     new net.minecraft.server.packs.PackLocationInfo("phoenix_chronicles_lang",
-                            Component.literal("Phoenix Chronicles Quest Translations"), PackSource.BUILT_IN,
+                            Component.translatable("key.chronicles.quest_translations"), PackSource.BUILT_IN,
                             java.util.Optional.empty()),
                     new PathPackResources.PathResourcesSupplier(root),
                     PackType.CLIENT_RESOURCES,

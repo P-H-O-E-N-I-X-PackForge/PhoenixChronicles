@@ -140,16 +140,20 @@ public class QuestTextInputScreen extends Screen {
         renderFormatButtons2(g, mx, my);
 
         int half = pw / 2 - 6;
-        drawBtn(g, mx, my, px + 6, btnY, half, 16, "§a✓ Confirm", C_GREEN);
-        drawBtn(g, mx, my, px + pw / 2 + 3, btnY, half, 16, "§c✕ Cancel", C_BTN);
+        drawBtn(g, mx, my, px + 6, btnY, half, 16,
+                ChroniclesUIKit.str("phoenix_chronicles.screen.quest_text_input.confirm"), C_GREEN);
+        drawBtn(g, mx, my, px + pw / 2 + 3, btnY, half, 16,
+                ChroniclesUIKit.str("phoenix_chronicles.screen.quest_text_input.cancel"), C_BTN);
     }
 
     private void renderHexRow(GuiGraphics g, int mx, int my) {
         int rowY = btnY - 36;
-        g.drawString(font, "§8Hex: ", px + 8, rowY + 2, ChroniclesThemePalette.TEXT_DIM, false);
+        g.drawString(font, ChroniclesUIKit.str("phoenix_chronicles.screen.quest_text_input.hex"), px + 8, rowY + 2,
+                ChroniclesThemePalette.TEXT_DIM, false);
 
         int insX = px + 8 + font.width("Hex: ") + 60;
-        drawBtn(g, mx, my, insX, rowY - 1, 40, 14, "§7insert", C_BTN);
+        drawBtn(g, mx, my, insX, rowY - 1, 40, 14,
+                ChroniclesUIKit.str("phoenix_chronicles.screen.quest_text_input.insert"), C_BTN);
 
         String hexVal = hexBox.getValue().trim();
         if (hexVal.startsWith("#") && hexVal.length() == 7) {
@@ -160,7 +164,8 @@ public class QuestTextInputScreen extends Screen {
                 g.fill(insX + 44, rowY, insX + 58, rowY + 12, col);
             }
         }
-        g.drawString(font, "§8{#RRGGBB} syntax: no & needed", insX + 60, rowY + 2, ChroniclesThemePalette.TEXT_DIM,
+        g.drawString(font, ChroniclesUIKit.str("phoenix_chronicles.screen.quest_text_input.rrggbb_syntax_no_needed"),
+                insX + 60, rowY + 2, ChroniclesThemePalette.TEXT_DIM,
                 false);
     }
 

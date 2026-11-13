@@ -246,8 +246,8 @@ public final class PhoenixTaskRegistry {
                     net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("minecraft", "pig"), 1, false);
             t.deserializeNBT(tag);
             return t;
-        }).icon("§c☠").label("Kill Entity")
-                .tooltip("Kill a number of a specific mob type.\nTarget: entity registry id (e.g. minecraft:zombie)")
+        }).icon("§c☠").label("phoenix_chronicles.task_type.kill_entity.label")
+                .tooltip("phoenix_chronicles.task_type.kill_entity.tooltip")
                 .register();
 
         register("item_check", tag -> {
@@ -255,10 +255,8 @@ public final class PhoenixTaskRegistry {
                     net.minecraft.world.item.Items.DIRT, 1, false);
             t.deserializeNBT(tag);
             return t;
-        }).icon("§e■").label("Collect Item")
-                .tooltip(
-                        "Have a specific item in your inventory.\nTarget: item registry id. Consume: remove items on complete.\n" +
-                                "If AE2 is installed, also counts items stored in your linked ME network (toggle: check_ae2_storage).")
+        }).icon("§e■").label("phoenix_chronicles.task_type.item_check.label")
+                .tooltip("phoenix_chronicles.task_type.item_check.tooltip")
                 .register();
 
         register("craft_item", tag -> {
@@ -266,8 +264,8 @@ public final class PhoenixTaskRegistry {
                     net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("minecraft", "dirt"), 1);
             t.deserializeNBT(tag);
             return t;
-        }).icon("§6⚒").label("Craft Item")
-                .tooltip("Craft a specific item the required number of times.\nTarget: item registry id.")
+        }).icon("§6⚒").label("phoenix_chronicles.task_type.craft_item.label")
+                .tooltip("phoenix_chronicles.task_type.craft_item.tooltip")
                 .register();
 
         register("recipe", tag -> {
@@ -275,21 +273,16 @@ public final class PhoenixTaskRegistry {
                     net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("minecraft", "smelting"), null, 1);
             t.deserializeNBT(tag);
             return t;
-        }).icon("§b⚙").label("Recipe")
-                .tooltip("Run a recipe a number of times - any recipe of a type (every macerator recipe), or one " +
-                        "specific recipe.\nTarget: recipe type id (e.g. gtceu:macerator).\n" +
-                        "Secondary: a specific recipe id (optional).\nCount: how many runs. Counted for the machine's " +
-                        "owner, or the nearest player.")
+        }).icon("§b⚙").label("phoenix_chronicles.task_type.recipe.label")
+                .tooltip("phoenix_chronicles.task_type.recipe.tooltip")
                 .register();
 
         register("gt_multiblock", tag -> {
             MultiblockFormedTask t = new MultiblockFormedTask(taskId(tag), desc(tag), null, 1);
             t.deserializeNBT(tag);
             return t;
-        }).icon("§6⬡").label("Form GT Multiblock")
-                .tooltip("Form a GregTech multiblock. Counted for the machine's owner, or the nearest player if " +
-                        "nobody owns it.\nTarget: controller block id (e.g. gtceu:electric_blast_furnace), or * for " +
-                        "any multiblock.\nCount: how many times.")
+        }).icon("§6⬡").label("phoenix_chronicles.task_type.gt_multiblock.label")
+                .tooltip("phoenix_chronicles.task_type.gt_multiblock.tooltip")
                 .requiresMod("gtceu")
                 .register();
 
@@ -297,8 +290,8 @@ public final class PhoenixTaskRegistry {
             ExperienceTask t = new ExperienceTask(taskId(tag), desc(tag), 1);
             t.deserializeNBT(tag);
             return t;
-        }).icon("§a✦").label("XP Level")
-                .tooltip("Reach a minimum XP level.\nNo target needed. Just set the required level.")
+        }).icon("§a✦").label("phoenix_chronicles.task_type.experience.label")
+                .tooltip("phoenix_chronicles.task_type.experience.tooltip")
                 .register();
 
         register("location_terminal", tag -> {
@@ -306,8 +299,8 @@ public final class PhoenixTaskRegistry {
                     net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("minecraft", "air"), false);
             t.deserializeNBT(tag);
             return t;
-        }).icon("§b◎").label("Terminal / Location")
-                .tooltip("Interact with a specific terminal block or location.\nTarget: terminal registry id.")
+        }).icon("§b◎").label("phoenix_chronicles.task_type.location_terminal.label")
+                .tooltip("phoenix_chronicles.task_type.location_terminal.tooltip")
                 .register();
 
         register("advancement", tag -> {
@@ -315,9 +308,8 @@ public final class PhoenixTaskRegistry {
                     net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("minecraft", "story/root"));
             t.deserializeNBT(tag);
             return t;
-        }).icon("§d★").label("Advancement")
-                .tooltip(
-                        "Earn a specific Minecraft advancement.\nTarget: advancement id (e.g. minecraft:story/mine_diamond)")
+        }).icon("§d★").label("phoenix_chronicles.task_type.advancement.label")
+                .tooltip("phoenix_chronicles.task_type.advancement.tooltip")
                 .register();
 
         register("block_interact", tag -> {
@@ -325,9 +317,8 @@ public final class PhoenixTaskRegistry {
                     net.minecraft.world.level.block.Blocks.STONE, "PLACE");
             t.deserializeNBT(tag);
             return t;
-        }).icon("§7□").label("Block Interact")
-                .tooltip(
-                        "Place or right-click a specific block, optionally several times.\nTarget: block id. Secondary: PLACE or RIGHT_CLICK. Count: how many times.")
+        }).icon("§7□").label("phoenix_chronicles.task_type.block_interact.label")
+                .tooltip("phoenix_chronicles.task_type.block_interact.tooltip")
                 .register();
     }
 
@@ -337,9 +328,8 @@ public final class PhoenixTaskRegistry {
                     net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("minecraft", "water"), 1000, false);
             t.deserializeNBT(tag);
             return t;
-        }).icon("§3≋").label("Fluid Check")
-                .tooltip("Have a fluid amount in a tank.\nTarget: fluid id. Count: amount in mB.\n" +
-                        "If AE2 is installed, also counts fluid stored in your linked ME network (toggle: check_ae2_storage).")
+        }).icon("§3≋").label("phoenix_chronicles.task_type.fluid_check.label")
+                .tooltip("phoenix_chronicles.task_type.fluid_check.tooltip")
                 .register();
 
         register("stat", tag -> {
@@ -347,9 +337,8 @@ public final class PhoenixTaskRegistry {
                     net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("minecraft", "jump"), 1, false);
             t.deserializeNBT(tag);
             return t;
-        }).icon("§9≡").label("Stat Tracker")
-                .tooltip(
-                        "Reach a value on a Minecraft statistic.\nTarget: stat id (e.g. minecraft:jump). Count: target value.")
+        }).icon("§9≡").label("phoenix_chronicles.task_type.stat.label")
+                .tooltip("phoenix_chronicles.task_type.stat.tooltip")
                 .register();
 
         register("dimension", tag -> {
@@ -359,8 +348,8 @@ public final class PhoenixTaskRegistry {
                             net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("minecraft", "overworld")));
             t.deserializeNBT(tag);
             return t;
-        }).icon("§5⊕").label("Visit Dimension")
-                .tooltip("Travel to a specific dimension.\nSecondary: dimension id (e.g. minecraft:the_nether)")
+        }).icon("§5⊕").label("phoenix_chronicles.task_type.dimension.label")
+                .tooltip("phoenix_chronicles.task_type.dimension.tooltip")
                 .register();
 
         register("biome", tag -> {
@@ -368,8 +357,8 @@ public final class PhoenixTaskRegistry {
                     net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("minecraft", "plains"));
             t.deserializeNBT(tag);
             return t;
-        }).icon("§2⛰").label("Visit Biome")
-                .tooltip("Stand inside a specific biome.\nTarget: biome registry id (e.g. minecraft:jungle)")
+        }).icon("§2⛰").label("phoenix_chronicles.task_type.biome.label")
+                .tooltip("phoenix_chronicles.task_type.biome.tooltip")
                 .register();
 
         register("structure", tag -> {
@@ -377,16 +366,16 @@ public final class PhoenixTaskRegistry {
                     net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("minecraft", "village"));
             t.deserializeNBT(tag);
             return t;
-        }).icon("§6⌂").label("Visit Structure")
-                .tooltip("Enter a specific structure.\nTarget: structure registry id (e.g. minecraft:village)")
+        }).icon("§6⌂").label("phoenix_chronicles.task_type.structure.label")
+                .tooltip("phoenix_chronicles.task_type.structure.tooltip")
                 .register();
 
         register("checkmark", tag -> {
             CheckmarkTask t = new CheckmarkTask(taskId(tag), desc(tag));
             t.deserializeNBT(tag);
             return t;
-        }).icon("§a✓").label("Checkmark")
-                .tooltip("Admin-completable manual task.\nNo target needed: complete with /chronicle task complete.")
+        }).icon("§a✓").label("phoenix_chronicles.task_type.checkmark.label")
+                .tooltip("phoenix_chronicles.task_type.checkmark.tooltip")
                 .register();
 
         register("tag_item", tag -> {
@@ -396,18 +385,16 @@ public final class PhoenixTaskRegistry {
                     1);
             t.deserializeNBT(tag);
             return t;
-        }).icon("§e◈").label("Tag Item")
-                .tooltip(
-                        "Have items matching an item tag in inventory.\nTarget: item tag (e.g. c:ores/iron). Count: required amount.")
+        }).icon("§e◈").label("phoenix_chronicles.task_type.tag_item.label")
+                .tooltip("phoenix_chronicles.task_type.tag_item.tooltip")
                 .register();
 
         register("info", tag -> {
             InfoTask t = new InfoTask(taskId(tag), desc(tag), "");
             t.deserializeNBT(tag);
             return t;
-        }).icon("§7§l!").label("Info / Text")
-                .tooltip(
-                        "A read-only information panel the player must acknowledge.\nNo target: body text is shown to the player.")
+        }).icon("§7§l!").label("phoenix_chronicles.task_type.info.label")
+                .tooltip("phoenix_chronicles.task_type.info.tooltip")
                 .register();
 
         register("timer", tag -> {
@@ -415,10 +402,8 @@ public final class PhoenixTaskRegistry {
                     desc(tag), 300);
             t.deserializeNBT(tag);
             return t;
-        }).icon("§b⏱").label("Timer")
-                .tooltip(
-                        "Completes automatically once the configured duration has elapsed since the quest became " +
-                                "active for the player.\nNo target needed: set Duration (seconds).")
+        }).icon("§b⏱").label("phoenix_chronicles.task_type.timer.label")
+                .tooltip("phoenix_chronicles.task_type.timer.tooltip")
                 .register();
 
         register("energy_check", tag -> {
@@ -426,9 +411,8 @@ public final class PhoenixTaskRegistry {
                     10000L, EnergyStorageTask.EnergyType.FE, EnergyStorageTask.Source.INVENTORY);
             t.deserializeNBT(tag);
             return t;
-        }).icon("§6⚡").label("Energy Storage")
-                .tooltip(
-                        "Check stored energy (FE or GTM EU) in inventory items OR a right-clicked block.\nCount: amount required.\nTarget: FE / EU / ANY  (energy type).\nSecondary: INVENTORY / HELD / BLOCK  (source).")
+        }).icon("§6⚡").label("phoenix_chronicles.task_type.energy_check.label")
+                .tooltip("phoenix_chronicles.task_type.energy_check.tooltip")
                 .register();
     }
 
@@ -454,12 +438,8 @@ public final class PhoenixTaskRegistry {
                     ItemFilters.tag("c:gems"), 1, false);
             t.deserializeNBT(tag);
             return t;
-        }).icon("§e◇").label("Collect Items (Filter)")
-                .tooltip("Have items matching a composable filter in inventory.\n" +
-                        "Filter types: exact, tag, mod, any_of, all_of, not.\n" +
-                        "Consume: remove matching items on completion.\n" +
-                        "Example: any_of [ {tag: forge:ingots/copper}, {tag: forge:ingots/gold} ]\n" +
-                        "If AE2 is installed, also counts matching items stored in your linked ME network (toggle: check_ae2_storage).")
+        }).icon("§e◇").label("phoenix_chronicles.task_type.filter_item.label")
+                .tooltip("phoenix_chronicles.task_type.filter_item.tooltip")
                 .register();
 
         register("filter_fluid", tag -> {
@@ -470,12 +450,8 @@ public final class PhoenixTaskRegistry {
                     false);
             t.deserializeNBT(tag);
             return t;
-        }).icon("§3≋").label("Fluid Check (Filter)")
-                .tooltip("Have a fluid amount in inventory matching a composable filter.\n" +
-                        "Filter types: exact, tag, mod, any_of, all_of, not.\n" +
-                        "Supports fluid tags (e.g. forge:milk, minecraft:water).\n" +
-                        "Amount in mB. Consume: drain fluid on completion.\n" +
-                        "If AE2 is installed, also counts matching fluid stored in your linked ME network (toggle: check_ae2_storage).")
+        }).icon("§3≋").label("phoenix_chronicles.task_type.filter_fluid.label")
+                .tooltip("phoenix_chronicles.task_type.filter_fluid.tooltip")
                 .register();
 
         register("block_break", tag -> {
@@ -483,9 +459,8 @@ public final class PhoenixTaskRegistry {
                     net.minecraft.world.level.block.Blocks.STONE, 1);
             t.deserializeNBT(tag);
             return t;
-        }).icon("§7✕").label("Break Block")
-                .tooltip(
-                        "Break a specific block a required number of times.\nTarget: block registry id (e.g. minecraft:stone). Count: how many times.")
+        }).icon("§7✕").label("phoenix_chronicles.task_type.block_break.label")
+                .tooltip("phoenix_chronicles.task_type.block_break.tooltip")
                 .register();
 
         register("enchantment", tag -> {
@@ -493,9 +468,8 @@ public final class PhoenixTaskRegistry {
                     taskId(tag), desc(tag), net.minecraft.resources.ResourceLocation.parse("minecraft:sharpness"), 1);
             t.deserializeNBT(tag);
             return t;
-        }).icon("§b✦").label("Enchantment")
-                .tooltip(
-                        "Complete when the player has a specific enchantment at >= the required level on any item the player carries or wears (enchanted books count).\nenchantment_id: registry id (e.g. minecraft:sharpness). required_level: minimum enchantment level.")
+        }).icon("§b✦").label("phoenix_chronicles.task_type.enchantment.label")
+                .tooltip("phoenix_chronicles.task_type.enchantment.tooltip")
                 .register();
     }
 
@@ -504,9 +478,8 @@ public final class PhoenixTaskRegistry {
             ViewMachineTask t = new ViewMachineTask(taskId(tag), desc(tag), "", 3.0f);
             t.deserializeNBT(tag);
             return t;
-        }).icon("§b⬡").label("View Machine (Phantasia)")
-                .tooltip(
-                        "Completes when the player views a Phantasia build guide for a specific machine for at least the required time.\nTarget: machine id (Phantasia multiblock definition id).")
+        }).icon("§b⬡").label("phoenix_chronicles.task_type.view_machine.label")
+                .tooltip("phoenix_chronicles.task_type.view_machine.tooltip")
                 .requiresMod("phantasia")
                 .register();
 
@@ -514,9 +487,8 @@ public final class PhoenixTaskRegistry {
             ViewSceneTask t = new ViewSceneTask(taskId(tag), desc(tag), "", 5.0f);
             t.deserializeNBT(tag);
             return t;
-        }).icon("§b⬢").label("View Scene (Phantasia)")
-                .tooltip(
-                        "Completes when the player views a multi-machine Phantasia scene for at least the required time.\nTarget: scene id (Phantasia scene definition id).")
+        }).icon("§b⬢").label("phoenix_chronicles.task_type.view_scene.label")
+                .tooltip("phoenix_chronicles.task_type.view_scene.tooltip")
                 .requiresMod("phantasia")
                 .register();
 
@@ -524,9 +496,8 @@ public final class PhoenixTaskRegistry {
             ViewGuideTask t = new ViewGuideTask(taskId(tag), desc(tag), "");
             t.deserializeNBT(tag);
             return t;
-        }).icon("§b📖").label("View Guide (Phantasia)")
-                .tooltip(
-                        "Completes when the player opens a Phantasia build/lore guide.\nTarget: guide id (Phantasia guide definition id). No minimum time - Phantasia doesn't report when guides close.")
+        }).icon("§b📖").label("phoenix_chronicles.task_type.view_guide.label")
+                .tooltip("phoenix_chronicles.task_type.view_guide.tooltip")
                 .requiresMod("phantasia")
                 .register();
 
@@ -535,9 +506,8 @@ public final class PhoenixTaskRegistry {
                     taskId(tag), desc(tag), "");
             t.deserializeNBT(tag);
             return t;
-        }).icon("§b📖").label("View Archive Entry")
-                .tooltip(
-                        "Completes when the player views a Phoenix Archive lore entry.\nTarget: entry id (e.g. phoenix_archive:log_001) - the id shown/set in Archive's own editor. No minimum time.")
+        }).icon("§b📖").label("phoenix_chronicles.task_type.archive_entry.label")
+                .tooltip("phoenix_chronicles.task_type.archive_entry.tooltip")
                 .requiresMod("phoenix_archive")
                 .register();
 
@@ -545,9 +515,8 @@ public final class PhoenixTaskRegistry {
             ExternalTriggerTask t = new ExternalTriggerTask(taskId(tag), desc(tag), "", 1);
             t.deserializeNBT(tag);
             return t;
-        }).icon("§d⚡").label("External Trigger")
-                .tooltip(
-                        "Completes when an external mod/script fires QuestAPI.fireExternalEvent() with the matching trigger ID.\nTarget: trigger id (e.g. mymod:sun_eaten).\nCount: how many times the event must fire.")
+        }).icon("§d⚡").label("phoenix_chronicles.task_type.external_trigger.label")
+                .tooltip("phoenix_chronicles.task_type.external_trigger.tooltip")
                 .register();
 
         register("conflux_research", tag -> {
@@ -555,9 +524,8 @@ public final class PhoenixTaskRegistry {
                     taskId(tag), desc(tag));
             t.deserializeNBT(tag);
             return t;
-        }).icon("§b☉").label("Conflux Research (PhoenixCore)")
-                .tooltip(
-                        "Completes when the player's Conflux research team has unlocked a specific research node or flag.\nNo effect if PhoenixCore isn't loaded.")
+        }).icon("§b☉").label("phoenix_chronicles.task_type.conflux_research.label")
+                .tooltip("phoenix_chronicles.task_type.conflux_research.tooltip")
                 .field(FieldDef.bool("flag_mode", "Check Flag Instead of Node"))
                 .field(FieldDef.text("node_id", "Research Node ID", "e.g. phoenixcore:some_node"))
                 .field(FieldDef.text("flag", "Research Flag"))
@@ -569,9 +537,8 @@ public final class PhoenixTaskRegistry {
                     taskId(tag), desc(tag));
             t.deserializeNBT(tag);
             return t;
-        }).icon("§d▣").label("Screen Opened")
-                .tooltip(
-                        "Completes when the player opens this quest's external screen (set via the quest's \"External Screen ID\" field).")
+        }).icon("§d▣").label("phoenix_chronicles.task_type.screen_opened.label")
+                .tooltip("phoenix_chronicles.task_type.screen_opened.tooltip")
                 .register();
     }
 

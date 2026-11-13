@@ -39,7 +39,8 @@ public class MinimapRenderer {
         int innerW = MM_W - 2, innerH = MM_H - 14;
         int innerX = bx + 1, innerY = by + 13;
 
-        g.drawString(font, "§8Map  §7M", bx + 3, by + 3, 0xFF666677, false);
+        g.drawString(font, ChroniclesUIKit.str("phoenix_chronicles.screen.minimap_renderer.map_m"), bx + 3, by + 3,
+                0xFF666677, false);
         g.fill(bx, by + 12, bx2, by + 13, 0xFF222233);
 
         Collection<QuestNode> nodes = QuestTreeRegistry.getAllQuests().values().stream()
@@ -47,7 +48,8 @@ public class MinimapRenderer {
                 .collect(Collectors.toList());
 
         if (nodes.isEmpty()) {
-            g.drawCenteredString(font, "§8empty", bx + MM_W / 2, by + MM_H / 2 - 4, 0xFF444455);
+            g.drawCenteredString(font, ChroniclesUIKit.str("phoenix_chronicles.screen.minimap_renderer.empty"),
+                    bx + MM_W / 2, by + MM_H / 2 - 4, 0xFF444455);
             return;
         }
 

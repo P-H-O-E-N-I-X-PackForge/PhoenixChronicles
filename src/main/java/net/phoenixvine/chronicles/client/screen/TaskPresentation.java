@@ -122,7 +122,9 @@ final class TaskPresentation {
                         t.isCompletedFor(Minecraft.getInstance().player);
                 boolean ready = !done && Minecraft.getInstance() != null && Minecraft.getInstance().player != null &&
                         t.hasRequiredItems(Minecraft.getInstance().player);
-                suffix = done ? "  (handed in)" : ready ? "  §a▶ click to hand in" : "  (consumed)";
+                suffix = done ? "  (handed in)" :
+                        ready ? ChroniclesUIKit.str("phoenix_chronicles.screen.task_presentation.click_to_hand_in") :
+                                "  (consumed)";
             }
             return name + (t.getRequiredCount() > 1 ? "  ×" + t.getRequiredCount() : "") + suffix;
         }
@@ -196,7 +198,9 @@ final class TaskPresentation {
     java.util.List<Component> buildTaskTooltip(QuestTask task) {
         java.util.List<Component> lines = new java.util.ArrayList<>();
         boolean done = screen.isTaskDone(task);
-        String status = done ? "§a✔ Complete" : (task.isOptional() ? "§8Optional" : "§c✗ Incomplete");
+        String status = done ? ChroniclesUIKit.str("phoenix_chronicles.screen.task_presentation.complete") :
+                (task.isOptional() ? ChroniclesUIKit.str("phoenix_chronicles.screen.editor_task_form.optional_2") :
+                        ChroniclesUIKit.str("phoenix_chronicles.screen.task_presentation.incomplete"));
         lines.add(ChroniclesUIKit.lit(status + "  §7" + task.getDescription().getString()));
         String detail = getTaskDetail(task);
         if (detail != null) lines.add(ChroniclesUIKit.lit("§8" + detail));
@@ -206,7 +210,8 @@ final class TaskPresentation {
         if (!icon.isEmpty()) lines.add(Component.translatable("phoenix_chronicles.ui.recipe_browser_hint"));
         if (screen.isEditMode && (task.hidesAmount() || task.hidesTarget())) {
             String real = rawTaskDetail(task);
-            lines.add(ChroniclesUIKit.lit("§d✎ Editor only - hidden from players: §7" + (real != null ? real : "")));
+            lines.add(ChroniclesUIKit.tr("phoenix_chronicles.screen.task_presentation.editor_only_hidden_from_players",
+                    (real != null ? real : "")));
         }
         return lines;
     }
@@ -215,7 +220,9 @@ final class TaskPresentation {
         java.util.List<Component> lines = buildPlayerRewardTooltip(reward);
         if (screen.isEditMode && (reward.hidesAmount() || reward.hidesTarget())) {
             lines.add(
-                    ChroniclesUIKit.lit("§d✎ Editor only - hidden from players: §7" + reward.getSummary().getString()));
+                    ChroniclesUIKit.tr(
+                            "phoenix_chronicles.screen.task_presentation.editor_only_hidden_from_players",
+                            reward.getSummary().getString()));
         }
         return lines;
     }
@@ -235,7 +242,7 @@ final class TaskPresentation {
                 for (int i = 1; i < vanillaLines.size(); i++) lines.add(vanillaLines.get(i));
             }
         } else if (rewardTargetMasked(reward)) {
-            lines.add(ChroniclesUIKit.lit("§7Hidden reward"));
+            lines.add(ChroniclesUIKit.tr("phoenix_chronicles.screen.task_presentation.hidden_reward"));
         } else if (reward instanceof QuestReward.ItemReward ir) {
             ItemStack stack = rewardStack(ir);
             lines.add(Component.translatable("phoenix_chronicles.ui.reward_line", stack.getHoverName(),
