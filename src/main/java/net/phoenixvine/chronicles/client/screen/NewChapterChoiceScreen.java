@@ -36,7 +36,7 @@ public class NewChapterChoiceScreen extends Screen {
         addRenderableWidget(
                 Button.builder(Component.translatable("phoenix_chronicles.screen.new_chapter_choice.new_chapter"),
                         b -> {
-                            parent.openNewChapterForm();
+                            parent.sidebar.openNewChapterForm();
                         }).bounds(fx, btnY, fw, 18).build());
 
         addRenderableWidget(
@@ -63,7 +63,8 @@ public class NewChapterChoiceScreen extends Screen {
         g.pose().translate(0f, 0f, 300f);
 
         ChroniclesUIKit.drawModalChrome(g, font, width, height, panelLeft, panelTop, PANEL_W, PANEL_H, 22,
-                "§bAdd to Sidebar", ChroniclesThemePalette.PANEL, ChroniclesThemePalette.HEADER,
+                ChroniclesUIKit.str("phoenix_chronicles.screen.new_chapter_choice.add_to_sidebar"),
+                ChroniclesThemePalette.PANEL, ChroniclesThemePalette.HEADER,
                 ACCENT, ChroniclesThemePalette.TEXT);
 
         g.flush();

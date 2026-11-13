@@ -2,12 +2,14 @@ package net.phoenixvine.chronicles.client.screen;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.phoenixvine.chronicles.client.render.ChroniclesThemePalette;
+import net.phoenixvine.chronicles.client.render.ChroniclesUIKit;
 import net.phoenixvine.chronicles.client.rich.MultilineTextArea;
 import net.phoenixvine.chronicles.client.util.ChapterConfig;
 import net.phoenixvine.chronicles.common.codec.QuestChroniclesSettings;
@@ -67,7 +69,7 @@ public class LangEditorScreen extends Screen {
     private String statusMsg = "";
     private int statusTimer = 0;
 
-    private final List<net.minecraft.client.gui.components.AbstractWidget> rowBoxes = new ArrayList<>();
+    private final List<AbstractWidget> rowBoxes = new ArrayList<>();
 
     private final List<Button> jumpButtons = new ArrayList<>();
 
@@ -79,12 +81,12 @@ public class LangEditorScreen extends Screen {
                              String fieldType) {}
 
     public LangEditorScreen(Screen parent) {
-        super(Component.literal("Text Editor"));
+        super(Component.translatable("phoenix_chronicles.screen.lang_editor.text_editor"));
         this.parent = parent;
     }
 
     public LangEditorScreen(Screen parent, QuestNode focusQuest) {
-        super(Component.literal("Text Editor"));
+        super(Component.translatable("phoenix_chronicles.screen.lang_editor.text_editor"));
         this.parent = parent;
         this.selectedChapter = focusQuest.getChapter() != null ? focusQuest.getChapter() : "";
         this.focusQuestId = focusQuest.getId();
@@ -110,7 +112,7 @@ public class LangEditorScreen extends Screen {
 
         int listX = SIDEBAR_W + 4;
         searchBox = new EditBox(font, listX, HEADER_H + 11, (vw - SIDEBAR_W) / 2 - 8, 13, Component.empty());
-        searchBox.setHint(Component.literal("§8Search text… (Regex supported)"));
+        searchBox.setHint(Component.translatable("phoenix_chronicles.screen.lang_editor.search_text_regex_supported"));
         searchBox.setMaxLength(128);
         searchBox.setValue(searchQuery);
 
@@ -124,10 +126,10 @@ public class LangEditorScreen extends Screen {
         });
         addRenderableWidget(searchBox);
 
-        addRenderableWidget(Button.builder(Component.literal("§a✔ Save all"),
+        addRenderableWidget(Button.builder(Component.translatable("phoenix_chronicles.screen.lang_editor.save_all"),
                 b -> saveAll()).bounds(vw - 100, HEADER_H + 11, 96, 13).build());
 
-        addRenderableWidget(Button.builder(Component.literal("§7‹ Back"),
+        addRenderableWidget(Button.builder(Component.translatable("phoenix_chronicles.ui.back"),
                 b -> {
                     if (minecraft != null) minecraft.setScreen(parent);
                 })
@@ -300,7 +302,9 @@ public class LangEditorScreen extends Screen {
                 int gy = rowY - GROUP_H;
                 if (gy + GROUP_H > top && gy < bott) {
                     ResourceLocation jumpTarget = entry.questId();
-                    Button jumpBtn = Button.builder(Component.literal("§dJump →"), b -> jumpToQuest(jumpTarget))
+                    Button jumpBtn = Button
+                            .builder(Component.translatable("phoenix_chronicles.screen.lang_editor.jump"),
+                                    b -> jumpToQuest(jumpTarget))
                             .bounds(listX + listW - 54, gy + 2, 50, GROUP_H - 4).build();
                     addRenderableWidget(jumpBtn);
                     jumpButtons.add(jumpBtn);
@@ -369,7 +373,9 @@ public class LangEditorScreen extends Screen {
                 if (gy + GROUP_H > top && gy < bott) {
                     g.fill(listX, gy, listX + listW, gy + GROUP_H, C_GROUP_BG);
                     g.fill(listX, gy, listX + 3, gy + GROUP_H, C_ACCENT);
-                    g.drawString(font, "§d▸ §7quests/" + entry.questId().getPath() + ".snbt",
+                    g.drawString(font,
+                            ChroniclesUIKit.str("phoenix_chronicles.screen.lang_editor.quests_snbt",
+                                    entry.questId().getPath()),
                             listX + 8, gy + 3, ChroniclesThemePalette.TEXT);
                 }
             }
@@ -417,7 +423,8 @@ public class LangEditorScreen extends Screen {
 
         g.fill(0, 0, SIDEBAR_W, vh, C_SIDEBAR);
         g.fill(SIDEBAR_W, 0, SIDEBAR_W + 1, vh, ChroniclesThemePalette.BORDER);
-        g.drawCenteredString(font, "§8CHAPTERS", SIDEBAR_W / 2, HEADER_H - 10, ChroniclesThemePalette.TEXT_FAINT);
+        g.drawCenteredString(font, ChroniclesUIKit.str("phoenix_chronicles.screen.lang_editor.chapters"), SIDEBAR_W / 2,
+                HEADER_H - 10, ChroniclesThemePalette.TEXT_FAINT);
 
         List<String> cats = buildChapterList();
         int sidebarContentH = cats.size() * 15;
@@ -451,9 +458,10 @@ public class LangEditorScreen extends Screen {
 
         g.fill(0, 0, vw, HEADER_H, ChroniclesThemePalette.HEADER);
         g.fill(0, HEADER_H - 1, vw, HEADER_H, ChroniclesThemePalette.BORDER);
-        g.drawString(font, "§dText Editor  §8│  §7" + friendly(selectedChapter),
+        g.drawString(font,
+                ChroniclesUIKit.str("phoenix_chronicles.screen.lang_editor.text_editor_2", friendly(selectedChapter)),
                 SIDEBAR_W + 6, 6, ChroniclesThemePalette.TEXT);
-        g.drawString(font, "§8Ctrl+S saves  ·  primary: quests/*.snbt  ·  also exports lang/en_us.json",
+        g.drawString(font, ChroniclesUIKit.str("phoenix_chronicles.screen.lang_editor.ctrl_s_saves_primary_quests"),
                 SIDEBAR_W + 6, 16, ChroniclesThemePalette.TEXT_FAINT);
 
         g.fill(SIDEBAR_W, vh - 18, vw, vh, ChroniclesThemePalette.PANEL);
@@ -461,13 +469,16 @@ public class LangEditorScreen extends Screen {
 
         int dirtyCount = dirty.size();
         if (dirtyCount > 0)
-            g.drawString(font, "§6" + dirtyCount + " unsaved change(s)",
+            g.drawString(font,
+                    ChroniclesUIKit.str("phoenix_chronicles.screen.lang_editor.unsaved_change_s", dirtyCount),
                     listX + 64, vh - 13, C_DIRTY_DOT);
 
         if (statusTimer > 0)
             g.drawString(font, statusMsg, listX + 64, vh - 13, ChroniclesThemePalette.TEXT);
 
-        g.drawString(font, "§8" + entries.size() + " fields  ·  " + countQuests() + " quests",
+        g.drawString(font,
+                ChroniclesUIKit.str("phoenix_chronicles.screen.lang_editor.fields_quests", entries.size(),
+                        countQuests()),
                 vw - 140, vh - 13, ChroniclesThemePalette.TEXT_FAINT);
 
         searchBox.render(g, mx, my, partial);
@@ -595,7 +606,7 @@ public class LangEditorScreen extends Screen {
 
     private void saveAll() {
         if (dirty.isEmpty()) {
-            setStatus("§8Nothing to save.");
+            setStatus(ChroniclesUIKit.str("phoenix_chronicles.screen.lang_editor.nothing_to_save"));
             return;
         }
 
@@ -706,7 +717,7 @@ public class LangEditorScreen extends Screen {
         QuestFileLoader.loadAdditiveFromDisk(base);
         rebuildEntries();
         buildRowBoxes();
-        setStatus("§a✔ Saved " + saved + " quest(s)  →  quests/*.snbt  +  lang/en_us.json");
+        setStatus(ChroniclesUIKit.str("phoenix_chronicles.screen.lang_editor.saved_quest_s_quests_snbt", saved));
     }
 
     static String patchMdFile(String original, String newTitle, String newDesc) {

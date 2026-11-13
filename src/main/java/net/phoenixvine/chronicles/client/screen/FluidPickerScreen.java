@@ -113,12 +113,13 @@ public class FluidPickerScreen extends Screen {
         g.fill(panelLeft, panelTop, panelLeft + PANEL_W, panelTop + HEADER_H, ChroniclesThemePalette.HEADER);
         g.fill(panelLeft, panelTop + HEADER_H - 1, panelLeft + PANEL_W, panelTop + HEADER_H,
                 ChroniclesThemePalette.BORDER);
-        g.drawCenteredString(font, "§3Pick Fluid", panelLeft + PANEL_W / 2, panelTop + 7, ChroniclesThemePalette.TEXT);
+        g.drawCenteredString(font, ChroniclesUIKit.str("phoenix_chronicles.screen.fluid_picker.pick_fluid"),
+                panelLeft + PANEL_W / 2, panelTop + 7, ChroniclesThemePalette.TEXT);
 
         int footerY = panelTop + PANEL_H - FOOTER_H;
         g.fill(panelLeft, footerY, panelLeft + PANEL_W, footerY + 1, ChroniclesThemePalette.BORDER);
         g.fill(panelLeft, footerY, panelLeft + PANEL_W, panelTop + PANEL_H, ChroniclesThemePalette.PANEL_DARK);
-        String countLabel = "§8" + displayFluids.size() + " fluids";
+        String countLabel = ChroniclesUIKit.str("phoenix_chronicles.screen.fluid_picker.fluids", displayFluids.size());
         if (!multiSelected.isEmpty())
             countLabel += "  §9(" + multiSelected.size() + " selected, right-click to toggle)";
         g.drawString(font, countLabel, panelLeft + 62, footerY + 7, ChroniclesThemePalette.TEXT_FAINT);

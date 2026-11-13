@@ -143,7 +143,7 @@ public final class AnimatedTexture {
         Path customFile = customFile(tex, ".mcmeta");
         if (customFile != null) return Files.exists(customFile) ? Files.newInputStream(customFile) : null;
 
-        ResourceLocation meta = ResourceLocation.fromNamespaceAndPath(tex.getNamespace(), tex.getPath() + ".mcmeta");
+        ResourceLocation meta = new ResourceLocation(tex.getNamespace(), tex.getPath() + ".mcmeta");
         Optional<Resource> resource = Minecraft.getInstance().getResourceManager().getResource(meta);
         return resource.isPresent() ? resource.get().open() : null;
     }

@@ -4,6 +4,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
+import net.phoenixvine.chronicles.client.render.ChroniclesUIKit;
 import net.phoenixvine.chronicles.client.render.NodeShapeRenderer;
 import net.phoenixvine.chronicles.common.codec.QuestChroniclesSettings;
 import net.phoenixvine.chronicles.common.codec.QuestChroniclesSettings.*;
@@ -128,6 +129,9 @@ public class DepLineSettingsScreen extends Screen {
     }
 
     @Override
+    public void renderBackground(GuiGraphics context) {}
+
+    @Override
     public void render(GuiGraphics g, int mx, int my, float partial) {
         pendingTooltip = null;
         g.fill(0, 0, width, height, C_BG);
@@ -136,8 +140,10 @@ public class DepLineSettingsScreen extends Screen {
         g.fill(0, HEADER_H - 1, width, HEADER_H, C_BORDER);
         QuestNode focusForHeader = focusNode();
         g.drawCenteredString(font,
-                focusForHeader != null ? "§fDependencies: " + focusForHeader.getTitle().getString() :
-                        "§fDependency Line Settings",
+                focusForHeader != null ?
+                        ChroniclesUIKit.str("phoenix_chronicles.screen.dep_line_settings.dependencies",
+                                focusForHeader.getTitle().getString()) :
+                        ChroniclesUIKit.str("phoenix_chronicles.screen.dep_line_settings.dependency_line_settings"),
                 width / 2, 9, C_TEXT);
 
         g.fill(0, HEADER_H, width, HEADER_H + SEARCH_H, C_HEADER);
@@ -154,16 +160,29 @@ public class DepLineSettingsScreen extends Screen {
 
         if (focusNodeId == null) {
 
-            g.drawString(font, "§8GLOBAL APPEARANCE:", x, y, C_TEXT_FAINT, false);
+            g.drawString(font, ChroniclesUIKit.str("phoenix_chronicles.screen.dep_line_settings.global_appearance"), x,
+                    y, C_TEXT_FAINT, false);
             y += GLOBAL_SECTION_LABEL_H;
 
-            y = renderCycleRow(g, x, y, w, "§fLine Shape", lineShape.name(), mx, my,
-                    "STRAIGHT/SPLINE/etc - the path a dependency line follows between two quest nodes") + ROW_GAP;
-            y = renderCycleRow(g, x, y, w, "§fLine Style", lineVisual.name(), mx, my,
-                    "The line's visual treatment (solid, dashed, glowing, etc.)") + ROW_GAP;
-            y = renderCycleRow(g, x, y, w, "§fArrow Speed", lineAnimSpeed.name(), mx, my,
-                    "How fast the animated arrows travel along a dependency line") + ROW_GAP;
-            y = renderCycleRow(g, x, y, w, "§fDirectional Arrows", lineArrows ? "ON" : "OFF", mx, my) + ROW_GAP;
+            y = renderCycleRow(g, x, y, w,
+                    ChroniclesUIKit.str("phoenix_chronicles.screen.dep_line_settings.line_shape"), lineShape.name(), mx,
+                    my,
+                    ChroniclesUIKit.str("phoenix_chronicles.screen.dep_line_settings.straight_spline_etc_the_path")) +
+                    ROW_GAP;
+            y = renderCycleRow(g, x, y, w,
+                    ChroniclesUIKit.str("phoenix_chronicles.screen.dep_line_settings.line_style"), lineVisual.name(),
+                    mx, my,
+                    ChroniclesUIKit.str("phoenix_chronicles.screen.dep_line_settings.the_line_s_visual_treatment")) +
+                    ROW_GAP;
+            y = renderCycleRow(g, x, y, w,
+                    ChroniclesUIKit.str("phoenix_chronicles.screen.dep_line_settings.arrow_speed"),
+                    lineAnimSpeed.name(), mx, my,
+                    ChroniclesUIKit.str("phoenix_chronicles.screen.dep_line_settings.how_fast_the_animated_arrows")) +
+                    ROW_GAP;
+            y = renderCycleRow(g, x, y, w,
+                    ChroniclesUIKit.str("phoenix_chronicles.screen.dep_line_settings.directional_arrows"),
+                    lineArrows ? "ON" : ChroniclesUIKit.str("phoenix_chronicles.screen.dep_line_settings.off"), mx,
+                    my) + ROW_GAP;
 
             y += 4;
             g.fill(x, y, x + w, y + PREVIEW_H, C_PANEL);
@@ -171,21 +190,28 @@ public class DepLineSettingsScreen extends Screen {
             g.fill(x, y + PREVIEW_H - 1, x + w, y + PREVIEW_H, C_BORDER);
             g.fill(x, y, x + 1, y + PREVIEW_H, C_BORDER);
             g.fill(x + w - 1, y, x + w, y + PREVIEW_H, C_BORDER);
-            g.drawString(font, "§8Preview", x + 4, y + 2, C_TEXT_FAINT, false);
+            g.drawString(font, ChroniclesUIKit.str("phoenix_chronicles.screen.dep_line_settings.preview"), x + 4, y + 2,
+                    C_TEXT_FAINT, false);
             drawPreviewLines(g, x + 4, y + 12, w - 8, PREVIEW_H - 16);
             y += PREVIEW_H + PREVIEW_GAP;
 
             g.fill(x, y, x + w, y + 1, C_BORDER);
             y += DIVIDER_H;
-            g.drawString(font, "§8CHAPTER DEFAULTS  §7(" + chapter + ")", x, y, C_TEXT_FAINT, false);
+            g.drawString(font,
+                    ChroniclesUIKit.str("phoenix_chronicles.screen.dep_line_settings.chapter_defaults", chapter), x, y,
+                    C_TEXT_FAINT, false);
             y += CATEGORY_LABEL_H;
 
             String requireAllLabel = catRequireAllDefault == null ? "No default (ALL)" :
                     catRequireAllDefault ? "ALL required" : "ANY sufficient";
-            y = renderCycleRow(g, x, y, w, "§fPrereq gate default", requireAllLabel, mx, my) + ROW_GAP;
+            y = renderCycleRow(g, x, y, w,
+                    ChroniclesUIKit.str("phoenix_chronicles.screen.dep_line_settings.prereq_gate_default"),
+                    requireAllLabel, mx, my) + ROW_GAP;
 
             String minCountLabel = minCountStepLabel(catOptionalMinDefault);
-            y = renderCycleRow(g, x, y, w, "§fOptional prereq min-count", minCountLabel, mx, my) + ROW_GAP;
+            y = renderCycleRow(g, x, y, w,
+                    ChroniclesUIKit.str("phoenix_chronicles.screen.dep_line_settings.optional_prereq_min_count"),
+                    minCountLabel, mx, my) + ROW_GAP;
 
             g.fill(x, y, x + w, y + 1, C_BORDER);
             y += DIVIDER_H;
@@ -204,7 +230,8 @@ public class DepLineSettingsScreen extends Screen {
             countHint = searchQuery.isEmpty() ? "(" + chapter + ")" :
                     "(" + quests.size() + " match" + (quests.size() == 1 ? "" : "es") + " in " + chapter + ")";
         }
-        g.drawString(font, "§8PER-QUEST  §7" + countHint, x, y, C_TEXT_FAINT, false);
+        g.drawString(font, ChroniclesUIKit.str("phoenix_chronicles.screen.dep_line_settings.per_quest", countHint), x,
+                y, C_TEXT_FAINT, false);
         y += PER_QUEST_LABEL_H;
 
         for (QuestNode quest : quests) {
@@ -240,15 +267,18 @@ public class DepLineSettingsScreen extends Screen {
 
             g.fill(hideX, btnY, hideX + hideW, btnY + ROW_H - 4, hideHov ? 0x33FFFFFF : 0x11FFFFFF);
             g.fill(hideX, btnY, hideX + hideW, btnY + 1, hidden ? 0xFF444455 : C_DONE);
-            g.drawCenteredString(font, hidden ? "§8HIDDEN" : "§aVISIBLE",
+            g.drawCenteredString(font,
+                    hidden ? ChroniclesUIKit.str("phoenix_chronicles.screen.dep_line_settings.hidden") :
+                            ChroniclesUIKit.str("phoenix_chronicles.screen.dep_line_settings.visible"),
                     hideX + hideW / 2, btnY + 5, hidden ? C_TEXT_FAINT : C_DONE);
 
             y += ROW_H + ROW_GAP;
         }
 
         if (quests.isEmpty()) {
-            String emptyMsg = searchQuery.isEmpty() ? "§8(no quests in this chapter)" :
-                    "§8No quests match \"" + searchQuery + "\"";
+            String emptyMsg = searchQuery.isEmpty() ?
+                    ChroniclesUIKit.str("phoenix_chronicles.screen.dep_line_settings.no_quests_in_this_chapter") :
+                    ChroniclesUIKit.str("phoenix_chronicles.screen.dep_line_settings.no_quests_match", searchQuery);
             g.drawString(font, emptyMsg, x + 4, y, C_TEXT_FAINT, false);
         }
 
@@ -267,11 +297,13 @@ public class DepLineSettingsScreen extends Screen {
 
         g.fill(saveX, fbtnY, saveX + fbtnW, fbtnY + 18, saveHov ? 0xFF2A4A2A : 0xFF1A2A1A);
         if (saveHov) g.fill(saveX, fbtnY, saveX + fbtnW, fbtnY + 1, C_DONE);
-        g.drawCenteredString(font, "§a✓ Save", saveX + fbtnW / 2, fbtnY + 6, saveHov ? C_DONE : C_TEXT);
+        g.drawCenteredString(font, ChroniclesUIKit.str("phoenix_chronicles.ui.save_2"), saveX + fbtnW / 2, fbtnY + 6,
+                saveHov ? C_DONE : C_TEXT);
 
         g.fill(closeX, fbtnY, closeX + fbtnW, fbtnY + 18, closeHov ? 0xFF3A3A3A : 0xFF2A2A2A);
         if (closeHov) g.fill(closeX, fbtnY, closeX + fbtnW, fbtnY + 1, 0xFF888898);
-        g.drawCenteredString(font, "§7✕ Close", closeX + fbtnW / 2, fbtnY + 6, closeHov ? 0xFFCCCCCC : C_TEXT);
+        g.drawCenteredString(font, ChroniclesUIKit.str("phoenix_chronicles.screen.dep_line_settings.close"),
+                closeX + fbtnW / 2, fbtnY + 6, closeHov ? 0xFFCCCCCC : C_TEXT);
 
         super.render(g, mx, my, partial);
 
@@ -282,24 +314,24 @@ public class DepLineSettingsScreen extends Screen {
 
     private void renderLegend(GuiGraphics g, int lx, int ly) {
         String[] lines = {
-                "§8LEGEND",
-                "§fShape",
-                "§7Spline: curved S",
-                "§7Straight: direct",
+                ChroniclesUIKit.str("phoenix_chronicles.screen.dep_line_settings.legend"),
+                ChroniclesUIKit.str("phoenix_chronicles.screen.dep_line_settings.shape"),
+                ChroniclesUIKit.str("phoenix_chronicles.screen.dep_line_settings.spline_curved_s"),
+                ChroniclesUIKit.str("phoenix_chronicles.screen.dep_line_settings.straight_direct"),
                 "",
-                "§fStyle",
-                "§7Thin/Normal/Bold",
-                "§7Thick/Wide: heavier",
-                "§7Glow: soft halo",
+                ChroniclesUIKit.str("phoenix_chronicles.screen.dep_line_settings.style"),
+                ChroniclesUIKit.str("phoenix_chronicles.screen.dep_line_settings.thin_normal_bold"),
+                ChroniclesUIKit.str("phoenix_chronicles.screen.dep_line_settings.thick_wide_heavier"),
+                ChroniclesUIKit.str("phoenix_chronicles.screen.dep_line_settings.glow_soft_halo"),
                 "",
-                "§fSpeed",
-                "§7Hover-arrow flow",
-                "§7Slowest…Very Fast",
+                ChroniclesUIKit.str("phoenix_chronicles.screen.dep_line_settings.speed"),
+                ChroniclesUIKit.str("phoenix_chronicles.screen.dep_line_settings.hover_arrow_flow"),
+                ChroniclesUIKit.str("phoenix_chronicles.screen.dep_line_settings.slowest_very_fast"),
                 "",
-                "§7\"Inherit\" = use the",
-                "§7Global Appearance",
-                "§7above (or this row's",
-                "§7own override)",
+                ChroniclesUIKit.str("phoenix_chronicles.screen.dep_line_settings.inherit_use_the"),
+                ChroniclesUIKit.str("phoenix_chronicles.screen.dep_line_settings.global_appearance_2"),
+                ChroniclesUIKit.str("phoenix_chronicles.screen.dep_line_settings.above_or_this_row_s"),
+                ChroniclesUIKit.str("phoenix_chronicles.screen.dep_line_settings.own_override"),
         };
         int lineH = 9;
         int panelH = lines.length * lineH + 8;

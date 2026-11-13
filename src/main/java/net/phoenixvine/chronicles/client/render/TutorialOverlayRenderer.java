@@ -83,7 +83,7 @@ public class TutorialOverlayRenderer {
             } else if (step.isNodeHighlight()) {
                 String nid = step.nodeHighlightId();
                 if (nid != null) {
-                    ResourceLocation rid = ResourceLocation.fromNamespaceAndPath(PhoenixChronicles.MOD_ID, nid);
+                    ResourceLocation rid = new ResourceLocation(PhoenixChronicles.MOD_ID, nid);
                     int[] pos = nodeScreenPos.get(rid);
                     if (pos != null) {
                         QuestNode hlNode = QuestTreeRegistry.getQuest(rid);
@@ -164,11 +164,13 @@ public class TutorialOverlayRenderer {
         tutSkipBtn = new int[] { skipX, btnY, skipX + skipW, btnY + btnH };
         boolean skipHov = mx >= skipX && mx < skipX + skipW && my >= btnY && my < btnY + btnH;
         g.fill(skipX, btnY, skipX + skipW, btnY + btnH, skipHov ? 0x33FFFFFF : 0x1AFFFFFF);
-        g.drawCenteredString(font, "§8Skip", skipX + skipW / 2, btnY + 4,
+        g.drawCenteredString(font, ChroniclesUIKit.str("phoenix_chronicles.screen.tutorial_overlay_renderer.skip"),
+                skipX + skipW / 2, btnY + 4,
                 skipHov ? colors.textDim() : colors.textFaint());
 
         boolean isLast = stepIdx == steps.size() - 1;
-        String nextLabel = isLast ? "§aFinish" : "§fNext →";
+        String nextLabel = isLast ? ChroniclesUIKit.str("phoenix_chronicles.screen.tutorial_overlay_renderer.finish") :
+                ChroniclesUIKit.str("phoenix_chronicles.screen.tutorial_overlay_renderer.next");
         int nextW = font.width(isLast ? "Finish" : "Next →") + 16;
         int nextX = skipX - nextW - 4;
         tutNextBtn = new int[] { nextX, btnY, nextX + nextW, btnY + btnH };
@@ -183,7 +185,8 @@ public class TutorialOverlayRenderer {
             tutPrevBtn = new int[] { prevX, btnY, prevX + prevW, btnY + btnH };
             boolean prevHov = mx >= prevX && mx < prevX + prevW && my >= btnY && my < btnY + btnH;
             g.fill(prevX, btnY, prevX + prevW, btnY + btnH, prevHov ? 0x33FFFFFF : 0x1AFFFFFF);
-            g.drawCenteredString(font, "§8← Prev", prevX + prevW / 2, btnY + 4,
+            g.drawCenteredString(font, ChroniclesUIKit.str("phoenix_chronicles.screen.tutorial_overlay_renderer.prev"),
+                    prevX + prevW / 2, btnY + 4,
                     prevHov ? colors.textDim() : colors.textFaint());
         }
     }

@@ -1,5 +1,6 @@
 package net.phoenixvine.chronicles.client.screen;
 
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.phoenixvine.chronicles.common.codec.QuestFileLoader;
 import net.phoenixvine.chronicles.common.model.QuestNode;
@@ -25,6 +26,9 @@ public class ChronicleWikiScreen extends WikiScreen {
     protected Map<String, UnaryOperator<String>> dynamicPageResolvers() {
         return Map.of("live_stats", ChronicleWikiScreen::resolveLiveStats);
     }
+
+    @Override
+    public void renderBackground(GuiGraphics context) {}
 
     private static String resolveLiveStats(String markdown) {
         Map<String, List<QuestNode>> byChapter = new LinkedHashMap<>();

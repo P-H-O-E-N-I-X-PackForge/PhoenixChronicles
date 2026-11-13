@@ -66,7 +66,7 @@ public class ChroniclesClient {
                 MOD_ID,
                 SuiteHudBar.PRIORITY_CHRONICLES,
                 iconPath,
-                () -> Component.literal("§fOpen Quest Book"),
+                () -> Component.translatable("phoenix_chronicles.screen.chronicles_client.open_quest_book"),
                 () -> 1,
                 () -> mc.setScreen(new ChronicleOverviewScreen(mc.screen)),
                 16,

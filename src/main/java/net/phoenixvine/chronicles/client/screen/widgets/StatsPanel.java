@@ -1,6 +1,7 @@
 package net.phoenixvine.chronicles.client.screen.widgets;
 
 import net.minecraft.client.gui.GuiGraphics;
+import net.phoenixvine.chronicles.client.render.ChroniclesUIKit;
 import net.phoenixvine.chronicles.client.screen.ChronicleOverviewScreen;
 import net.phoenixvine.chronicles.client.screen.utils.ScreenContext;
 import net.phoenixvine.chronicles.client.util.QuestCompletionStats;
@@ -112,7 +113,8 @@ public class StatsPanel implements TogglePanel {
         g.fill(panX, panY, panX + 1, panY + panH, bc);
         g.fill(panX + panW - 1, panY, panX + panW, panY + panH, bc);
         g.fill(panX, panY + panH - 1, panX + panW, panY + panH, bc);
-        g.drawString(ctx.font(), "§bQuest Progress", panX + 6, panY + 4, 0xFF55AAEE, false);
+        g.drawString(ctx.font(), ChroniclesUIKit.str("phoenix_chronicles.screen.stats_panel.quest_progress"), panX + 6,
+                panY + 4, 0xFF55AAEE, false);
         g.fill(panX + 4, panY + 14, panX + panW - 4, panY + 15, 0xFF222233);
 
         int x = panX + 6, right = panX + panW - 6;
@@ -121,22 +123,27 @@ public class StatsPanel implements TogglePanel {
 
         QuestCompletionStats.Tally overall = stats.overall();
         if (overall.total <= 0) {
-            g.drawString(ctx.font(), "§8Nothing to track yet.", x, sy, 0xFF666677, false);
+            g.drawString(ctx.font(), ChroniclesUIKit.str("phoenix_chronicles.screen.stats_panel.nothing_to_track_yet"),
+                    x, sy, 0xFF666677, false);
             sy += ROW_H + 2;
         } else {
-            drawProgressRow(g, x, sy, 62, right, "§fOverall", overall, fill);
+            drawProgressRow(g, x, sy, 62, right, ChroniclesUIKit.str("phoenix_chronicles.screen.stats_panel.overall"),
+                    overall, fill);
             sy += ROW_H + 1;
             if (stats.required.total > 0) {
-                drawProgressRow(g, x, sy, 62, right, "§7Required", stats.required, fill);
+                drawProgressRow(g, x, sy, 62, right,
+                        ChroniclesUIKit.str("phoenix_chronicles.screen.stats_panel.required"), stats.required, fill);
                 sy += ROW_H;
             }
             if (stats.optional.total > 0) {
-                drawProgressRow(g, x, sy, 62, right, "§7Optional", stats.optional, fill);
+                drawProgressRow(g, x, sy, 62, right,
+                        ChroniclesUIKit.str("phoenix_chronicles.screen.stats_panel.optional"), stats.optional, fill);
                 sy += ROW_H;
             }
         }
         if (stats.disabled > 0 || stats.repeatable > 0) {
-            StringBuilder sb = new StringBuilder("§8Not counted:");
+            StringBuilder sb = new StringBuilder(
+                    ChroniclesUIKit.str("phoenix_chronicles.screen.stats_panel.not_counted"));
             if (stats.disabled > 0) sb.append(" ").append(stats.disabled).append(" disabled");
             if (stats.disabled > 0 && stats.repeatable > 0) sb.append(",");
             if (stats.repeatable > 0) sb.append(" ").append(stats.repeatable).append(" repeatable");
@@ -149,7 +156,8 @@ public class StatsPanel implements TogglePanel {
 
         if (ctx.isDevMode()) sy = renderAuthoringStats(ctx, g, sy);
 
-        g.drawString(ctx.font(), "§8Chapters", x, sy, 0xFF666677, false);
+        g.drawString(ctx.font(), ChroniclesUIKit.str("phoenix_chronicles.screen.stats_panel.chapters"), x, sy,
+                0xFF666677, false);
         sy += LINE_H;
 
         listTop = sy;
@@ -171,8 +179,8 @@ public class StatsPanel implements TogglePanel {
         g.disableScissor();
 
         if (maxScroll > 0) {
-            String hint = "§8scroll · " + (scrollRows + 1) + "-" +
-                    Math.min(stats.chapters.size(), scrollRows + visibleRows) + " of " + stats.chapters.size();
+            String hint = ChroniclesUIKit.str("phoenix_chronicles.screen.stats_panel.scroll_of", (scrollRows + 1),
+                    Math.min(stats.chapters.size(), scrollRows + visibleRows), stats.chapters.size());
             g.drawString(ctx.font(), hint, right - ctx.font().width(hint.replaceAll("§.", "")), panY + 4, 0xFF666677,
                     false);
         }
@@ -213,31 +221,51 @@ public class StatsPanel implements TogglePanel {
         int lh = LINE_H;
         int col1 = panX + 6, col2 = panX + panW / 2 + 10;
 
-        g.drawString(ctx.font(), "§8Authoring", col1, sy, 0xFF666677, false);
+        g.drawString(ctx.font(), ChroniclesUIKit.str("phoenix_chronicles.screen.stats_panel.authoring"), col1, sy,
+                0xFF666677, false);
         sy += lh;
-        g.drawString(ctx.font(), "§fTotal quests:  §e" + total, col1, sy, 0xFFDDDDFF, false);
-        g.drawString(ctx.font(), "§fTotal tasks:   §7" + totalTasks, col2, sy, 0xFFDDDDFF, false);
+        g.drawString(ctx.font(), ChroniclesUIKit.str("phoenix_chronicles.screen.stats_panel.total_quests", total), col1,
+                sy, 0xFFDDDDFF, false);
+        g.drawString(ctx.font(), ChroniclesUIKit.str("phoenix_chronicles.screen.stats_panel.total_tasks", totalTasks),
+                col2, sy, 0xFFDDDDFF, false);
         sy += lh;
-        g.drawString(ctx.font(), "§fNo tasks:      §c" + noTask, col1, sy, 0xFFDDDDFF, false);
-        g.drawString(ctx.font(), "§fTotal rewards: §7" + totalRewards, col2, sy, 0xFFDDDDFF, false);
+        g.drawString(ctx.font(), ChroniclesUIKit.str("phoenix_chronicles.screen.stats_panel.no_tasks", noTask), col1,
+                sy, 0xFFDDDDFF, false);
+        g.drawString(ctx.font(),
+                ChroniclesUIKit.str("phoenix_chronicles.screen.stats_panel.total_rewards", totalRewards), col2, sy,
+                0xFFDDDDFF, false);
         sy += lh;
-        g.drawString(ctx.font(), "§fNo rewards:    §8" + noReward, col1, sy, 0xFFDDDDFF, false);
-        g.drawString(ctx.font(), "§fCategories:    §7" + catCounts.size(), col2, sy, 0xFFDDDDFF, false);
+        g.drawString(ctx.font(), ChroniclesUIKit.str("phoenix_chronicles.screen.stats_panel.no_rewards", noReward),
+                col1, sy, 0xFFDDDDFF, false);
+        g.drawString(ctx.font(),
+                ChroniclesUIKit.str("phoenix_chronicles.screen.stats_panel.categories", catCounts.size()), col2, sy,
+                0xFFDDDDFF, false);
         sy += lh;
-        g.drawString(ctx.font(), "§fOrphaned:      §e" + orphaned, col1, sy, 0xFFDDDDFF, false);
-        g.drawString(ctx.font(), "§fGroups:        §7" + totalGroups, col2, sy, 0xFFDDDDFF, false);
+        g.drawString(ctx.font(), ChroniclesUIKit.str("phoenix_chronicles.screen.stats_panel.orphaned", orphaned), col1,
+                sy, 0xFFDDDDFF, false);
+        g.drawString(ctx.font(), ChroniclesUIKit.str("phoenix_chronicles.screen.stats_panel.groups", totalGroups), col2,
+                sy, 0xFFDDDDFF, false);
         sy += lh;
-        g.drawString(ctx.font(), "§fRepeatable:    §b" + repeatable, col1, sy, 0xFFDDDDFF, false);
-        g.drawString(ctx.font(), "§fHidden/Mystery:§7" + hiddenOrMystery, col2, sy, 0xFFDDDDFF, false);
+        g.drawString(ctx.font(), ChroniclesUIKit.str("phoenix_chronicles.screen.stats_panel.repeatable", repeatable),
+                col1, sy, 0xFFDDDDFF, false);
+        g.drawString(ctx.font(),
+                ChroniclesUIKit.str("phoenix_chronicles.screen.stats_panel.hidden_mystery", hiddenOrMystery), col2, sy,
+                0xFFDDDDFF, false);
         sy += lh;
-        g.drawString(ctx.font(), "§fDisabled:      §7" + disabled, col1, sy, 0xFFDDDDFF, false);
-        g.drawString(ctx.font(), "§fLink stubs:    §7" + linkStubs, col2, sy, 0xFFDDDDFF, false);
+        g.drawString(ctx.font(), ChroniclesUIKit.str("phoenix_chronicles.screen.stats_panel.disabled", disabled), col1,
+                sy, 0xFFDDDDFF, false);
+        g.drawString(ctx.font(), ChroniclesUIKit.str("phoenix_chronicles.screen.stats_panel.link_stubs", linkStubs),
+                col2, sy, 0xFFDDDDFF, false);
         sy += lh;
-        g.drawString(ctx.font(), "§fCustom icons:  §7" + withCustomIcon + "§8/" + total, col1, sy, 0xFFDDDDFF,
+        g.drawString(ctx.font(),
+                ChroniclesUIKit.str("phoenix_chronicles.screen.stats_panel.custom_icons", withCustomIcon, total), col1,
+                sy, 0xFFDDDDFF,
                 false);
         g.drawString(ctx.font(),
-                validationIssueCount > 0 ? "§fValidation:    §c" + validationIssueCount + " issue(s)" :
-                        "§fValidation:    §a✔ clean",
+                validationIssueCount > 0 ?
+                        ChroniclesUIKit.str("phoenix_chronicles.screen.stats_panel.validation_issue_s",
+                                validationIssueCount) :
+                        ChroniclesUIKit.str("phoenix_chronicles.screen.stats_panel.validation_clean"),
                 col2, sy, 0xFFDDDDFF, false);
         sy += lh;
         g.fill(panX + 4, sy, panX + panW - 4, sy + 1, 0xFF222233);

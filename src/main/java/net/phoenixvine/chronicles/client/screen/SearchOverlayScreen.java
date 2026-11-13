@@ -4,6 +4,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
+import net.phoenixvine.chronicles.client.render.ChroniclesUIKit;
 import net.phoenixvine.chronicles.client.util.ChapterConfig;
 import net.phoenixvine.chronicles.common.codec.QuestChroniclesSettings;
 import net.phoenixvine.chronicles.common.model.QuestNode;
@@ -86,6 +87,9 @@ public class SearchOverlayScreen extends Screen {
     }
 
     @Override
+    public void renderBackground(GuiGraphics context) {}
+
+    @Override
     public void onClose() {
         if (minecraft != null) minecraft.setScreen(parent);
     }
@@ -127,7 +131,8 @@ public class SearchOverlayScreen extends Screen {
         searchBox.render(g, mx, my, partial);
 
         g.fill(panX + panW - 32, panY + 12, panX + panW - 14, panY + 26, 0x22FFFFFF);
-        g.drawCenteredString(font, "§8ESC", panX + panW - 23, panY + 16, C_TEXT_FAINT);
+        g.drawCenteredString(font, ChroniclesUIKit.str("phoenix_chronicles.screen.search_overlay.esc"),
+                panX + panW - 23, panY + 16, C_TEXT_FAINT);
 
         int cy = panY + searchRowH;
 
@@ -141,7 +146,10 @@ public class SearchOverlayScreen extends Screen {
             int bg = sel ? (C_SEL_ACCENT & 0x00FFFFFF | 0x44000000) : (hov ? 0x22FFFFFF : 0x11FFFFFF);
             g.fill(cpx, cpy, cpx + cpw, cpy + cph, bg);
             if (sel) g.fill(cpx, cpy + cph - 1, cpx + cpw, cpy + cph, C_SEL_ACCENT);
-            g.drawString(font, sel ? "§aAll" : "§8All", cpx + 5, cpy + 3, C_TEXT_DIM, false);
+            g.drawString(font,
+                    sel ? ChroniclesUIKit.str("phoenix_chronicles.screen.search_overlay.all") :
+                            ChroniclesUIKit.str("phoenix_chronicles.screen.search_overlay.all_2"),
+                    cpx + 5, cpy + 3, C_TEXT_DIM, false);
             cpx += cpw + 4;
         }
         for (String cat : cats) {
@@ -354,7 +362,7 @@ public class SearchOverlayScreen extends Screen {
                 continue;
             }
 
-            String hay = parent.buildSearchHaystack(n);
+            String hay = parent.chapters.buildSearchHaystack(n);
             boolean allMatch = true;
             for (String w : words) {
                 if (!w.startsWith("@") && !hay.contains(w)) {
@@ -385,7 +393,7 @@ public class SearchOverlayScreen extends Screen {
             String d = n.getDescription().getString();
             return d.length() > 72 ? d.substring(0, 70) + "…" : d;
         }
-        String hay = parent.searchCache.computeIfAbsent(n.getId(), id -> parent.buildSearchHaystack(n));
+        String hay = parent.searchCache.computeIfAbsent(n.getId(), id -> parent.chapters.buildSearchHaystack(n));
         for (String w : words) {
             if (w.startsWith("@")) continue;
             int idx = hay.indexOf(w);

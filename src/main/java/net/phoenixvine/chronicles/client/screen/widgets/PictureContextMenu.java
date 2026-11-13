@@ -3,6 +3,7 @@ package net.phoenixvine.chronicles.client.screen.widgets;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.resources.ResourceLocation;
 import net.phoenixvine.chronicles.client.render.*;
+import net.phoenixvine.chronicles.client.render.ChroniclesUIKit;
 import net.phoenixvine.chronicles.client.screen.ChronicleOverviewScreen;
 import net.phoenixvine.chronicles.client.screen.utils.ScreenContext;
 import net.phoenixvine.chronicles.client.util.BackgroundPictureConfig;
@@ -26,9 +27,14 @@ public class PictureContextMenu implements TogglePanel {
     private static final String[] ROTATE_NAMES = { "Reset to 0°", "Clockwise 90°", "Counter-clockwise 90°",
             "Flip 180°", "Clockwise 45°", "Counter-clockwise 45°", "Clockwise 15°", "Counter-clockwise 15°" };
     private static final float[] ROTATE_DELTAS = { Float.NaN, 90f, -90f, 180f, 45f, -45f, 15f, -15f };
-    private static final String[] PARALLAX_NAMES = { "Fixed to screen  §8(0)", "Far away  §8(0.25)",
-            "Distant  §8(0.5)", "Slightly behind  §8(0.75)", "With the quests  §8(1)", "Near  §8(1.25)",
-            "Foreground  §8(1.5)" };
+    private static final String[] PARALLAX_NAMES = {
+            ChroniclesUIKit.str("phoenix_chronicles.screen.picture_context_menu.fixed_to_screen_0"),
+            ChroniclesUIKit.str("phoenix_chronicles.screen.picture_context_menu.far_away_0_25"),
+            ChroniclesUIKit.str("phoenix_chronicles.screen.picture_context_menu.distant_0_5"),
+            ChroniclesUIKit.str("phoenix_chronicles.screen.picture_context_menu.slightly_behind_0_75"),
+            ChroniclesUIKit.str("phoenix_chronicles.screen.picture_context_menu.with_the_quests_1"),
+            ChroniclesUIKit.str("phoenix_chronicles.screen.picture_context_menu.near_1_25"),
+            ChroniclesUIKit.str("phoenix_chronicles.screen.picture_context_menu.foreground_1_5") };
     private static final float[] PARALLAX_VALUES = { 0f, 0.25f, 0.5f, 0.75f, 1f, 1.25f, 1.5f };
     private static final int MENU_H = 4 + CTX_ROW * 9 + CTX_SEP;
 
@@ -129,17 +135,24 @@ public class PictureContextMenu implements TogglePanel {
         g.fill(x + CTX_W - 1, y, x + CTX_W, y + menuH, ChronicleOverviewScreen.C_CTX_BORDER);
 
         int iy = y + 2;
-        iy = drawRow(g, x, iy, "Move  §8(shift+drag)", "§7", false, mx, my);
-        iy = drawRow(g, x, iy, "Resize  ▸", "§7", false, mx, my);
-        iy = drawRow(g, x, iy, "Resize (scroll + drag)…", "§7", false, mx, my);
-        iy = drawRow(g, x, iy, "Opacity  ▸", "§7", false, mx, my);
-        iy = drawRow(g, x, iy, "Tint  ▸", "§7", false, mx, my);
-        iy = drawRow(g, x, iy, "Rotate  ▸", "§7", false, mx, my);
-        iy = drawRow(g, x, iy, "Parallax  ▸", "§7", false, mx, my);
-        iy = drawRow(g, x, iy, "Move to Chapter  ▸", "§7", false, mx, my);
+        iy = drawRow(g, x, iy, ChroniclesUIKit.str("phoenix_chronicles.screen.picture_context_menu.move_shift_drag"),
+                "§7", false, mx, my);
+        iy = drawRow(g, x, iy, ChroniclesUIKit.str("phoenix_chronicles.screen.picture_context_menu.resize"), "§7",
+                false, mx, my);
+        iy = drawRow(g, x, iy, ChroniclesUIKit.str("phoenix_chronicles.ui.resize_scroll_drag"), "§7", false, mx, my);
+        iy = drawRow(g, x, iy, ChroniclesUIKit.str("phoenix_chronicles.screen.picture_context_menu.opacity"), "§7",
+                false, mx, my);
+        iy = drawRow(g, x, iy, ChroniclesUIKit.str("phoenix_chronicles.screen.picture_context_menu.tint"), "§7", false,
+                mx, my);
+        iy = drawRow(g, x, iy, ChroniclesUIKit.str("phoenix_chronicles.screen.picture_context_menu.rotate"), "§7",
+                false, mx, my);
+        iy = drawRow(g, x, iy, ChroniclesUIKit.str("phoenix_chronicles.screen.picture_context_menu.parallax"), "§7",
+                false, mx, my);
+        iy = drawRow(g, x, iy, ChroniclesUIKit.str("phoenix_chronicles.ui.move_to_chapter"), "§7", false, mx, my);
         g.fill(x + 6, iy + 2, x + CTX_W - 6, iy + 3, ChronicleOverviewScreen.C_CTX_SEP);
         iy += CTX_SEP;
-        drawRow(g, x, iy, "Delete picture", "§c", true, mx, my);
+        drawRow(g, x, iy, ChroniclesUIKit.str("phoenix_chronicles.screen.picture_context_menu.delete_picture"), "§c",
+                true, mx, my);
 
         if (resizeOpen) renderResizeSubmenu(g, x, y + 2 + CTX_ROW, mx, my);
         if (opacityOpen) renderOpacitySubmenu(g, x, y + 2 + CTX_ROW * 3, mx, my);
@@ -162,7 +175,8 @@ public class PictureContextMenu implements TogglePanel {
         ChroniclesUIKit.drawBorder(g, subX, subY, CTX_W, subH, ChronicleOverviewScreen.C_CTX_BORDER);
         int sy = subY + 2;
         if (nativeSz != null) {
-            drawRow(g, subX, sy, "§b" + nativeSz[0] + "x" + nativeSz[1] + " §8(native)", "", false, mx, my);
+            drawRow(g, subX, sy, ChroniclesUIKit.str("phoenix_chronicles.screen.picture_context_menu.x_native",
+                    nativeSz[0], nativeSz[1]), "", false, mx, my);
             sy += CTX_ROW;
         }
         for (int size : RESIZE_PRESETS) {
@@ -177,7 +191,7 @@ public class PictureContextMenu implements TogglePanel {
     private ResourceLocation texture() {
         if (target == null || target.texture == null || target.texture.isBlank()) return null;
         try {
-            return ResourceLocation.parse(target.texture);
+            return new ResourceLocation(target.texture);
         } catch (Exception e) {
             return null;
         }
@@ -220,7 +234,9 @@ public class PictureContextMenu implements TogglePanel {
         g.fill(subX, subY, subX + CTX_W, subY + subH, ChronicleOverviewScreen.C_CTX_BG);
         ChroniclesUIKit.drawBorder(g, subX, subY, CTX_W, subH, ChronicleOverviewScreen.C_CTX_BORDER);
         int sy = subY + 2;
-        String current = target != null ? "§b" + Math.round(target.rotation) + "° §8now" : "";
+        String current = target != null ?
+                ChroniclesUIKit.str("phoenix_chronicles.screen.picture_context_menu.now", Math.round(target.rotation)) :
+                "";
         g.drawString(ctx.font(), current, subX + CTX_W - 6 - ctx.font().width(current.replaceAll("§.", "")),
                 subY - 9, ChronicleOverviewScreen.C_CTX_TEXT);
         for (String name : ROTATE_NAMES) {
@@ -255,7 +271,9 @@ public class PictureContextMenu implements TogglePanel {
         ChroniclesUIKit.drawBorder(g, subX, subY, CTX_W, subH, ChronicleOverviewScreen.C_CTX_BORDER);
         int sy = subY + 2;
         if (cats.isEmpty()) {
-            g.drawString(ctx.font(), "§8(no other chapters)", subX + 6, sy + 4,
+            g.drawString(ctx.font(),
+                    ChroniclesUIKit.str("phoenix_chronicles.screen.picture_context_menu.no_other_chapters"), subX + 6,
+                    sy + 4,
                     ChronicleOverviewScreen.C_CTX_TEXT);
         }
         for (String cat : cats) {
@@ -272,173 +290,219 @@ public class PictureContextMenu implements TogglePanel {
     private boolean handleClick(int mx, int my) {
         if (target == null) return false;
         BackgroundPictureConfig.Picture pic = target;
-        int x = this.x, y = this.y;
 
-        if (resizeOpen) {
-            ResourceLocation nativeLoc = texture();
-            int[] nativeSz = nativeLoc != null ? CustomTextureCache.nativeSize(nativeLoc) : null;
-            int subX = x + CTX_W + 2;
-            int sy = y + 2 + CTX_ROW;
-            if (nativeSz != null) {
-                if (mx >= subX && mx <= subX + CTX_W && my >= sy && my <= sy + CTX_ROW) {
-                    applyResize(pic, nativeSz[0], nativeSz[1]);
-                    return true;
-                }
-                sy += CTX_ROW;
+        if (resizeOpen && handleResizeSubmenuClick(mx, my, pic)) return true;
+        if (opacityOpen && handleOpacitySubmenuClick(mx, my, pic)) return true;
+        if (tintOpen && handleTintSubmenuClick(mx, my, pic)) return true;
+        if (parallaxOpen && handleParallaxSubmenuClick(mx, my, pic)) return true;
+        if (rotateOpen && handleRotateSubmenuClick(mx, my, pic)) return true;
+        if (moveCatOpen && handleMoveChapterSubmenuClick(mx, my, pic)) return true;
+
+        return handleMainMenuClick(mx, my, pic);
+    }
+
+    private boolean handleResizeSubmenuClick(int mx, int my, BackgroundPictureConfig.Picture pic) {
+        int x = this.x, y = this.y;
+        ResourceLocation nativeLoc = texture();
+        int[] nativeSz = nativeLoc != null ? CustomTextureCache.nativeSize(nativeLoc) : null;
+        int subX = x + CTX_W + 2;
+        int sy = y + 2 + CTX_ROW;
+        if (nativeSz != null) {
+            if (mx >= subX && mx <= subX + CTX_W && my >= sy && my <= sy + CTX_ROW) {
+                applyResize(pic, nativeSz[0], nativeSz[1]);
+                return true;
             }
-            for (int i = 0; i < RESIZE_PRESETS.length; i++) {
-                int ry = sy + i * CTX_ROW;
-                if (mx >= subX && mx <= subX + CTX_W && my >= ry && my <= ry + CTX_ROW) {
-                    int size = RESIZE_PRESETS[i];
-                    applyResize(pic, size, size);
-                    return true;
-                }
-            }
-            if (mx < x || mx > x + CTX_W + 2 + CTX_W || my < y || my > y + MENU_H) {
-                close();
+            sy += CTX_ROW;
+        }
+        for (int i = 0; i < RESIZE_PRESETS.length; i++) {
+            int ry = sy + i * CTX_ROW;
+            if (mx >= subX && mx <= subX + CTX_W && my >= ry && my <= ry + CTX_ROW) {
+                int size = RESIZE_PRESETS[i];
+                applyResize(pic, size, size);
                 return true;
             }
         }
-        if (opacityOpen) {
-            int subX = x + CTX_W + 2;
-            int sy = y + 2 + CTX_ROW * 3;
-            for (int pct : OPACITY_PRESETS) {
-                if (mx >= subX && mx <= subX + CTX_W && my >= sy && my <= sy + CTX_ROW) {
-                    final float oldOpacity = pic.opacity;
-                    final float newOpacity = pct / 100f;
-                    ctx.pushUndo("Undo: picture opacity reverted", () -> {
-                        pic.opacity = oldOpacity;
-                        BackgroundPictureConfig.save();
-                    }, () -> {
-                        pic.opacity = newOpacity;
-                        BackgroundPictureConfig.save();
-                    });
-                    pic.opacity = pct / 100f;
-                    BackgroundPictureConfig.save();
-                    ctx.setFeedbackDone("Picture opacity set to %d%%", pct);
-                    close();
-                    return true;
-                }
-                sy += CTX_ROW;
-            }
-            if (mx < x || mx > x + CTX_W + 2 + CTX_W || my < y || my > y + MENU_H) {
+        if (mx < x || mx > x + CTX_W + 2 + CTX_W || my < y || my > y + MENU_H) {
+            close();
+            return true;
+        }
+        return false;
+    }
+
+    private boolean handleOpacitySubmenuClick(int mx, int my, BackgroundPictureConfig.Picture pic) {
+        int x = this.x, y = this.y;
+        int subX = x + CTX_W + 2;
+        int sy = y + 2 + CTX_ROW * 3;
+        for (int pct : OPACITY_PRESETS) {
+            if (mx >= subX && mx <= subX + CTX_W && my >= sy && my <= sy + CTX_ROW) {
+                final float oldOpacity = pic.opacity;
+                final float newOpacity = pct / 100f;
+                ctx.pushUndo(ChroniclesUIKit
+                        .str("phoenix_chronicles.screen.picture_context_menu.undo_picture_opacity_reverted"), () -> {
+                            pic.opacity = oldOpacity;
+                            BackgroundPictureConfig.save();
+                        }, () -> {
+                            pic.opacity = newOpacity;
+                            BackgroundPictureConfig.save();
+                        });
+                pic.opacity = pct / 100f;
+                BackgroundPictureConfig.save();
+                ctx.setFeedbackDone(ChroniclesUIKit
+                        .label("phoenix_chronicles.screen.picture_context_menu.picture_opacity_set_to_d"), pct);
                 close();
                 return true;
             }
+            sy += CTX_ROW;
         }
-        if (tintOpen) {
-            int subX = x + CTX_W + 2, subY = y + 2 + CTX_ROW * 4;
-            int sy = subY;
-            for (int i = 0; i < TINT_PRESETS.length; i++) {
-                if (mx >= subX && mx <= subX + CTX_W && my >= sy && my <= sy + CTX_ROW) {
-                    final int oldColor = pic.color;
-                    final int newColor = TINT_PRESETS[i];
-                    ctx.pushUndo("Undo: picture tint reverted", () -> {
-                        pic.color = oldColor;
-                        BackgroundPictureConfig.save();
-                    }, () -> {
-                        pic.color = newColor;
-                        BackgroundPictureConfig.save();
-                    });
-                    pic.color = newColor;
-                    BackgroundPictureConfig.save();
-                    ctx.setFeedbackDone("Picture tint set to %s", TINT_NAMES[i]);
-                    close();
-                    return true;
-                }
-                sy += CTX_ROW;
-            }
-            if (mx < x || mx > x + CTX_W + 2 + CTX_W || my < y || my > y + MENU_H) {
+        if (mx < x || mx > x + CTX_W + 2 + CTX_W || my < y || my > y + MENU_H) {
+            close();
+            return true;
+        }
+        return false;
+    }
+
+    private boolean handleTintSubmenuClick(int mx, int my, BackgroundPictureConfig.Picture pic) {
+        int x = this.x, y = this.y;
+        int subX = x + CTX_W + 2, subY = y + 2 + CTX_ROW * 4;
+        int sy = subY;
+        for (int i = 0; i < TINT_PRESETS.length; i++) {
+            if (mx >= subX && mx <= subX + CTX_W && my >= sy && my <= sy + CTX_ROW) {
+                final int oldColor = pic.color;
+                final int newColor = TINT_PRESETS[i];
+                ctx.pushUndo(ChroniclesUIKit
+                        .str("phoenix_chronicles.screen.picture_context_menu.undo_picture_tint_reverted"), () -> {
+                            pic.color = oldColor;
+                            BackgroundPictureConfig.save();
+                        }, () -> {
+                            pic.color = newColor;
+                            BackgroundPictureConfig.save();
+                        });
+                pic.color = newColor;
+                BackgroundPictureConfig.save();
+                ctx.setFeedbackDone(
+                        ChroniclesUIKit.label("phoenix_chronicles.screen.picture_context_menu.picture_tint_set_to"),
+                        TINT_NAMES[i]);
                 close();
                 return true;
             }
+            sy += CTX_ROW;
         }
-        if (parallaxOpen) {
-            int subX = x + CTX_W + 2;
-            int sy = y + 2 + CTX_ROW * 6 + 2;
-            for (int i = 0; i < PARALLAX_VALUES.length; i++) {
-                if (mx >= subX && mx <= subX + CTX_W && my >= sy && my <= sy + CTX_ROW) {
-                    final float oldParallax = pic.parallax;
-                    final float newParallax = PARALLAX_VALUES[i];
-                    pic.parallax = newParallax;
-                    ctx.pushUndo("Undo: picture parallax reverted", () -> {
-                        pic.parallax = oldParallax;
-                        BackgroundPictureConfig.save();
-                    }, () -> {
-                        pic.parallax = newParallax;
-                        BackgroundPictureConfig.save();
-                    });
-                    BackgroundPictureConfig.save();
-                    ctx.setFeedbackDone("Picture parallax set to %s", String.valueOf(newParallax));
-                    close();
-                    return true;
-                }
-                sy += CTX_ROW;
-            }
-            if (mx < x || mx > x + CTX_W + 2 + CTX_W || my < y || my > y + MENU_H) {
+        if (mx < x || mx > x + CTX_W + 2 + CTX_W || my < y || my > y + MENU_H) {
+            close();
+            return true;
+        }
+        return false;
+    }
+
+    private boolean handleParallaxSubmenuClick(int mx, int my, BackgroundPictureConfig.Picture pic) {
+        int x = this.x, y = this.y;
+        int subX = x + CTX_W + 2;
+        int sy = y + 2 + CTX_ROW * 6 + 2;
+        for (int i = 0; i < PARALLAX_VALUES.length; i++) {
+            if (mx >= subX && mx <= subX + CTX_W && my >= sy && my <= sy + CTX_ROW) {
+                final float oldParallax = pic.parallax;
+                final float newParallax = PARALLAX_VALUES[i];
+                pic.parallax = newParallax;
+                ctx.pushUndo(
+                        ChroniclesUIKit
+                                .str("phoenix_chronicles.screen.picture_context_menu.undo_picture_parallax_reverted"),
+                        () -> {
+                            pic.parallax = oldParallax;
+                            BackgroundPictureConfig.save();
+                        }, () -> {
+                            pic.parallax = newParallax;
+                            BackgroundPictureConfig.save();
+                        });
+                BackgroundPictureConfig.save();
+                ctx.setFeedbackDone(
+                        ChroniclesUIKit.label("phoenix_chronicles.screen.picture_context_menu.picture_parallax_set_to"),
+                        String.valueOf(newParallax));
                 close();
                 return true;
             }
+            sy += CTX_ROW;
         }
-        if (rotateOpen) {
-            int subX = x + CTX_W + 2;
-            int sy = y + 2 + CTX_ROW * 5 + 2;
-            for (int i = 0; i < ROTATE_DELTAS.length; i++) {
-                if (mx >= subX && mx <= subX + CTX_W && my >= sy && my <= sy + CTX_ROW) {
-                    final float oldRotation = pic.rotation;
-                    float delta = ROTATE_DELTAS[i];
-                    if (Float.isNaN(delta)) pic.rotation = 0f;
-                    else pic.rotateBy(delta);
-                    final float newRotation = pic.rotation;
-                    ctx.pushUndo("Undo: picture rotation reverted", () -> {
-                        pic.rotation = oldRotation;
-                        BackgroundPictureConfig.save();
-                    }, () -> {
-                        pic.rotation = newRotation;
-                        BackgroundPictureConfig.save();
-                    });
-                    BackgroundPictureConfig.save();
-                    ctx.setFeedbackDone("Picture rotated to %d°", Math.round(newRotation));
-                    close();
-                    return true;
-                }
-                sy += CTX_ROW;
-            }
-            if (mx < x || mx > x + CTX_W + 2 + CTX_W || my < y || my > y + MENU_H) {
+        if (mx < x || mx > x + CTX_W + 2 + CTX_W || my < y || my > y + MENU_H) {
+            close();
+            return true;
+        }
+        return false;
+    }
+
+    private boolean handleRotateSubmenuClick(int mx, int my, BackgroundPictureConfig.Picture pic) {
+        int x = this.x, y = this.y;
+        int subX = x + CTX_W + 2;
+        int sy = y + 2 + CTX_ROW * 5 + 2;
+        for (int i = 0; i < ROTATE_DELTAS.length; i++) {
+            if (mx >= subX && mx <= subX + CTX_W && my >= sy && my <= sy + CTX_ROW) {
+                final float oldRotation = pic.rotation;
+                float delta = ROTATE_DELTAS[i];
+                if (Float.isNaN(delta)) pic.rotation = 0f;
+                else pic.rotateBy(delta);
+                final float newRotation = pic.rotation;
+                ctx.pushUndo(
+                        ChroniclesUIKit
+                                .str("phoenix_chronicles.screen.picture_context_menu.undo_picture_rotation_reverted"),
+                        () -> {
+                            pic.rotation = oldRotation;
+                            BackgroundPictureConfig.save();
+                        }, () -> {
+                            pic.rotation = newRotation;
+                            BackgroundPictureConfig.save();
+                        });
+                BackgroundPictureConfig.save();
+                ctx.setFeedbackDone(
+                        ChroniclesUIKit.label("phoenix_chronicles.screen.picture_context_menu.picture_rotated_to_d"),
+                        Math.round(newRotation));
                 close();
                 return true;
             }
+            sy += CTX_ROW;
         }
-        if (moveCatOpen) {
-            List<String> cats = ctx.buildChapterList();
-            cats.remove("ALL");
-            cats.remove(ctx.selectedChapter());
-            int subX = x + CTX_W + 2, subY = y + 2 + CTX_ROW * 7;
-            int sy = subY + 2;
-            for (String cat : cats) {
-                if (mx >= subX && mx <= subX + CTX_W && my >= sy && my <= sy + CTX_ROW) {
-                    final String oldCat = ctx.selectedChapter();
-                    final String newCat = cat;
-                    ctx.pushUndo("Undo: picture moved back to %s".formatted(ctx.friendly(oldCat)), () -> {
-                        BackgroundPictureConfig.remove(newCat, pic);
-                        BackgroundPictureConfig.add(oldCat, pic);
-                    }, () -> {
-                        BackgroundPictureConfig.remove(oldCat, pic);
-                        BackgroundPictureConfig.add(newCat, pic);
-                    });
+        if (mx < x || mx > x + CTX_W + 2 + CTX_W || my < y || my > y + MENU_H) {
+            close();
+            return true;
+        }
+        return false;
+    }
+
+    private boolean handleMoveChapterSubmenuClick(int mx, int my, BackgroundPictureConfig.Picture pic) {
+        int x = this.x, y = this.y;
+        List<String> cats = ctx.buildChapterList();
+        cats.remove("ALL");
+        cats.remove(ctx.selectedChapter());
+        int subX = x + CTX_W + 2, subY = y + 2 + CTX_ROW * 7;
+        int sy = subY + 2;
+        for (String cat : cats) {
+            if (mx >= subX && mx <= subX + CTX_W && my >= sy && my <= sy + CTX_ROW) {
+                final String oldCat = ctx.selectedChapter();
+                final String newCat = cat;
+                ctx.pushUndo("Undo: picture moved back to %s".formatted(ctx.friendly(oldCat)), () -> {
+                    BackgroundPictureConfig.remove(newCat, pic);
+                    BackgroundPictureConfig.add(oldCat, pic);
+                }, () -> {
                     BackgroundPictureConfig.remove(oldCat, pic);
                     BackgroundPictureConfig.add(newCat, pic);
-                    ctx.setFeedbackDone("Picture moved to %s", ctx.friendly(newCat));
-                    close();
-                    return true;
-                }
-                sy += CTX_ROW;
-            }
-            if (mx < x || mx > x + CTX_W + 2 + CTX_W || my < y || my > y + MENU_H) {
+                });
+                BackgroundPictureConfig.remove(oldCat, pic);
+                BackgroundPictureConfig.add(newCat, pic);
+                ctx.setFeedbackDone(
+                        ChroniclesUIKit.label("phoenix_chronicles.screen.picture_context_menu.picture_moved_to"),
+                        ctx.friendly(newCat));
                 close();
                 return true;
             }
+            sy += CTX_ROW;
         }
+        if (mx < x || mx > x + CTX_W + 2 + CTX_W || my < y || my > y + MENU_H) {
+            close();
+            return true;
+        }
+        return false;
+    }
+
+    private boolean handleMainMenuClick(int mx, int my, BackgroundPictureConfig.Picture pic) {
+        int x = this.x, y = this.y;
 
         int rowY0 = y + 2;
         int rowY1 = rowY0 + CTX_ROW;
@@ -456,7 +520,8 @@ public class PictureContextMenu implements TogglePanel {
         }
         if (my >= rowY0 && my < rowY0 + CTX_ROW) {
 
-            ctx.setFeedback("Shift-click and drag the picture");
+            ctx.setFeedback(
+                    ChroniclesUIKit.str("phoenix_chronicles.screen.picture_context_menu.shift_click_and_drag_the"));
             close();
             return true;
         }
@@ -471,7 +536,7 @@ public class PictureContextMenu implements TogglePanel {
         if (my >= rowY2 && my < rowY2 + CTX_ROW) {
 
             ctx.setPictureEditMode(pic);
-            ctx.setFeedback("§eScroll to resize, drag to move - right-click or Esc to finish");
+            ctx.setFeedback(ChroniclesUIKit.str("phoenix_chronicles.ui.scroll_to_resize_drag_to"));
             close();
             return true;
         }
@@ -521,10 +586,11 @@ public class PictureContextMenu implements TogglePanel {
         if (my >= rowY6 && my < rowY6 + CTX_ROW) {
             final BackgroundPictureConfig.Picture deleted = pic;
             final String cat = ctx.selectedChapter();
-            ctx.pushUndo("Undo: picture restored", () -> BackgroundPictureConfig.add(cat, deleted),
+            ctx.pushUndo(ChroniclesUIKit.str("phoenix_chronicles.screen.picture_context_menu.undo_picture_restored"),
+                    () -> BackgroundPictureConfig.add(cat, deleted),
                     () -> BackgroundPictureConfig.remove(cat, deleted));
             BackgroundPictureConfig.remove(cat, deleted);
-            ctx.setFeedbackDone("Picture deleted");
+            ctx.setFeedbackDone(ChroniclesUIKit.str("phoenix_chronicles.screen.picture_context_menu.picture_deleted"));
             close();
             return true;
         }
@@ -534,7 +600,7 @@ public class PictureContextMenu implements TogglePanel {
 
     private void applyResize(BackgroundPictureConfig.@NotNull Picture pic, float w, float h) {
         final float oldW = pic.w, oldH = pic.h;
-        ctx.pushUndo("Undo: picture resized", () -> {
+        ctx.pushUndo(ChroniclesUIKit.str("phoenix_chronicles.screen.picture_context_menu.undo_picture_resized"), () -> {
             pic.w = oldW;
             pic.h = oldH;
             BackgroundPictureConfig.save();
@@ -546,7 +612,7 @@ public class PictureContextMenu implements TogglePanel {
         pic.w = w;
         pic.h = h;
         BackgroundPictureConfig.save();
-        ctx.setFeedbackDone("Picture resized");
+        ctx.setFeedbackDone(ChroniclesUIKit.str("phoenix_chronicles.screen.picture_context_menu.picture_resized"));
         close();
     }
 }

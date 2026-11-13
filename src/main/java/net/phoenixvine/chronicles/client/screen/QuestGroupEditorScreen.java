@@ -64,7 +64,9 @@ public class QuestGroupEditorScreen extends Screen {
 
     public QuestGroupEditorScreen(Screen parent, String chapter, @Nullable QuestGroup existing,
                                   int canvasX, int canvasY) {
-        super(Component.literal(existing == null ? "New Quest Group" : "Edit Quest Group"));
+        super(Component.literal(
+                existing == null ? ChroniclesUIKit.str("phoenix_chronicles.screen.quest_group_editor.new_quest_group") :
+                        ChroniclesUIKit.str("phoenix_chronicles.screen.quest_group_editor.edit_quest_group")));
         this.parent = parent;
         this.chapter = chapter;
         this.existing = existing;
@@ -86,21 +88,22 @@ public class QuestGroupEditorScreen extends Screen {
         int row = dy + 30;
 
         labelBox = new CodeEditBox(font, fieldX, row, fieldW, FIELD_H, Component.empty());
-        labelBox.setHint(Component.literal("§8Group label…"));
+        labelBox.setHint(Component.translatable("phoenix_chronicles.screen.quest_group_editor.group_label"));
         labelBox.setMaxLength(48);
         if (existing != null) labelBox.setValue(existing.getLabel());
         addRenderableWidget(labelBox);
         row += ROW_H;
 
         colorBox = new EditBox(font, fieldX, row, fieldW, FIELD_H, Component.empty());
-        colorBox.setHint(Component.literal("§8#AARRGGBB fill color"));
+        colorBox.setHint(Component.translatable("phoenix_chronicles.screen.quest_group_editor.aarrggbb_fill_color"));
         colorBox.setMaxLength(10);
         colorBox.setValue(existing != null ? QuestGroupManager.formatColor(existing.getColor()) : "#22FFFFFF");
         addRenderableWidget(colorBox);
         row += ROW_H;
 
         borderColorBox = new EditBox(font, fieldX, row, fieldW, FIELD_H, Component.empty());
-        borderColorBox.setHint(Component.literal("§8#AARRGGBB border color"));
+        borderColorBox
+                .setHint(Component.translatable("phoenix_chronicles.screen.quest_group_editor.aarrggbb_border_color"));
         borderColorBox.setMaxLength(10);
         borderColorBox
                 .setValue(existing != null ? QuestGroupManager.formatColor(existing.getBorderColor()) : "#44FFFFFF");
@@ -109,33 +112,34 @@ public class QuestGroupEditorScreen extends Screen {
 
         int halfW = (fieldW - 6) / 2;
         widthBox = new EditBox(font, fieldX, row, halfW, FIELD_H, Component.empty());
-        widthBox.setHint(Component.literal("§8Width"));
+        widthBox.setHint(Component.translatable("phoenix_chronicles.screen.quest_group_editor.width"));
         widthBox.setMaxLength(5);
         widthBox.setValue(String.valueOf(existing != null ? existing.getWidth() : 120));
         addRenderableWidget(widthBox);
         heightBox = new EditBox(font, fieldX + halfW + 6, row, halfW, FIELD_H, Component.empty());
-        heightBox.setHint(Component.literal("§8Height"));
+        heightBox.setHint(Component.translatable("phoenix_chronicles.screen.quest_group_editor.height"));
         heightBox.setMaxLength(5);
         heightBox.setValue(String.valueOf(existing != null ? existing.getHeight() : 80));
         addRenderableWidget(heightBox);
         row += ROW_H;
 
         int iconBtnW = (fieldW - 8) / 3;
-        addRenderableWidget(Button.builder(Component.literal("§7+ Item"), b -> {
+        addRenderableWidget(Button.builder(Component.translatable("phoenix_chronicles.ui.item"), b -> {
             if (minecraft != null) minecraft.setScreen(new ItemPickerScreen(this, stack -> {
                 ResourceLocation id = ForgeRegistries.ITEMS.getKey(stack.getItem());
                 if (id != null) icons.add(new QuestGroup.GroupIcon(QuestGroup.IconKind.ITEM, id.toString()));
             }));
         }).bounds(fieldX, row, iconBtnW, FIELD_H).build());
-        addRenderableWidget(Button.builder(Component.literal("§3+ Fluid"), b -> {
+        addRenderableWidget(Button.builder(Component.translatable("phoenix_chronicles.ui.fluid"), b -> {
             if (minecraft != null) minecraft.setScreen(
                     new FluidPickerScreen(this,
                             fluidId -> icons.add(new QuestGroup.GroupIcon(QuestGroup.IconKind.FLUID, fluidId))));
         }).bounds(fieldX + iconBtnW + 4, row, iconBtnW, FIELD_H).build());
-        addRenderableWidget(Button.builder(Component.literal("§d+ Texture"), b -> {
-            if (minecraft != null) minecraft.setScreen(new TextureBrowserScreen(this,
-                    texId -> icons.add(new QuestGroup.GroupIcon(QuestGroup.IconKind.TEXTURE, texId))));
-        }).bounds(fieldX + (iconBtnW + 4) * 2, row, iconBtnW, FIELD_H).build());
+        addRenderableWidget(
+                Button.builder(Component.translatable("phoenix_chronicles.screen.quest_group_editor.texture"), b -> {
+                    if (minecraft != null) minecraft.setScreen(new TextureBrowserScreen(this,
+                            texId -> icons.add(new QuestGroup.GroupIcon(QuestGroup.IconKind.TEXTURE, texId))));
+                }).bounds(fieldX + (iconBtnW + 4) * 2, row, iconBtnW, FIELD_H).build());
         row += FIELD_H + 6;
 
         iconStripY = row;
@@ -143,11 +147,13 @@ public class QuestGroupEditorScreen extends Screen {
 
         if (PHANTASIA) {
             phantasiaIdBox = new EditBox(font, fieldX, row, fieldW - 60, FIELD_H, Component.empty());
-            phantasiaIdBox.setHint(Component.literal("§8Phantasia machine id (optional)"));
+            phantasiaIdBox.setHint(Component.translatable("phoenix_chronicles.ui.phantasia_machine_id_optional"));
             phantasiaIdBox.setMaxLength(128);
             if (existing != null) phantasiaIdBox.setValue(existing.getPhantasiaMachineId());
             addRenderableWidget(phantasiaIdBox);
-            addRenderableWidget(Button.builder(Component.literal("§7▶ Preview"), b -> refreshPhantasiaPreview())
+            addRenderableWidget(Button
+                    .builder(Component.translatable("phoenix_chronicles.screen.quest_group_editor.preview"),
+                            b -> refreshPhantasiaPreview())
                     .bounds(fieldX + fieldW - 56, row, 56, FIELD_H).build());
             row += ROW_H;
 
@@ -164,16 +170,22 @@ public class QuestGroupEditorScreen extends Screen {
         int btnY = dy + dialogH - 24;
         int btnW = existing != null ? (DIALOG_W - 30) / 3 : (DIALOG_W - 20) / 2;
 
-        addRenderableWidget(Button.builder(Component.literal("§aSave"), b -> onSave())
+        addRenderableWidget(Button.builder(Component.translatable("phoenix_chronicles.ui.save"), b -> onSave())
                 .bounds(dx + 10, btnY, btnW, 14).build());
 
         if (existing != null) {
-            addRenderableWidget(Button.builder(Component.literal("§cDelete"), b -> onDelete())
+            addRenderableWidget(Button
+                    .builder(Component.translatable("phoenix_chronicles.screen.quest_group_editor.delete"),
+                            b -> onDelete())
                     .bounds(dx + 10 + btnW + 5, btnY, btnW, 14).build());
-            addRenderableWidget(Button.builder(Component.literal("§8Cancel"), b -> close())
+            addRenderableWidget(Button
+                    .builder(Component.translatable("phoenix_chronicles.screen.quest_group_editor.cancel"),
+                            b -> close())
                     .bounds(dx + 10 + (btnW + 5) * 2, btnY, btnW, 14).build());
         } else {
-            addRenderableWidget(Button.builder(Component.literal("§8Cancel"), b -> close())
+            addRenderableWidget(Button
+                    .builder(Component.translatable("phoenix_chronicles.screen.quest_group_editor.cancel"),
+                            b -> close())
                     .bounds(dx + 10 + btnW + 5, btnY, btnW, 14).build());
         }
     }
@@ -291,22 +303,29 @@ public class QuestGroupEditorScreen extends Screen {
 
         int row = dy + 30;
 
-        g.drawString(font, "§8Label", dx + 10, row - 11, ChroniclesThemePalette.TEXT_FAINT);
+        g.drawString(font, ChroniclesUIKit.str("phoenix_chronicles.screen.quest_group_editor.label"), dx + 10, row - 11,
+                ChroniclesThemePalette.TEXT_FAINT);
         row += ROW_H;
-        g.drawString(font, "§8Fill color  §7(#AARRGGBB)", dx + 10, row - 11, ChroniclesThemePalette.TEXT_FAINT);
+        g.drawString(font, ChroniclesUIKit.str("phoenix_chronicles.screen.quest_group_editor.fill_color_aarrggbb"),
+                dx + 10, row - 11, ChroniclesThemePalette.TEXT_FAINT);
         row += ROW_H;
-        g.drawString(font, "§8Border color  §7(#AARRGGBB)", dx + 10, row - 11, ChroniclesThemePalette.TEXT_FAINT);
+        g.drawString(font, ChroniclesUIKit.str("phoenix_chronicles.screen.quest_group_editor.border_color_aarrggbb"),
+                dx + 10, row - 11, ChroniclesThemePalette.TEXT_FAINT);
         row += ROW_H;
-        g.drawString(font, "§8Size (W × H)", dx + 10, row - 11, ChroniclesThemePalette.TEXT_FAINT);
+        g.drawString(font, ChroniclesUIKit.str("phoenix_chronicles.screen.quest_group_editor.size_w_h"), dx + 10,
+                row - 11, ChroniclesThemePalette.TEXT_FAINT);
         row += ROW_H;
 
-        g.drawString(font, "§8Icons  §7(click to remove)", dx + 10, row - 8, ChroniclesThemePalette.TEXT_FAINT);
+        g.drawString(font, ChroniclesUIKit.str("phoenix_chronicles.screen.quest_group_editor.icons_click_to_remove"),
+                dx + 10, row - 8, ChroniclesThemePalette.TEXT_FAINT);
         row += FIELD_H + 6;
         renderIconStrip(g, mx, my, dx + 10, iconStripY);
         row += 20;
 
         if (PHANTASIA) {
-            g.drawString(font, "§8Phantasia preview §7(optional)", dx + 10, row - 11,
+            g.drawString(font,
+                    ChroniclesUIKit.str("phoenix_chronicles.screen.quest_group_editor.phantasia_preview_optional"),
+                    dx + 10, row - 11,
                     ChroniclesThemePalette.TEXT_FAINT);
             row += ROW_H;
             renderPhantasiaPreview(g, mx, my, partial);
@@ -315,7 +334,9 @@ public class QuestGroupEditorScreen extends Screen {
 
         row += 6;
 
-        g.drawString(font, "§8Chapter: §7" + friendlyChapter(), dx + 10, row + 2, ChroniclesThemePalette.TEXT_DIM);
+        g.drawString(font,
+                ChroniclesUIKit.str("phoenix_chronicles.screen.quest_group_editor.chapter", friendlyChapter()), dx + 10,
+                row + 2, ChroniclesThemePalette.TEXT_DIM);
 
         if (!errorMsg.isEmpty()) {
             g.drawCenteredString(font, "§c" + errorMsg, dx + DIALOG_W / 2, dy + dialogH - 36, 0xFFCC4444);
@@ -332,7 +353,8 @@ public class QuestGroupEditorScreen extends Screen {
         int sz = 14, gap = 3;
         hoveredIconIndex = -1;
         if (icons.isEmpty()) {
-            g.drawString(font, "§8(none)", x, y + 3, ChroniclesThemePalette.TEXT_FAINT, false);
+            g.drawString(font, ChroniclesUIKit.str("phoenix_chronicles.ui.none"), x, y + 3,
+                    ChroniclesThemePalette.TEXT_FAINT, false);
             return;
         }
         int ix = x;
@@ -377,7 +399,8 @@ public class QuestGroupEditorScreen extends Screen {
         g.fill(previewX, previewY, previewX + previewW, previewY + PREVIEW_H, 0xFF0A0A10);
         ChroniclesUIKit.drawBorder(g, previewX, previewY, previewW, PREVIEW_H, ChroniclesThemePalette.BORDER);
         if (phantasiaPreview == null) {
-            g.drawCenteredString(font, "§8Enter a machine id and press Preview",
+            g.drawCenteredString(font,
+                    ChroniclesUIKit.str("phoenix_chronicles.screen.quest_group_editor.enter_a_machine_id_and"),
                     previewX + previewW / 2, previewY + PREVIEW_H / 2 - 4, ChroniclesThemePalette.TEXT_FAINT);
             return;
         }

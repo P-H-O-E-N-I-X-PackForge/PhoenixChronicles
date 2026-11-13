@@ -2,6 +2,7 @@ package net.phoenixvine.chronicles.client.screen.widgets;
 
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.resources.ResourceLocation;
+import net.phoenixvine.chronicles.client.render.ChroniclesUIKit;
 import net.phoenixvine.chronicles.client.screen.ChronicleOverviewScreen;
 import net.phoenixvine.chronicles.client.screen.utils.ScreenContext;
 import net.phoenixvine.chronicles.common.codec.QuestFileSaver;
@@ -118,7 +119,9 @@ public class ValidationPanel implements TogglePanel {
         g.fill(panX + panW - 1, panY, panX + panW, panY + panH, 0xFFFF4444);
         g.fill(panX, panY + panH - 1, panX + panW, panY + panH, 0xFFFF4444);
 
-        g.drawString(ctx.font(), "§cValidation Issues §8(V to close)", panX + 6, panY + 4, 0xFFFF6666, false);
+        g.drawString(ctx.font(),
+                ChroniclesUIKit.str("phoenix_chronicles.screen.validation_panel.validation_issues_v_to_close"),
+                panX + 6, panY + 4, 0xFFFF6666, false);
         g.fill(panX + 4, panY + 14, panX + panW - 4, panY + 15, 0xFF333344);
 
         int vy = panY + 18;
@@ -141,7 +144,8 @@ public class ValidationPanel implements TogglePanel {
         }
         g.disableScissor();
         if (!any) {
-            g.drawString(ctx.font(), "§aNo issues found!", panX + 6, panY + 20, 0xFF44CC88, false);
+            g.drawString(ctx.font(), ChroniclesUIKit.str("phoenix_chronicles.screen.validation_panel.no_issues_found"),
+                    panX + 6, panY + 20, 0xFF44CC88, false);
         }
         g.disableScissor();
         g.pose().popPose();

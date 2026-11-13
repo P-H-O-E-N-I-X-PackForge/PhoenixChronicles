@@ -83,6 +83,18 @@ public class PhantasiaCompat {
         }
     }
 
+    public static java.util.Collection<String> allMachineIds() {
+        return isAvailable() ? PhantasiaAPI.getAllMachineIds() : null;
+    }
+
+    public static java.util.Collection<String> allSceneIds() {
+        return isAvailable() ? PhantasiaAPI.getAllSceneIds() : null;
+    }
+
+    public static java.util.Collection<String> allGuideIds() {
+        return isAvailable() ? PhantasiaAPI.getAllGuideIds() : null;
+    }
+
     public static boolean canOpenForTask(Object task) {
         if (!isAvailable()) return false;
         if (task instanceof ViewMachineTask vmt) {

@@ -87,7 +87,7 @@ public class CanvasThemeScreen extends Screen {
     private static final ChapterConfig.BgStyle[] STYLES = ChapterConfig.BgStyle.values();
 
     public CanvasThemeScreen(Screen parent, String chapter) {
-        super(Component.literal("Canvas Theme"));
+        super(Component.translatable("phoenix_chronicles.screen.canvas_theme.canvas_theme"));
         this.parent = parent;
         this.chapter = chapter;
 
@@ -152,12 +152,12 @@ public class CanvasThemeScreen extends Screen {
         overrideStyleButtonY.clear();
 
         addRenderableWidget(Button.builder(
-                Component.literal("§8Style: §7" + selectedStyle.name() + " §8▾"),
+                Component.translatable("phoenix_chronicles.ui.style", selectedStyle.name()),
                 b -> styleDropOpen = !styleDropOpen).bounds(fx, rowTop(ROW_STYLE), fw, FIELD_H).build());
 
         colorBox = new EditBox(font, fx, rowTop(ROW_COLOR) + 11, fw, FIELD_H, Component.empty());
         colorBox.setMaxLength(7);
-        colorBox.setHint(Component.literal("§8#RRGGBB  (empty = default)"));
+        colorBox.setHint(Component.translatable("phoenix_chronicles.ui.rrggbb_empty_default"));
         colorBox.setValue(cachedColor != 0 ? ChroniclesUIKit.formatHexColor(cachedColor) : "");
         colorBox.setResponder(v -> cachedColor = ChroniclesUIKit.parseHexColor(v, 0));
         addRenderableWidget(colorBox);
@@ -177,7 +177,7 @@ public class CanvasThemeScreen extends Screen {
             } catch (NumberFormatException ignored) {}
         });
         addRenderableWidget(opacityBox);
-        addRenderableWidget(Button.builder(Component.literal("§7None"), b -> {
+        addRenderableWidget(Button.builder(Component.translatable("phoenix_chronicles.screen.canvas_theme.none"), b -> {
             cachedColorAlpha = 0;
             opacityBox.setValue("0");
         }).bounds(fx + fw - transparentW, opacityRowY + 11, transparentW, FIELD_H).build());
@@ -187,14 +187,14 @@ public class CanvasThemeScreen extends Screen {
         int textureRowY = rowTop(ROW_TEXTURE);
         textureBox = new EditBox(font, fx, textureRowY + 11, fw - browseW - browseGap, FIELD_H, Component.empty());
         textureBox.setMaxLength(256);
-        textureBox.setHint(Component.literal("§8modid:texture.png"));
+        textureBox.setHint(Component.translatable("phoenix_chronicles.screen.canvas_theme.modid_texture_png"));
         textureBox.setValue(cachedTexture);
         textureBox.setResponder(v -> {
             cachedTexture = v.trim();
             if (!cachedTexture.isEmpty()) selectedStyle = ChapterConfig.BgStyle.CUSTOM;
         });
         addRenderableWidget(textureBox);
-        addRenderableWidget(Button.builder(Component.literal("Browse…"), b -> {
+        addRenderableWidget(Button.builder(Component.translatable("phoenix_chronicles.ui.browse"), b -> {
             if (minecraft != null)
                 minecraft.setScreen(new TextureBrowserScreen(this, rl -> {
                     cachedTexture = rl;
@@ -207,14 +207,14 @@ public class CanvasThemeScreen extends Screen {
         int shaderRowY = rowTop(ROW_SHADER);
         shaderBox = new EditBox(font, fx, shaderRowY + 11, fw - browseW - browseGap, FIELD_H, Component.empty());
         shaderBox.setMaxLength(64);
-        shaderBox.setHint(Component.literal("§8shader id  (empty = none)"));
+        shaderBox.setHint(Component.translatable("phoenix_chronicles.ui.shader_id_empty_none"));
         shaderBox.setValue(cachedShaderId);
         shaderBox.setResponder(v -> {
             cachedShaderId = v.trim();
             if (!cachedShaderId.isEmpty()) selectedStyle = ChapterConfig.BgStyle.SHADER;
         });
         addRenderableWidget(shaderBox);
-        addRenderableWidget(Button.builder(Component.literal("Browse…"), b -> {
+        addRenderableWidget(Button.builder(Component.translatable("phoenix_chronicles.ui.browse"), b -> {
             if (minecraft != null)
                 minecraft.setScreen(new ShaderPickerScreen(this, id -> {
                     cachedShaderId = id;
@@ -237,7 +237,7 @@ public class CanvasThemeScreen extends Screen {
 
                 EditBox condBox = new EditBox(font, fx, oy, fw - removeW - 4, FIELD_H, Component.empty());
                 condBox.setMaxLength(128);
-                condBox.setHint(Component.literal("§8condition: e.g. config:pack_mode=expert"));
+                condBox.setHint(Component.translatable("phoenix_chronicles.ui.condition_e_g_config_pack"));
                 condBox.setValue(ov.condition);
                 condBox.setResponder(v -> overrides.get(idx).condition = v.trim());
                 addRenderableWidget(condBox);
@@ -254,7 +254,7 @@ public class CanvasThemeScreen extends Screen {
 
                 overrideStyleButtonY.put(idx, oy);
                 addRenderableWidget(Button.builder(
-                        Component.literal("§8Style: §7" + ov.style.name() + " §8▾"),
+                        Component.translatable("phoenix_chronicles.ui.style", ov.style.name()),
                         b -> openOverrideStyleDropdown = (openOverrideStyleDropdown == idx) ? -1 : idx)
                         .bounds(fx, oy, fw, FIELD_H).build());
 
@@ -262,7 +262,8 @@ public class CanvasThemeScreen extends Screen {
 
                 EditBox texBox = new EditBox(font, fx, oy, fw, FIELD_H, Component.empty());
                 texBox.setMaxLength(256);
-                texBox.setHint(Component.literal("§8modid:texture.png  (CUSTOM only)"));
+                texBox.setHint(
+                        Component.translatable("phoenix_chronicles.screen.canvas_theme.modid_texture_png_custom_only"));
                 texBox.setValue(ov.texture);
                 texBox.setResponder(v -> overrides.get(idx).texture = v.trim());
                 addRenderableWidget(texBox);
@@ -272,7 +273,7 @@ public class CanvasThemeScreen extends Screen {
 
                 EditBox shBox = new EditBox(font, fx, oy, fw, FIELD_H, Component.empty());
                 shBox.setMaxLength(64);
-                shBox.setHint(Component.literal("§8shader id  (SHADER only)"));
+                shBox.setHint(Component.translatable("phoenix_chronicles.screen.canvas_theme.shader_id_shader_only"));
                 shBox.setValue(ov.shaderId);
                 shBox.setResponder(v -> overrides.get(idx).shaderId = v.trim());
                 addRenderableWidget(shBox);
@@ -281,7 +282,7 @@ public class CanvasThemeScreen extends Screen {
                 oy += FIELD_H + ADV_ROW_GAP;
             }
 
-            addRenderableWidget(Button.builder(Component.literal("§7+ Add Override"), b -> {
+            addRenderableWidget(Button.builder(Component.translatable("phoenix_chronicles.ui.add_override"), b -> {
                 overrides.add(new ChapterConfig.CanvasOverride());
                 advScrollRow = maxAdvScrollRow();
                 clearWidgets();
@@ -293,9 +294,9 @@ public class CanvasThemeScreen extends Screen {
 
         int btnY = panelTop + panelH - 10 - 18;
         int half = (fw - 6) / 2;
-        addRenderableWidget(Button.builder(Component.literal("§aSave"), b -> save())
+        addRenderableWidget(Button.builder(Component.translatable("phoenix_chronicles.ui.save"), b -> save())
                 .bounds(fx, btnY, half, 18).build());
-        addRenderableWidget(Button.builder(Component.literal("§7Cancel"),
+        addRenderableWidget(Button.builder(Component.translatable("phoenix_chronicles.ui.cancel"),
                 b -> {
                     if (minecraft != null) minecraft.setScreen(parent);
                 })
@@ -348,33 +349,41 @@ public class CanvasThemeScreen extends Screen {
         g.pose().scale(uiScale, uiScale, 1f);
 
         ChroniclesUIKit.drawModalChrome(g, font, vw, vh, panelLeft, panelTop, PANEL_W, panelH, 22,
-                "§dCanvas Theme: §7" + chapter, ChroniclesThemePalette.PANEL, ChroniclesThemePalette.HEADER,
+                ChroniclesUIKit.str("phoenix_chronicles.screen.canvas_theme.canvas_theme_2", chapter),
+                ChroniclesThemePalette.PANEL, ChroniclesThemePalette.HEADER,
                 ACCENT, ChroniclesThemePalette.TEXT);
 
         int fx = panelLeft + MARGIN;
         int fw = PANEL_W - MARGIN * 2;
 
-        g.drawString(font, "§8Background Color", fx, rowTop(ROW_COLOR), ChroniclesThemePalette.TEXT_FAINT);
-        g.drawString(font, "§8Background Opacity", fx, rowTop(ROW_OPACITY), ChroniclesThemePalette.TEXT_FAINT);
-        g.drawString(font, "§8Custom Background", fx, rowTop(ROW_TEXTURE), ChroniclesThemePalette.TEXT_FAINT);
+        g.drawString(font, ChroniclesUIKit.str("phoenix_chronicles.screen.canvas_theme.background_color"), fx,
+                rowTop(ROW_COLOR), ChroniclesThemePalette.TEXT_FAINT);
+        g.drawString(font, ChroniclesUIKit.str("phoenix_chronicles.screen.canvas_theme.background_opacity"), fx,
+                rowTop(ROW_OPACITY), ChroniclesThemePalette.TEXT_FAINT);
+        g.drawString(font, ChroniclesUIKit.str("phoenix_chronicles.screen.canvas_theme.custom_background"), fx,
+                rowTop(ROW_TEXTURE), ChroniclesThemePalette.TEXT_FAINT);
 
         if (textureBox.isMouseOver(mx, my)) {
-            g.renderComponentTooltip(font, java.util.List.of(Component.literal("§7modid:textures/gui/bg.png"),
-                    Component.literal("§8(CUSTOM style only)")), mx, my);
+            g.renderComponentTooltip(font,
+                    java.util.List.of(Component.translatable("phoenix_chronicles.ui.modid_textures_gui_bg_png"),
+                            Component.translatable("phoenix_chronicles.screen.canvas_theme.custom_style_only")),
+                    mx, my);
         }
 
-        g.drawString(font, "§8Canvas Shader", fx, rowTop(ROW_SHADER), ChroniclesThemePalette.TEXT_FAINT);
+        g.drawString(font, ChroniclesUIKit.str("phoenix_chronicles.screen.canvas_theme.canvas_shader"), fx,
+                rowTop(ROW_SHADER), ChroniclesThemePalette.TEXT_FAINT);
         ChroniclesUIKit.drawShaderWarning(g, font, shaderBox, DynamicShaderManager.lastCompileFailed(cachedShaderId));
         if (shaderBox.isMouseOver(mx, my)) {
             List<Component> tip = new ArrayList<>();
-            tip.add(Component.literal("§7A .frag file's name (no extension) from"));
-            tip.add(Component.literal("§7config/phoenix_chronicles/shaders/"));
-            tip.add(Component.literal("§8(SHADER style only)"));
+            tip.add(Component.translatable("phoenix_chronicles.ui.a_frag_file_s_name"));
+            tip.add(Component.translatable("phoenix_chronicles.ui.config_phoenix_chronicles_shaders"));
+            tip.add(Component.translatable("phoenix_chronicles.screen.canvas_theme.shader_style_only"));
             if (DynamicShaderManager.lastCompileFailed(cachedShaderId)) {
-                tip.add(Component.literal("§c⚠ failed to compile -- check the log for the real error"));
+                tip.add(Component.translatable("phoenix_chronicles.ui.failed_to_compile_check_the"));
             }
             List<String> available = DynamicShaderManager.listAvailable();
-            if (!available.isEmpty()) tip.add(Component.literal("§8Available: §7" + String.join(", ", available)));
+            if (!available.isEmpty())
+                tip.add(Component.translatable("phoenix_chronicles.ui.available", String.join(", ", available)));
             g.renderComponentTooltip(font, tip, mx, my);
         }
 
@@ -403,21 +412,23 @@ public class CanvasThemeScreen extends Screen {
         for (EditBox condBox : overrideConditionBoxes) {
             if (condBox.isMouseOver(mx, my)) {
                 g.renderComponentTooltip(font, java.util.List.of(
-                        Component.literal("§7Evaluated the same way quest-variant conditions are:"),
-                        Component.literal("§7config:<file>#<key>=<value>, kjs:<key>=<value>,"),
-                        Component.literal("§7mod:<modid>, rule:<gamerule>=<value> -- \"!\" negates,"),
-                        Component.literal("§7\",\" is AND, \"|\" is OR."),
-                        Component.literal("§8First override (top to bottom) whose condition is true wins,"),
-                        Component.literal("§8with its whole style/texture/shader taking over as one unit;"),
-                        Component.literal("§8falls back to the base fields above if none match or this"),
-                        Component.literal("§8list is empty.")), mx, my);
+                        Component.translatable("phoenix_chronicles.ui.evaluated_the_same_way_quest"),
+                        Component.translatable("phoenix_chronicles.ui.config_file_key_value_kjs"),
+                        Component.translatable("phoenix_chronicles.ui.mod_modid_rule_gamerule_value"),
+                        Component.translatable("phoenix_chronicles.ui.is_and_is_or"),
+                        Component.translatable("phoenix_chronicles.ui.first_override_top_to_bottom"),
+                        Component.translatable("phoenix_chronicles.ui.with_its_whole_style_texture"),
+                        Component.translatable("phoenix_chronicles.screen.canvas_theme.falls_back_to_the_base"),
+                        Component.translatable("phoenix_chronicles.ui.list_is_empty")), mx, my);
                 break;
             }
         }
         for (EditBox texBox : overrideTextureBoxes) {
             if (texBox.isMouseOver(mx, my)) {
-                g.renderComponentTooltip(font, java.util.List.of(Component.literal("§7modid:textures/gui/bg.png"),
-                        Component.literal("§8(this override's own Style must be CUSTOM)")), mx, my);
+                g.renderComponentTooltip(font,
+                        java.util.List.of(Component.translatable("phoenix_chronicles.ui.modid_textures_gui_bg_png"),
+                                Component.translatable("phoenix_chronicles.ui.this_override_s_own_style")),
+                        mx, my);
                 break;
             }
         }
@@ -427,10 +438,10 @@ public class CanvasThemeScreen extends Screen {
             ChroniclesUIKit.drawShaderWarning(g, font, shBox, DynamicShaderManager.lastCompileFailed(shaderId));
             if (shBox.isMouseOver(mx, my)) {
                 List<Component> tip = new ArrayList<>();
-                tip.add(Component.literal("§7A .frag file's name from config/phoenix_chronicles/shaders/"));
-                tip.add(Component.literal("§8(this override's own Style must be SHADER)"));
+                tip.add(Component.translatable("phoenix_chronicles.ui.a_frag_file_s_name_2"));
+                tip.add(Component.translatable("phoenix_chronicles.ui.this_override_s_own_style_2"));
                 if (DynamicShaderManager.lastCompileFailed(shaderId)) {
-                    tip.add(Component.literal("§c⚠ failed to compile -- check the log for the real error"));
+                    tip.add(Component.translatable("phoenix_chronicles.ui.failed_to_compile_check_the"));
                 }
                 g.renderComponentTooltip(font, tip, mx, my);
                 break;
@@ -490,19 +501,24 @@ public class CanvasThemeScreen extends Screen {
                 }
             }
             case SOLID -> {}
-            case CUSTOM -> g.drawCenteredString(font, "§8custom", x + w / 2, y + h / 2 - 4, 0xFF555566);
+            case CUSTOM -> g.drawCenteredString(font,
+                    ChroniclesUIKit.str("phoenix_chronicles.screen.canvas_theme.custom"), x + w / 2, y + h / 2 - 4,
+                    0xFF555566);
             case SHADER -> {
                 if (cachedShaderId.isBlank()) {
-                    g.drawCenteredString(font, "§8shader", x + w / 2, y + h / 2 - 4, 0xFF555566);
+                    g.drawCenteredString(font, ChroniclesUIKit.str("phoenix_chronicles.screen.canvas_theme.shader"),
+                            x + w / 2, y + h / 2 - 4, 0xFF555566);
                 } else {
                     ShaderInstance shader = DynamicShaderManager.get(cachedShaderId);
                     if (shader != null) {
                         float t = (System.currentTimeMillis() % 3_600_000L) / 1000f;
                         BackgroundRenderUtil.drawDynamicShaderQuad(g, shader, x, y, w, h, t);
                     } else if (DynamicShaderManager.lastCompileFailed(cachedShaderId)) {
-                        g.drawCenteredString(font, "§c⚠ compile error", x + w / 2, y + h / 2 - 4, 0xFFFF5555);
+                        g.drawCenteredString(font, ChroniclesUIKit.str("phoenix_chronicles.ui.compile_error"),
+                                x + w / 2, y + h / 2 - 4, 0xFFFF5555);
                     } else {
-                        g.drawCenteredString(font, "§8not found", x + w / 2, y + h / 2 - 4, 0xFF555566);
+                        g.drawCenteredString(font, ChroniclesUIKit.str("phoenix_chronicles.ui.not_found"), x + w / 2,
+                                y + h / 2 - 4, 0xFF555566);
                     }
                 }
             }

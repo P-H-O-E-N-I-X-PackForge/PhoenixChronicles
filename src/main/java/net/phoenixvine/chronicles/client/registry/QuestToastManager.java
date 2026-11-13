@@ -8,6 +8,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraftforge.registries.ForgeRegistries;
+import net.phoenixvine.chronicles.client.render.ChroniclesUIKit;
 import net.phoenixvine.chronicles.common.codec.QuestChroniclesSettings;
 import net.phoenixvine.chronicles.common.model.QuestGroup;
 import net.phoenixvine.chronicles.common.model.QuestNode;
@@ -286,17 +287,6 @@ public class QuestToastManager {
                 logIfStuck(cfg.phantasiaMachineId, preview);
             }
         }
-    }
-
-    public static float[] computeAutoFitCenter(@NotNull QuestToastConfig cfg) {
-        float tx = cfg.title.x, ty = cfg.title.y;
-        float lx = cfg.label.x, ly = cfg.label.y;
-        float ix = cfg.icon.x, iy = cfg.icon.y;
-        float minX = Math.min(tx, Math.min(lx, ix));
-        float maxX = Math.max(tx, Math.max(lx, ix));
-        float minY = Math.min(ty, Math.min(ly, iy));
-        float maxY = Math.max(ty, Math.max(ly, iy));
-        return new float[] { (minX + maxX) / 2f, (minY + maxY) / 2f };
     }
 
     private static final Map<String, Object> PHANTASIA_PREVIEW_CACHE = new HashMap<>();

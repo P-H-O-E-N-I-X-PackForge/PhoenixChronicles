@@ -3,6 +3,7 @@ package net.phoenixvine.chronicles.client.screen.utils;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.resources.ResourceLocation;
 import net.phoenixvine.chronicles.client.render.*;
+import net.phoenixvine.chronicles.client.render.ChroniclesUIKit;
 import net.phoenixvine.chronicles.client.screen.ChronicleOverviewScreen;
 import net.phoenixvine.chronicles.common.model.QuestNode;
 import net.phoenixvine.chronicles.common.registry.QuestTreeRegistry;
@@ -16,7 +17,7 @@ import java.util.Map;
 public class DragController {
 
     private final ScreenContext ctx;
-    private final DragControllerState state;
+    private final ChronicleOverviewScreen state;
     private final GraphEditorState editorState;
 
     private int lastMoveOrigX = 0, lastMoveOrigY = 0;
@@ -26,7 +27,7 @@ public class DragController {
     private @Nullable QuestNode dragUndoSingleNode;
     private int dragUndoSinglePreX, dragUndoSinglePreY;
 
-    public DragController(ScreenContext ctx, DragControllerState state, GraphEditorState editorState) {
+    public DragController(ScreenContext ctx, ChronicleOverviewScreen state, GraphEditorState editorState) {
         this.ctx = ctx;
         this.state = state;
         this.editorState = editorState;
@@ -122,7 +123,7 @@ public class DragController {
             }
             editorState.bulkDragOrigPositions = null;
             editorState.lastMovedNode = null;
-            ctx.setFeedback("Moved %d quests", count);
+            ctx.setFeedback(ChroniclesUIKit.label("phoenix_chronicles.screen.drag_controller.moved_d_quests"), count);
             if (orig != null && !orig.equals(after)) {
                 ctx.undoRedo().push(
                         () -> applyBulkPositions(orig),

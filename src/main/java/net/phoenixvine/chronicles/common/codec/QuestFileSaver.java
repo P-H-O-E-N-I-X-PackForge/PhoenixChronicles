@@ -791,4 +791,8 @@ public class QuestFileSaver {
             }
         }
     }
+
+    public static String prettySnbt(CompoundTag tag) {
+        return toPrettySnbt(tag);
+    }
 }

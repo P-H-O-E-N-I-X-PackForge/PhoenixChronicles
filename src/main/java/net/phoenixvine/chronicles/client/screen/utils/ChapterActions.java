@@ -3,7 +3,9 @@ package net.phoenixvine.chronicles.client.screen.utils;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.resources.ResourceLocation;
+import net.phoenixvine.chronicles.client.render.ChroniclesUIKit;
 import net.phoenixvine.chronicles.client.screen.*;
+import net.phoenixvine.chronicles.client.screen.ChronicleOverviewScreen;
 import net.phoenixvine.chronicles.client.screen.widgets.SidebarPanel;
 import net.phoenixvine.chronicles.client.util.ChapterConfig;
 import net.phoenixvine.chronicles.common.codec.QuestFileLoader;
@@ -31,13 +33,13 @@ import java.util.Map;
 public class ChapterActions {
 
     private final ScreenContext ctx;
-    private final ChapterActionsState state;
+    private final ChronicleOverviewScreen state;
     private final GraphEditorState editorState;
 
     private @Nullable String armedDeleteCategoryId = null;
     private @Nullable String armedDeleteChapterId = null;
 
-    public ChapterActions(ScreenContext ctx, ChapterActionsState state, GraphEditorState editorState) {
+    public ChapterActions(ScreenContext ctx, ChronicleOverviewScreen state, GraphEditorState editorState) {
         this.ctx = ctx;
         this.state = state;
         this.editorState = editorState;
@@ -46,23 +48,27 @@ public class ChapterActions {
     public void forceCompleteChapterOnRightClick(String chapter) {
         List<ResourceLocation> ids = state.questIdsInChapter(chapter);
         if (ids.isEmpty()) {
-            ctx.setFeedback("§7No quests in '%s'", ctx.friendly(chapter));
+            ctx.setFeedback(ChroniclesUIKit.label("phoenix_chronicles.screen.chapter_actions.no_quests_in"),
+                    ctx.friendly(chapter));
             return;
         }
         ChronicleNetwork.CHANNEL.sendToServer(
                 new C2SBulkQuestActionPacket(ids, C2SBulkQuestActionPacket.Action.FORCE_COMPLETE));
-        ctx.setFeedback("§aForce-completed %d quest(s) in %s", ids.size(), ctx.friendly(chapter));
+        ctx.setFeedback(ChroniclesUIKit.label("phoenix_chronicles.screen.chapter_actions.force_completed_d_quest_s"),
+                ids.size(), ctx.friendly(chapter));
     }
 
     public void resetChapterOnRightClick(String chapter) {
         List<ResourceLocation> ids = state.questIdsInChapter(chapter);
         if (ids.isEmpty()) {
-            ctx.setFeedback("§7No quests in '%s'", ctx.friendly(chapter));
+            ctx.setFeedback(ChroniclesUIKit.label("phoenix_chronicles.screen.chapter_actions.no_quests_in"),
+                    ctx.friendly(chapter));
             return;
         }
         ChronicleNetwork.CHANNEL.sendToServer(
                 new C2SBulkQuestActionPacket(ids, C2SBulkQuestActionPacket.Action.RESET));
-        ctx.setFeedback("§7Reset %d quest(s) in %s", ids.size(), ctx.friendly(chapter));
+        ctx.setFeedback(ChroniclesUIKit.label("phoenix_chronicles.screen.chapter_actions.reset_d_quest_s_in"),
+                ids.size(), ctx.friendly(chapter));
     }
 
     public void forceCompleteCategoryOnRightClick(@NotNull String categoryId) {
@@ -70,12 +76,13 @@ public class ChapterActions {
         CategoryDefinition cat = CategoryRegistry.get(categoryId);
         String label = cat != null ? cat.displayName() : categoryId;
         if (ids.isEmpty()) {
-            ctx.setFeedback("§7No quests in '%s'", label);
+            ctx.setFeedback(ChroniclesUIKit.label("phoenix_chronicles.screen.chapter_actions.no_quests_in"), label);
             return;
         }
         ChronicleNetwork.CHANNEL.sendToServer(
                 new C2SBulkQuestActionPacket(ids, C2SBulkQuestActionPacket.Action.FORCE_COMPLETE));
-        ctx.setFeedback("§aForce-completed %d quest(s) in %s", ids.size(), label);
+        ctx.setFeedback(ChroniclesUIKit.label("phoenix_chronicles.screen.chapter_actions.force_completed_d_quest_s"),
+                ids.size(), label);
     }
 
     public void resetCategoryOnRightClick(@NotNull String categoryId) {
@@ -83,12 +90,13 @@ public class ChapterActions {
         CategoryDefinition cat = CategoryRegistry.get(categoryId);
         String label = cat != null ? cat.displayName() : categoryId;
         if (ids.isEmpty()) {
-            ctx.setFeedback("§7No quests in '%s'", label);
+            ctx.setFeedback(ChroniclesUIKit.label("phoenix_chronicles.screen.chapter_actions.no_quests_in"), label);
             return;
         }
         ChronicleNetwork.CHANNEL.sendToServer(
                 new C2SBulkQuestActionPacket(ids, C2SBulkQuestActionPacket.Action.RESET));
-        ctx.setFeedback("§7Reset %d quest(s) in %s", ids.size(), label);
+        ctx.setFeedback(ChroniclesUIKit.label("phoenix_chronicles.screen.chapter_actions.reset_d_quest_s_in"),
+                ids.size(), label);
     }
 
     public void deleteChapter(@NotNull String chapter) {
@@ -191,7 +199,8 @@ public class ChapterActions {
 
         applyDelete.run();
         String countSuffix = questCount > 0 ? " (%d quests)".formatted(questCount) : "";
-        ctx.setFeedbackDone("Chapter deleted: %s%s", chapter, countSuffix);
+        ctx.setFeedbackDone(ChroniclesUIKit.label("phoenix_chronicles.screen.chapter_actions.chapter_deleted"), chapter,
+                countSuffix);
     }
 
     public void deleteCategoryOnRightClick(@NotNull String categoryId) {
@@ -200,8 +209,19 @@ public class ChapterActions {
 
         if (!cat.chapters().isEmpty() && !categoryId.equals(armedDeleteCategoryId)) {
             armedDeleteCategoryId = categoryId;
-            ctx.setFeedback("§6Right-click '%s' -> Delete Category again to confirm §7(%d chapter(s) will become " +
-                    "uncategorized, not deleted themselves)", cat.displayName(), cat.chapters().size());
+            ctx.setFeedback(
+                    ChroniclesUIKit
+                            .label("phoenix_chronicles.screen.chapter_actions.right_click_delete_category_again"),
+                    cat.displayName(), cat.chapters().size());
+            return;
+        }
+        if (cat.chapters().isEmpty() && !CategoryRegistry.childrenOf(categoryId).isEmpty() &&
+                !categoryId.equals(armedDeleteCategoryId)) {
+            armedDeleteCategoryId = categoryId;
+            ctx.setFeedback(
+                    ChroniclesUIKit
+                            .label("phoenix_chronicles.screen.chapter_actions.right_click_delete_category_again_2"),
+                    cat.displayName());
             return;
         }
 
@@ -212,21 +232,48 @@ public class ChapterActions {
         state.invalidateChapterCaches();
         state.rebuild();
         String uncatSuffix = chapterCount > 0 ? " (%d chapter(s) uncategorized)".formatted(chapterCount) : "";
-        ctx.setFeedback("§aCategory deleted: %s%s", cat.displayName(), uncatSuffix);
+        ctx.setFeedback(ChroniclesUIKit.label("phoenix_chronicles.screen.chapter_actions.category_deleted"),
+                cat.displayName(), uncatSuffix);
     }
 
     public void deleteChapterOnRightClick(@NotNull String chapter) {
         int questCount = state.chapterQuestCount(chapter);
         if (questCount > 0 && !chapter.equals(armedDeleteChapterId)) {
             armedDeleteChapterId = chapter;
-            ctx.setFeedback("§6Right-click '%s' -> Delete Chapter again to confirm §7(%d quest(s) will be deleted)",
+            ctx.setFeedback(
+                    ChroniclesUIKit.label("phoenix_chronicles.screen.chapter_actions.right_click_delete_chapter_again"),
                     ctx.friendly(chapter), questCount);
             return;
         }
 
         armedDeleteChapterId = null;
         deleteChapter(chapter);
-        ctx.setFeedback("§aChapter deleted: %s", ctx.friendly(chapter));
+        ctx.setFeedback(ChroniclesUIKit.label("phoenix_chronicles.screen.chapter_actions.chapter_deleted_2"),
+                ctx.friendly(chapter));
+    }
+
+    private void openPasteScreen(@NotNull Screen parent, @Nullable String destCategoryId) {
+        Minecraft.getInstance().setScreen(new PasteCategoryScreen(parent, destCategoryId, result -> {
+            if (result.newRootId() == null) {
+                ctx.setFeedback(ChroniclesUIKit.str("phoenix_chronicles.screen.chapter_actions.can_t_paste_there_too"));
+                return;
+            }
+            if (destCategoryId != null && CategoryRegistry.isCollapsed(destCategoryId))
+                CategoryRegistry.toggleCollapsed(destCategoryId);
+            CategoryRegistry.save();
+            state.invalidateChapterCaches();
+            state.rebuild();
+            if (!result.warnings().isEmpty()) {
+                ctx.setFeedback(ChroniclesUIKit.label("phoenix_chronicles.screen.chapter_actions.pasted_d_chapter_s_d"),
+                        CategoryRegistry.pathLabel(result.newRootId()), result.chapters(), result.quests(),
+                        result.warnings().size());
+                for (String w : result.warnings()) System.err.println("[Phoenix Chronicles] Paste: " + w);
+            } else {
+                ctx.setFeedback(
+                        ChroniclesUIKit.label("phoenix_chronicles.screen.chapter_actions.pasted_d_chapter_s_d_2"),
+                        CategoryRegistry.pathLabel(result.newRootId()), result.chapters(), result.quests());
+            }
+        }));
     }
 
     public void openSidebarContextMenu(@NotNull SidebarRow row, int mx, int my) {
@@ -235,28 +282,80 @@ public class ChapterActions {
         if (row.isFolder()) {
             CategoryDefinition cat = CategoryRegistry.get(row.id());
             String currentLabel = cat != null ? cat.displayName() : row.label();
-            actions.add(new SidebarPanel.MenuAction("Rename Category", () -> {
-                Minecraft mc = Minecraft.getInstance();
-                mc.setScreen(new NewFolderScreen(parent, row.id(), currentLabel, id -> state.rebuild()));
-            }));
-            actions.add(new SidebarPanel.MenuAction("Category Theme…",
+            actions.add(new SidebarPanel.MenuAction(
+                    ChroniclesUIKit.str("phoenix_chronicles.screen.new_folder.title_rename"), () -> {
+                        Minecraft mc = Minecraft.getInstance();
+                        mc.setScreen(new NewFolderScreen(parent, row.id(), currentLabel, id -> state.rebuild()));
+                    }));
+            if (CategoryRegistry.depthOf(row.id()) + 1 < CategoryRegistry.MAX_DEPTH) {
+                actions.add(new SidebarPanel.MenuAction(
+                        ChroniclesUIKit.str("phoenix_chronicles.screen.chapter_actions.new_subcategory"), () -> {
+                            Minecraft mc = Minecraft.getInstance();
+                            mc.setScreen(new NewFolderScreen(parent, row.id(), id -> {
+                                if (CategoryRegistry.isCollapsed(row.id())) CategoryRegistry.toggleCollapsed(row.id());
+                                CategoryRegistry.save();
+                                state.rebuild();
+                            }));
+                        }));
+            }
+            if (!CategoryRegistry.parentOf(row.id()).isEmpty()) {
+                actions.add(new SidebarPanel.MenuAction(
+                        ChroniclesUIKit.str("phoenix_chronicles.screen.chapter_actions.move_to_top_level"), () -> {
+                            CategoryRegistry.moveCategory(row.id(), null, null);
+                            CategoryRegistry.save();
+                            state.rebuild();
+                        }));
+            }
+            actions.add(new SidebarPanel.MenuAction(
+                    ChroniclesUIKit.str("phoenix_chronicles.screen.chapter_actions.copy_category"), () -> {
+                        if (CategoryRegistry.copyCategory(row.id())) {
+                            ctx.setFeedback(
+                                    ChroniclesUIKit.label(
+                                            "phoenix_chronicles.screen.chapter_actions.copied_d_categories_d_chapters"),
+                                    row.label(),
+                                    CategoryRegistry.clipboardSize(), CategoryRegistry.clipboardChapters().size());
+                        }
+                    }));
+            if (CategoryRegistry.hasClipboard()) {
+                if (CategoryRegistry.canPasteInto(row.id())) {
+                    actions.add(new SidebarPanel.MenuAction(
+                            ChroniclesUIKit.str("phoenix_chronicles.screen.chapter_actions.paste_inside"),
+                            () -> openPasteScreen(parent, row.id())));
+                }
+                if (CategoryRegistry.canPasteInto(null)) {
+                    actions.add(new SidebarPanel.MenuAction(
+                            ChroniclesUIKit.str("phoenix_chronicles.screen.chapter_actions.paste_at_top_level"),
+                            () -> openPasteScreen(parent, null)));
+                }
+            }
+            actions.add(new SidebarPanel.MenuAction(
+                    ChroniclesUIKit.str("phoenix_chronicles.screen.chapter_actions.category_theme"),
                     () -> Minecraft.getInstance().setScreen(new CategoryThemeScreen(parent, row.id()))));
-            actions.add(new SidebarPanel.MenuAction("Force Complete Category",
+            actions.add(new SidebarPanel.MenuAction(
+                    ChroniclesUIKit.str("phoenix_chronicles.screen.chapter_actions.force_complete_category"),
                     () -> forceCompleteCategoryOnRightClick(row.id())));
-            actions.add(new SidebarPanel.MenuAction("Reset Category",
+            actions.add(new SidebarPanel.MenuAction(
+                    ChroniclesUIKit.str("phoenix_chronicles.screen.chapter_actions.reset_category"),
                     () -> resetCategoryOnRightClick(row.id())));
             actions.add(new SidebarPanel.MenuAction(
-                    row.id().equals(armedDeleteCategoryId) ? "§cConfirm Delete Category" : "Delete Category",
+                    row.id().equals(armedDeleteCategoryId) ?
+                            ChroniclesUIKit.str("phoenix_chronicles.screen.chapter_actions.confirm_delete_category") :
+                            ChroniclesUIKit.str("phoenix_chronicles.screen.chapter_actions.delete_category"),
                     () -> deleteCategoryOnRightClick(row.id())));
         } else {
-            actions.add(new SidebarPanel.MenuAction("Chapter Settings…",
+            actions.add(new SidebarPanel.MenuAction(
+                    ChroniclesUIKit.str("phoenix_chronicles.screen.chapter_actions.chapter_settings"),
                     () -> Minecraft.getInstance().setScreen(new ChapterThemeScreen(parent, row.id()))));
-            actions.add(new SidebarPanel.MenuAction("Force Complete Chapter",
+            actions.add(new SidebarPanel.MenuAction(
+                    ChroniclesUIKit.str("phoenix_chronicles.screen.chapter_actions.force_complete_chapter"),
                     () -> forceCompleteChapterOnRightClick(row.id())));
-            actions.add(new SidebarPanel.MenuAction("Reset Chapter",
+            actions.add(new SidebarPanel.MenuAction(
+                    ChroniclesUIKit.str("phoenix_chronicles.screen.chapter_actions.reset_chapter"),
                     () -> resetChapterOnRightClick(row.id())));
             actions.add(new SidebarPanel.MenuAction(
-                    row.id().equals(armedDeleteChapterId) ? "§cConfirm Delete Chapter" : "Delete Chapter",
+                    row.id().equals(armedDeleteChapterId) ?
+                            ChroniclesUIKit.str("phoenix_chronicles.screen.chapter_actions.confirm_delete_chapter") :
+                            ChroniclesUIKit.str("phoenix_chronicles.screen.chapter_actions.delete_chapter"),
                     () -> deleteChapterOnRightClick(row.id())));
         }
         state.openContextMenuFor(mx, my, actions);

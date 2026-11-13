@@ -12,7 +12,7 @@ import net.phoenixvine.chronicles.common.model.QuestNode;
 import net.phoenixvine.chronicles.common.model.QuestReward;
 import net.phoenixvine.chronicles.common.model.QuestState;
 import net.phoenixvine.chronicles.common.registry.QuestTreeRegistry;
-import net.phoenixvine.chronicles.network.ChronicleNetwork;
+import net.phoenixvine.chronicles.common.util.ItemData;
 import net.phoenixvine.chronicles.network.packet.C2SClaimAllRewardsPacket;
 import net.phoenixvine.chronicles.network.packet.C2SClaimQuestRewardPacket;
 import net.phoenixvine.wiki.theme.PhoenixTheme;
@@ -43,17 +43,22 @@ public class ClaimRewardsScreen extends Screen {
     }
 
     @Override
+    public void renderBackground(GuiGraphics context) {}
+
+    @Override
     protected void init() {
         refreshList();
 
         addRenderableWidget(
                 Button.builder(Component.translatable("phoenix_chronicles.screen.claim_rewards.claim_all"), b -> {
-                    ChronicleNetwork.CHANNEL.sendToServer(new C2SClaimAllRewardsPacket());
+                    net.phoenixvine.chronicles.network.ChronicleNetwork.CHANNEL
+                            .sendToServer(new C2SClaimAllRewardsPacket());
                 }).bounds(MARGIN, height - FOOTER_H + 6, 110, 18).build());
 
-        addRenderableWidget(Button.builder(Component.literal("§e⚡ Auto-claim…"), b -> {
-            if (minecraft != null) minecraft.setScreen(new AutoClaimSettingsScreen(this));
-        }).bounds(MARGIN + 116, height - FOOTER_H + 6, 100, 18).build());
+        addRenderableWidget(
+                Button.builder(Component.translatable("phoenix_chronicles.screen.claim_rewards.auto_claim"), b -> {
+                    if (minecraft != null) minecraft.setScreen(new AutoClaimSettingsScreen(this));
+                }).bounds(MARGIN + 116, height - FOOTER_H + 6, 100, 18).build());
 
         addRenderableWidget(Button.builder(Component.translatable("phoenix_chronicles.ui.back"), b -> {
             if (minecraft != null) minecraft.setScreen(parent);
@@ -78,7 +83,7 @@ public class ClaimRewardsScreen extends Screen {
             unclaimed = list;
             return;
         }
-        PlayerQuestData data = minecraft.player.getCapability(QuestCapabilityProvider.PLAYER_QUESTS).orElse(null);
+        PlayerQuestData data = QuestCapabilityProvider.of(minecraft.player).orElse(null);
         if (data == null) {
             unclaimed = list;
             return;
@@ -99,7 +104,7 @@ public class ClaimRewardsScreen extends Screen {
     private List<QuestReward> remainingRewards(QuestNode node) {
         List<QuestReward> all = node.getRewards();
         PlayerQuestData data = minecraft != null && minecraft.player != null ?
-                minecraft.player.getCapability(QuestCapabilityProvider.PLAYER_QUESTS).orElse(null) : null;
+                QuestCapabilityProvider.of(minecraft.player).orElse(null) : null;
         if (data == null) return all;
         List<QuestReward> remaining = new ArrayList<>();
         for (int i = 0; i < all.size(); i++) {
@@ -141,14 +146,17 @@ public class ClaimRewardsScreen extends Screen {
         g.fill(0, 0, width, height, bg);
         g.fill(0, 0, width, HEADER_H, header);
         g.fill(0, HEADER_H - 1, width, HEADER_H, border);
-        String headerText = "§f🎁 Unclaimed Rewards  §8: §7" + unclaimed.size() + " quest(s)";
+        String headerText = ChroniclesUIKit.str("phoenix_chronicles.screen.claim_rewards.unclaimed_rewards_quest_s",
+                unclaimed.size());
         g.drawString(font, ChroniclesUIKit.fitText(font, headerText, width - MARGIN * 2), MARGIN, 10, text, false);
 
         g.fill(0, height - FOOTER_H, width, height, header);
         g.fill(0, height - FOOTER_H, width, height - FOOTER_H + 1, border);
 
         if (unclaimed.isEmpty()) {
-            g.drawCenteredString(font, "§8Nothing to claim right now.", width / 2, (listTop() + listBottom()) / 2,
+            g.drawCenteredString(font,
+                    ChroniclesUIKit.str("phoenix_chronicles.screen.claim_rewards.nothing_to_claim_right_now"),
+                    width / 2, (listTop() + listBottom()) / 2,
                     textFaint);
         } else {
             g.enableScissor(0, listTop(), width, listBottom());
@@ -180,10 +188,12 @@ public class ClaimRewardsScreen extends Screen {
                     boolean btnHov = mx >= btnX && mx < btnX + 52 && my >= ty + 4 && my < ty + ROW_H - 4;
                     if (row.pendingBoxOnly()) {
                         g.fill(btnX, ty + 4, btnX + 52, ty + ROW_H - 4, btnHov ? 0xFF6B4C8F : 0xFF473262);
-                        g.drawCenteredString(font, "§dOpen", btnX + 26, ty + (ROW_H - 8) / 2, 0xFFDDAAFF);
+                        g.drawCenteredString(font, ChroniclesUIKit.str("phoenix_chronicles.screen.claim_rewards.open"),
+                                btnX + 26, ty + (ROW_H - 8) / 2, 0xFFDDAAFF);
                     } else {
                         g.fill(btnX, ty + 4, btnX + 52, ty + ROW_H - 4, btnHov ? 0xFF2C6644 : 0xFF1C4430);
-                        g.drawCenteredString(font, "§aClaim", btnX + 26, ty + (ROW_H - 8) / 2, 0xFF88FFAA);
+                        g.drawCenteredString(font, ChroniclesUIKit.str("phoenix_chronicles.screen.claim_rewards.claim"),
+                                btnX + 26, ty + (ROW_H - 8) / 2, 0xFF88FFAA);
                     }
                 }
                 ty += ROW_H;
@@ -210,7 +220,7 @@ public class ClaimRewardsScreen extends Screen {
         g.fill(x, y, x + ICON_SZ, y + ICON_SZ, 0xFF0F0F18);
         if (reward instanceof QuestReward.ItemReward ir) {
             ItemStack stack = new ItemStack(ir.getItem(), ir.getCount());
-            if (ir.getNbt() != null && !ir.getNbt().isEmpty()) stack.setTag(ir.getNbt().copy());
+            ItemData.applyReward(stack, ir.getNbt());
             g.renderItem(stack, x, y);
         } else if (reward instanceof QuestReward.ChoiceBoxReward box) {
             String glyph = box.getMode() == QuestReward.ChoiceBoxReward.Mode.LOOTBOX ? "🎲" : "🎁";
@@ -245,7 +255,8 @@ public class ClaimRewardsScreen extends Screen {
                                 }
                             }
                         } else {
-                            ChronicleNetwork.CHANNEL.sendToServer(new C2SClaimQuestRewardPacket(node.getId(), -1));
+                            net.phoenixvine.chronicles.network.ChronicleNetwork.CHANNEL
+                                    .sendToServer(new C2SClaimQuestRewardPacket(node.getId(), -1));
                         }
                         return true;
                     }

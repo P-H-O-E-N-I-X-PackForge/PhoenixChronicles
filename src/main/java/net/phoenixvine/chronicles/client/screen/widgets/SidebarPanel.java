@@ -38,6 +38,8 @@ import java.util.function.Function;
 public class SidebarPanel {
 
     static final int SIDEBAR_CAT_ROW_H = 18;
+    /** Pixels each level of folder nesting shifts a row to the right. */
+    static final int SIDEBAR_FOLDER_INDENT = 6;
     private static final int SIDEBAR_FOLDER_ROW_H = 14;
     public static final int SIDEBAR_COLLAPSE_TOGGLE_H = 12;
     public static final int SIDEBAR_DRAG_THRESHOLD = 4;
@@ -283,34 +285,59 @@ public class SidebarPanel {
                 rows.add(new SidebarRow(false, cat, friendly.apply(cat), y, SIDEBAR_CAT_ROW_H, false, false, false,
                         false));
                 y += SIDEBAR_CAT_ROW_H;
-                y = emitSubChapters(rows, cat, childrenOf, y, false, friendly, progressLookup);
+                y = emitSubChapters(rows, cat, childrenOf, y, 0, friendly, progressLookup);
                 continue;
             }
 
             CategoryDefinition category = CategoryRegistry.get(CategoryRegistry.tokenId(token));
             if (category == null) continue;
-            List<String> fcats = category.chapters().stream().filter(cats::contains)
-                    .filter(c -> !hasParent.contains(c)).toList();
-
-            // a folder with a condition and nothing left to show in it (none of its chapters is shown to this player)
-            if (category.hasCondition() && fcats.isEmpty()) continue;
-
-            boolean collapsedFolder = CategoryRegistry.isCollapsed(category.id());
-            rows.add(new SidebarRow(true, category.id(), category.displayName(), y, SIDEBAR_FOLDER_ROW_H, false,
-                    collapsedFolder, false, false));
-            y += SIDEBAR_FOLDER_ROW_H;
-
-            if (!collapsedFolder) {
-                for (String cat : fcats) {
-                    rows.add(new SidebarRow(false, cat, friendly.apply(cat), y, SIDEBAR_CAT_ROW_H, true, false,
-                            false, false));
-                    y += SIDEBAR_CAT_ROW_H;
-                    y = emitSubChapters(rows, cat, childrenOf, y, true, friendly, progressLookup);
-                }
-            }
+            y = emitFolder(rows, category, 0, y, cats, hasParent, childrenOf, friendly, progressLookup);
         }
 
         return rows;
+    }
+
+    /** Emits a folder row, its chapters, then its subfolders (each emitted the same way, one level deeper). */
+    private int emitFolder(@NotNull List<SidebarRow> rows, @NotNull CategoryDefinition category, int depth, int y,
+                           @NotNull List<String> cats, @NotNull Set<String> hasParent,
+                           @NotNull Map<String, List<String>> childrenOf, @NotNull Function<String, String> friendly,
+                           @NotNull Function<String, int[]> progressLookup) {
+        // a folder with a condition and nothing left to show in it (none of its chapters, nor those of its
+        // subfolders, is shown to this player)
+        if (category.hasCondition() && !folderHasVisibleChapters(category.id(), cats, hasParent, 0)) return y;
+
+        boolean collapsedFolder = CategoryRegistry.isCollapsed(category.id());
+        rows.add(new SidebarRow(true, category.id(), category.displayName(), y, SIDEBAR_FOLDER_ROW_H, depth > 0,
+                collapsedFolder, false, false, depth));
+        y += SIDEBAR_FOLDER_ROW_H;
+        if (collapsedFolder) return y;
+
+        for (String token : CategoryRegistry.folderItems(category.id())) {
+            if (CategoryRegistry.isCategoryToken(token)) {
+                CategoryDefinition child = CategoryRegistry.get(CategoryRegistry.tokenId(token));
+                if (child != null)
+                    y = emitFolder(rows, child, depth + 1, y, cats, hasParent, childrenOf, friendly, progressLookup);
+                continue;
+            }
+            String cat = CategoryRegistry.tokenId(token);
+            if (!cats.contains(cat) || hasParent.contains(cat)) continue;
+            rows.add(new SidebarRow(false, cat, friendly.apply(cat), y, SIDEBAR_CAT_ROW_H, true, false, false, false,
+                    depth + 1));
+            y += SIDEBAR_CAT_ROW_H;
+            y = emitSubChapters(rows, cat, childrenOf, y, depth + 1, friendly, progressLookup);
+        }
+        return y;
+    }
+
+    private boolean folderHasVisibleChapters(@NotNull String categoryId, @NotNull List<String> cats,
+                                             @NotNull Set<String> hasParent, int guard) {
+        CategoryDefinition category = CategoryRegistry.get(categoryId);
+        if (category == null || guard > CategoryRegistry.MAX_DEPTH) return false;
+        for (String c : category.chapters()) if (cats.contains(c) && !hasParent.contains(c)) return true;
+        for (CategoryDefinition child : CategoryRegistry.childrenOf(categoryId)) {
+            if (folderHasVisibleChapters(child.id(), cats, hasParent, guard + 1)) return true;
+        }
+        return false;
     }
 
     private @NotNull List<String> standaloneChapters(@NotNull List<String> cats, @NotNull Set<String> hasParent) {
@@ -334,17 +361,17 @@ public class SidebarPanel {
 
     private int emitSubChapters(@NotNull List<SidebarRow> rows, String parent,
                                 @NotNull Map<String, List<String>> childrenOf,
-                                int y, boolean inFolder, @NotNull Function<String, String> friendly,
+                                int y, int depth, @NotNull Function<String, String> friendly,
                                 @NotNull Function<String, int[]> progressLookup) {
         List<String> children = childrenOf.get(parent);
         if (children == null) return y;
         int[] parentProgress = progressLookup.apply(parent);
         boolean locked = parentProgress[0] == 0;
         for (String child : children) {
-            rows.add(new SidebarRow(false, child, friendly.apply(child), y, SIDEBAR_CAT_ROW_H, inFolder, false,
-                    true, locked));
+            rows.add(new SidebarRow(false, child, friendly.apply(child), y, SIDEBAR_CAT_ROW_H, depth > 0, false,
+                    true, locked, depth));
             y += SIDEBAR_CAT_ROW_H;
-            y = emitSubChapters(rows, child, childrenOf, y, inFolder, friendly, progressLookup);
+            y = emitSubChapters(rows, child, childrenOf, y, depth, friendly, progressLookup);
         }
         return y;
     }
@@ -386,17 +413,70 @@ public class SidebarPanel {
 
     public @NotNull DropZone dropZone(@NotNull SidebarRow source, @NotNull SidebarRow target, int my) {
         int rel = my - target.y();
-        if (target.isFolder() && !source.isFolder()) {
-            return rel < target.height() * 0.3f ? DropZone.BEFORE : DropZone.INTO;
+        int h = target.height();
+        if (target.isFolder()) {
+            if (target.depth() == 0) {
+                // top-level folder
+                if (!source.isFolder()) return rel < h * 0.3f ? DropZone.BEFORE : DropZone.INTO;
+                if (!CategoryRegistry.canNest(source.id(), target.id())) {
+                    return rel < h / 2 ? DropZone.BEFORE : DropZone.AFTER;
+                }
+                if (rel < h * 0.25f) return DropZone.BEFORE;
+                if (rel > h * 0.75f) return DropZone.AFTER;
+                return DropZone.INTO;
+            }
+            // nested folder: top edge = before it, bottom edge = after it (only when closed or empty, since an
+            // open folder's own contents come right after its row), the middle drops inside
+            if (source.isFolder() && !CategoryRegistry.canNest(source.id(), target.id())) {
+                return rel < h / 2 ? DropZone.BEFORE : DropZone.AFTER;
+            }
+            boolean openWithContents = !target.collapsed() && !CategoryRegistry.folderItems(target.id()).isEmpty();
+            if (rel < h * 0.25f) return DropZone.BEFORE;
+            if (rel > h * 0.75f && !openWithContents) return DropZone.AFTER;
+            return DropZone.INTO;
         }
-        if (!target.isFolder() && target.inFolder() && !source.isFolder()) return DropZone.INTO;
-        return rel < target.height() / 2 ? DropZone.BEFORE : DropZone.AFTER;
+        // a chapter row: drop before or after it, in whichever folder (or the top level) it sits in
+        return rel < h / 2 ? DropZone.BEFORE : DropZone.AFTER;
+    }
+
+    /** The category a drop INTO this row would land in: the folder itself, or the folder a chapter row sits in. */
+    private static @Nullable String destinationFolderOf(@NotNull SidebarRow target) {
+        if (target.isFolder()) return target.id();
+        CategoryDefinition owner = CategoryRegistry.categoryFor(target.id());
+        return owner != null ? owner.id() : null;
+    }
+
+    /**
+     * The category whose item list a BEFORE/AFTER drop beside this row edits: the parent of a nested folder, the
+     * folder a chapter sits in, or "" for the top level.
+     */
+    private static @NotNull String containerOf(@NotNull SidebarRow target) {
+        if (target.isFolder()) return CategoryRegistry.parentOf(target.id());
+        CategoryDefinition owner = CategoryRegistry.categoryFor(target.id());
+        return owner != null ? owner.id() : "";
+    }
+
+    private static @NotNull String itemTokenOf(@NotNull SidebarRow row) {
+        return row.isFolder() ? CategoryRegistry.categoryToken(row.id()) : CategoryRegistry.chapterToken(row.id());
+    }
+
+    /** Whether dropping {@code source} on {@code target} in {@code zone} is allowed (no loops, not too deep). */
+    public boolean canDrop(@NotNull SidebarRow source, @NotNull SidebarRow target, @NotNull DropZone zone) {
+        if (!source.isFolder()) return true;
+        if (zone == DropZone.INTO) {
+            String dest = destinationFolderOf(target);
+            return dest != null && CategoryRegistry.canNest(source.id(), dest);
+        }
+        if (target.isFolder() && target.id().equals(source.id())) return false;
+        String container = containerOf(target);
+        return container.isEmpty() || container.equals(CategoryRegistry.parentOf(source.id())) ||
+                CategoryRegistry.canNest(source.id(), container);
     }
 
     private static @Nullable String topLevelTokenFor(@NotNull SidebarRow target) {
-        if (target.isFolder()) return CategoryRegistry.categoryToken(target.id());
+        if (target.isFolder()) return CategoryRegistry.categoryToken(CategoryRegistry.rootOf(target.id()));
         CategoryDefinition owner = CategoryRegistry.categoryFor(target.id());
-        if (owner != null) return CategoryRegistry.categoryToken(owner.id());
+        if (owner != null) return CategoryRegistry.categoryToken(CategoryRegistry.rootOf(owner.id()));
         return CategoryRegistry.chapterToken(target.id());
     }
 
@@ -419,21 +499,66 @@ public class SidebarPanel {
         List<String> standalone = standaloneChapters(cats, subChapterIds(cats));
 
         if (source.isFolder()) {
-            String before = null;
-            if (target != null) {
-                String targetToken = topLevelTokenFor(target);
-                before = dropZone(source, target, my) == DropZone.BEFORE ? targetToken :
-                        tokenAfter(CategoryRegistry.resolveTopLevel(standalone), targetToken);
+            String sourceToken = CategoryRegistry.categoryToken(source.id());
+            if (target == null) {
+                CategoryRegistry.moveCategory(source.id(), null, null);
+                CategoryRegistry.moveTopLevel(sourceToken, null, standalone);
+                setFeedback.accept(ChroniclesUIKit.str("phoenix_chronicles.screen.sidebar_panel.category_reordered"));
+            } else {
+                DropZone zone = dropZone(source, target, my);
+                String container = containerOf(target);
+                if (!canDrop(source, target, zone)) {
+                    setFeedback.accept(
+                            ChroniclesUIKit.str("phoenix_chronicles.screen.sidebar_panel.can_t_move_a_category"));
+                } else if (zone == DropZone.INTO) {
+                    String dest = destinationFolderOf(target);
+                    if (dest != null && CategoryRegistry.moveCategory(source.id(), dest, null)) {
+                        if (CategoryRegistry.isCollapsed(dest)) CategoryRegistry.toggleCollapsed(dest);
+                        setFeedback.accept(ChroniclesUIKit.str("phoenix_chronicles.screen.sidebar_panel.moved_into",
+                                source.label(), CategoryRegistry.pathLabel(dest)));
+                    }
+                } else if (!container.isEmpty()) {
+                    // beside an item inside a folder: take its place among that folder's chapters and subfolders
+                    String targetToken = itemTokenOf(target);
+                    String before = zone == DropZone.BEFORE ? targetToken :
+                            tokenAfter(CategoryRegistry.folderItems(container), targetToken);
+                    if (sourceToken.equals(before)) before = null;
+                    CategoryRegistry.moveCategory(source.id(), container, before);
+                    setFeedback
+                            .accept(ChroniclesUIKit.str("phoenix_chronicles.screen.sidebar_panel.category_reordered"));
+                } else {
+                    CategoryRegistry.moveCategory(source.id(), null, null);
+                    String targetToken = topLevelTokenFor(target);
+                    String before = zone == DropZone.BEFORE ? targetToken :
+                            tokenAfter(CategoryRegistry.resolveTopLevel(standalone), targetToken);
+                    CategoryRegistry.moveTopLevel(sourceToken, before, standalone);
+                    setFeedback
+                            .accept(ChroniclesUIKit.str("phoenix_chronicles.screen.sidebar_panel.category_reordered"));
+                }
             }
-            CategoryRegistry.moveTopLevel(CategoryRegistry.categoryToken(source.id()), before, standalone);
-            setFeedback.accept("Category reordered");
+            CategoryRegistry.save();
         } else {
             String chap = source.id();
             CategoryDefinition currentCategory = CategoryRegistry.categoryFor(chap);
             DropZone zone = target != null ? dropZone(source, target, my) : DropZone.AFTER;
+            String container = target != null ? containerOf(target) : "";
 
             if (target != null && zone == DropZone.INTO) {
-                moveChapterIntoCategory(chap, currentCategory, target, my, friendly, setFeedback);
+                String dest = destinationFolderOf(target);
+                if (dest != null) {
+                    CategoryRegistry.moveChapterTo(chap, dest, null);
+                    setFeedback.accept(ChroniclesUIKit.str("phoenix_chronicles.screen.sidebar_panel.moved_into",
+                            friendly.apply(chap), CategoryRegistry.pathLabel(dest)));
+                }
+            } else if (target != null && !container.isEmpty()) {
+                // beside an item inside a folder
+                String targetToken = itemTokenOf(target);
+                String before = zone == DropZone.BEFORE ? targetToken :
+                        tokenAfter(CategoryRegistry.folderItems(container), targetToken);
+                if (CategoryRegistry.chapterToken(chap).equals(before)) before = null;
+                CategoryRegistry.moveChapterTo(chap, container, before);
+                setFeedback.accept(
+                        ChroniclesUIKit.str("phoenix_chronicles.screen.sidebar_panel.reordered", friendly.apply(chap)));
             } else {
                 if (currentCategory != null) CategoryRegistry.removeChapterFromCategory(currentCategory.id(), chap);
 
@@ -448,48 +573,13 @@ public class SidebarPanel {
                 }
                 CategoryRegistry.moveTopLevel(CategoryRegistry.chapterToken(chap), before, withChapter);
                 setFeedback.accept(currentCategory != null ?
-                        "Removed " + friendly.apply(chap) + " from " + currentCategory.displayName() :
-                        "Reordered " + friendly.apply(chap));
+                        ChroniclesUIKit.str("phoenix_chronicles.screen.sidebar_panel.removed_from",
+                                friendly.apply(chap), currentCategory.displayName()) :
+                        ChroniclesUIKit.str("phoenix_chronicles.screen.sidebar_panel.reordered", friendly.apply(chap)));
             }
             CategoryRegistry.save();
         }
         rebuild.run();
-    }
-
-    private void moveChapterIntoCategory(@NotNull String chap, @Nullable CategoryDefinition currentCategory,
-                                         @NotNull SidebarRow target, int my,
-                                         @NotNull Function<String, String> friendly,
-                                         @NotNull Consumer<String> setFeedback) {
-        String destCategoryId;
-        if (target.isFolder()) {
-            destCategoryId = target.id();
-        } else {
-            CategoryDefinition tc = CategoryRegistry.categoryFor(target.id());
-            if (tc == null) return;
-            destCategoryId = tc.id();
-        }
-
-        if (currentCategory != null && currentCategory.id().equals(destCategoryId)) {
-            String targetChap = null;
-            if (!target.isFolder()) {
-                List<String> catChapters = currentCategory.chapters();
-                if (my < target.y() + target.height() / 2) {
-                    int targetIdx = catChapters.indexOf(target.id());
-                    targetChap = targetIdx > 0 ? catChapters.get(targetIdx - 1) : target.id();
-                } else {
-                    targetChap = target.id();
-                }
-            }
-            if (!chap.equals(targetChap)) {
-                CategoryRegistry.reorderCategoryChapter(currentCategory.id(), chap, targetChap);
-                setFeedback.accept("Reordered " + friendly.apply(chap));
-            }
-            return;
-        }
-
-        if (currentCategory != null) CategoryRegistry.removeChapterFromCategory(currentCategory.id(), chap);
-        CategoryRegistry.addChapterToCategory(destCategoryId, chap);
-        setFeedback.accept("Moved " + friendly.apply(chap) + " into " + destCategoryId);
     }
 
     private int chapterAccent(@NotNull String cat) {
@@ -529,7 +619,8 @@ public class SidebarPanel {
                 g.pose().pushPose();
                 g.pose().translate(0f, 0f, 250f);
                 g.flush();
-                String tip = collapsed ? "§7Show sidebar" : "§7Collapse sidebar";
+                String tip = collapsed ? ChroniclesUIKit.str("phoenix_chronicles.screen.sidebar_panel.show_sidebar") :
+                        ChroniclesUIKit.str("phoenix_chronicles.screen.sidebar_panel.collapse_sidebar");
                 int ttW = font.width(tip) + 10;
                 int ttX = width() + 3, ttY = toggleY;
                 g.fill(ttX, ttY, ttX + ttW, ttY + 14, 0xFF1A1A24);
@@ -560,8 +651,9 @@ public class SidebarPanel {
 
         if (dragMoved && dragRow != null) {
             SidebarRow dropTarget = rowAt(sidebarRows, mx, my);
-            if (dropTarget != null && !dropTarget.subChapter()) {
-                switch (dropZone(dragRow, dropTarget, my)) {
+            DropZone indicatorZone = dropTarget != null ? dropZone(dragRow, dropTarget, my) : null;
+            if (dropTarget != null && !dropTarget.subChapter() && canDrop(dragRow, dropTarget, indicatorZone)) {
+                switch (indicatorZone) {
                     case BEFORE -> g.fill(1, dropTarget.y() - 1, width() - 2, dropTarget.y() + 1, 0xFF00DDFF);
                     case AFTER -> g.fill(1, dropTarget.y() + dropTarget.height() - 1, width() - 2,
                             dropTarget.y() + dropTarget.height() + 1, 0xFF00DDFF);
@@ -577,7 +669,8 @@ public class SidebarPanel {
 
         if (sidebarRows.isEmpty()) {
             g.drawCenteredString(font, "§8No", width() / 2, scrollTop + 10, colors.textFaint());
-            g.drawCenteredString(font, "§8chapters", width() / 2, scrollTop + 20, colors.textFaint());
+            g.drawCenteredString(font, ChroniclesUIKit.str("phoenix_chronicles.screen.sidebar_panel.chapters"),
+                    width() / 2, scrollTop + 20, colors.textFaint());
         }
 
         g.flush();
@@ -610,7 +703,7 @@ public class SidebarPanel {
         String line2 = null;
         if (!row.isFolder()) {
             int[] p = progressLookup.apply(row.id());
-            if (p[1] > 0) line2 = "§8" + p[0] + "/" + p[1] + " complete";
+            if (p[1] > 0) line2 = ChroniclesUIKit.str("phoenix_chronicles.screen.sidebar_panel.complete", p[0], p[1]);
         }
         int ttW = Math.max(font.width(line1), line2 != null ? font.width(line2) : 0) + 10;
         int ttH = line2 != null ? 24 : 14;
@@ -643,10 +736,11 @@ public class SidebarPanel {
         g.fill(0, y + h - 1, width() - 1, y + h, colors.border());
 
         int accent = categoryAccent(row.id());
-        g.fill(0, y, 2, y + h, accent);
+        int folderIndent = row.depth() * SIDEBAR_FOLDER_INDENT;
+        g.fill(folderIndent, y, folderIndent + 2, y + h, accent);
 
         String arrow = row.collapsed() ? "▶" : "▼";
-        int textX = 6;
+        int textX = 6 + folderIndent;
         g.drawString(font, "§8" + arrow, textX, y + (h - 8) / 2, hov ? colors.textDim() : colors.textFaint(), false);
         textX += 9;
 
@@ -733,7 +827,7 @@ public class SidebarPanel {
         String cat = row.id();
         int y = row.y(), h = row.height();
 
-        int indent = (row.inFolder() ? 6 : 0) + (row.subChapter() ? 10 : 0);
+        int indent = row.depth() * SIDEBAR_FOLDER_INDENT + (row.subChapter() ? 10 : 0);
         int iconX = 4 + indent;
         int iconY = y + (h - 16) / 2;
         boolean locked = row.locked();
@@ -810,7 +904,8 @@ public class SidebarPanel {
             int ttX = visualWidth() + 3, ttY = y - 2;
             g.fill(ttX, ttY, ttX + ttW, ttY + 14, 0xFF1A1A24);
             ChroniclesUIKit.drawBorder(g, ttX, ttY, ttW, 14, colors.borderLit());
-            g.drawString(font, "§7New chapter", ttX + 5, ttY + 3, colors.textDim(), false);
+            g.drawString(font, ChroniclesUIKit.str("phoenix_chronicles.screen.sidebar_panel.new_chapter"), ttX + 5,
+                    ttY + 3, colors.textDim(), false);
         }
     }
 
@@ -849,17 +944,27 @@ public class SidebarPanel {
                 g.fill(ttX, ttY + ttH - 1, ttX + ttW, ttY + ttH, colors.border());
                 g.fill(ttX, ttY, ttX + 1, ttY + ttH, colors.border());
                 g.fill(ttX + ttW - 1, ttY, ttX + ttW, ttY + ttH, colors.border());
-                g.drawString(font, "§dUtilities", ttX + 5, ttY + 4, colors.text(), false);
-                g.drawString(font, "§8§oLeft-click§r§8: Edit all quest texts", ttX + 5, ttY + 14, colors.textDim(),
+                g.drawString(font, ChroniclesUIKit.str("phoenix_chronicles.screen.sidebar_panel.utilities"), ttX + 5,
+                        ttY + 4, colors.text(), false);
+                g.drawString(font,
+                        ChroniclesUIKit.str("phoenix_chronicles.screen.sidebar_panel.left_click_edit_all_quest"),
+                        ttX + 5, ttY + 14, colors.textDim(),
                         false);
                 if (devMode) {
-                    g.drawString(font, "§8§oRight-click§r§8: Export lang/en_us.json", ttX + 5, ttY + 24,
+                    g.drawString(font,
+                            ChroniclesUIKit.str("phoenix_chronicles.screen.sidebar_panel.right_click_export_lang_en"),
+                            ttX + 5, ttY + 24,
                             colors.textDim(), false);
-                    g.drawString(font, "§8§o[I]§r§8: Import FTB Quests chapter", ttX + 5, ttY + 34, colors.textDim(),
+                    g.drawString(font,
+                            ChroniclesUIKit.str("phoenix_chronicles.screen.sidebar_panel.i_import_ftb_quests_chapter"),
+                            ttX + 5, ttY + 34, colors.textDim(),
                             false);
-                    g.drawString(font, "§8(place .snbt in ftb_import/ folder)", ttX + 5, ttY + 44, colors.textFaint(),
+                    g.drawString(font,
+                            ChroniclesUIKit.str("phoenix_chronicles.screen.sidebar_panel.place_snbt_in_ftb_import"),
+                            ttX + 5, ttY + 44, colors.textFaint(),
                             false);
-                    g.drawString(font, "§8(pack's en_us.json also goes there)", ttX + 5, ttY + 54,
+                    g.drawString(font, ChroniclesUIKit.str("phoenix_chronicles.screen.sidebar_panel.pack_s_en_us_json"),
+                            ttX + 5, ttY + 54,
                             colors.textFaint(), false);
                 }
                 g.flush();

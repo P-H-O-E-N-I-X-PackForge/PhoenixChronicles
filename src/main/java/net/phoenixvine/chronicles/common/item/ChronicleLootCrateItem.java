@@ -21,6 +21,7 @@ import net.minecraftforge.client.extensions.common.IClientItemExtensions;
 import net.phoenixvine.chronicles.client.render.LootCrateItemRenderer;
 import net.phoenixvine.chronicles.common.model.QuestReward;
 import net.phoenixvine.chronicles.common.model.QuestReward.WeightedReward;
+import net.phoenixvine.chronicles.common.util.ChroniclesLang;
 
 import org.jetbrains.annotations.Nullable;
 
@@ -61,7 +62,7 @@ public class ChronicleLootCrateItem extends Item {
         CompoundTag tag = stack.getTag();
         String title = (tag != null && tag.contains(TAG_TITLE)) ? tag.getString(TAG_TITLE) : "";
         String suffix = title.isEmpty() ? "" : ": §d" + title;
-        return Component.literal("§6Chronicle Crate" + suffix);
+        return ChroniclesLang.tr("phoenix_chronicles.chronicle_loot_crate_item.chronicle_crate", suffix);
     }
 
     @Override
@@ -72,7 +73,8 @@ public class ChronicleLootCrateItem extends Item {
 
         CompoundTag tag = stack.getTag();
         if (tag == null || !tag.contains(TAG_REWARDS)) {
-            sp.sendSystemMessage(Component.literal("§cThis crate has no rewards configured."));
+            sp.sendSystemMessage(
+                    ChroniclesLang.tr("phoenix_chronicles.chronicle_loot_crate_item.this_crate_has_no_rewards"));
             return InteractionResultHolder.fail(stack);
         }
 
@@ -105,7 +107,8 @@ public class ChronicleLootCrateItem extends Item {
             granted++;
         }
 
-        sp.sendSystemMessage(Component.literal("§6✦ §eCrate opened! §7(" + granted + " reward(s) granted)"));
+        sp.sendSystemMessage(ChroniclesLang
+                .tr("phoenix_chronicles.chronicle_loot_crate_item.crate_opened_reward_s_granted", granted));
         level.playSound(null, sp.blockPosition(), SoundEvents.UI_TOAST_CHALLENGE_COMPLETE,
                 SoundSource.PLAYERS, 0.5f, 1.2f);
 
@@ -124,7 +127,8 @@ public class ChronicleLootCrateItem extends Item {
                     pickCount + " of " + count + " reward(s) inside (weighted random)" : count + " reward(s) inside";
             lines.add(Component.literal("§8" + desc));
         }
-        lines.add(Component.literal("§7Right-click to open").withStyle(ChatFormatting.ITALIC));
+        lines.add(ChroniclesLang.tr("phoenix_chronicles.chronicle_loot_crate_item.right_click_to_open")
+                .withStyle(ChatFormatting.ITALIC));
     }
 
     public static ItemStack build(String crateTitle, List<QuestReward> rewards) {

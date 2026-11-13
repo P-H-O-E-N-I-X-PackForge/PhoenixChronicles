@@ -18,6 +18,11 @@ import org.jetbrains.annotations.Nullable;
 public class QuestCapabilityProvider implements ICapabilitySerializable<CompoundTag> {
 
     public static final Capability<PlayerQuestData> PLAYER_QUESTS = CapabilityManager.get(new CapabilityToken<>() {});
+
+    public static java.util.Optional<PlayerQuestData> of(net.minecraft.world.entity.Entity entity) {
+        return entity.getCapability(PLAYER_QUESTS).resolve();
+    }
+
     private static final ResourceLocation KEY = ResourceLocation.fromNamespaceAndPath(PhoenixChronicles.MOD_ID,
             "player_quests");
 

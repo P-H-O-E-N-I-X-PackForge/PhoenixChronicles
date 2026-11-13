@@ -93,7 +93,8 @@ public class SetIconScreen extends Screen {
 
         apply.run();
         parent.setFeedback(feedback);
-        parent.pushUndo("Undo: change quest icon", revert, apply);
+        parent.pushUndo(ChroniclesUIKit.str("phoenix_chronicles.screen.set_icon.undo_change_quest_icon"), revert,
+                apply);
     }
 
     private void close() {
@@ -111,7 +112,8 @@ public class SetIconScreen extends Screen {
         g.pose().translate(0f, 0f, 300f);
 
         ChroniclesUIKit.drawModalChrome(g, font, width, height, panelLeft, panelTop, PANEL_W, panelH, 22,
-                "§fSet Icon", ChroniclesThemePalette.PANEL, ChroniclesThemePalette.HEADER,
+                ChroniclesUIKit.str("phoenix_chronicles.screen.set_icon.set_icon"), ChroniclesThemePalette.PANEL,
+                ChroniclesThemePalette.HEADER,
                 ChroniclesThemePalette.BORDER, ChroniclesThemePalette.TEXT);
 
         g.flush();

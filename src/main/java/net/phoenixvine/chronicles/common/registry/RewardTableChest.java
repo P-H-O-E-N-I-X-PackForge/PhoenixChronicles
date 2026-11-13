@@ -15,6 +15,7 @@ import net.minecraft.world.phys.HitResult;
 import net.phoenixvine.chronicles.common.model.QuestReward.ItemReward;
 import net.phoenixvine.chronicles.common.model.QuestReward.WeightedReward;
 import net.phoenixvine.chronicles.common.model.RewardTable;
+import net.phoenixvine.chronicles.common.util.ChroniclesLang;
 
 import org.jetbrains.annotations.Nullable;
 
@@ -106,8 +107,9 @@ public final class RewardTableChest {
     }
 
     private static String weightLoreJson(int weight) {
-        return Component.Serializer.toJson(Component.literal("Reward weight: " + weight)
-                .withStyle(s -> s.withColor(ChatFormatting.GRAY).withItalic(false)));
+        return Component.Serializer
+                .toJson(ChroniclesLang.tr("phoenix_chronicles.reward_table_chest.reward_weight", weight)
+                        .withStyle(s -> s.withColor(ChatFormatting.GRAY).withItalic(false)));
     }
 
     public static Result importInto(Path configDir, String id, @Nullable Integer pick, Container container) {

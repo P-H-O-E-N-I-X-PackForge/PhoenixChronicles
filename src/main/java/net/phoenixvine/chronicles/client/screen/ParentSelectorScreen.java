@@ -313,12 +313,15 @@ public class ParentSelectorScreen extends Screen implements SuiteHudBar.Aware {
         ChroniclesUIKit.drawBorder(graphics, midX - 170, 10, 340, this.height - 16, ChroniclesThemePalette.BORDER_LIT);
 
         graphics.drawCenteredString(this.font,
-                singleSelect ? "§dSelect a Quest" : "§dSelect Prerequisites  §8(" + selected.size() + " picked)",
+                singleSelect ? ChroniclesUIKit.str("phoenix_chronicles.screen.parent_selector.select_a_quest") :
+                        ChroniclesUIKit.str("phoenix_chronicles.screen.parent_selector.select_prerequisites_picked",
+                                selected.size()),
                 midX, 18, ChroniclesThemePalette.TEXT);
 
         graphics.drawCenteredString(this.font,
-                singleSelect ? "§7Click a quest to select it" :
-                        "§7Click any number of rows to toggle them - §a[x]§7 = selected",
+                singleSelect ?
+                        ChroniclesUIKit.str("phoenix_chronicles.screen.parent_selector.click_a_quest_to_select") :
+                        ChroniclesUIKit.str("phoenix_chronicles.screen.parent_selector.click_any_number_of_rows"),
                 midX, 30, ChroniclesThemePalette.TEXT_FAINT);
 
         chapterBtnX = midX - 140;
@@ -330,14 +333,18 @@ public class ParentSelectorScreen extends Screen implements SuiteHudBar.Aware {
                 chapterHov || chapterDropdownOpen ? ChroniclesThemePalette.SEL_TAB : ChroniclesThemePalette.PANEL);
         ChroniclesUIKit.drawBorder(graphics, chapterBtnX, chapterBtnY, chapterBtnW, CHAPTER_BTN_H,
                 chapterDropdownOpen ? ChroniclesThemePalette.BORDER_LIT : ChroniclesThemePalette.BORDER);
-        graphics.drawString(this.font, "§7Chapter:  §f" + friendlyChapter(chapterFilter),
+        graphics.drawString(this.font,
+                ChroniclesUIKit.str("phoenix_chronicles.screen.parent_selector.chapter",
+                        friendlyChapter(chapterFilter)),
                 chapterBtnX + 5, chapterBtnY + 4, ChroniclesThemePalette.TEXT, false);
         graphics.drawString(this.font, chapterDropdownOpen ? "§f▲" : "§f▼",
                 chapterBtnX + chapterBtnW - 12, chapterBtnY + 4, ChroniclesThemePalette.TEXT, false);
 
         int visibleRows = visibleRows();
         if (this.filteredNodes.isEmpty()) {
-            graphics.drawCenteredString(this.font, "§8No matching nodes located.", midX, LIST_TOP + 4,
+            graphics.drawCenteredString(this.font,
+                    ChroniclesUIKit.str("phoenix_chronicles.screen.parent_selector.no_matching_nodes_located"), midX,
+                    LIST_TOP + 4,
                     ChroniclesThemePalette.TEXT_FAINT);
         } else if (this.filteredNodes.size() > visibleRows) {
             int shownEnd = Math.min(this.filteredNodes.size(), this.scrollOffset + visibleRows);

@@ -37,6 +37,10 @@ public final class ArchiveLoreCompat {
                 .register();
     }
 
+    public static java.util.Collection<String> allEntryIds() {
+        return isAvailable() ? ArchiveLoreCompatImpl.allEntryIds() : null;
+    }
+
     public static boolean hasEntry(String entryId) {
         return isAvailable() && ArchiveLoreCompatImpl.hasEntry(entryId);
     }

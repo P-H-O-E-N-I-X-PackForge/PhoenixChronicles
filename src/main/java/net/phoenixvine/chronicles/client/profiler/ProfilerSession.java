@@ -1,6 +1,7 @@
 package net.phoenixvine.chronicles.client.profiler;
 
 import net.phoenixvine.chronicles.PhoenixChronicles;
+import net.phoenixvine.chronicles.client.render.ChroniclesUIKit;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -71,7 +72,7 @@ public final class ProfilerSession {
             Files.createDirectories(dir);
         } catch (IOException e) {
             PhoenixChronicles.LOGGER.error("[ProfilerSession] Failed to create session directory", e);
-            return "§cProfiler failed to start (see log)";
+            return ChroniclesUIKit.str("phoenix_chronicles.screen.profiler_session.profiler_failed_to_start_see");
         }
         Path file = dir.resolve("session.log");
         boolean priorEnabled = FrameProfiler.isEnabled();
@@ -82,23 +83,25 @@ public final class ProfilerSession {
             session.writer.newLine();
         } catch (IOException e) {
             PhoenixChronicles.LOGGER.error("[ProfilerSession] Failed to open session log", e);
-            return "§cProfiler failed to start (see log)";
+            return ChroniclesUIKit.str("phoenix_chronicles.screen.profiler_session.profiler_failed_to_start_see");
         }
         FrameProfiler.setEnabled(true);
         active = session;
-        return "§aProfiler session started -> " + file;
+        return ChroniclesUIKit.str("phoenix_chronicles.screen.profiler_session.profiler_session_started", file);
     }
 
     private static @NotNull String stop(String reason) {
         ProfilerSession session = active;
-        if (session == null) return "§7No active profiler session";
+        if (session == null)
+            return ChroniclesUIKit.str("phoenix_chronicles.screen.profiler_session.no_active_profiler_session");
         active = null;
         session.writeSummary(reason);
         session.close();
         if (!session.priorFrameProfilerEnabled) {
             FrameProfiler.setEnabled(false);
         }
-        return "§aProfiler session saved -> " + session.logFile;
+        return ChroniclesUIKit.str("phoenix_chronicles.screen.profiler_session.profiler_session_saved",
+                session.logFile);
     }
 
     private long[] gcTotals() {

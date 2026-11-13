@@ -26,7 +26,7 @@ public final class DynamicShaderManager {
     private static final Path SHADER_DIR = Minecraft.getInstance().gameDirectory.toPath()
             .resolve("config").resolve(PhoenixChronicles.MOD_ID).resolve("shaders");
 
-    private static final ResourceLocation ANCHOR_RESOURCE = ResourceLocation.fromNamespaceAndPath(
+    private static final ResourceLocation ANCHOR_RESOURCE = new ResourceLocation(
             PhoenixChronicles.MOD_ID,
             "shaders/core/quest_bg_sun.vsh");
 
@@ -161,7 +161,7 @@ public final class DynamicShaderManager {
         ResourceProvider provider = ResourceProvider.fromMap(resources);
 
         try {
-            return new ShaderInstance(provider, ResourceLocation.fromNamespaceAndPath(PhoenixChronicles.MOD_ID, name),
+            return new ShaderInstance(provider, new ResourceLocation(PhoenixChronicles.MOD_ID, name),
                     DefaultVertexFormat.POSITION_TEX);
         } catch (Exception e) {
             PhoenixChronicles.LOGGER.error(
@@ -171,7 +171,7 @@ public final class DynamicShaderManager {
     }
 
     private static @NotNull ResourceLocation coreResLoc(String name, String ext) {
-        return ResourceLocation.fromNamespaceAndPath(PhoenixChronicles.MOD_ID,
+        return new ResourceLocation(PhoenixChronicles.MOD_ID,
                 "shaders/core/" + name + ext);
     }
 

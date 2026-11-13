@@ -15,6 +15,18 @@ public final class ChroniclesUIKit {
         return Component.literal(ChroniclesThemePalette.adapt(raw));
     }
 
+    public static Component tr(String key, Object... args) {
+        return lit(net.minecraft.client.resources.language.I18n.get(key, args));
+    }
+
+    public static String str(String key, Object... args) {
+        return net.minecraft.client.resources.language.I18n.get(key, args);
+    }
+
+    public static String label(String keyOrText) {
+        return net.minecraft.locale.Language.getInstance().getOrDefault(keyOrText);
+    }
+
     private static void drawText(GuiGraphics g, Font font, String text, int x, int y, int color, boolean shadow) {
         if (text.indexOf('<') >= 0) {
             logTaggedText(text);

@@ -61,6 +61,9 @@ public class SettingsScreen extends Screen {
         }
     }
 
+    @Override
+    public void renderBackground(GuiGraphics context) {}
+
     private enum RowType {
         TOGGLE,
         CYCLE,
@@ -96,7 +99,9 @@ public class SettingsScreen extends Screen {
 
         static Row toggle(String label, Supplier<Boolean> getter, Consumer<Boolean> setter) {
             Runnable flip = () -> setter.accept(!getter.get());
-            return new Row(RowType.TOGGLE, label, () -> getter.get() ? "§aOn" : "§cOff", flip, flip, null);
+            return new Row(RowType.TOGGLE, label,
+                    () -> getter.get() ? "§aOn" : ChroniclesUIKit.str("phoenix_chronicles.screen.settings.off"), flip,
+                    flip, null);
         }
 
         static <E extends Enum<E>> Row cycle(String label, Class<E> cls, Supplier<E> getter, Consumer<E> setter) {
@@ -147,7 +152,7 @@ public class SettingsScreen extends Screen {
     private int scrollY = 0;
 
     public SettingsScreen(Screen parent) {
-        super(ChroniclesUIKit.lit("Chronicles Settings"));
+        super(ChroniclesUIKit.tr("phoenix_chronicles.screen.settings.chronicles_settings"));
         this.parent = parent;
         this.settings = QuestChroniclesSettings.load();
     }
@@ -189,166 +194,232 @@ public class SettingsScreen extends Screen {
 
         switch (selectedCategory) {
             case GENERAL -> {
-                rows.add(Row.cycle("§fText Scale", TextScale.class, settings::getTextScale, settings::setTextScale)
-                        .tip("Scales all quest text and UI labels up or down."));
-                rows.add(Row.cycle("§fLayout Density", Density.class, settings::getDensity, settings::setDensity)
+                rows.add(Row
+                        .cycle(ChroniclesUIKit.str("phoenix_chronicles.screen.settings.text_scale"), TextScale.class,
+                                settings::getTextScale, settings::setTextScale)
+                        .tip(ChroniclesUIKit.str("phoenix_chronicles.screen.settings.scales_all_quest_text_and")));
+                rows.add(Row
+                        .cycle(ChroniclesUIKit.str("phoenix_chronicles.screen.settings.layout_density"), Density.class,
+                                settings::getDensity, settings::setDensity)
                         .tip("Controls spacing between quest nodes and UI rows -\ntighter for more on screen, looser for readability."));
-                rows.add(Row.toggle("§fReduce Motion", settings::isReduceMotion, settings::setReduceMotion)
+                rows.add(Row
+                        .toggle(ChroniclesUIKit.str("phoenix_chronicles.screen.settings.reduce_motion"),
+                                settings::isReduceMotion, settings::setReduceMotion)
                         .tip("Freezes blinking/pulsing effects and animated dependency lines\n(validation warnings, unclaimed rewards, ACTIVE glow, etc.)."));
-                rows.add(Row.toggle("§fReturn to Quest Book from Recipe Viewer",
+                rows.add(Row.toggle(ChroniclesUIKit.str("phoenix_chronicles.screen.settings.return_to_quest_book_from"),
                         settings::isReturnToQuestbookFromRecipeViewer,
                         settings::setReturnToQuestbookFromRecipeViewer)
                         .tip("When opening EMI from a task/reward icon, closing EMI brings you\nback to the quest book instead of EMI's own default (a throwaway\ninventory screen, then straight to gameplay)."));
-                rows.add(Row.cycle("§fSidebar Behavior", SidebarBehavior.class, settings::getSidebarBehavior,
-                        settings::setSidebarBehavior)
+                rows.add(Row
+                        .cycle(ChroniclesUIKit.str("phoenix_chronicles.screen.settings.sidebar_behavior"),
+                                SidebarBehavior.class, settings::getSidebarBehavior,
+                                settings::setSidebarBehavior)
                         .tip("Collapsible: click the small arrow to pin the sidebar open/closed.\n" +
                                 "Hover To Expand: FTB Quests-style - always collapsed, moving the\n" +
                                 "mouse over it opens it, moving away closes it - no clicking needed."));
-                rows.add(Row.cycle("§fQuest Node Move Style",
+                rows.add(Row.cycle(ChroniclesUIKit.str("phoenix_chronicles.screen.settings.quest_node_move_style"),
                         QuestChroniclesSettings.NodeMoveMode.class,
                         settings::getNodeMoveMode, settings::setNodeMoveMode)
                         .tip("Drag: shift+click and hold to move a quest node, release to drop it.\n" +
                                 "Pickup Place: shift+click once to pick it up (it follows the cursor\n" +
                                 "with no button held), click again to place it - Escape cancels\n" +
                                 "either way and snaps it back to where it started."));
-                rows.add(Row.link("§fTheme Editor",
+                rows.add(Row.link(ChroniclesUIKit.str("phoenix_chronicles.screen.settings.theme_editor"),
                         () -> {
                             if (minecraft != null) minecraft.setScreen(new PhoenixThemeEditorScreen(this));
                         })
                         .tip("Opens the full color editor - customize every panel, text, and\nstate color, then save it as a named theme."));
-                rows.add(Row.info("§8Keybinds: Minecraft's own Options → Controls → Phoenix Chronicles", 1));
+                rows.add(Row.info(
+                        ChroniclesUIKit.str("phoenix_chronicles.screen.settings.keybinds_minecraft_s_own_options"), 1));
             }
             case HUD -> {
-                rows.add(Row.cycle("§fHUD Position", HUDPosition.class, settings::getHudPosition,
-                        settings::setHudPosition)
+                rows.add(Row
+                        .cycle(ChroniclesUIKit.str("phoenix_chronicles.screen.settings.hud_position"),
+                                HUDPosition.class, settings::getHudPosition,
+                                settings::setHudPosition)
                         .tip("Which screen corner the pinned-quest widget(s) anchor to and stack from\nwhile you're out playing (this does not affect the quest book itself)."));
-                rows.add(new Row(RowType.CYCLE, "§fHUD Opacity",
+                rows.add(new Row(RowType.CYCLE, ChroniclesUIKit.str("phoenix_chronicles.screen.settings.hud_opacity"),
                         () -> String.format("%.0f%%", settings.getHudOpacity() * 100),
                         () -> settings.setHudOpacity(settings.getHudOpacity() - 0.1f),
                         () -> settings.setHudOpacity(settings.getHudOpacity() + 0.1f), null)
                         .tip("How see-through the pinned quest widget's background panel is.\nLower = more of the game shows through behind it; text stays fully readable either way."));
-                rows.add(Row.toggle("§fShow HUD Title", settings::isShowHUDTitle, settings::setShowHUDTitle)
+                rows.add(Row
+                        .toggle(ChroniclesUIKit.str("phoenix_chronicles.screen.settings.show_hud_title"),
+                                settings::isShowHUDTitle, settings::setShowHUDTitle)
                         .tip("Shows the quest icon, name, and pin marker as a header row\non each pinned widget. Turn off to hide that header row entirely -\nonly the remaining-task list below it will still show."));
-                rows.add(Row.toggle("§fShow HUD Progress", settings::isShowHUDProgress, settings::setShowHUDProgress)
+                rows.add(Row
+                        .toggle(ChroniclesUIKit.str("phoenix_chronicles.screen.settings.show_hud_progress"),
+                                settings::isShowHUDProgress, settings::setShowHUDProgress)
                         .tip("Shows a small \"done/total\" count (e.g. 2/5) next to the quest title.\nTurn off to hide just this counter - the list of remaining tasks\nbelow it is unaffected."));
-                rows.add(Row.toggle("§fShow HUD Rewards", settings::isShowHUDRewards, settings::setShowHUDRewards)
+                rows.add(Row
+                        .toggle(ChroniclesUIKit.str("phoenix_chronicles.screen.settings.show_hud_rewards"),
+                                settings::isShowHUDRewards, settings::setShowHUDRewards)
                         .tip("Shows a row of small reward icons at the bottom of each pinned\nquest's HUD widget, below its remaining tasks."));
             }
             case POPUPS -> {
-                rows.add(Row.toggle("§fShow Pop-Ups (Toasts)", settings::isShowToasts, settings::setShowToasts)
+                rows.add(Row
+                        .toggle(ChroniclesUIKit.str("phoenix_chronicles.screen.settings.show_pop_ups_toasts"),
+                                settings::isShowToasts, settings::setShowToasts)
                         .tip("Master switch - turn off to silence every quest pop-up/toast,\nregardless of the settings below."));
-                rows.add(Row.toggle("§fQuest Unlocked Pop-Ups", settings::isShowUnlockToasts,
-                        settings::setShowUnlockToasts)
-                        .tip("Show a pop-up when a quest unlocks. Off silences just those."));
-                rows.add(Row.toggle("§fQuest Complete Pop-Ups", settings::isShowCompleteToasts,
-                        settings::setShowCompleteToasts)
-                        .tip("Show a pop-up when a quest is completed. Off silences just those."));
-                rows.add(Row.cycle("§fPop-Up Style", ToastStyle.class, settings::getToastStyle,
-                        settings::setToastStyle).tip("Overall visual style of the quest completion/unlock pop-up."));
-                rows.add(Row.cycle("§fPop-Up Position", HUDPosition.class, settings::getToastPosition,
-                        settings::setToastPosition).tip("Corner of the screen pop-ups slide in from."));
-                rows.add(Row.toggle("§fPlay Pop-Up Sounds", settings::isPlayToastSounds, settings::setPlayToastSounds)
-                        .tip("Plays a sound alongside quest unlock/completion pop-ups."));
-                rows.add(Row.info("§8Individual pop-ups: right-click a quest → Design Pop-Up", 1));
+                rows.add(Row
+                        .toggle(ChroniclesUIKit.str("phoenix_chronicles.screen.settings.quest_unlocked_pop_ups"),
+                                settings::isShowUnlockToasts,
+                                settings::setShowUnlockToasts)
+                        .tip(ChroniclesUIKit.str("phoenix_chronicles.screen.settings.show_a_pop_up_when_2")));
+                rows.add(Row
+                        .toggle(ChroniclesUIKit.str("phoenix_chronicles.screen.settings.quest_complete_pop_ups"),
+                                settings::isShowCompleteToasts,
+                                settings::setShowCompleteToasts)
+                        .tip(ChroniclesUIKit.str("phoenix_chronicles.screen.settings.show_a_pop_up_when")));
+                rows.add(Row
+                        .cycle(ChroniclesUIKit.str("phoenix_chronicles.screen.settings.pop_up_style"), ToastStyle.class,
+                                settings::getToastStyle,
+                                settings::setToastStyle)
+                        .tip(ChroniclesUIKit.str("phoenix_chronicles.screen.settings.overall_visual_style_of_the")));
+                rows.add(Row
+                        .cycle(ChroniclesUIKit.str("phoenix_chronicles.screen.settings.pop_up_position"),
+                                HUDPosition.class, settings::getToastPosition,
+                                settings::setToastPosition)
+                        .tip(ChroniclesUIKit.str("phoenix_chronicles.screen.settings.corner_of_the_screen_pop")));
+                rows.add(Row
+                        .toggle(ChroniclesUIKit.str("phoenix_chronicles.screen.settings.play_pop_up_sounds"),
+                                settings::isPlayToastSounds, settings::setPlayToastSounds)
+                        .tip(ChroniclesUIKit.str("phoenix_chronicles.screen.settings.plays_a_sound_alongside_quest")));
+                rows.add(Row.info(
+                        ChroniclesUIKit.str("phoenix_chronicles.screen.settings.individual_pop_ups_right_click"), 1));
             }
             case CANVAS -> {
-                rows.add(Row.toggle("§fChapter Complete Stamp", settings::isShowChapterStamp,
-                        settings::setShowChapterStamp)
+                rows.add(Row
+                        .toggle(ChroniclesUIKit.str("phoenix_chronicles.screen.settings.chapter_complete_stamp"),
+                                settings::isShowChapterStamp,
+                                settings::setShowChapterStamp)
                         .tip("Shows a \"CHAPTER COMPLETE\" stamp in the corner of the canvas once every required\nquest in the open chapter is done."));
-                rows.add(Row.toggle("§fHide Completed by Default", settings::isHideCompletedByDefault,
-                        settings::setHideCompletedByDefault)
+                rows.add(Row
+                        .toggle(ChroniclesUIKit.str("phoenix_chronicles.screen.settings.hide_completed_by_default"),
+                                settings::isHideCompletedByDefault,
+                                settings::setHideCompletedByDefault)
                         .tip("Newly opened quest books start with completed quests\nhidden from the canvas."));
-                rows.add(Row.toggle("§fShow Progress Ring", settings::isShowProgressArc, settings::setShowProgressArc)
+                rows.add(Row
+                        .toggle(ChroniclesUIKit.str("phoenix_chronicles.screen.settings.show_progress_ring"),
+                                settings::isShowProgressArc, settings::setShowProgressArc)
                         .tip("Draws a ring around a quest node showing task-completion progress,\non top of the background color-coding. Off by default."));
-                rows.add(Row.intCycle("§fDefault Grid Snap", new int[] { 1, 2, 4, 8, 16, 32 },
-                        settings::getDefaultGridSnap, settings::setDefaultGridSnap)
-                        .tip("Default grid size new quest editors snap node dragging to."));
-                rows.add(Row.cycle("§fDependency Line Style", LineStyle.class, settings::getLineStyle,
-                        settings::setLineStyle)
+                rows.add(Row
+                        .intCycle(ChroniclesUIKit.str("phoenix_chronicles.screen.settings.default_grid_snap"),
+                                new int[] { 1, 2, 4, 8, 16, 32 },
+                                settings::getDefaultGridSnap, settings::setDefaultGridSnap)
+                        .tip(ChroniclesUIKit.str("phoenix_chronicles.screen.settings.default_grid_size_new_quest")));
+                rows.add(Row
+                        .cycle(ChroniclesUIKit.str("phoenix_chronicles.screen.settings.dependency_line_style"),
+                                LineStyle.class, settings::getLineStyle,
+                                settings::setLineStyle)
                         .tip("Shape of the lines connecting prerequisite quests\n(straight, curved, elbow, etc.)."));
-                rows.add(Row.cycle("§fLine Visual Style", LineVisualStyle.class, settings::getLineVisualStyle,
-                        settings::setLineVisualStyle)
+                rows.add(Row
+                        .cycle(ChroniclesUIKit.str("phoenix_chronicles.screen.settings.line_visual_style"),
+                                LineVisualStyle.class, settings::getLineVisualStyle,
+                                settings::setLineVisualStyle)
                         .tip("Rendering treatment for dependency lines - solid, dashed,\nhollow rail, etc."));
-                rows.add(Row.cycle("§fLine Animation Speed", LineAnimSpeed.class, settings::getLineAnimSpeed,
-                        settings::setLineAnimSpeed)
+                rows.add(Row
+                        .cycle(ChroniclesUIKit.str("phoenix_chronicles.screen.settings.line_animation_speed"),
+                                LineAnimSpeed.class, settings::getLineAnimSpeed,
+                                settings::setLineAnimSpeed)
                         .tip("How fast the marching-ants/spark animation travels along\nactive dependency lines. Ignored if Reduce Motion is on."));
-                rows.add(Row.toggle("§fShow Line Arrows", settings::isShowLineArrows, settings::setShowLineArrows)
-                        .tip("Draws directional arrowheads on dependency lines."));
-                rows.add(Row.toggle("§fMiddle-Click Pickup/Place", settings::isMiddleClickPickupPlace,
-                        settings::setMiddleClickPickupPlace)
+                rows.add(Row
+                        .toggle(ChroniclesUIKit.str("phoenix_chronicles.screen.settings.show_line_arrows"),
+                                settings::isShowLineArrows, settings::setShowLineArrows)
+                        .tip(ChroniclesUIKit
+                                .str("phoenix_chronicles.screen.settings.draws_directional_arrowheads_on_dependen")));
+                rows.add(Row
+                        .toggle(ChroniclesUIKit.str("phoenix_chronicles.screen.settings.middle_click_pickup_place"),
+                                settings::isMiddleClickPickupPlace,
+                                settings::setMiddleClickPickupPlace)
                         .tip("OFF: hold the middle mouse button on a quest, move the mouse, and\n" +
                                 "release to drop it (classic behavior).\n" +
                                 "ON: middle-click a quest to pick it up - it follows the cursor with\n" +
                                 "no button held - then middle-click again anywhere to drop it."));
-                rows.add(Row.toggle("§fCascade Hidden Quests", settings::isCascadeHiddenQuests, on -> {
-                    settings.setCascadeHiddenQuests(on);
-                    settings.save();
-                    if (parent instanceof ChronicleOverviewScreen overview) overview.rebuild();
-                })
+                rows.add(Row.toggle(ChroniclesUIKit.str("phoenix_chronicles.screen.settings.cascade_hidden_quests"),
+                        settings::isCascadeHiddenQuests, on -> {
+                            settings.setCascadeHiddenQuests(on);
+                            settings.save();
+                            if (parent instanceof ChronicleOverviewScreen overview) overview.rebuild();
+                        })
                         .tip("On by default: a locked HIDDEN/MYSTERY quest also hides every quest\n" +
                                 "downstream of it, and hides the whole chapter if nothing else in it\n" +
                                 "is visible yet - lets one gating quest hide a whole questline,\n" +
                                 "FTB-Quests-style. Turn off to only hide that one quest and show\n" +
                                 "everything else as normal, regardless of its prerequisites."));
-                rows.add(Row.info("§8These can also be changed via right-click on the quest canvas.", 1));
+                rows.add(Row.info(ChroniclesUIKit.str("phoenix_chronicles.screen.settings.these_can_also_be_changed"),
+                        1));
             }
-            case PHANTASIA -> rows.add(Row.toggle("§fAuto-Spin Previews", settings::isPhantasiaAutoSpin,
-                    settings::setPhantasiaAutoSpin)
+            case PHANTASIA -> rows.add(Row
+                    .toggle(ChroniclesUIKit.str("phoenix_chronicles.screen.settings.auto_spin_previews"),
+                            settings::isPhantasiaAutoSpin,
+                            settings::setPhantasiaAutoSpin)
                     .tip("Slowly rotates embedded Phantasia multiblock/scene previews\n(quest nodes, toasts) instead of holding them still."));
             case DEV -> {
 
-                rows.add(Row.toggle("§fAuto-Register Screens", settings::isAutoRegisterScreens, on -> {
-                    settings.setAutoRegisterScreens(on);
-                    settings.save();
-                }).tip("Lists every screen from Minecraft and your mods in the screen id pickers.\nTakes effect after restarting the game."));
+                rows.add(Row.toggle(ChroniclesUIKit.str("phoenix_chronicles.screen.settings.auto_register_screens"),
+                        settings::isAutoRegisterScreens, on -> {
+                            settings.setAutoRegisterScreens(on);
+                            settings.save();
+                        })
+                        .tip("Lists every screen from Minecraft and your mods in the screen id pickers.\nTakes effect after restarting the game."));
 
-                rows.add(Row.toggle("§fDev Mode Enabled", () -> !settings.isDevModeDisabled(), on -> {
-                    settings.setDevModeDisabled(!on);
-                    if (on) {
+                rows.add(Row.toggle(ChroniclesUIKit.str("phoenix_chronicles.screen.settings.dev_mode_enabled"),
+                        () -> !settings.isDevModeDisabled(), on -> {
+                            settings.setDevModeDisabled(!on);
+                            if (on) {
 
-                        settings.setShowDevInfoByDefault(true);
-                        settings.setShowFlagDisabledChapters(true);
-                        settings.setShowFlagDisabledQuests(true);
-                    }
-                    settings.save();
-                    if (parent instanceof ChronicleOverviewScreen overview) overview.rebuild();
-                }).tip("Unlocks debug-only canvas tools (Stats/Validation panels,\nSubgraph mode, FTB import, Dev Wiki) for creative/op players.\nTurning this on also enables the other dev toggles below\n(except Always-On Profiler and Generate .md Sidecar Files)."));
-                rows.add(Row.toggle("§fShow Dev Info by Default", settings::isShowDevInfoByDefault,
-                        settings::setShowDevInfoByDefault)
-                        .tip("Opens quest editors with dev-only fields expanded by default."));
-                rows.add(Row.toggle("§fShow Flag-Disabled Chapters", settings::isShowFlagDisabledChapters, on -> {
-                    settings.setShowFlagDisabledChapters(on);
-                    settings.save();
-                    if (parent instanceof ChronicleOverviewScreen overview) overview.rebuild();
-                })
+                                settings.setShowDevInfoByDefault(true);
+                                settings.setShowFlagDisabledChapters(true);
+                                settings.setShowFlagDisabledQuests(true);
+                            }
+                            settings.save();
+                            if (parent instanceof ChronicleOverviewScreen overview) overview.rebuild();
+                        })
+                        .tip("Unlocks debug-only canvas tools (Stats/Validation panels,\nSubgraph mode, FTB import, Dev Wiki) for creative/op players.\nTurning this on also enables the other dev toggles below\n(except Always-On Profiler and Generate .md Sidecar Files)."));
+                rows.add(Row
+                        .toggle(ChroniclesUIKit.str("phoenix_chronicles.screen.settings.show_dev_info_by_default"),
+                                settings::isShowDevInfoByDefault,
+                                settings::setShowDevInfoByDefault)
+                        .tip(ChroniclesUIKit.str("phoenix_chronicles.screen.settings.opens_quest_editors_with_dev")));
+                rows.add(Row
+                        .toggle(ChroniclesUIKit.str("phoenix_chronicles.screen.settings.show_flag_disabled_chapters"),
+                                settings::isShowFlagDisabledChapters, on -> {
+                                    settings.setShowFlagDisabledChapters(on);
+                                    settings.save();
+                                    if (parent instanceof ChronicleOverviewScreen overview) overview.rebuild();
+                                })
                         .tip("Off by default: the sidebar hides chapters a chapter_flags.snbt\n" +
                                 "rule has disabled (e.g. pack-mode variants like Genesis Hard/Expert\n" +
                                 "when you're not in that mode), same as a real player would see.\n" +
                                 "Turn on to see and edit every variant regardless of the current flag state."));
-                rows.add(Row.toggle("§fShow Flag-Disabled Quests", settings::isShowFlagDisabledQuests, on -> {
-                    settings.setShowFlagDisabledQuests(on);
-                    settings.save();
-                    if (parent instanceof ChronicleOverviewScreen overview) overview.rebuild();
-                })
+                rows.add(Row.toggle(ChroniclesUIKit.str("phoenix_chronicles.screen.settings.show_flag_disabled_quests"),
+                        settings::isShowFlagDisabledQuests, on -> {
+                            settings.setShowFlagDisabledQuests(on);
+                            settings.save();
+                            if (parent instanceof ChronicleOverviewScreen overview) overview.rebuild();
+                        })
                         .tip("On by default: within a visible chapter, dev mode also shows\n" +
                                 "individual quests a chapter_flags.snbt rule has disabled (marked\n" +
                                 "with the purple ⚑ border), so you can see and edit them in place.\n" +
                                 "Turn off to hide flag-disabled quests even while in dev mode."));
-                rows.add(Row.toggle("§fGenerate .md Sidecar Files", settings::isGenerateMdSidecarFiles, on -> {
-                    settings.setGenerateMdSidecarFiles(on);
-                    settings.save();
-                }).tip("Off by default: quest title/description already live in the .snbt\n" +
-                        "and render identically either way (same markdown formatting support).\n" +
-                        "Turn on if you'd rather edit description text in a real .md file next\n" +
-                        "to the .snbt - useful for some workflows, but many packdevs prefer\n" +
-                        "not to have an extra file per quest."));
-                rows.add(Row.toggle("§fAlways-On Profiler", settings::isAlwaysProfilerEnabled, on -> {
-                    settings.setAlwaysProfilerEnabled(on);
-                    settings.save();
-                    FrameProfiler.setEnabled(on);
-                }).tip("Keeps the rolling render-cost profiler (Ctrl+P) running for the\n" +
-                        "whole session and logs a snapshot every 10s - useful for tracking\n" +
-                        "down intermittent performance issues without remembering to toggle it."));
+                rows.add(Row.toggle(ChroniclesUIKit.str("phoenix_chronicles.screen.settings.generate_md_sidecar_files"),
+                        settings::isGenerateMdSidecarFiles, on -> {
+                            settings.setGenerateMdSidecarFiles(on);
+                            settings.save();
+                        }).tip("Off by default: quest title/description already live in the .snbt\n" +
+                                "and render identically either way (same markdown formatting support).\n" +
+                                "Turn on if you'd rather edit description text in a real .md file next\n" +
+                                "to the .snbt - useful for some workflows, but many packdevs prefer\n" +
+                                "not to have an extra file per quest."));
+                rows.add(Row.toggle(ChroniclesUIKit.str("phoenix_chronicles.screen.settings.always_on_profiler"),
+                        settings::isAlwaysProfilerEnabled, on -> {
+                            settings.setAlwaysProfilerEnabled(on);
+                            settings.save();
+                            FrameProfiler.setEnabled(on);
+                        }).tip("Keeps the rolling render-cost profiler (Ctrl+P) running for the\n" +
+                                "whole session and logs a snapshot every 10s - useful for tracking\n" +
+                                "down intermittent performance issues without remembering to toggle it."));
                 rows.add(Row.info(
                         "§8Off by default - click to opt in. Still only takes effect if you're\n" +
                                 "§8creative or op level 2+; this can't grant dev tools by itself.",
@@ -385,7 +456,8 @@ public class SettingsScreen extends Screen {
         g.fill(0, 0, vw, HEADER_H, C_HEADER);
         g.fill(0, 0, vw, 2, C_ACCENT);
         g.fill(0, HEADER_H - 1, vw, HEADER_H, C_BORDER);
-        ChroniclesUIKit.drawCenteredString(g, font, "§fChronicles Settings", vw / 2, 9, C_TEXT);
+        ChroniclesUIKit.drawCenteredString(g, font,
+                ChroniclesUIKit.str("phoenix_chronicles.screen.settings.chronicles_settings_2"), vw / 2, 9, C_TEXT);
 
         int contentTop = HEADER_H;
         int contentBottom = vh - FOOTER_H;
@@ -457,7 +529,8 @@ public class SettingsScreen extends Screen {
         g.fill(vw / 2 - btnW - btnGap / 2, btnY, vw / 2 - btnGap / 2, btnY + 18,
                 saveHov ? 0xFF2A4A2A : 0xFF1A2A1A);
         if (saveHov) g.fill(vw / 2 - btnW - btnGap / 2, btnY, vw / 2 - btnGap / 2, btnY + 1, C_OK);
-        ChroniclesUIKit.drawCenteredString(g, font, "§a✓ Save", vw / 2 - btnW / 2 - btnGap / 2, btnY + 6,
+        ChroniclesUIKit.drawCenteredString(g, font, ChroniclesUIKit.str("phoenix_chronicles.ui.save_2"),
+                vw / 2 - btnW / 2 - btnGap / 2, btnY + 6,
                 saveHov ? C_OK : C_TEXT);
 
         boolean cancelHov = mx >= vw / 2 + btnGap / 2 && mx < vw / 2 + btnW + btnGap / 2 && my >= btnY &&
@@ -465,7 +538,8 @@ public class SettingsScreen extends Screen {
         g.fill(vw / 2 + btnGap / 2, btnY, vw / 2 + btnW + btnGap / 2, btnY + 18,
                 cancelHov ? 0xFF3A3A3A : 0xFF2A2A2A);
         if (cancelHov) g.fill(vw / 2 + btnGap / 2, btnY, vw / 2 + btnW + btnGap / 2, btnY + 1, C_CANCEL);
-        ChroniclesUIKit.drawCenteredString(g, font, "§7✕ Cancel", vw / 2 + btnW / 2 + btnGap / 2, btnY + 6,
+        ChroniclesUIKit.drawCenteredString(g, font, ChroniclesUIKit.str("phoenix_chronicles.screen.settings.cancel"),
+                vw / 2 + btnW / 2 + btnGap / 2, btnY + 6,
                 cancelHov ? C_CANCEL : C_TEXT);
 
         if (hoveredTooltip != null) {

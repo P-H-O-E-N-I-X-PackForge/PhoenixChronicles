@@ -32,6 +32,7 @@ import net.phoenixvine.chronicles.common.registry.*;
 import net.phoenixvine.chronicles.common.tasks.*;
 import net.phoenixvine.chronicles.common.tracker.QuestProgressTracker;
 import net.phoenixvine.chronicles.common.tracker.TeamKeyResolver;
+import net.phoenixvine.chronicles.common.util.ChroniclesLang;
 import net.phoenixvine.chronicles.network.ChronicleNetwork;
 import net.phoenixvine.chronicles.network.packet.S2CSyncPlayerProgressPacket;
 import net.phoenixvine.chronicles.network.packet.S2CSyncPooledProgressPacket;
@@ -366,7 +367,8 @@ public class ChronicleEvents {
                                 .executes(ctx -> {
                                     if (!(ctx.getSource()
                                             .getEntity() instanceof net.minecraft.server.level.ServerPlayer sp)) {
-                                        ctx.getSource().sendFailure(Component.literal("Must be run by a player."));
+                                        ctx.getSource().sendFailure(ChroniclesLang
+                                                .tr("phoenix_chronicles.chronicle_events.must_be_run_by_a"));
                                         return 0;
                                     }
                                     String qStr = com.mojang.brigadier.arguments.StringArgumentType.getString(ctx,
@@ -375,26 +377,30 @@ public class ChronicleEvents {
                                     try {
                                         questId = parseQuestArg(qStr);
                                     } catch (Exception e) {
-                                        ctx.getSource().sendFailure(Component.literal("Invalid quest id: " + qStr));
+                                        ctx.getSource().sendFailure(ChroniclesLang
+                                                .tr("phoenix_chronicles.chronicle_events.invalid_quest_id_2", qStr));
                                         return 0;
                                     }
                                     QuestNode node = QuestTreeRegistry.getQuest(questId);
                                     if (node == null) {
-                                        ctx.getSource().sendFailure(Component.literal("Quest not found: " + qStr));
+                                        ctx.getSource().sendFailure(ChroniclesLang
+                                                .tr("phoenix_chronicles.chronicle_events.quest_not_found", qStr));
                                         return 0;
                                     }
                                     QuestState state = sp.getCapability(
                                             QuestCapabilityProvider.PLAYER_QUESTS)
                                             .map(d -> d.getQuestState(questId, QuestState.LOCKED))
                                             .orElse(QuestState.LOCKED);
-                                    String stateLabel = switch (state) {
-                                        case COMPLETED -> "§aCompleted";
-                                        case ACTIVE -> "§eActive";
-                                        case UNLOCKED -> "§bAvailable";
-                                        default -> "§7Locked";
-                                    };
-                                    ctx.getSource().sendSuccess(() -> Component.literal(
-                                            "Quest \"" + node.getTitle().getString() + "\": " + stateLabel), false);
+                                    net.minecraft.network.chat.Component stateLabel = ChroniclesLang.tr(switch (state) {
+                                        case COMPLETED -> "phoenix_chronicles.command.state_completed";
+                                        case ACTIVE -> "phoenix_chronicles.command.state_active";
+                                        case UNLOCKED -> "phoenix_chronicles.command.state_available";
+                                        default -> "phoenix_chronicles.command.state_locked";
+                                    });
+                                    ctx.getSource().sendSuccess(
+                                            () -> ChroniclesLang.tr("phoenix_chronicles.chronicle_events.quest",
+                                                    node.getTitle().getString(), stateLabel),
+                                            false);
                                     return 1;
                                 })))
 
@@ -403,7 +409,8 @@ public class ChronicleEvents {
                                 .executes(ctx -> {
                                     if (!(ctx.getSource()
                                             .getEntity() instanceof net.minecraft.server.level.ServerPlayer sp)) {
-                                        ctx.getSource().sendFailure(Component.literal("Must be run by a player."));
+                                        ctx.getSource().sendFailure(ChroniclesLang
+                                                .tr("phoenix_chronicles.chronicle_events.must_be_run_by_a"));
                                         return 0;
                                     }
                                     String qStr = com.mojang.brigadier.arguments.StringArgumentType.getString(ctx,
@@ -412,12 +419,14 @@ public class ChronicleEvents {
                                     try {
                                         questId = parseQuestArg(qStr);
                                     } catch (Exception e) {
-                                        ctx.getSource().sendFailure(Component.literal("Invalid quest id: " + qStr));
+                                        ctx.getSource().sendFailure(ChroniclesLang
+                                                .tr("phoenix_chronicles.chronicle_events.invalid_quest_id_2", qStr));
                                         return 0;
                                     }
                                     QuestNode node = QuestTreeRegistry.getQuest(questId);
                                     if (node == null) {
-                                        ctx.getSource().sendFailure(Component.literal("Quest not found: " + qStr));
+                                        ctx.getSource().sendFailure(ChroniclesLang
+                                                .tr("phoenix_chronicles.chronicle_events.quest_not_found", qStr));
                                         return 0;
                                     }
                                     QuestProgressTracker.EmergencyResult result = QuestProgressTracker
@@ -447,7 +456,8 @@ public class ChronicleEvents {
                                 .executes(ctx -> {
                                     if (!(ctx.getSource()
                                             .getEntity() instanceof net.minecraft.server.level.ServerPlayer sp)) {
-                                        ctx.getSource().sendFailure(Component.literal("Must be run by a player."));
+                                        ctx.getSource().sendFailure(ChroniclesLang
+                                                .tr("phoenix_chronicles.chronicle_events.must_be_run_by_a"));
                                         return 0;
                                     }
                                     String qStr = com.mojang.brigadier.arguments.StringArgumentType.getString(ctx,
@@ -459,7 +469,8 @@ public class ChronicleEvents {
                                         node = null;
                                     }
                                     if (node == null) {
-                                        ctx.getSource().sendFailure(Component.literal("Quest not found: " + qStr));
+                                        ctx.getSource().sendFailure(ChroniclesLang
+                                                .tr("phoenix_chronicles.chronicle_events.quest_not_found", qStr));
                                         return 0;
                                     }
                                     final QuestNode fn = node;
@@ -490,8 +501,10 @@ public class ChronicleEvents {
                         .then(Commands.literal("off")
                                 .executes(ctx -> {
                                     net.phoenixvine.chronicles.common.debug.ChronicleDebug.watch(null);
-                                    ctx.getSource().sendSuccess(() -> Component.literal("Quest debug logging off."),
-                                            false);
+                                    ctx.getSource()
+                                            .sendSuccess(() -> ChroniclesLang
+                                                    .tr("phoenix_chronicles.chronicle_events.quest_debug_logging_off"),
+                                                    false);
                                     return 1;
                                 }))
                         .then(Commands.argument("quest", questArg)
@@ -505,13 +518,13 @@ public class ChronicleEvents {
                                         node = null;
                                     }
                                     if (node == null) {
-                                        ctx.getSource().sendFailure(Component.literal("Quest not found: " + qStr));
+                                        ctx.getSource().sendFailure(ChroniclesLang
+                                                .tr("phoenix_chronicles.chronicle_events.quest_not_found", qStr));
                                         return 0;
                                     }
                                     net.phoenixvine.chronicles.common.debug.ChronicleDebug.watch(node.getId());
-                                    ctx.getSource().sendSuccess(() -> Component.literal(
-                                            "Watching " + qStr + ": its state changes and every task check go to the " +
-                                                    "server log as [Chronicles debug]. /chronicles debug off to stop."),
+                                    ctx.getSource().sendSuccess(() -> ChroniclesLang.tr(
+                                            "phoenix_chronicles.chronicle_events.watching_its_state_changes_and", qStr),
                                             false);
                                     return 1;
                                 })))
@@ -573,7 +586,8 @@ public class ChronicleEvents {
                         .executes(ctx -> {
                             MinecraftServer server = getCachedServer();
                             if (server == null) {
-                                ctx.getSource().sendFailure(Component.literal("Server not available."));
+                                ctx.getSource().sendFailure(
+                                        ChroniclesLang.tr("phoenix_chronicles.chronicle_events.server_not_available"));
                                 return 0;
                             }
                             java.nio.file.Path configDir = resolveConfigDir(server);
@@ -594,9 +608,8 @@ public class ChronicleEvents {
                                 playerCount++;
                             }
                             final int fp = playerCount;
-                            ctx.getSource().sendSuccess(() -> Component.literal(
-                                    "§a✔ Reloaded " + questCount + " quest(s) from config, synced to " + fp +
-                                            " player(s)."),
+                            ctx.getSource().sendSuccess(() -> ChroniclesLang.tr(
+                                    "phoenix_chronicles.chronicle_events.reloaded_quest_s_from_config", questCount, fp),
                                     true);
                             return 1;
                         }))
@@ -616,13 +629,15 @@ public class ChronicleEvents {
                                             RewardTable table = RewardTableRegistry.get(id);
                                             if (table == null) {
                                                 ctx.getSource().sendFailure(
-                                                        Component.literal("No reward table '" + id + "'."));
+                                                        ChroniclesLang.tr(
+                                                                "phoenix_chronicles.chronicle_events.no_reward_table",
+                                                                id));
                                                 return 0;
                                             }
                                             net.minecraft.world.Container box = RewardTableChest.targetContainer(sp);
                                             if (box == null) {
-                                                ctx.getSource().sendFailure(Component.literal(
-                                                        "Look at a chest, barrel, or other container (within 6 blocks)."));
+                                                ctx.getSource().sendFailure(ChroniclesLang.tr(
+                                                        "phoenix_chronicles.chronicle_events.look_at_a_chest_barrel"));
                                                 return 0;
                                             }
                                             RewardTableChest.Result r = RewardTableChest.export(table, box);
@@ -652,7 +667,8 @@ public class ChronicleEvents {
                         .executes(ctx -> {
                             MinecraftServer server = getCachedServer();
                             if (server == null) {
-                                ctx.getSource().sendFailure(Component.literal("Server not available."));
+                                ctx.getSource().sendFailure(
+                                        ChroniclesLang.tr("phoenix_chronicles.chronicle_events.server_not_available"));
                                 return 0;
                             }
                             String stamp = java.time.LocalDateTime.now()
@@ -664,8 +680,10 @@ public class ChronicleEvents {
                             } catch (java.io.IOException ignored) {}
                             int count = QuestFileSaver.exportTo(exportDir);
                             final java.nio.file.Path fp = exportDir;
-                            ctx.getSource().sendSuccess(() -> Component.literal(
-                                    "§a✔ Exported §f" + count + " §aquest(s) to §7" + fp), false);
+                            ctx.getSource()
+                                    .sendSuccess(() -> ChroniclesLang
+                                            .tr("phoenix_chronicles.chronicle_events.exported_quest_s_to", count, fp),
+                                            false);
                             return count;
                         }))
 
@@ -707,18 +725,21 @@ public class ChronicleEvents {
                             }
                             int total = errors.size() + noTask.size();
                             if (total == 0) {
-                                ctx.getSource().sendSuccess(() -> Component.literal("§a✔ No issues found. " +
-                                        QuestTreeRegistry.getAllQuests().size() + " quests loaded cleanly."), false);
+                                ctx.getSource()
+                                        .sendSuccess(() -> ChroniclesLang.tr(
+                                                "phoenix_chronicles.chronicle_events.no_issues_found_quests_loaded",
+                                                QuestTreeRegistry.getAllQuests().size()), false);
                                 return 1;
                             }
-                            ctx.getSource().sendSuccess(() -> Component.literal("§e⚠ " + total + " issue(s) found:"),
+                            ctx.getSource().sendSuccess(
+                                    () -> ChroniclesLang.tr("phoenix_chronicles.chronicle_events.issue_s_found", total),
                                     false);
                             for (String err : errors)
                                 ctx.getSource().sendSuccess(() -> Component.literal("§c✗ " + err), false);
                             for (String id : noTask)
                                 ctx.getSource()
-                                        .sendSuccess(() -> Component.literal(
-                                                "§7◦ '" + id + "' has no tasks: will auto-complete on unlock."),
+                                        .sendSuccess(() -> ChroniclesLang
+                                                .tr("phoenix_chronicles.chronicle_events.has_no_tasks_will_auto", id),
                                                 false);
                             return 1;
                         }))
@@ -728,7 +749,8 @@ public class ChronicleEvents {
                                 .executes(ctx -> {
                                     if (!(ctx.getSource()
                                             .getEntity() instanceof net.minecraft.server.level.ServerPlayer sp)) {
-                                        ctx.getSource().sendFailure(Component.literal("Must be run by a player."));
+                                        ctx.getSource().sendFailure(ChroniclesLang
+                                                .tr("phoenix_chronicles.chronicle_events.must_be_run_by_a"));
                                         return 0;
                                     }
                                     String name = com.mojang.brigadier.arguments.StringArgumentType.getString(ctx,
@@ -746,7 +768,8 @@ public class ChronicleEvents {
         net.minecraft.server.level.ServerPlayer sp = explicitPlayer;
         if (sp == null) {
             if (!(ctx.getSource().getEntity() instanceof net.minecraft.server.level.ServerPlayer self)) {
-                ctx.getSource().sendFailure(Component.literal("Must specify a player when running from console."));
+                ctx.getSource().sendFailure(
+                        ChroniclesLang.tr("phoenix_chronicles.chronicle_events.must_specify_a_player_when"));
                 return 0;
             }
             sp = self;
@@ -756,12 +779,14 @@ public class ChronicleEvents {
         try {
             questId = parseQuestArg(questArg);
         } catch (Exception e) {
-            ctx.getSource().sendFailure(Component.literal("Invalid quest ID: " + questArg));
+            ctx.getSource()
+                    .sendFailure(ChroniclesLang.tr("phoenix_chronicles.chronicle_events.invalid_quest_id", questArg));
             return 0;
         }
         QuestNode node = QuestTreeRegistry.getQuest(questId);
         if (node == null) {
-            ctx.getSource().sendFailure(Component.literal("Quest not found: " + questArg));
+            ctx.getSource()
+                    .sendFailure(ChroniclesLang.tr("phoenix_chronicles.chronicle_events.quest_not_found", questArg));
             return 0;
         }
         final net.minecraft.server.level.ServerPlayer fsp = sp;
@@ -777,12 +802,14 @@ public class ChronicleEvents {
                             new S2CSyncPlayerProgressPacket(
                                     data));
                 });
-        String label = target == QuestState.COMPLETED ? "§acompleted" :
-                target == QuestState.ACTIVE ? "§estarted" :
-                        target == QuestState.UNLOCKED ? "§bunlocked" : "§7reset";
+        net.minecraft.network.chat.Component label = ChroniclesLang.tr(target == QuestState.COMPLETED ?
+                "phoenix_chronicles.command.did_complete" :
+                target == QuestState.ACTIVE ? "phoenix_chronicles.command.did_start" :
+                        target == QuestState.UNLOCKED ? "phoenix_chronicles.command.did_unlock" :
+                                "phoenix_chronicles.command.did_reset");
         String name = fsp.getName().getString();
         ctx.getSource().sendSuccess(
-                () -> Component.literal("Quest " + label + "§r for " + name + ": " + questArg), true);
+                () -> ChroniclesLang.tr("phoenix_chronicles.chronicle_events.quest_for", label, name, questArg), true);
         return 1;
     }
 
@@ -791,7 +818,8 @@ public class ChronicleEvents {
         net.minecraft.server.level.ServerPlayer sp = explicitPlayer;
         if (sp == null) {
             if (!(ctx.getSource().getEntity() instanceof net.minecraft.server.level.ServerPlayer self)) {
-                ctx.getSource().sendFailure(Component.literal("Must specify a player when running from console."));
+                ctx.getSource().sendFailure(
+                        ChroniclesLang.tr("phoenix_chronicles.chronicle_events.must_specify_a_player_when"));
                 return 0;
             }
             sp = self;
@@ -801,12 +829,14 @@ public class ChronicleEvents {
         try {
             taskId = parseQuestArg(taskArg);
         } catch (Exception e) {
-            ctx.getSource().sendFailure(Component.literal("Invalid task ID: " + taskArg));
+            ctx.getSource()
+                    .sendFailure(ChroniclesLang.tr("phoenix_chronicles.chronicle_events.invalid_task_id", taskArg));
             return 0;
         }
         QuestNode node = QuestTreeRegistry.getTaskOwner(taskId);
         if (node == null) {
-            ctx.getSource().sendFailure(Component.literal("Task not found: " + taskArg));
+            ctx.getSource()
+                    .sendFailure(ChroniclesLang.tr("phoenix_chronicles.chronicle_events.task_not_found", taskArg));
             return 0;
         }
 
@@ -818,7 +848,8 @@ public class ChronicleEvents {
 
         String name = fsp.getName().getString();
         ctx.getSource().sendSuccess(
-                () -> Component.literal("Task §aforce-completed§r for " + name + ": " + taskArg), true);
+                () -> ChroniclesLang.tr("phoenix_chronicles.chronicle_events.task_force_completed_for", name, taskArg),
+                true);
         return 1;
     }
 
@@ -827,7 +858,8 @@ public class ChronicleEvents {
         net.minecraft.server.level.ServerPlayer sp = explicitPlayer;
         if (sp == null) {
             if (!(ctx.getSource().getEntity() instanceof net.minecraft.server.level.ServerPlayer self)) {
-                ctx.getSource().sendFailure(Component.literal("Must specify a player when running from console."));
+                ctx.getSource().sendFailure(
+                        ChroniclesLang.tr("phoenix_chronicles.chronicle_events.must_specify_a_player_when"));
                 return 0;
             }
             sp = self;
@@ -837,12 +869,14 @@ public class ChronicleEvents {
         try {
             taskId = parseQuestArg(taskArg);
         } catch (Exception e) {
-            ctx.getSource().sendFailure(Component.literal("Invalid task ID: " + taskArg));
+            ctx.getSource()
+                    .sendFailure(ChroniclesLang.tr("phoenix_chronicles.chronicle_events.invalid_task_id", taskArg));
             return 0;
         }
         QuestNode node = QuestTreeRegistry.getTaskOwner(taskId);
         if (node == null) {
-            ctx.getSource().sendFailure(Component.literal("Task not found: " + taskArg));
+            ctx.getSource()
+                    .sendFailure(ChroniclesLang.tr("phoenix_chronicles.chronicle_events.task_not_found", taskArg));
             return 0;
         }
 
@@ -863,7 +897,8 @@ public class ChronicleEvents {
 
         String name = fsp.getName().getString();
         ctx.getSource().sendSuccess(
-                () -> Component.literal("Task §7progress reset§r for " + name + ": " + taskArg), true);
+                () -> ChroniclesLang.tr("phoenix_chronicles.chronicle_events.task_progress_reset_for", name, taskArg),
+                true);
         return 1;
     }
 
@@ -872,7 +907,8 @@ public class ChronicleEvents {
         net.minecraft.server.level.ServerPlayer sp = explicitPlayer;
         if (sp == null) {
             if (!(ctx.getSource().getEntity() instanceof net.minecraft.server.level.ServerPlayer self)) {
-                ctx.getSource().sendFailure(Component.literal("Must specify a player when running from console."));
+                ctx.getSource().sendFailure(
+                        ChroniclesLang.tr("phoenix_chronicles.chronicle_events.must_specify_a_player_when"));
                 return 0;
             }
             sp = self;
@@ -882,12 +918,14 @@ public class ChronicleEvents {
         try {
             questId = parseQuestArg(questArg);
         } catch (Exception e) {
-            ctx.getSource().sendFailure(Component.literal("Invalid quest ID: " + questArg));
+            ctx.getSource()
+                    .sendFailure(ChroniclesLang.tr("phoenix_chronicles.chronicle_events.invalid_quest_id", questArg));
             return 0;
         }
         QuestNode node = QuestTreeRegistry.getQuest(questId);
         if (node == null) {
-            ctx.getSource().sendFailure(Component.literal("Quest not found: " + questArg));
+            ctx.getSource()
+                    .sendFailure(ChroniclesLang.tr("phoenix_chronicles.chronicle_events.quest_not_found", questArg));
             return 0;
         }
         List<net.minecraft.resources.ResourceLocation> taskIds = new java.util.ArrayList<>();
@@ -913,7 +951,8 @@ public class ChronicleEvents {
                 });
         String name = fsp.getName().getString();
         ctx.getSource().sendSuccess(
-                () -> Component.literal("Quest §7progress reset§r for " + name + ": " + questArg), true);
+                () -> ChroniclesLang.tr("phoenix_chronicles.chronicle_events.quest_progress_reset_for", name, questArg),
+                true);
         return 1;
     }
 
@@ -923,7 +962,8 @@ public class ChronicleEvents {
         net.minecraft.server.level.ServerPlayer sp = explicitPlayer;
         if (sp == null) {
             if (!(ctx.getSource().getEntity() instanceof net.minecraft.server.level.ServerPlayer self)) {
-                ctx.getSource().sendFailure(Component.literal("Must specify a player when running from console."));
+                ctx.getSource().sendFailure(
+                        ChroniclesLang.tr("phoenix_chronicles.chronicle_events.must_specify_a_player_when"));
                 return 0;
             }
             sp = self;
@@ -931,7 +971,7 @@ public class ChronicleEvents {
 
         MinecraftServer server = getCachedServer();
         if (server == null) {
-            ctx.getSource().sendFailure(Component.literal("Server not available."));
+            ctx.getSource().sendFailure(ChroniclesLang.tr("phoenix_chronicles.chronicle_events.server_not_available"));
             return 0;
         }
 
@@ -943,8 +983,9 @@ public class ChronicleEvents {
                 .resolve("ftbquests").resolve(sp.getStringUUID() + ".snbt");
 
         if (!java.nio.file.Files.exists(ftbPlayerSaveFile)) {
-            ctx.getSource().sendFailure(Component.literal(
-                    "No FTB Quests save found for " + sp.getName().getString() + " at §7" + ftbPlayerSaveFile));
+            ctx.getSource()
+                    .sendFailure(ChroniclesLang.tr("phoenix_chronicles.chronicle_events.no_ftb_quests_save_found",
+                            sp.getName().getString(), ftbPlayerSaveFile));
             return 0;
         }
 
@@ -967,15 +1008,15 @@ public class ChronicleEvents {
 
         var result = resultHolder.result;
         if (result == null) {
-            ctx.getSource().sendFailure(Component.literal("No quest capability available for that player."));
+            ctx.getSource().sendFailure(
+                    ChroniclesLang.tr("phoenix_chronicles.chronicle_events.no_quest_capability_available_for"));
             return 0;
         }
 
         String name = fsp.getName().getString();
-        ctx.getSource().sendSuccess(() -> Component.literal(
-                "§a✔ FTB progress import for " + name + ": §f" + result.ported() + " §aquest(s) newly completed, §7" +
-                        result.alreadyComplete() + " §aalready complete, §f" + result.claimedRewards() +
-                        " §areward(s) marked claimed" +
+        ctx.getSource().sendSuccess(
+                () -> ChroniclesLang.tr("phoenix_chronicles.chronicle_events.ftb_progress_import_for_quest", name,
+                        result.ported(), result.alreadyComplete(), result.claimedRewards(),
                         (result.notPortable() > 0 ? " §e(" + result.notPortable() +
                                 " completed FTB quest(s) had no Chronicles " + "counterpart and couldn't be ported)" :
                                 "")),
@@ -992,19 +1033,19 @@ public class ChronicleEvents {
         net.minecraft.server.level.ServerPlayer sp = ctx.getSource().getPlayerOrException();
         String id = com.mojang.brigadier.arguments.StringArgumentType.getString(ctx, "table");
         if (!RewardTableChest.isValidId(id)) {
-            ctx.getSource().sendFailure(Component.literal(
-                    "Table ids can use letters, digits, '_', '-' and '.', and must not start with '.'."));
+            ctx.getSource()
+                    .sendFailure(ChroniclesLang.tr("phoenix_chronicles.chronicle_events.table_ids_can_use_letters"));
             return 0;
         }
         MinecraftServer server = getCachedServer();
         if (server == null) {
-            ctx.getSource().sendFailure(Component.literal("Server not available."));
+            ctx.getSource().sendFailure(ChroniclesLang.tr("phoenix_chronicles.chronicle_events.server_not_available"));
             return 0;
         }
         net.minecraft.world.Container box = RewardTableChest.targetContainer(sp);
         if (box == null) {
             ctx.getSource()
-                    .sendFailure(Component.literal("Look at a chest, barrel, or other container (within 6 blocks)."));
+                    .sendFailure(ChroniclesLang.tr("phoenix_chronicles.chronicle_events.look_at_a_chest_barrel"));
             return 0;
         }
         RewardTableChest.Result r = RewardTableChest.importInto(resolveConfigDir(server), id, pick, box);
@@ -1020,7 +1061,7 @@ public class ChronicleEvents {
                                 String subfolder) {
         MinecraftServer server = getCachedServer();
         if (server == null) {
-            ctx.getSource().sendFailure(Component.literal("Server not available."));
+            ctx.getSource().sendFailure(ChroniclesLang.tr("phoenix_chronicles.chronicle_events.server_not_available"));
             return 0;
         }
         java.nio.file.Path importDir = resolveConfigDir(server).resolve(subfolder);
@@ -1040,9 +1081,9 @@ public class ChronicleEvents {
             playerCount++;
         }
         final int fp = playerCount;
-        ctx.getSource().sendSuccess(() -> Component.literal(
-                "§a✔ Imported §f" + added + " §anew quest(s) from §7" + importDir +
-                        (fp > 0 ? " §aand synced to §f" + fp + " §aplayer(s)." : ".")),
+        ctx.getSource().sendSuccess(
+                () -> ChroniclesLang.tr("phoenix_chronicles.chronicle_events.imported_new_quest_s_from", added,
+                        importDir, (fp > 0 ? " §aand synced to §f" + fp + " §aplayer(s)." : ".")),
                 true);
         return added;
     }
@@ -1072,7 +1113,7 @@ public class ChronicleEvents {
                                    String subfolder) {
         MinecraftServer server = getCachedServer();
         if (server == null) {
-            ctx.getSource().sendFailure(Component.literal("Server not available."));
+            ctx.getSource().sendFailure(ChroniclesLang.tr("phoenix_chronicles.chronicle_events.server_not_available"));
             return 0;
         }
         java.nio.file.Path configDir = resolveConfigDir(server);
@@ -1091,8 +1132,8 @@ public class ChronicleEvents {
             return 0;
         }
 
-        ctx.getSource().sendSuccess(() -> Component.literal(
-                "§7Importing FTB Quests from §f" + importDir + "§7 - this runs in the background, hang on..."), true);
+        ctx.getSource().sendSuccess(() -> ChroniclesLang
+                .tr("phoenix_chronicles.chronicle_events.importing_ftb_quests_from_this", importDir), true);
 
         Thread importThread = new Thread(() -> {
             long tImportStart = System.currentTimeMillis();
@@ -1102,7 +1143,8 @@ public class ChronicleEvents {
                         configDir);
             } catch (Exception e) {
                 server.execute(
-                        () -> ctx.getSource().sendFailure(Component.literal("§cFTB import failed: " + e.getMessage())));
+                        () -> ctx.getSource().sendFailure(ChroniclesLang
+                                .tr("phoenix_chronicles.chronicle_events.ftb_import_failed", e.getMessage())));
                 return;
             }
             long tImportDone = System.currentTimeMillis();
@@ -1150,9 +1192,10 @@ public class ChronicleEvents {
                                 (localReload ? "local reload signal" : "full packet") +
                                 ") took " + (tSyncDone - tReloadDone) + "ms");
                 final int fp = playerCount;
-                ctx.getSource().sendSuccess(() -> Component.literal(
-                        "§a✔ FTB import: §f" + r.imported() + " §aconverted, §c" + r.skipped() + " §askipped" +
-                                (r.category().isEmpty() ? "" : " §8(chapter: §7" + r.category() + "§8)") +
+                ctx.getSource().sendSuccess(
+                        () -> ChroniclesLang.tr("phoenix_chronicles.chronicle_events.ftb_import_converted_skipped",
+                                r.imported(), r.skipped(),
+                                (r.category().isEmpty() ? "" : " §8(chapter: §7" + r.category() + "§8)"),
                                 (fp > 0 ? " §8· §asynced to §f" + fp + " §aplayer(s)" : "")),
                         true);
                 for (String w : r.warnings()) {
@@ -1160,8 +1203,9 @@ public class ChronicleEvents {
                 }
 
                 if (!loadErrors.isEmpty()) {
-                    ctx.getSource().sendSuccess(() -> Component.literal(
-                            "§c⚠ " + loadErrors.size() + " issue(s) found after reload:"), false);
+                    ctx.getSource().sendSuccess(() -> ChroniclesLang
+                            .tr("phoenix_chronicles.chronicle_events.issue_s_found_after_reload", loadErrors.size()),
+                            false);
                     for (String err : loadErrors) {
                         ctx.getSource().sendSuccess(() -> Component.literal("§c  • " + err), false);
                     }

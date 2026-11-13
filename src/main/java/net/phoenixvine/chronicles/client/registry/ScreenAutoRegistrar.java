@@ -91,7 +91,7 @@ public final class ScreenAutoRegistrar {
 
     private static ResourceLocation idFor(String className) {
         String path = className.toLowerCase().replace('.', '/');
-        return ResourceLocation.tryParse(NAMESPACE + ":" + path);
+        return ResourceLocation.tryBuild(NAMESPACE, path);
     }
 
     private static Screen create(Class<?> clazz) {

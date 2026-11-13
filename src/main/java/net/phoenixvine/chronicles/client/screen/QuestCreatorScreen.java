@@ -196,7 +196,7 @@ public class QuestCreatorScreen extends Screen {
     }
 
     public QuestCreatorScreen(Screen parent, String defaultChapter) {
-        super(ChroniclesUIKit.lit("New Quest"));
+        super(ChroniclesUIKit.tr("phoenix_chronicles.ui.new_quest"));
         this.parent = parent;
         this.editingNode = null;
         if (defaultChapter != null && !defaultChapter.isBlank()) this.cachedChapter = defaultChapter;
@@ -208,7 +208,7 @@ public class QuestCreatorScreen extends Screen {
     }
 
     public QuestCreatorScreen(Screen parent, int canvasX, int canvasY, String defaultChapter) {
-        super(ChroniclesUIKit.lit("New Quest"));
+        super(ChroniclesUIKit.tr("phoenix_chronicles.ui.new_quest"));
         this.parent = parent;
         this.editingNode = null;
         this.cachedPosX = canvasX;
@@ -218,7 +218,7 @@ public class QuestCreatorScreen extends Screen {
     }
 
     public QuestCreatorScreen(Screen parent, QuestNode editingNode) {
-        super(ChroniclesUIKit.lit("Edit Quest"));
+        super(ChroniclesUIKit.tr("phoenix_chronicles.screen.quest_creator.edit_quest"));
         this.parent = parent;
         this.editingNode = editingNode;
 
@@ -358,23 +358,27 @@ public class QuestCreatorScreen extends Screen {
 
         int fbtnY = height - FOOTER_H + (FOOTER_H - 16) / 2;
         int halfW = (cw - COL_GAP) / 2;
-        addRenderableWidget(Button.builder(ChroniclesUIKit.lit("§a✓ Save & Close"), b -> {
-            save();
-            if (!statusIsErr) {
-                ChronicleOverviewScreen.invalidateNodeCachesUpChain(parent, lastSavedNode);
-                if (minecraft != null) minecraft.setScreen(parent);
-            }
-        }).bounds(cx, fbtnY, halfW, 16)
-                .tooltip(Tooltip.create(ChroniclesUIKit.lit("Write quest to disk, register it live, and return")))
-                .build());
-        addRenderableWidget(Button.builder(ChroniclesUIKit.lit("§f✕ Cancel"), b -> {
+        addRenderableWidget(
+                Button.builder(ChroniclesUIKit.tr("phoenix_chronicles.screen.quest_creator.save_close"), b -> {
+                    save();
+                    if (!statusIsErr) {
+                        ChronicleOverviewScreen.invalidateNodeCachesUpChain(parent, lastSavedNode);
+                        if (minecraft != null) minecraft.setScreen(parent);
+                    }
+                }).bounds(cx, fbtnY, halfW, 16)
+                        .tooltip(Tooltip.create(ChroniclesUIKit
+                                .tr("phoenix_chronicles.screen.quest_creator.write_quest_to_disk_register")))
+                        .build());
+        addRenderableWidget(Button.builder(ChroniclesUIKit.tr("phoenix_chronicles.screen.quest_creator.cancel"), b -> {
             if (hasUnsavedChanges()) {
                 cancelConfirmOpen = true;
             } else if (minecraft != null) {
                 minecraft.setScreen(parent);
             }
         }).bounds(cx + halfW + COL_GAP, fbtnY, halfW, 16)
-                .tooltip(Tooltip.create(ChroniclesUIKit.lit("Discard unsaved changes and return"))).build());
+                .tooltip(Tooltip.create(ChroniclesUIKit
+                        .tr("phoenix_chronicles.screen.quest_creator.discard_unsaved_changes_and_return")))
+                .build());
     }
 
     @FunctionalInterface
@@ -401,10 +405,11 @@ public class QuestCreatorScreen extends Screen {
 
     private int buildBasicInfo(int y) {
         int rowY = y + LABEL_H + LABEL_GAP;
-        labels.add(new LabelEntry(cx, y, "§fTitle", C_TEXT_FAINT));
+        labels.add(new LabelEntry(cx, y, ChroniclesUIKit.str("phoenix_chronicles.screen.quest_creator.title_2"),
+                C_TEXT_FAINT));
         titleBox = new CodeEditBox(font, cx, rowY, cw - EDIT_W - 2, FIELD_H, Component.empty());
         titleBox.setMaxLength(160);
-        titleBox.setHint(ChroniclesUIKit.lit("§fQuest title shown to players"));
+        titleBox.setHint(ChroniclesUIKit.tr("phoenix_chronicles.screen.quest_creator.quest_title_shown_to_players"));
         titleBox.setValue(cachedTitle);
         titleBox.setResponder(v -> {
             cachedTitle = v;
@@ -419,25 +424,29 @@ public class QuestCreatorScreen extends Screen {
         });
         addRenderableWidget(titleBox);
         addRenderableWidget(Button.builder(ChroniclesUIKit.lit("§f✎"),
-                b -> Minecraft.getInstance().setScreen(new QuestTextInputScreen(this, "Title", cachedTitle, 64,
-                        v -> {
-                            cachedTitle = v;
-                            if (titleBox != null) titleBox.setValue(v);
-                        })))
+                b -> Minecraft.getInstance()
+                        .setScreen(new QuestTextInputScreen(this,
+                                ChroniclesUIKit.str("phoenix_chronicles.screen.quest_creator.title"), cachedTitle, 64,
+                                v -> {
+                                    cachedTitle = v;
+                                    if (titleBox != null) titleBox.setValue(v);
+                                })))
                 .bounds(cx + cw - EDIT_W, rowY, EDIT_W, FIELD_H).build());
         y = rowY + FIELD_H + ROW_GAP;
 
         rowY = y + LABEL_H + LABEL_GAP;
-        labels.add(new LabelEntry(cx, y, "§fDescription", C_TEXT_FAINT));
+        labels.add(new LabelEntry(cx, y, ChroniclesUIKit.str("phoenix_chronicles.screen.quest_creator.description"),
+                C_TEXT_FAINT));
         descBox = new CodeEditBox(font, cx, rowY, cw - EDIT_W - 2, FIELD_H, Component.empty());
         descBox.setMaxLength(512);
-        descBox.setHint(ChroniclesUIKit.lit("§fShort description / lore text"));
+        descBox.setHint(ChroniclesUIKit.tr("phoenix_chronicles.screen.quest_creator.short_description_lore_text"));
         descBox.setValue(cachedDesc);
         descBox.setResponder(v -> cachedDesc = v);
         addRenderableWidget(descBox);
         addRenderableWidget(Button.builder(ChroniclesUIKit.lit("§f✎"),
                 b -> Minecraft.getInstance()
-                        .setScreen(new QuestTextInputScreen(this, "Description", cachedDesc, 8192,
+                        .setScreen(new QuestTextInputScreen(this,
+                                ChroniclesUIKit.str("phoenix_chronicles.ui.description"), cachedDesc, 8192,
                                 v -> {
                                     cachedDesc = v;
                                     if (descBox != null) descBox.setValue(v);
@@ -451,13 +460,15 @@ public class QuestCreatorScreen extends Screen {
         int subX = cx + catColW + COL_GAP;
         catRowY = y;
         catW = catColW;
-        labels.add(new LabelEntry(cx, y, "§fChapter", C_TEXT_FAINT));
-        labels.add(new LabelEntry(subX, y, "§fSubtitle", C_TEXT_FAINT));
+        labels.add(new LabelEntry(cx, y, ChroniclesUIKit.str("phoenix_chronicles.screen.quest_creator.chapter"),
+                C_TEXT_FAINT));
+        labels.add(new LabelEntry(subX, y, ChroniclesUIKit.str("phoenix_chronicles.screen.quest_creator.subtitle_3"),
+                C_TEXT_FAINT));
         int catPickW = 16, newCatW = 32;
         int catBoxW = catColW - catPickW - 2 - newCatW - 2;
         chapterBox = new EditBox(font, cx, rowY, catBoxW, FIELD_H, Component.empty());
         chapterBox.setMaxLength(32);
-        chapterBox.setHint(ChroniclesUIKit.lit("§fMAIN  CHAPTER_1  …"));
+        chapterBox.setHint(ChroniclesUIKit.tr("phoenix_chronicles.screen.quest_creator.main_chapter_1"));
         chapterBox.setValue(cachedChapter);
         chapterBox.setResponder(v -> {
             cachedChapter = v;
@@ -468,7 +479,7 @@ public class QuestCreatorScreen extends Screen {
             chapterDropdownOpen = !chapterDropdownOpen;
             visibilityDropdownOpen = false;
         }).bounds(cx + catBoxW + 2, rowY, catPickW, FIELD_H).build());
-        addRenderableWidget(Button.builder(ChroniclesUIKit.lit("§a+New"), b -> {
+        addRenderableWidget(Button.builder(ChroniclesUIKit.tr("phoenix_chronicles.screen.quest_creator.new"), b -> {
             chapterDropdownOpen = false;
             cachedChapter = "";
             if (chapterBox != null) {
@@ -478,13 +489,15 @@ public class QuestCreatorScreen extends Screen {
         }).bounds(cx + catBoxW + 2 + catPickW + 2, rowY, newCatW, FIELD_H).build());
         subtitleBox = new CodeEditBox(font, subX, rowY, subW - EDIT_W - 2, FIELD_H, Component.empty());
         subtitleBox.setMaxLength(256);
-        subtitleBox.setHint(ChroniclesUIKit.lit("§fSubtitle…"));
+        subtitleBox.setHint(ChroniclesUIKit.tr("phoenix_chronicles.screen.quest_creator.subtitle"));
         subtitleBox.setValue(cachedSubtitle);
         subtitleBox.setResponder(v -> cachedSubtitle = v);
         addRenderableWidget(subtitleBox);
         addRenderableWidget(Button.builder(ChroniclesUIKit.lit("§f✎"),
                 b -> Minecraft.getInstance()
-                        .setScreen(new QuestTextInputScreen(this, "Subtitle", cachedSubtitle, 128,
+                        .setScreen(new QuestTextInputScreen(this,
+                                ChroniclesUIKit.str("phoenix_chronicles.screen.quest_creator.subtitle_2"),
+                                cachedSubtitle, 128,
                                 v -> {
                                     cachedSubtitle = v;
                                     if (subtitleBox != null) subtitleBox.setValue(v);
@@ -500,12 +513,15 @@ public class QuestCreatorScreen extends Screen {
         shapeRowY = rowY;
         shapeColW = shapeW;
         shapeX = sX;
-        labels.add(new LabelEntry(cx, y, "§fIcon", C_TEXT_FAINT));
-        labels.add(new LabelEntry(sX, y, "§fShape  §f" + cachedShape, C_TEXT_FAINT));
+        labels.add(new LabelEntry(cx, y, ChroniclesUIKit.str("phoenix_chronicles.screen.quest_creator.icon"),
+                C_TEXT_FAINT));
+        labels.add(new LabelEntry(sX, y,
+                ChroniclesUIKit.str("phoenix_chronicles.screen.quest_creator.shape", cachedShape), C_TEXT_FAINT));
         net.minecraft.world.item.Item iconItem = cachedIconItemId.isBlank() ? null :
                 ForgeRegistries.ITEMS.getValue(ResourceLocation.parse(cachedIconItemId));
         String iconBtnLabel = (iconItem != null && iconItem != net.minecraft.world.item.Items.AIR) ?
-                "§f" + new net.minecraft.world.item.ItemStack(iconItem).getHoverName().getString() : "§fPick icon…";
+                "§f" + new net.minecraft.world.item.ItemStack(iconItem).getHoverName().getString() :
+                ChroniclesUIKit.str("phoenix_chronicles.screen.quest_creator.pick_icon");
         addRenderableWidget(Button.builder(ChroniclesUIKit.lit(iconBtnLabel), b -> {
             if (minecraft != null) minecraft.setScreen(new ItemPickerScreen(this, stack -> {
                 ResourceLocation id = ForgeRegistries.ITEMS.getKey(stack.getItem());
@@ -543,29 +559,34 @@ public class QuestCreatorScreen extends Screen {
         java.util.List<String> bgIds = new java.util.ArrayList<>();
         bgIds.add("");
         bgIds.addAll(QuestBackgroundRegistry.getAll().keySet());
-        String bgLabel = cachedBackgroundType.isBlank() ? "§fNo background" : "§d" + cachedBackgroundType;
-        labels.add(new LabelEntry(cx, y, "§fBackground (animated, drawn as the node's own body)", C_TEXT_FAINT));
+        String bgLabel = cachedBackgroundType.isBlank() ?
+                ChroniclesUIKit.str("phoenix_chronicles.screen.quest_creator.no_background") :
+                "§d" + cachedBackgroundType;
+        labels.add(new LabelEntry(cx, y,
+                ChroniclesUIKit.str("phoenix_chronicles.screen.quest_creator.background_animated_drawn_as_the"),
+                C_TEXT_FAINT));
         addRenderableWidget(Button.builder(ChroniclesUIKit.lit(bgLabel), b -> {
             int idx = bgIds.indexOf(cachedBackgroundType);
             cachedBackgroundType = bgIds.get((idx + 1) % bgIds.size());
             rebuildWidgets();
         }).bounds(cx, rowY, cw, FIELD_H)
                 .tooltip(Tooltip.create(ChroniclesUIKit.lit(
-                        "Cycles through every registered animated background (see QuestBackgroundRegistry) - " +
-                                "\"No background\" leaves this quest's normal flat state-colored body. " +
-                                "Custom ones can be added via Java or KubeJS (QuestBackgroundBuilder / " +
-                                "BackgroundEffects), no shader knowledge required.")))
+                        ChroniclesUIKit.str(
+                                "phoenix_chronicles.screen.quest_creator.cycles_through_every_registered_animated"))))
                 .build());
         y = rowY + FIELD_H + ROW_GAP;
 
         if (editingNode != null) {
             rowY = y + LABEL_H + LABEL_GAP;
-            labels.add(new LabelEntry(cx, y, "§fAppearance", C_TEXT_FAINT));
-            addRenderableWidget(Button.builder(ChroniclesUIKit.lit("§f🔔 Design Pop-Up…"),
-                    b -> Minecraft.getInstance().setScreen(new ToastDesignerScreen(this, editingNode)))
+            labels.add(new LabelEntry(cx, y, ChroniclesUIKit.str("phoenix_chronicles.screen.quest_creator.appearance"),
+                    C_TEXT_FAINT));
+            addRenderableWidget(Button
+                    .builder(ChroniclesUIKit.tr("phoenix_chronicles.screen.quest_creator.design_pop_up"),
+                            b -> Minecraft.getInstance().setScreen(new ToastDesignerScreen(this, editingNode)))
                     .bounds(cx, rowY, cw, FIELD_H)
                     .tooltip(Tooltip.create(ChroniclesUIKit.lit(
-                            "Customize this quest's unlock/completion toast popup appearance")))
+                            ChroniclesUIKit
+                                    .str("phoenix_chronicles.screen.quest_creator.customize_this_quest_s_unlock"))))
                     .build());
             y = rowY + FIELD_H;
         }
@@ -573,12 +594,14 @@ public class QuestCreatorScreen extends Screen {
     }
 
     private String basicInfoSummary() {
-        return cachedTitle.isBlank() ? "§f(untitled)" : "§f" + cachedTitle;
+        return cachedTitle.isBlank() ? ChroniclesUIKit.str("phoenix_chronicles.screen.quest_creator.untitled") :
+                "§f" + cachedTitle;
     }
 
     private int buildPositionSize(int y) {
         int rowY = y + LABEL_H + LABEL_GAP;
-        labels.add(new LabelEntry(cx, y, "§fCanvas Position X/Y", C_TEXT_FAINT));
+        labels.add(new LabelEntry(cx, y,
+                ChroniclesUIKit.str("phoenix_chronicles.screen.quest_creator.canvas_position_x_y"), C_TEXT_FAINT));
         int halfPosW = (cw - COL_GAP) / 2;
         posXBox = new EditBox(font, cx, rowY, halfPosW, FIELD_H, Component.empty());
         posXBox.setMaxLength(6);
@@ -604,8 +627,9 @@ public class QuestCreatorScreen extends Screen {
 
         rowY = y + LABEL_H + LABEL_GAP;
         String sizeHeaderLabel = cachedSizeOverridePx > 0 ?
-                "§fNode size  §b(custom " + cachedSizeOverridePx + "px active. Pick a preset below to reset)" :
-                "§fNode size";
+                ChroniclesUIKit.str("phoenix_chronicles.screen.quest_creator.node_size_custom_px_active",
+                        cachedSizeOverridePx) :
+                ChroniclesUIKit.str("phoenix_chronicles.screen.quest_creator.node_size");
         labels.add(new LabelEntry(cx, y, sizeHeaderLabel, C_TEXT_FAINT));
         int sizeBtnW = cw / NODE_SIZES.length;
         for (int i = 0; i < NODE_SIZES.length; i++) {
@@ -633,7 +657,8 @@ public class QuestCreatorScreen extends Screen {
         y = rowY + FIELD_H + ROW_GAP;
 
         rowY = y + LABEL_H + LABEL_GAP;
-        labels.add(new LabelEntry(cx, y, "§fTitle label position", C_TEXT_FAINT));
+        labels.add(new LabelEntry(cx, y,
+                ChroniclesUIKit.str("phoenix_chronicles.screen.quest_creator.title_label_position"), C_TEXT_FAINT));
         int lblBtnW = cw / LABEL_POSITIONS.length;
         for (int i = 0; i < LABEL_POSITIONS.length; i++) {
             String posOpt = LABEL_POSITIONS[i];
@@ -646,7 +671,7 @@ public class QuestCreatorScreen extends Screen {
                 rebuildWidgets();
             }).bounds(bx, rowY, bw, FIELD_H)
                     .tooltip(Tooltip.create(ChroniclesUIKit.lit(
-                            "Where this quest's title text draws relative to its icon on the map.")))
+                            ChroniclesUIKit.str("phoenix_chronicles.screen.quest_creator.where_this_quest_s_title"))))
                     .build());
         }
         y = rowY + FIELD_H;
@@ -664,21 +689,25 @@ public class QuestCreatorScreen extends Screen {
         int rewardCount = editingNode != null ? editingNode.getRewards().size() :
                 (pendingWorkingNode != null ? pendingWorkingNode.getRewards().size() : 0);
         labels.add(new LabelEntry(cx, y,
-                "§f" + taskCount + " task(s)  ·  " + rewardCount + " reward(s)", C_TEXT_FAINT));
-        addRenderableWidget(Button.builder(ChroniclesUIKit.lit("§f⊞ Open Tasks & Rewards Editor"), b -> {
-            chapterDropdownOpen = false;
-            visibilityDropdownOpen = false;
-            Minecraft.getInstance().setScreen(new TaskRewardEditorScreen(this, resolveWorkingNode()));
-        }).bounds(cx, rowY, cw, FIELD_H).build());
+                ChroniclesUIKit.str("phoenix_chronicles.screen.quest_creator.task_s_reward_s", taskCount, rewardCount),
+                C_TEXT_FAINT));
+        addRenderableWidget(Button
+                .builder(ChroniclesUIKit.tr("phoenix_chronicles.screen.quest_creator.open_tasks_rewards_editor"), b -> {
+                    chapterDropdownOpen = false;
+                    visibilityDropdownOpen = false;
+                    Minecraft.getInstance().setScreen(new TaskRewardEditorScreen(this, resolveWorkingNode()));
+                }).bounds(cx, rowY, cw, FIELD_H).build());
         return rowY + FIELD_H;
     }
 
     private int buildEmergency(int y) {
         int rowY = y + LABEL_H + LABEL_GAP;
         EmergencyKit kit = resolveWorkingNode().getEmergencyKit();
-        labels.add(new LabelEntry(cx, y, "§fFallback rewards for a player stuck on this quest", C_TEXT_FAINT));
+        labels.add(new LabelEntry(cx, y,
+                ChroniclesUIKit.str("phoenix_chronicles.screen.quest_creator.fallback_rewards_for_a_player"),
+                C_TEXT_FAINT));
         addRenderableWidget(Button.builder(
-                ChroniclesUIKit.lit("§6⚠ §fEdit Emergency Items" +
+                ChroniclesUIKit.tr("phoenix_chronicles.screen.quest_creator.edit_emergency_items",
                         (kit.hasRewards() ? " §7(" + kit.getRewards().size() + ")" : "")),
                 b -> {
                     chapterDropdownOpen = false;
@@ -697,27 +726,32 @@ public class QuestCreatorScreen extends Screen {
 
     private String emergencySummary() {
         EmergencyKit kit = resolveWorkingNode().getEmergencyKit();
-        return kit.hasRewards() ? "§f" + kit.getRewards().size() + " reward(s)" : "§8none";
+        return kit.hasRewards() ?
+                ChroniclesUIKit.str("phoenix_chronicles.screen.quest_creator.reward_s", kit.getRewards().size()) :
+                ChroniclesUIKit.str("phoenix_chronicles.screen.quest_creator.none");
     }
 
     private String tasksRewardsSummary() {
         int taskCount = editingNode != null ? editingNode.getTasks().size() :
                 (pendingWorkingNode != null ? pendingWorkingNode.getTasks().size() : 0);
-        return "§f" + taskCount + " task(s)";
+        return ChroniclesUIKit.str("phoenix_chronicles.screen.quest_creator.task_s", taskCount);
     }
 
     private int buildVariants(int y) {
         int rowY = y + LABEL_H + LABEL_GAP;
         int variantCount = editingNode != null ? editingNode.getVariants().size() :
                 (pendingWorkingNode != null ? pendingWorkingNode.getVariants().size() : 0);
-        labels.add(new LabelEntry(cx, y, "§f" + variantCount + " variant(s)", C_TEXT_FAINT));
-        addRenderableWidget(Button.builder(ChroniclesUIKit.lit("§f◈ Open Variants Editor"), b -> {
-            chapterDropdownOpen = false;
-            visibilityDropdownOpen = false;
-            Minecraft.getInstance().setScreen(new VariantEditorScreen(this, resolveWorkingNode()));
-        }).bounds(cx, rowY, cw, FIELD_H)
+        labels.add(new LabelEntry(cx, y,
+                ChroniclesUIKit.str("phoenix_chronicles.screen.quest_creator.variant_s", variantCount), C_TEXT_FAINT));
+        addRenderableWidget(Button
+                .builder(ChroniclesUIKit.tr("phoenix_chronicles.screen.quest_creator.open_variants_editor"), b -> {
+                    chapterDropdownOpen = false;
+                    visibilityDropdownOpen = false;
+                    Minecraft.getInstance().setScreen(new VariantEditorScreen(this, resolveWorkingNode()));
+                }).bounds(cx, rowY, cw, FIELD_H)
                 .tooltip(Tooltip.create(ChroniclesUIKit.lit(
-                        "Pack-mode variants: override this quest's title/description/visibility/tasks/rewards based on a flag condition (e.g. config:pack_mode=expert)")))
+                        ChroniclesUIKit
+                                .str("phoenix_chronicles.screen.quest_creator.pack_mode_variants_override_this"))))
                 .build());
         return rowY + FIELD_H;
     }
@@ -741,7 +775,9 @@ public class QuestCreatorScreen extends Screen {
 
     private int buildVisibilityPrereqs(int y) {
         int rowY = y + LABEL_H + LABEL_GAP;
-        labels.add(new LabelEntry(cx, y, "§fVisibility  ·  Prerequisite gate", C_TEXT_FAINT));
+        labels.add(new LabelEntry(cx, y,
+                ChroniclesUIKit.str("phoenix_chronicles.screen.quest_creator.visibility_prerequisite_gate"),
+                C_TEXT_FAINT));
         int vw = 90;
         visRowY = y;
         visW = vw;
@@ -761,11 +797,12 @@ public class QuestCreatorScreen extends Screen {
             Boolean catDefault = ChapterPrereqDefaults
                     .getRequireAll(cachedChapter);
             boolean effective = catDefault != null ? catDefault : true;
-            prereqLabel = "§fInherit (" + (effective ? "ALL" : "ANY") + ") §f▾";
+            prereqLabel = ChroniclesUIKit.str("phoenix_chronicles.screen.quest_creator.inherit",
+                    (effective ? "ALL" : "ANY"));
         } else if (cachedRequireAll) {
-            prereqLabel = "§a✔ ALL prereqs required";
+            prereqLabel = ChroniclesUIKit.str("phoenix_chronicles.screen.quest_creator.all_prereqs_required");
         } else {
-            prereqLabel = "§e◑ ANY prereq sufficient";
+            prereqLabel = ChroniclesUIKit.str("phoenix_chronicles.screen.quest_creator.any_prereq_sufficient");
         }
         addRenderableWidget(Button.builder(ChroniclesUIKit.lit(prereqLabel),
                 b -> {
@@ -777,7 +814,9 @@ public class QuestCreatorScreen extends Screen {
                 })
                 .bounds(cx + vw + COL_GAP, rowY, prereqW, FIELD_H).build());
         if (showBlock) {
-            String blkLabel = cachedDisabledBlocksChildren ? "§eBlocks children" : "§fBlocks children";
+            String blkLabel = cachedDisabledBlocksChildren ?
+                    ChroniclesUIKit.str("phoenix_chronicles.screen.quest_creator.blocks_children") :
+                    ChroniclesUIKit.str("phoenix_chronicles.screen.quest_creator.blocks_children_2");
             addRenderableWidget(Button.builder(ChroniclesUIKit.lit(blkLabel),
                     b -> {
                         cachedDisabledBlocksChildren = !cachedDisabledBlocksChildren;
@@ -788,10 +827,12 @@ public class QuestCreatorScreen extends Screen {
         y = rowY + FIELD_H + ROW_GAP;
 
         rowY = y + LABEL_H + LABEL_GAP;
-        labels.add(new LabelEntry(cx, y, "§fWhole chapters / categories this quest waits on", C_TEXT_FAINT));
+        labels.add(new LabelEntry(cx, y,
+                ChroniclesUIKit.str("phoenix_chronicles.screen.quest_creator.whole_chapters_categories_this_quest"),
+                C_TEXT_FAINT));
         int chapterDepCount = cachedChapterPrereqs.size() + cachedCategoryPrereqs.size();
         addRenderableWidget(Button.builder(
-                ChroniclesUIKit.lit("§f▤ Chapter & Category Dependencies" +
+                ChroniclesUIKit.tr("phoenix_chronicles.screen.quest_creator.chapter_category_dependencies",
                         (chapterDepCount > 0 ? " §7(" + chapterDepCount + ")" : "")),
                 b -> {
                     chapterDropdownOpen = false;
@@ -811,10 +852,12 @@ public class QuestCreatorScreen extends Screen {
         y = rowY + FIELD_H + ROW_GAP;
 
         rowY = y + LABEL_H + LABEL_GAP;
-        labels.add(new LabelEntry(cx, y, "§fTask completion gate", C_TEXT_FAINT));
+        labels.add(new LabelEntry(cx, y,
+                ChroniclesUIKit.str("phoenix_chronicles.screen.quest_creator.task_completion_gate"), C_TEXT_FAINT));
         boolean anyMode = cachedTaskMinCount > 0;
-        String gateLabel = anyMode ? "§e◑ Complete any " + cachedTaskMinCount + " task(s)" :
-                "§a✔ Complete all tasks";
+        String gateLabel = anyMode ?
+                ChroniclesUIKit.str("phoenix_chronicles.screen.quest_creator.complete_any_task_s", cachedTaskMinCount) :
+                ChroniclesUIKit.str("phoenix_chronicles.screen.quest_creator.complete_all_tasks");
         addRenderableWidget(Button.builder(ChroniclesUIKit.lit(gateLabel), b -> {
             cachedTaskMinCount = cachedTaskMinCount == 0 ? 1 : 0;
             rebuildWidgets();
@@ -832,10 +875,11 @@ public class QuestCreatorScreen extends Screen {
         y = rowY + FIELD_H + ROW_GAP;
 
         rowY = y + LABEL_H + LABEL_GAP;
-        labels.add(new LabelEntry(cx, y, "§fenable_if", C_TEXT_FAINT));
+        labels.add(new LabelEntry(cx, y, ChroniclesUIKit.str("phoenix_chronicles.screen.quest_creator.enable_if_2"),
+                C_TEXT_FAINT));
         EditBox enableIfBox = new EditBox(font, cx, rowY, cw, FIELD_H, Component.empty());
         enableIfBox.setMaxLength(128);
-        enableIfBox.setHint(ChroniclesUIKit.lit("§fenable_if…"));
+        enableIfBox.setHint(ChroniclesUIKit.tr("phoenix_chronicles.screen.quest_creator.enable_if"));
         enableIfBox.setValue(cachedEnableIf);
         enableIfBox.setResponder(v -> {
             cachedEnableIf = v;
@@ -849,25 +893,27 @@ public class QuestCreatorScreen extends Screen {
 
         rowY = y + LABEL_H + LABEL_GAP;
         labels.add(new LabelEntry(cx, y,
-                "§fPrerequisites  §f(" + cachedPrerequisites.size() + ")", C_TEXT_FAINT));
-        String prereqsSummary = cachedPrerequisites.isEmpty() ? "§fNo prerequisites" :
+                ChroniclesUIKit.str("phoenix_chronicles.screen.quest_creator.prerequisites",
+                        cachedPrerequisites.size()),
+                C_TEXT_FAINT));
+        String prereqsSummary = cachedPrerequisites.isEmpty() ?
+                ChroniclesUIKit.str("phoenix_chronicles.screen.quest_creator.no_prerequisites") :
                 "§a" + cachedPrerequisites.stream().map(n -> n.getId().getPath())
                         .reduce((a, b) -> a + ", " + b).orElse("");
-        addRenderableWidget(Button.builder(ChroniclesUIKit.lit("§fManage Prerequisites…  " + prereqsSummary), b -> {
-            chapterDropdownOpen = false;
-            visibilityDropdownOpen = false;
-            Minecraft.getInstance().setScreen(ParentSelectorScreen.multiSelect(this, editingNode,
-                    new ArrayList<>(cachedPrerequisites), picked -> {
-                        cachedPrerequisites.clear();
-                        cachedPrerequisites.addAll(picked);
-                        rebuildWidgets();
-                    }));
-        }).bounds(cx, rowY, cw, FIELD_H)
+        addRenderableWidget(Button.builder(
+                ChroniclesUIKit.tr("phoenix_chronicles.screen.quest_creator.manage_prerequisites", prereqsSummary),
+                b -> {
+                    chapterDropdownOpen = false;
+                    visibilityDropdownOpen = false;
+                    Minecraft.getInstance().setScreen(ParentSelectorScreen.multiSelect(this, editingNode,
+                            new ArrayList<>(cachedPrerequisites), picked -> {
+                                cachedPrerequisites.clear();
+                                cachedPrerequisites.addAll(picked);
+                                rebuildWidgets();
+                            }));
+                }).bounds(cx, rowY, cw, FIELD_H)
                 .tooltip(Tooltip.create(ChroniclesUIKit.lit(
-                        "Quests that must be completed before this one unlocks - multiple allowed. " +
-                                "The first one picked also becomes this quest's canvas-tree parent " +
-                                "(used only for grouping/layout, not for unlocking). " +
-                                "You can also drag a link between quests directly on the canvas.")))
+                        ChroniclesUIKit.str("phoenix_chronicles.screen.quest_creator.quests_that_must_be_completed"))))
                 .build());
         y = rowY + FIELD_H;
         return y;
@@ -879,7 +925,8 @@ public class QuestCreatorScreen extends Screen {
 
     private int buildRewardsRepeats(int y) {
         int rowY = y + LABEL_H + LABEL_GAP;
-        labels.add(new LabelEntry(cx, y, "§fRepeat mode", C_TEXT_FAINT));
+        labels.add(new LabelEntry(cx, y, ChroniclesUIKit.str("phoenix_chronicles.screen.quest_creator.repeat_mode"),
+                C_TEXT_FAINT));
         repeatRowY = rowY;
         boolean hasCooldown = cachedRepeatMode == QuestNode.RepeatMode.COOLDOWN;
         int repeatBtnWLocal = hasCooldown ? (int) (cw * 0.50f) : cw;
@@ -896,12 +943,13 @@ public class QuestCreatorScreen extends Screen {
             rebuildWidgets();
         }).bounds(cx, rowY, repeatBtnWLocal, FIELD_H)
                 .tooltip(Tooltip.create(ChroniclesUIKit.lit(
-                        "NONE = one-time only  ·  DAILY = resets at midnight  ·  COOLDOWN = custom wait  ·  INFINITE = repeats immediately")))
+                        ChroniclesUIKit.str("phoenix_chronicles.screen.quest_creator.none_one_time_only_daily"))))
                 .build());
         if (hasCooldown) {
             int coolW = cw - repeatBtnWLocal - COL_GAP;
             int coolX = cx + repeatBtnWLocal + COL_GAP;
-            labels.add(new LabelEntry(coolX + 22, y, "§fCooldown hours", C_TEXT_FAINT));
+            labels.add(new LabelEntry(coolX + 22, y,
+                    ChroniclesUIKit.str("phoenix_chronicles.screen.quest_creator.cooldown_hours"), C_TEXT_FAINT));
             addRenderableWidget(Button.builder(ChroniclesUIKit.lit("§f−"), b -> {
                 if (cachedRepeatCooldownHours > 1) cachedRepeatCooldownHours--;
                 rebuildWidgets();
@@ -914,8 +962,11 @@ public class QuestCreatorScreen extends Screen {
         y = rowY + FIELD_H + ROW_GAP;
 
         rowY = y + LABEL_H + LABEL_GAP;
-        labels.add(new LabelEntry(cx, y, "§fRewards", C_TEXT_FAINT));
-        String autoLabel = cachedAutoClaimRewards ? "§a⚡ Auto-claim rewards" : "§f⚡ Auto-claim rewards";
+        labels.add(new LabelEntry(cx, y, ChroniclesUIKit.str("phoenix_chronicles.screen.quest_creator.rewards"),
+                C_TEXT_FAINT));
+        String autoLabel = cachedAutoClaimRewards ?
+                ChroniclesUIKit.str("phoenix_chronicles.screen.quest_creator.auto_claim_rewards") :
+                ChroniclesUIKit.str("phoenix_chronicles.screen.quest_creator.auto_claim_rewards_2");
         addRenderableWidget(Button.builder(ChroniclesUIKit.lit(autoLabel),
                 b -> {
                     cachedAutoClaimRewards = !cachedAutoClaimRewards;
@@ -923,38 +974,48 @@ public class QuestCreatorScreen extends Screen {
                 })
                 .bounds(cx, rowY, cw, FIELD_H)
                 .tooltip(Tooltip.create(ChroniclesUIKit.lit(
-                        "Automatically grant rewards on completion. No claim button needed")))
+                        ChroniclesUIKit.str(
+                                "phoenix_chronicles.screen.quest_creator.automatically_grant_rewards_on_completio"))))
                 .build());
         y = rowY + FIELD_H + ROW_GAP;
 
         rowY = y + LABEL_H + LABEL_GAP;
-        labels.add(new LabelEntry(cx, y, "§fTeams", C_TEXT_FAINT));
+        labels.add(new LabelEntry(cx, y, ChroniclesUIKit.str("phoenix_chronicles.screen.quest_creator.teams"),
+                C_TEXT_FAINT));
         int teamBtnW = (cw - 4) / 2;
         addRenderableWidget(Button.builder(
-                ChroniclesUIKit.lit(cachedShared ? "§a⚑ Share completion" : "§f⚑ Share completion"),
+                ChroniclesUIKit.lit(
+                        cachedShared ? ChroniclesUIKit.str("phoenix_chronicles.screen.quest_creator.share_completion") :
+                                ChroniclesUIKit.str("phoenix_chronicles.screen.quest_creator.share_completion_2")),
                 b -> {
                     cachedShared = !cachedShared;
                     rebuildWidgets();
                 })
                 .bounds(cx, rowY, teamBtnW, FIELD_H)
                 .tooltip(Tooltip.create(ChroniclesUIKit.lit(
-                        "When someone on a team completes this quest, everyone on that team completes it too.")))
+                        ChroniclesUIKit.str("phoenix_chronicles.screen.quest_creator.when_someone_on_a_team"))))
                 .build());
         addRenderableWidget(Button.builder(
-                ChroniclesUIKit.lit(cachedPooledProgress ? "§a⚑ Pool progress" : "§f⚑ Pool progress"),
+                ChroniclesUIKit.lit(cachedPooledProgress ?
+                        ChroniclesUIKit.str("phoenix_chronicles.screen.quest_creator.pool_progress") :
+                        ChroniclesUIKit.str("phoenix_chronicles.screen.quest_creator.pool_progress_2")),
                 b -> {
                     cachedPooledProgress = !cachedPooledProgress;
                     rebuildWidgets();
                 })
                 .bounds(cx + teamBtnW + 4, rowY, cw - teamBtnW - 4, FIELD_H)
                 .tooltip(Tooltip.create(ChroniclesUIKit.lit(
-                        "Task progress (kills, items handed in, and so on) is counted together for the whole team.")))
+                        ChroniclesUIKit
+                                .str("phoenix_chronicles.screen.quest_creator.task_progress_kills_items_handed"))))
                 .build());
         y = rowY + FIELD_H + ROW_GAP;
 
         rowY = y + LABEL_H + LABEL_GAP;
-        labels.add(new LabelEntry(cx, y, "§fChoice reward", C_TEXT_FAINT));
-        String choiceLabel = cachedRewardChoice ? "§6◈ Reward choice: ON" : "§f◈ Reward choice: OFF";
+        labels.add(new LabelEntry(cx, y, ChroniclesUIKit.str("phoenix_chronicles.screen.quest_creator.choice_reward"),
+                C_TEXT_FAINT));
+        String choiceLabel = cachedRewardChoice ?
+                ChroniclesUIKit.str("phoenix_chronicles.screen.quest_creator.reward_choice_on") :
+                ChroniclesUIKit.str("phoenix_chronicles.screen.quest_creator.reward_choice_off");
         addRenderableWidget(Button.builder(ChroniclesUIKit.lit(choiceLabel),
                 b -> {
                     cachedRewardChoice = !cachedRewardChoice;
@@ -962,7 +1023,7 @@ public class QuestCreatorScreen extends Screen {
                 })
                 .bounds(cx, rowY, cachedRewardChoice ? cw - 54 : cw, FIELD_H)
                 .tooltip(Tooltip.create(ChroniclesUIKit.lit(
-                        "Player picks a reward from the list instead of receiving all")))
+                        ChroniclesUIKit.str("phoenix_chronicles.screen.quest_creator.player_picks_a_reward_from"))))
                 .build());
         if (cachedRewardChoice) {
             addRenderableWidget(Button.builder(ChroniclesUIKit.lit("§f−"),
@@ -986,8 +1047,11 @@ public class QuestCreatorScreen extends Screen {
 
         rowY = y + LABEL_H + LABEL_GAP;
         int hdepW = (int) (cw * 0.48f);
-        labels.add(new LabelEntry(cx, y, "§fDependencies", C_TEXT_FAINT));
-        String depToggleLabel = cachedHideDepLine ? "§e⊖ Dependency Lines" : "§f⊕ Dependency Lines";
+        labels.add(new LabelEntry(cx, y, ChroniclesUIKit.str("phoenix_chronicles.screen.quest_creator.dependencies"),
+                C_TEXT_FAINT));
+        String depToggleLabel = cachedHideDepLine ?
+                ChroniclesUIKit.str("phoenix_chronicles.screen.quest_creator.dependency_lines") :
+                ChroniclesUIKit.str("phoenix_chronicles.screen.quest_creator.dependency_lines_2");
         addRenderableWidget(Button.builder(ChroniclesUIKit.lit(depToggleLabel),
                 b -> {
                     cachedHideDepLine = !cachedHideDepLine;
@@ -995,12 +1059,15 @@ public class QuestCreatorScreen extends Screen {
                 })
                 .bounds(cx, rowY, hdepW, FIELD_H)
                 .tooltip(Tooltip.create(
-                        ChroniclesUIKit.lit("Hide all dependency lines connected to this node on the quest canvas")))
+                        ChroniclesUIKit
+                                .tr("phoenix_chronicles.screen.quest_creator.hide_all_dependency_lines_connected")))
                 .build());
         if (editingNode != null) {
             int childCount = editingNode.getChildren().size();
-            String childStr = childCount == 0 ? "§fNo Dependents" :
-                    "§f" + childCount + " quest" + (childCount == 1 ? "" : "s") + " unlock after this";
+            String childStr = childCount == 0 ?
+                    ChroniclesUIKit.str("phoenix_chronicles.screen.quest_creator.no_dependents") :
+                    ChroniclesUIKit.str("phoenix_chronicles.screen.quest_creator.quest_unlock_after_this", childCount,
+                            (childCount == 1 ? "" : "s"));
             labels.add(new LabelEntry(cx + hdepW + COL_GAP, rowY + (FIELD_H - 8) / 2 - LABEL_H - LABEL_GAP,
                     childStr, C_TEXT_DIM));
         }
@@ -1009,7 +1076,9 @@ public class QuestCreatorScreen extends Screen {
     }
 
     private String rewardsRepeatsSummary() {
-        return cachedRepeatMode == QuestNode.RepeatMode.NONE ? "§fOne-time" : "§f" + cachedRepeatMode.name();
+        return cachedRepeatMode == QuestNode.RepeatMode.NONE ?
+                ChroniclesUIKit.str("phoenix_chronicles.screen.quest_creator.one_time") :
+                "§f" + cachedRepeatMode.name();
     }
 
     private int buildAdvanced(int y) {
@@ -1019,7 +1088,7 @@ public class QuestCreatorScreen extends Screen {
         int copyW = 36;
         idBox = new EditBox(font, cx, rowY, cw - lockW - copyW - 4, FIELD_H, Component.empty());
         idBox.setMaxLength(128);
-        idBox.setHint(ChroniclesUIKit.lit("§fauto-generated from title"));
+        idBox.setHint(ChroniclesUIKit.tr("phoenix_chronicles.screen.quest_creator.auto_generated_from_title"));
         idBox.setValue(cachedId);
         idBox.setResponder(v -> {
             cachedId = v;
@@ -1027,7 +1096,9 @@ public class QuestCreatorScreen extends Screen {
         });
         addRenderableWidget(idBox);
         addRenderableWidget(Button.builder(
-                ChroniclesUIKit.lit(idManuallySet ? "§cLocked" : "§aAuto"),
+                ChroniclesUIKit
+                        .lit(idManuallySet ? ChroniclesUIKit.str("phoenix_chronicles.screen.quest_creator.locked") :
+                                ChroniclesUIKit.str("phoenix_chronicles.screen.quest_creator.auto")),
                 b -> {
                     idManuallySet = !idManuallySet;
                     if (!idManuallySet) {
@@ -1048,14 +1119,18 @@ public class QuestCreatorScreen extends Screen {
                     Minecraft.getInstance().keyboardHandler.setClipboard(fullId);
                 })
                 .bounds(cx + cw - copyW, rowY, copyW, FIELD_H)
-                .tooltip(Tooltip.create(ChroniclesUIKit.lit("Copy full quest ID to clipboard"))).build());
+                .tooltip(Tooltip
+                        .create(ChroniclesUIKit.tr("phoenix_chronicles.screen.quest_creator.copy_full_quest_id_to")))
+                .build());
         y = rowY + FIELD_H + ROW_GAP;
 
         rowY = y + LABEL_H + LABEL_GAP;
-        labels.add(new LabelEntry(cx, y, "§fDev Notes", C_TEXT_FAINT));
+        labels.add(new LabelEntry(cx, y, ChroniclesUIKit.str("phoenix_chronicles.screen.quest_creator.dev_notes"),
+                C_TEXT_FAINT));
         EditBox devNotesBox = new EditBox(font, cx, rowY, cw, FIELD_H, Component.empty());
         devNotesBox.setMaxLength(512);
-        devNotesBox.setHint(ChroniclesUIKit.lit("§fDev notes (internal, never shown to players)…"));
+        devNotesBox
+                .setHint(ChroniclesUIKit.tr("phoenix_chronicles.screen.quest_creator.dev_notes_internal_never_shown"));
         devNotesBox.setValue(cachedDevNotes);
         devNotesBox.setResponder(v -> cachedDevNotes = v);
         addRenderableWidget(devNotesBox);
@@ -1064,11 +1139,13 @@ public class QuestCreatorScreen extends Screen {
         if (PhantasiaCompat.isAvailable()) {
             y += ROW_GAP;
             rowY = y + LABEL_H + LABEL_GAP;
-            labels.add(new LabelEntry(cx, y, "§fPhantasia Preview", C_TEXT_FAINT));
+            labels.add(new LabelEntry(cx, y,
+                    ChroniclesUIKit.str("phoenix_chronicles.screen.quest_creator.phantasia_preview"), C_TEXT_FAINT));
             EditBox previewMachineBox = new EditBox(font, cx, rowY, cw, FIELD_H, Component.empty());
             previewMachineBox.setMaxLength(128);
             previewMachineBox
-                    .setHint(ChroniclesUIKit.lit("§fPhantasia machine id shown in the quest viewer (optional)"));
+                    .setHint(ChroniclesUIKit
+                            .tr("phoenix_chronicles.screen.quest_creator.phantasia_machine_id_shown_in"));
             previewMachineBox.setValue(cachedPreviewMachineId);
             previewMachineBox.setResponder(v -> cachedPreviewMachineId = v);
             addRenderableWidget(previewMachineBox);
@@ -1077,13 +1154,15 @@ public class QuestCreatorScreen extends Screen {
 
         y += ROW_GAP;
         rowY = y + LABEL_H + LABEL_GAP;
-        labels.add(new LabelEntry(cx, y, "§fExternal Screen ID", C_TEXT_FAINT));
+        labels.add(new LabelEntry(cx, y,
+                ChroniclesUIKit.str("phoenix_chronicles.screen.quest_creator.external_screen_id"), C_TEXT_FAINT));
         int screenPickW = 16;
         EditBox externalScreenBox = new EditBox(font, cx, rowY, cw - screenPickW - 2, FIELD_H, Component.empty());
         externalScreenBox.setMaxLength(128);
         externalScreenBox.setHint(ChroniclesUIKit
                 .lit(
-                        "§fRegistered external screen id (opens instead of the task viewer; used by \"Screen Opened\" tasks)"));
+                        ChroniclesUIKit
+                                .str("phoenix_chronicles.screen.quest_creator.registered_external_screen_id_opens")));
         externalScreenBox.setValue(cachedExternalScreenId);
         externalScreenBox.setResponder(v -> cachedExternalScreenId = v);
         addRenderableWidget(externalScreenBox);
@@ -1091,59 +1170,67 @@ public class QuestCreatorScreen extends Screen {
             java.util.Collection<ResourceLocation> ids = net.phoenixvine.chronicles.client.registry.ExternalScreenRegistry
                     .registeredIds();
             if (minecraft != null && !ids.isEmpty()) {
-                minecraft.setScreen(new RegistryIdPickerScreen(this, "Pick external screen", ids, id -> {
-                    cachedExternalScreenId = id.toString();
-                    externalScreenBox.setValue(cachedExternalScreenId);
-                }));
+                minecraft.setScreen(new RegistryIdPickerScreen(this,
+                        ChroniclesUIKit.str("phoenix_chronicles.ui.pick_external_screen"), ids, id -> {
+                            cachedExternalScreenId = id.toString();
+                            externalScreenBox.setValue(cachedExternalScreenId);
+                        }));
             }
         }).bounds(cx + cw - screenPickW, rowY, screenPickW, FIELD_H)
-                .tooltip(Tooltip.create(ChroniclesUIKit.lit("Browse registered external screens")))
+                .tooltip(Tooltip.create(ChroniclesUIKit.tr("phoenix_chronicles.ui.browse_registered_external_screens")))
                 .build());
         y = rowY + FIELD_H;
 
         y += ROW_GAP;
         rowY = y + LABEL_H + LABEL_GAP;
-        labels.add(new LabelEntry(cx, y, "§fUnlock Sound", C_TEXT_FAINT));
+        labels.add(new LabelEntry(cx, y, ChroniclesUIKit.str("phoenix_chronicles.screen.quest_creator.unlock_sound"),
+                C_TEXT_FAINT));
         int soundPickW = 16;
         EditBox unlockSoundBox = new EditBox(font, cx, rowY, cw - soundPickW - 2, FIELD_H, Component.empty());
         unlockSoundBox.setMaxLength(128);
-        unlockSoundBox.setHint(ChroniclesUIKit.lit("§fSound played when this quest unlocks (blank = chapter/default)"));
+        unlockSoundBox
+                .setHint(ChroniclesUIKit.tr("phoenix_chronicles.screen.quest_creator.sound_played_when_this_quest"));
         unlockSoundBox.setValue(cachedUnlockSoundId);
         unlockSoundBox.setResponder(v -> cachedUnlockSoundId = v);
         addRenderableWidget(unlockSoundBox);
         addRenderableWidget(Button.builder(ChroniclesUIKit.lit("§7⊞"), b -> {
             if (minecraft != null) {
-                minecraft.setScreen(new RegistryIdPickerScreen(this, "Pick unlock sound",
-                        net.minecraftforge.registries.ForgeRegistries.SOUND_EVENTS.getKeys(), id -> {
-                            cachedUnlockSoundId = id.toString();
-                            unlockSoundBox.setValue(cachedUnlockSoundId);
-                        }));
+                minecraft.setScreen(
+                        new RegistryIdPickerScreen(this, ChroniclesUIKit.str("phoenix_chronicles.ui.pick_unlock_sound"),
+                                net.minecraftforge.registries.ForgeRegistries.SOUND_EVENTS.getKeys(), id -> {
+                                    cachedUnlockSoundId = id.toString();
+                                    unlockSoundBox.setValue(cachedUnlockSoundId);
+                                }));
             }
         }).bounds(cx + cw - soundPickW, rowY, soundPickW, FIELD_H)
-                .tooltip(Tooltip.create(ChroniclesUIKit.lit("Browse registered sound events")))
+                .tooltip(Tooltip.create(
+                        ChroniclesUIKit.tr("phoenix_chronicles.screen.quest_creator.browse_registered_sound_events")))
                 .build());
         y = rowY + FIELD_H;
 
         y += ROW_GAP;
         rowY = y + LABEL_H + LABEL_GAP;
-        labels.add(new LabelEntry(cx, y, "§fComplete Sound", C_TEXT_FAINT));
+        labels.add(new LabelEntry(cx, y, ChroniclesUIKit.str("phoenix_chronicles.screen.quest_creator.complete_sound"),
+                C_TEXT_FAINT));
         EditBox completeSoundBox = new EditBox(font, cx, rowY, cw - soundPickW - 2, FIELD_H, Component.empty());
         completeSoundBox.setMaxLength(128);
         completeSoundBox
-                .setHint(ChroniclesUIKit.lit("§fSound played when this quest completes (blank = chapter/default)"));
+                .setHint(ChroniclesUIKit.tr("phoenix_chronicles.screen.quest_creator.sound_played_when_this_quest_2"));
         completeSoundBox.setValue(cachedCompleteSoundId);
         completeSoundBox.setResponder(v -> cachedCompleteSoundId = v);
         addRenderableWidget(completeSoundBox);
         addRenderableWidget(Button.builder(ChroniclesUIKit.lit("§7⊞"), b -> {
             if (minecraft != null) {
-                minecraft.setScreen(new RegistryIdPickerScreen(this, "Pick complete sound",
+                minecraft.setScreen(new RegistryIdPickerScreen(this,
+                        ChroniclesUIKit.str("phoenix_chronicles.ui.pick_complete_sound"),
                         net.minecraftforge.registries.ForgeRegistries.SOUND_EVENTS.getKeys(), id -> {
                             cachedCompleteSoundId = id.toString();
                             completeSoundBox.setValue(cachedCompleteSoundId);
                         }));
             }
         }).bounds(cx + cw - soundPickW, rowY, soundPickW, FIELD_H)
-                .tooltip(Tooltip.create(ChroniclesUIKit.lit("Browse registered sound events")))
+                .tooltip(Tooltip.create(
+                        ChroniclesUIKit.tr("phoenix_chronicles.screen.quest_creator.browse_registered_sound_events")))
                 .build());
         y = rowY + FIELD_H;
         return y;
@@ -1152,36 +1239,44 @@ public class QuestCreatorScreen extends Screen {
     private String audioSummary() {
         boolean voice = !cachedVoiceId.isBlank();
         boolean music = !cachedMusicId.isBlank();
-        if (!voice && !music) return "§8none";
+        if (!voice && !music) return ChroniclesUIKit.str("phoenix_chronicles.screen.quest_creator.none");
         return "§f" + (voice ? "♪ voice" : "") + (voice && music ? "  " : "") + (music ? "♫ music" : "");
     }
 
     private int buildAudioSection(int y) {
         int soundPickW = 16;
         int rowY = y + LABEL_H + LABEL_GAP;
-        labels.add(new LabelEntry(cx, y, "§fNarration (voice line)", C_TEXT_FAINT));
+        labels.add(new LabelEntry(cx, y,
+                ChroniclesUIKit.str("phoenix_chronicles.screen.quest_creator.narration_voice_line"), C_TEXT_FAINT));
         int autoW = 56;
         EditBox voiceBox = new EditBox(font, cx, rowY, cw - soundPickW - autoW - 4, FIELD_H, Component.empty());
         voiceBox.setMaxLength(128);
-        voiceBox.setHint(ChroniclesUIKit.lit("§fsound event id from a resource pack / KubeJS (blank = none)"));
+        voiceBox.setHint(ChroniclesUIKit.tr("phoenix_chronicles.screen.quest_creator.sound_event_id_from_a"));
         voiceBox.setValue(cachedVoiceId);
         voiceBox.setResponder(v -> cachedVoiceId = v);
         addRenderableWidget(voiceBox);
         addRenderableWidget(Button.builder(ChroniclesUIKit.lit("§7⊞"), b -> {
             if (minecraft != null) {
-                minecraft.setScreen(new RegistryIdPickerScreen(this, "Pick voice line",
+                minecraft.setScreen(new RegistryIdPickerScreen(this,
+                        ChroniclesUIKit.str("phoenix_chronicles.screen.quest_creator.pick_voice_line"),
                         net.minecraftforge.registries.ForgeRegistries.SOUND_EVENTS.getKeys(), id -> {
                             cachedVoiceId = id.toString();
                             voiceBox.setValue(cachedVoiceId);
                         }));
             }
         }).bounds(cx + cw - soundPickW - autoW - 2, rowY, soundPickW, FIELD_H)
-                .tooltip(Tooltip.create(ChroniclesUIKit.lit("Browse registered sound events")))
+                .tooltip(Tooltip.create(
+                        ChroniclesUIKit.tr("phoenix_chronicles.screen.quest_creator.browse_registered_sound_events")))
                 .build());
-        addRenderableWidget(Button.builder(ChroniclesUIKit.lit(cachedVoiceAuto ? "§aAuto" : "§8Auto"), b -> {
-            cachedVoiceAuto = !cachedVoiceAuto;
-            b.setMessage(ChroniclesUIKit.lit(cachedVoiceAuto ? "§aAuto" : "§8Auto"));
-        }).bounds(cx + cw - autoW, rowY, autoW, FIELD_H)
+        addRenderableWidget(Button.builder(ChroniclesUIKit
+                .lit(cachedVoiceAuto ? ChroniclesUIKit.str("phoenix_chronicles.screen.quest_creator.auto") :
+                        ChroniclesUIKit.str("phoenix_chronicles.screen.quest_creator.auto_2")),
+                b -> {
+                    cachedVoiceAuto = !cachedVoiceAuto;
+                    b.setMessage(ChroniclesUIKit
+                            .lit(cachedVoiceAuto ? ChroniclesUIKit.str("phoenix_chronicles.screen.quest_creator.auto") :
+                                    ChroniclesUIKit.str("phoenix_chronicles.screen.quest_creator.auto_2")));
+                }).bounds(cx + cw - autoW, rowY, autoW, FIELD_H)
                 .tooltip(Tooltip.create(ChroniclesUIKit.lit(
                         "Auto: play the narration the moment the quest opens.\n" +
                                 "Off: players start it with the ♪ button in the quest footer.")))
@@ -1190,36 +1285,40 @@ public class QuestCreatorScreen extends Screen {
 
         y += ROW_GAP;
         rowY = y + LABEL_H + LABEL_GAP;
-        labels.add(new LabelEntry(cx, y, "§fMusic  §8(volume %  /  fade seconds)", C_TEXT_FAINT));
+        labels.add(new LabelEntry(cx, y,
+                ChroniclesUIKit.label("phoenix_chronicles.screen.quest_creator.music_volume_fade_seconds"),
+                C_TEXT_FAINT));
         int numW = 34;
         EditBox musicBox = new EditBox(font, cx, rowY, cw - soundPickW - numW * 2 - 6, FIELD_H, Component.empty());
         musicBox.setMaxLength(128);
-        musicBox.setHint(ChroniclesUIKit.lit("§floops while this quest is open (blank = chapter music)"));
+        musicBox.setHint(ChroniclesUIKit.tr("phoenix_chronicles.screen.quest_creator.loops_while_this_quest_is"));
         musicBox.setValue(cachedMusicId);
         musicBox.setResponder(v -> cachedMusicId = v);
         addRenderableWidget(musicBox);
         addRenderableWidget(Button.builder(ChroniclesUIKit.lit("§7⊞"), b -> {
             if (minecraft != null) {
-                minecraft.setScreen(new RegistryIdPickerScreen(this, "Pick music",
+                minecraft.setScreen(new RegistryIdPickerScreen(this,
+                        ChroniclesUIKit.str("phoenix_chronicles.screen.quest_creator.pick_music"),
                         net.minecraftforge.registries.ForgeRegistries.SOUND_EVENTS.getKeys(), id -> {
                             cachedMusicId = id.toString();
                             musicBox.setValue(cachedMusicId);
                         }));
             }
         }).bounds(cx + cw - soundPickW - numW * 2 - 4, rowY, soundPickW, FIELD_H)
-                .tooltip(Tooltip.create(ChroniclesUIKit.lit("Browse registered sound events")))
+                .tooltip(Tooltip.create(
+                        ChroniclesUIKit.tr("phoenix_chronicles.screen.quest_creator.browse_registered_sound_events")))
                 .build());
         EditBox volBox = new EditBox(font, cx + cw - numW * 2 - 2, rowY, numW, FIELD_H, Component.empty());
         volBox.setMaxLength(3);
         volBox.setValue(cachedMusicVolumePct);
         volBox.setResponder(v -> cachedMusicVolumePct = v);
-        volBox.setTooltip(Tooltip.create(ChroniclesUIKit.lit("Music volume, 0-100%")));
+        volBox.setTooltip(Tooltip.create(ChroniclesUIKit.tr("phoenix_chronicles.ui.music_volume_0_100")));
         addRenderableWidget(volBox);
         EditBox fadeBox = new EditBox(font, cx + cw - numW, rowY, numW, FIELD_H, Component.empty());
         fadeBox.setMaxLength(5);
         fadeBox.setValue(cachedMusicFadeSec);
         fadeBox.setResponder(v -> cachedMusicFadeSec = v);
-        fadeBox.setTooltip(Tooltip.create(ChroniclesUIKit.lit("Fade in / out time in seconds")));
+        fadeBox.setTooltip(Tooltip.create(ChroniclesUIKit.tr("phoenix_chronicles.ui.fade_in_out_time_in")));
         addRenderableWidget(fadeBox);
         y = rowY + FIELD_H;
         return y;
@@ -1239,11 +1338,12 @@ public class QuestCreatorScreen extends Screen {
     }
 
     private String advancedSummary() {
-        return idManuallySet ? "§c" + cachedId + " (manual)" : "§f" + cachedId;
+        return idManuallySet ? ChroniclesUIKit.str("phoenix_chronicles.screen.quest_creator.manual", cachedId) :
+                "§f" + cachedId;
     }
 
     private int buildRaw(int y) {
-        addRenderableWidget(Button.builder(ChroniclesUIKit.lit("§f⎘ Copy SNBT"),
+        addRenderableWidget(Button.builder(ChroniclesUIKit.tr("phoenix_chronicles.screen.quest_creator.copy_snbt"),
                 b -> {
                     if (minecraft != null) minecraft.keyboardHandler.setClipboard(buildCurrentSnbt());
                 })
@@ -1274,7 +1374,10 @@ public class QuestCreatorScreen extends Screen {
         g.fill(0, 0, width, HEADER_H, C_HEADER);
         g.fill(0, 0, width, 2, C_ACCENT);
         g.fill(0, HEADER_H - 1, width, HEADER_H, C_BORDER);
-        String heading = editingNode != null ? "§fEdit Quest  §f: §f" + editingNode.getId().getPath() : "§fNew Quest";
+        String heading = editingNode != null ?
+                ChroniclesUIKit.str("phoenix_chronicles.screen.quest_creator.edit_quest_2",
+                        editingNode.getId().getPath()) :
+                ChroniclesUIKit.str("phoenix_chronicles.screen.quest_creator.new_quest");
         ChroniclesUIKit.drawCenteredString(g, font, heading, width / 2, (HEADER_H - 8) / 2, C_TEXT);
 
         g.fill(0, height - FOOTER_H, width, height, C_HEADER);
@@ -1402,7 +1505,9 @@ public class QuestCreatorScreen extends Screen {
             g.fill(cx, dropY, cx + dropW, dropY + dropH, C_PANEL);
             drawBorder(g, cx, dropY, dropW, dropH, C_ACCENT);
             if (cats.isEmpty()) {
-                ChroniclesUIKit.drawString(g, font, "§fNo categories yet", cx + 5, dropY + 3, C_TEXT_FAINT, false);
+                ChroniclesUIKit.drawString(g, font,
+                        ChroniclesUIKit.str("phoenix_chronicles.screen.quest_creator.no_categories_yet"), cx + 5,
+                        dropY + 3, C_TEXT_FAINT, false);
             } else {
                 for (int i = 0; i < cats.size(); i++) {
                     int ry = dropY + i * (FIELD_H + 1);
@@ -1420,7 +1525,9 @@ public class QuestCreatorScreen extends Screen {
             g.fill(0, 0, width, height, 0x88000000);
             g.fill(px, py, px + pw, py + ph, C_PANEL);
             drawBorder(g, px, py, pw, ph, C_ACCENT);
-            ChroniclesUIKit.drawCenteredString(g, font, "§fDiscard unsaved changes?", px + pw / 2, py + 10, C_TEXT);
+            ChroniclesUIKit.drawCenteredString(g, font,
+                    ChroniclesUIKit.str("phoenix_chronicles.screen.quest_creator.discard_unsaved_changes"), px + pw / 2,
+                    py + 10, C_TEXT);
             int byY = py + ph - 26;
             int bw = (pw - 30) / 2;
             confirmDiscardX = px + 10;
@@ -1431,10 +1538,14 @@ public class QuestCreatorScreen extends Screen {
             boolean hovKeep = mx >= confirmKeepX && mx < confirmKeepX + bw && my >= byY && my < byY + 18;
             g.fill(confirmDiscardX, byY, confirmDiscardX + bw, byY + 18, hovDiscard ? 0xFF3A1A1A : 0xFF241010);
             drawBorder(g, confirmDiscardX, byY, bw, 18, C_BORDER);
-            ChroniclesUIKit.drawCenteredString(g, font, "§cDiscard", confirmDiscardX + bw / 2, byY + 5, 0xFFFF6666);
+            ChroniclesUIKit.drawCenteredString(g, font,
+                    ChroniclesUIKit.str("phoenix_chronicles.screen.quest_creator.discard"), confirmDiscardX + bw / 2,
+                    byY + 5, 0xFFFF6666);
             g.fill(confirmKeepX, byY, confirmKeepX + bw, byY + 18, hovKeep ? 0xFF1A3A1A : 0xFF102410);
             drawBorder(g, confirmKeepX, byY, bw, 18, C_BORDER);
-            ChroniclesUIKit.drawCenteredString(g, font, "§aKeep editing", confirmKeepX + bw / 2, byY + 5, C_OK);
+            ChroniclesUIKit.drawCenteredString(g, font,
+                    ChroniclesUIKit.str("phoenix_chronicles.screen.quest_creator.keep_editing"), confirmKeepX + bw / 2,
+                    byY + 5, C_OK);
         }
 
         g.pose().popPose();

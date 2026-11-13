@@ -44,6 +44,11 @@ final class ArchiveLoreCompatImpl {
                 });
     }
 
+    static java.util.Collection<String> allEntryIds() {
+        return net.phoenix_archives.phoenix_archive.api.LoreDataLoader.LORE_ENTRIES.keySet().stream()
+                .map(net.minecraft.resources.ResourceLocation::toString).toList();
+    }
+
     static boolean hasEntry(String entryId) {
         return ArchiveClient.hasLoreEntry(entryId);
     }

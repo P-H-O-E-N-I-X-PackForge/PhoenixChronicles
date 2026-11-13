@@ -2,8 +2,6 @@ package net.phoenixvine.chronicles.client.render;
 
 import net.minecraft.resources.ResourceLocation;
 import net.phoenixvine.chronicles.client.screen.ChronicleOverviewScreen;
-import net.phoenixvine.chronicles.client.screen.utils.DragControllerState;
-import net.phoenixvine.chronicles.client.screen.utils.GraphLayoutState;
 import net.phoenixvine.chronicles.client.screen.utils.ScreenContext;
 import net.phoenixvine.chronicles.common.codec.QuestFileSaver;
 import net.phoenixvine.chronicles.common.model.QuestNode;
@@ -15,10 +13,11 @@ import java.util.*;
 public class GraphLayoutEngine {
 
     private final ScreenContext ctx;
-    private final DragControllerState dragState;
-    private final GraphLayoutState layoutState;
+    private final ChronicleOverviewScreen dragState;
+    private final ChronicleOverviewScreen layoutState;
 
-    public GraphLayoutEngine(ScreenContext ctx, DragControllerState dragState, GraphLayoutState layoutState) {
+    public GraphLayoutEngine(ScreenContext ctx, ChronicleOverviewScreen dragState,
+                             ChronicleOverviewScreen layoutState) {
         this.ctx = ctx;
         this.dragState = dragState;
         this.layoutState = layoutState;
@@ -149,7 +148,8 @@ public class GraphLayoutEngine {
         for (QuestNode n : nodes) QuestFileSaver.saveOneQuestToDisk(n, false);
         layoutState.resetViewOffset();
         dragState.rebuild();
-        ctx.setFeedback("Auto-arranged %d quest(s)", nodes.size());
+        ctx.setFeedback(ChroniclesUIKit.label("phoenix_chronicles.screen.graph_layout_engine.auto_arranged_d_quest_s"),
+                nodes.size());
 
         Map<ResourceLocation, int[]> newPositions = new HashMap<>();
         for (QuestNode n : nodes) newPositions.put(n.getId(), new int[] { n.getCustomX(), n.getCustomY() });
@@ -187,7 +187,8 @@ public class GraphLayoutEngine {
         }
 
         applyPositions(nodes, newPositions);
-        ctx.setFeedback("Rotated %d quest(s) in chapter", nodes.size());
+        ctx.setFeedback(ChroniclesUIKit.label("phoenix_chronicles.screen.graph_layout_engine.rotated_d_quest_s_in"),
+                nodes.size());
 
         ctx.undoRedo().push(
                 () -> applyPositions(nodes, oldPositions),

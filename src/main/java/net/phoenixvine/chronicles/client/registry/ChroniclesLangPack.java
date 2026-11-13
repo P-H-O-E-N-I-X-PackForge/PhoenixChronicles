@@ -23,7 +23,8 @@ public class ChroniclesLangPack {
         event.addRepositorySource(consumer -> {
             Pack pack = Pack.readMetaAndCreate(
                     "phoenix_chronicles_lang",
-                    Component.literal("Phoenix Chronicles Quest Translations"),
+                    Component.translatable(
+                            "phoenix_chronicles.screen.chronicles_lang_pack.phoenix_chronicles_quest_translations"),
                     true,
                     id -> new PathPackResources(id, root, false),
                     PackType.CLIENT_RESOURCES,

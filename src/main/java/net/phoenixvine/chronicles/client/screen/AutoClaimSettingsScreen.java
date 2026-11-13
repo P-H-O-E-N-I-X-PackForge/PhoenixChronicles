@@ -29,7 +29,7 @@ public class AutoClaimSettingsScreen extends Screen {
     private int panelX, panelY, panelH;
 
     public AutoClaimSettingsScreen(Screen parent) {
-        super(Component.literal("Auto-claim Rewards"));
+        super(Component.translatable("phoenix_chronicles.screen.auto_claim_settings.auto_claim_rewards"));
         this.parent = parent;
     }
 
@@ -37,6 +37,9 @@ public class AutoClaimSettingsScreen extends Screen {
         return minecraft != null && minecraft.player != null ?
                 minecraft.player.getCapability(QuestCapabilityProvider.PLAYER_QUESTS).orElse(null) : null;
     }
+
+    @Override
+    public void renderBackground(GuiGraphics context) {}
 
     private void apply(boolean enabled, EnumSet<AutoClaimCategory> categories) {
         PlayerQuestData data = data();
@@ -62,7 +65,9 @@ public class AutoClaimSettingsScreen extends Screen {
 
         int y = panelY + HEADER_H + 8;
         addRenderableWidget(Button.builder(
-                Component.literal(enabled ? "§a⚡ Auto-claim: ON" : "§7⚡ Auto-claim: OFF"),
+                Component.literal(
+                        enabled ? ChroniclesUIKit.str("phoenix_chronicles.screen.auto_claim_settings.auto_claim_on") :
+                                ChroniclesUIKit.str("phoenix_chronicles.screen.auto_claim_settings.auto_claim_off")),
                 b -> {
                     apply(!enabled, categories);
                     init();
@@ -91,7 +96,7 @@ public class AutoClaimSettingsScreen extends Screen {
             y += ROW_H;
         }
 
-        addRenderableWidget(Button.builder(Component.literal("§fDone"), b -> onClose())
+        addRenderableWidget(Button.builder(Component.translatable("phoenix_chronicles.ui.done"), b -> onClose())
                 .bounds(panelX + PANEL_W - 66, panelY + panelH - FOOTER_H + 5, 60, 16).build());
     }
 
@@ -105,9 +110,14 @@ public class AutoClaimSettingsScreen extends Screen {
         ChroniclesUIKit.drawModalChrome(g, font, width, height, panelX, panelY, PANEL_W, panelH, HEADER_H,
                 "Auto-claim Rewards");
         int hintY = panelY + HEADER_H + 8 + ROW_H + 2;
-        g.drawString(font, ChroniclesUIKit.fitText(font, "§7Ticked kinds are claimed for you; the rest wait for you.",
-                PANEL_W - 12), panelX + 6, hintY, ChroniclesThemePalette.TEXT_DIM, false);
-        g.drawString(font, ChroniclesUIKit.fitText(font, "§8Anything left over stays in the claim screen.",
+        g.drawString(font,
+                ChroniclesUIKit.fitText(font,
+                        ChroniclesUIKit
+                                .str("phoenix_chronicles.screen.auto_claim_settings.ticked_kinds_are_claimed_for"),
+                        PANEL_W - 12),
+                panelX + 6, hintY, ChroniclesThemePalette.TEXT_DIM, false);
+        g.drawString(font, ChroniclesUIKit.fitText(font,
+                ChroniclesUIKit.str("phoenix_chronicles.screen.auto_claim_settings.anything_left_over_stays_in"),
                 PANEL_W - 12), panelX + 6, panelY + panelH - FOOTER_H - 12, ChroniclesThemePalette.TEXT_FAINT, false);
         super.render(g, mx, my, partial);
     }

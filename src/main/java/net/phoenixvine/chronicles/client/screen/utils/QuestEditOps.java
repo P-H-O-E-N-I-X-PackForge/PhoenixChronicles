@@ -5,6 +5,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.phoenixvine.chronicles.capability.importer.FtbQuestsImporter;
 import net.phoenixvine.chronicles.client.registry.ChroniclesLangPack;
+import net.phoenixvine.chronicles.client.render.ChroniclesUIKit;
 import net.phoenixvine.chronicles.common.codec.QuestFileLoader;
 import net.phoenixvine.chronicles.common.codec.QuestFileSaver;
 import net.phoenixvine.chronicles.common.model.QuestNode;
@@ -36,13 +37,14 @@ public class QuestEditOps {
     public void questCopy(@NotNull QuestNode node) {
         String content = QuestFileSaver.readRawSnbt(node);
         if (content == null || content.isBlank()) {
-            ctx.setFeedback("§cCopy failed. Quest file not found on disk");
+            ctx.setFeedback(ChroniclesUIKit.str("phoenix_chronicles.screen.quest_edit_ops.copy_failed_quest_file_not"));
             return;
         }
         editorState.questClipboard = content;
         Minecraft mc = Minecraft.getInstance();
         if (mc != null) mc.keyboardHandler.setClipboard(content);
-        ctx.setFeedback("§aCopied SNBT for '%s'  (Ctrl+V to paste)", node.getId().getPath());
+        ctx.setFeedback(ChroniclesUIKit.label("phoenix_chronicles.screen.quest_edit_ops.copied_snbt_for_ctrl_v"),
+                node.getId().getPath());
     }
 
     public void questPaste() {
@@ -52,37 +54,40 @@ public class QuestEditOps {
             src = mc != null ? mc.keyboardHandler.getClipboard() : null;
         }
         if (src == null || src.isBlank()) {
-            ctx.setFeedback("§eNothing to paste (Ctrl+C a quest first)");
+            ctx.setFeedback(ChroniclesUIKit.str("phoenix_chronicles.screen.quest_edit_ops.nothing_to_paste_ctrl_c"));
             return;
         }
 
         if (!src.contains("id:")) {
-            ctx.setFeedback("§eClipboard doesn't look like quest SNBT");
+            ctx.setFeedback(
+                    ChroniclesUIKit.str("phoenix_chronicles.screen.quest_edit_ops.clipboard_doesn_t_look_like"));
             return;
         }
         try {
             String newPath = QuestFileSaver.pasteQuestFromSnbt(src, ctx.selectedChapter());
             state.rebuild();
-            ctx.setFeedback("§aPasted → %s", newPath);
+            ctx.setFeedback(ChroniclesUIKit.label("phoenix_chronicles.screen.quest_edit_ops.pasted"), newPath);
 
-            ResourceLocation newId = ResourceLocation.fromNamespaceAndPath("phoenix_chronicles", newPath);
+            ResourceLocation newId = new ResourceLocation("phoenix_chronicles", newPath);
             QuestNode pasted = QuestTreeRegistry.getQuest(newId);
             if (pasted != null) {
                 String pastedSnbt = QuestFileSaver.readRawSnbt(pasted);
                 Path pastedPath = QuestFileSaver.getQuestSnbtPath(pasted);
-                ctx.pushUndo("Undo: pasted quest removed", () -> {
-                    QuestTreeRegistry.removeQuest(newId);
-                    state.deleteQuestFiles(pasted);
-                    if (editorState.selectedNode == pasted) editorState.selectedNode = null;
-                    state.rebuild();
-                }, () -> {
-                    QuestFileSaver.restoreRawSnbt(pasted, pastedSnbt);
-                    QuestFileLoader.loadOneFromDisk(pastedPath);
-                    state.rebuild();
-                });
+                ctx.pushUndo(ChroniclesUIKit.str("phoenix_chronicles.screen.quest_edit_ops.undo_pasted_quest_removed"),
+                        () -> {
+                            QuestTreeRegistry.removeQuest(newId);
+                            state.deleteQuestFiles(pasted);
+                            if (editorState.selectedNode == pasted) editorState.selectedNode = null;
+                            state.rebuild();
+                        }, () -> {
+                            QuestFileSaver.restoreRawSnbt(pasted, pastedSnbt);
+                            QuestFileLoader.loadOneFromDisk(pastedPath);
+                            state.rebuild();
+                        });
             }
         } catch (IOException e) {
-            ctx.setFeedback("§cPaste error: %s", e.getMessage());
+            ctx.setFeedback(ChroniclesUIKit.label("phoenix_chronicles.screen.quest_edit_ops.paste_error"),
+                    e.getMessage());
         }
     }
 
@@ -93,7 +98,7 @@ public class QuestEditOps {
                 .sorted(Comparator.comparingInt(QuestNode::getCustomX))
                 .collect(java.util.stream.Collectors.toList());
         if (ordered.size() < 2) {
-            ctx.setFeedback("§eSelect 2+ quests to chain");
+            ctx.setFeedback(ChroniclesUIKit.str("phoenix_chronicles.screen.quest_edit_ops.select_2_quests_to_chain"));
             return;
         }
         int wired = 0;
@@ -110,23 +115,25 @@ public class QuestEditOps {
         }
         state.buildLineCache();
         state.rebuild();
-        ctx.setFeedback("§aChained %d quests (%d new link%s)", ordered.size(), wired, wired == 1 ? "" : "s");
+        ctx.setFeedback(ChroniclesUIKit.label("phoenix_chronicles.screen.quest_edit_ops.chained_d_quests_d_new"),
+                ordered.size(), wired, wired == 1 ? "" : "s");
         if (!newLinks.isEmpty()) {
-            ctx.pushUndo("Undo: chain links removed", () -> {
-                for (QuestNode[] link : newLinks) {
-                    link[0].removePrerequisite(link[1]);
-                    state.saveNodePrereqsToDisk(link[0]);
-                }
-                state.buildLineCache();
-                state.rebuild();
-            }, () -> {
-                for (QuestNode[] link : newLinks) {
-                    link[0].addPrerequisite(link[1]);
-                    state.saveNodePrereqsToDisk(link[0]);
-                }
-                state.buildLineCache();
-                state.rebuild();
-            });
+            ctx.pushUndo(ChroniclesUIKit.str("phoenix_chronicles.screen.quest_edit_ops.undo_chain_links_removed"),
+                    () -> {
+                        for (QuestNode[] link : newLinks) {
+                            link[0].removePrerequisite(link[1]);
+                            state.saveNodePrereqsToDisk(link[0]);
+                        }
+                        state.buildLineCache();
+                        state.rebuild();
+                    }, () -> {
+                        for (QuestNode[] link : newLinks) {
+                            link[0].addPrerequisite(link[1]);
+                            state.saveNodePrereqsToDisk(link[0]);
+                        }
+                        state.buildLineCache();
+                        state.rebuild();
+                    });
         }
     }
 
@@ -137,7 +144,7 @@ public class QuestEditOps {
                 .sorted(Comparator.comparingInt(QuestNode::getCustomX))
                 .collect(java.util.stream.Collectors.toList());
         if (nodes.size() < 2) {
-            ctx.setFeedback("§eSelect 2+ quests to fan");
+            ctx.setFeedback(ChroniclesUIKit.str("phoenix_chronicles.screen.quest_edit_ops.select_2_quests_to_fan"));
             return;
         }
         QuestNode root = nodes.get(0);
@@ -154,9 +161,10 @@ public class QuestEditOps {
         }
         state.buildLineCache();
         state.rebuild();
-        ctx.setFeedback("§aFanned from '%s' to %d quest%s", root.getId().getPath(), wired, wired == 1 ? "" : "s");
+        ctx.setFeedback(ChroniclesUIKit.label("phoenix_chronicles.screen.quest_edit_ops.fanned_from_to_d_quest"),
+                root.getId().getPath(), wired, wired == 1 ? "" : "s");
         if (!newlyLinked.isEmpty()) {
-            ctx.pushUndo("Undo: fan links removed", () -> {
+            ctx.pushUndo(ChroniclesUIKit.str("phoenix_chronicles.screen.quest_edit_ops.undo_fan_links_removed"), () -> {
                 for (QuestNode child : newlyLinked) {
                     child.removePrerequisite(root);
                     state.saveNodePrereqsToDisk(child);
@@ -178,14 +186,15 @@ public class QuestEditOps {
         Minecraft mc = Minecraft.getInstance();
         if (mc == null) return;
         if (ftbImportInProgress) {
-            ctx.setFeedback("§eFTB import already in progress…");
+            ctx.setFeedback(
+                    ChroniclesUIKit.str("phoenix_chronicles.screen.quest_edit_ops.ftb_import_already_in_progress"));
             return;
         }
         Path base = mc.gameDirectory.toPath().resolve("config").resolve("phoenix_chronicles");
         Path importDir = resolveFtbImportDir(mc, base);
 
         ftbImportInProgress = true;
-        ctx.setFeedback("§7Importing FTB Quests… this may take a moment for large packs");
+        ctx.setFeedback(ChroniclesUIKit.str("phoenix_chronicles.screen.quest_edit_ops.importing_ftb_quests_this_may"));
 
         Thread worker = new Thread(() -> {
             FtbQuestsImporter.ImportResult result = null;
@@ -234,16 +243,19 @@ public class QuestEditOps {
                                  Path importDir) {
         ftbImportInProgress = false;
         if (error != null) {
-            ctx.setFeedback("§cFTB import error: %s", error.getMessage());
+            ctx.setFeedback(ChroniclesUIKit.label("phoenix_chronicles.screen.quest_edit_ops.ftb_import_error"),
+                    error.getMessage());
             return;
         }
         if (r.imported() == 0 && r.skipped() == 0) {
-            ctx.setFeedback("§eNo .snbt files found in %s", importDir);
+            ctx.setFeedback(ChroniclesUIKit.label("phoenix_chronicles.screen.quest_edit_ops.no_snbt_files_found_in"),
+                    importDir);
         } else {
             String skippedPart = r.skipped() > 0 ? " §c(%d skipped)".formatted(r.skipped()) : "";
             String warningsPart = r.warnings().isEmpty() ? "" :
                     " §8%d warnings".formatted(r.warnings().size());
-            ctx.setFeedback("§aImported %d quests%s%s", r.imported(), skippedPart, warningsPart);
+            ctx.setFeedback(ChroniclesUIKit.label("phoenix_chronicles.screen.quest_edit_ops.imported_d_quests"),
+                    r.imported(), skippedPart, warningsPart);
             if (r.imported() > 0) {
                 QuestFileLoader.reloadAllQuestsFromDisk();
 
@@ -255,32 +267,35 @@ public class QuestEditOps {
 
     public void duplicateQuest(@NotNull QuestNode source) {
         if (!QuestFileSaver.doesQuestFileExist(source)) {
-            ctx.setFeedback("Cannot duplicate. Source file not found on disk");
+            ctx.setFeedback(
+                    ChroniclesUIKit.str("phoenix_chronicles.screen.quest_edit_ops.cannot_duplicate_source_file_not"));
             return;
         }
         try {
             String newPath = QuestFileSaver.duplicateQuestOnDisk(source);
-            ResourceLocation newId = ResourceLocation.fromNamespaceAndPath(source.getId().getNamespace(), newPath);
+            ResourceLocation newId = new ResourceLocation(source.getId().getNamespace(), newPath);
             QuestNode duplicated = QuestTreeRegistry.getQuest(newId);
             if (duplicated != null) {
                 String duplicatedSnbt = QuestFileSaver.readRawSnbt(duplicated);
                 Path duplicatedPath = QuestFileSaver.getQuestSnbtPath(duplicated);
-                ctx.pushUndo("Undo: duplicate removed", () -> {
-                    QuestTreeRegistry.removeQuest(newId);
-                    state.deleteQuestFiles(duplicated);
-                    if (editorState.selectedNode == duplicated) editorState.selectedNode = null;
-                    state.rebuild();
-                }, () -> {
-                    QuestFileSaver.restoreRawSnbt(duplicated, duplicatedSnbt);
-                    QuestFileLoader.loadOneFromDisk(duplicatedPath);
-                    state.rebuild();
-                });
+                ctx.pushUndo(ChroniclesUIKit.str("phoenix_chronicles.screen.quest_edit_ops.undo_duplicate_removed"),
+                        () -> {
+                            QuestTreeRegistry.removeQuest(newId);
+                            state.deleteQuestFiles(duplicated);
+                            if (editorState.selectedNode == duplicated) editorState.selectedNode = null;
+                            state.rebuild();
+                        }, () -> {
+                            QuestFileSaver.restoreRawSnbt(duplicated, duplicatedSnbt);
+                            QuestFileLoader.loadOneFromDisk(duplicatedPath);
+                            state.rebuild();
+                        });
             }
             state.rebuild();
-            ctx.setFeedbackDone("Duplicated → %s", newPath);
+            ctx.setFeedbackDone(ChroniclesUIKit.label("phoenix_chronicles.screen.quest_edit_ops.duplicated"), newPath);
         } catch (IOException e) {
             e.printStackTrace();
-            ctx.setFeedback("Duplicate failed: %s", e.getMessage());
+            ctx.setFeedback(ChroniclesUIKit.label("phoenix_chronicles.screen.quest_edit_ops.duplicate_failed"),
+                    e.getMessage());
         }
     }
 
@@ -294,12 +309,12 @@ public class QuestEditOps {
 
         String path = base;
         int suffix = 2;
-        while (QuestTreeRegistry.getQuest(ResourceLocation.fromNamespaceAndPath("phoenix_chronicles", path)) != null) {
+        while (QuestTreeRegistry.getQuest(new ResourceLocation("phoenix_chronicles", path)) != null) {
             path = base + "_" + suffix;
             suffix++;
         }
 
-        ResourceLocation newId = ResourceLocation.fromNamespaceAndPath("phoenix_chronicles", path);
+        ResourceLocation newId = new ResourceLocation("phoenix_chronicles", path);
         QuestNode node = new QuestNode(newId, Component.literal(""), Component.literal(""));
         node.setChapter(ctx.selectedChapter());
         node.setCustomPosition(canvasX, canvasY);
@@ -308,9 +323,10 @@ public class QuestEditOps {
         QuestTreeRegistry.injectDynamicQuestNode(node, null);
         QuestFileSaver.saveOneQuestToDisk(node);
         state.rebuild();
-        ctx.setFeedbackDone("§aLinked → %s", target.getId().getPath());
+        ctx.setFeedbackDone(ChroniclesUIKit.label("phoenix_chronicles.screen.quest_edit_ops.linked"),
+                target.getId().getPath());
 
-        ctx.pushUndo("Undo: link quest removed", () -> {
+        ctx.pushUndo(ChroniclesUIKit.str("phoenix_chronicles.screen.quest_edit_ops.undo_link_quest_removed"), () -> {
             QuestTreeRegistry.removeQuest(newId);
             state.deleteQuestFiles(node);
             if (editorState.selectedNode == node) editorState.selectedNode = null;

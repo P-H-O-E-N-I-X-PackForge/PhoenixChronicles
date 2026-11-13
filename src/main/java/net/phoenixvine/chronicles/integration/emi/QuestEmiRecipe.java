@@ -21,6 +21,7 @@ import net.phoenixvine.chronicles.common.tasks.FilterItemTask;
 import net.phoenixvine.chronicles.common.tasks.FluidRequirementTask;
 import net.phoenixvine.chronicles.common.tasks.ItemRequirementTask;
 import net.phoenixvine.chronicles.common.tasks.TagItemTask;
+import net.phoenixvine.chronicles.common.util.ChroniclesLang;
 import net.phoenixvine.chronicles.integration.QuestRewardDisplay;
 
 import dev.emi.emi.api.recipe.EmiRecipe;
@@ -171,7 +172,8 @@ public class QuestEmiRecipe implements EmiRecipe {
             if (lines.size() > maxVisibleLines) {
 
                 widgets.add(new JumpToQuestWidget(
-                        Component.literal("§7... (View full log in Quest Book)").getVisualOrderText(),
+                        ChroniclesLang.tr("phoenix_chronicles.quest_emi_recipe.view_full_log_in_quest")
+                                .getVisualOrderText(),
                         4, textY, 0x888888, this::jumpToQuest));
             }
         }
@@ -179,7 +181,8 @@ public class QuestEmiRecipe implements EmiRecipe {
         int slotY = 92;
 
         int taskX = 4;
-        widgets.addText(Component.literal("Tasks").getVisualOrderText(), taskX, slotY - 11, 0x333333, false);
+        widgets.addText(ChroniclesLang.tr("phoenix_chronicles.quest_emi_recipe.tasks").getVisualOrderText(), taskX,
+                slotY - 11, 0x333333, false);
         List<EmiIngredient> currentInputs = getInputs();
         for (int i = 0; i < Math.min(currentInputs.size(), 3); i++) {
             widgets.addSlot(currentInputs.get(i), taskX + (i * 18), slotY).drawBack(true);
@@ -191,11 +194,12 @@ public class QuestEmiRecipe implements EmiRecipe {
         }
 
         int rewardX = 100;
-        widgets.addText(Component.literal("Rewards").getVisualOrderText(), rewardX, slotY - 11, 0x333333, false);
+        widgets.addText(ChroniclesLang.tr("phoenix_chronicles.quest_emi_recipe.rewards").getVisualOrderText(), rewardX,
+                slotY - 11, 0x333333, false);
 
         if (rewardEntries.isEmpty()) {
             widgets.addSlot(EmiStack.of(Items.BOOK), rewardX, slotY).drawBack(true)
-                    .appendTooltip(Component.literal("§7Quest Completion Record"));
+                    .appendTooltip(ChroniclesLang.tr("phoenix_chronicles.quest_emi_recipe.quest_completion_record"));
             return;
         }
 
@@ -205,7 +209,9 @@ public class QuestEmiRecipe implements EmiRecipe {
             for (Component line : entry.tooltip()) slot.appendTooltip(line);
         }
         if (rewardEntries.size() > 3) {
-            widgets.addText(Component.literal("+" + (rewardEntries.size() - 3) + " more").getVisualOrderText(),
+            widgets.addText(
+                    ChroniclesLang.tr("phoenix_chronicles.quest_emi_recipe.more", (rewardEntries.size() - 3))
+                            .getVisualOrderText(),
                     rewardX, slotY + 20, 0x777777, false);
         }
     }

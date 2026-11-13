@@ -201,7 +201,7 @@ public final class CanvasBackgroundRenderer {
         if (textureLoc == null || textureLoc.isBlank()) return;
         try {
             ResourceLocation loc = CustomTextureCache.resolve(
-                    ResourceLocation.parse(textureLoc));
+                    new ResourceLocation(textureLoc));
             int w = x2 - x1, h = y2 - y1;
             if (parallax <= 0f || w <= 0 || h <= 0) {
                 g.blit(loc, x1, y1, 0, 0, w, h, w, h);

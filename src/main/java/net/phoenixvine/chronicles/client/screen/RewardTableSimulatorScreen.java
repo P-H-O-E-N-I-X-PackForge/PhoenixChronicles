@@ -47,6 +47,9 @@ public class RewardTableSimulatorScreen extends Screen {
     }
 
     @Override
+    public void renderBackground(GuiGraphics context) {}
+
+    @Override
     protected void init() {
         this.clearWidgets();
         int midX = width / 2;
@@ -64,17 +67,19 @@ public class RewardTableSimulatorScreen extends Screen {
     private void roll() {
         RewardTable table = directTable != null ? directTable : RewardTableRegistry.get(tableId);
         if (table == null) {
-            statusLine = "§cTable '" + tableId + "' not found -- check the id and that it's loaded.";
+            statusLine = ChroniclesUIKit
+                    .str("phoenix_chronicles.screen.reward_table_simulator.table_not_found_check_the", tableId);
             results = List.of();
             return;
         }
         if (table.entries().isEmpty()) {
-            statusLine = "§7Table has no entries.";
+            statusLine = ChroniclesUIKit.str("phoenix_chronicles.screen.reward_table_simulator.table_has_no_entries");
             results = List.of();
             return;
         }
         if (table.pickCount() <= 0) {
-            statusLine = "§7No randomness -- this table grants every entry, every time.";
+            statusLine = ChroniclesUIKit
+                    .str("phoenix_chronicles.screen.reward_table_simulator.no_randomness_this_table_grants");
             results = table.entries().stream()
                     .map(e -> new Result(e.reward() != null ? e.reward().getSummary().getString() : "?", ROLLS))
                     .toList();
@@ -96,8 +101,9 @@ public class RewardTableSimulatorScreen extends Screen {
         }
         out.sort((a, c) -> Integer.compare(c.hits(), a.hits()));
         results = out;
-        statusLine = "§7" + table.displayName() + " -- §f" + table.pickCount() + "§7/" + table.entries().size() +
-                " picked per roll, " + ROLLS + " rolls simulated";
+        statusLine = ChroniclesUIKit.str(
+                "phoenix_chronicles.screen.reward_table_simulator.picked_per_roll_rolls_simulated", table.displayName(),
+                table.pickCount(), table.entries().size(), ROLLS);
     }
 
     @Override
@@ -124,7 +130,10 @@ public class RewardTableSimulatorScreen extends Screen {
             rowY += rowH;
         }
         if (results.size() > maxRows) {
-            g.drawCenteredString(font, "§8… " + (results.size() - maxRows) + " more", width / 2, rowY,
+            g.drawCenteredString(font,
+                    ChroniclesUIKit.str("phoenix_chronicles.screen.reward_table_simulator.more",
+                            (results.size() - maxRows)),
+                    width / 2, rowY,
                     ChroniclesThemePalette.TEXT_FAINT);
         }
 

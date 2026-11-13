@@ -111,17 +111,20 @@ public class QuestbookTitleScreen extends Screen {
         g.pose().translate(0f, 0f, 300f);
 
         ChroniclesUIKit.drawModalChrome(g, font, width, height, panelLeft, panelTop, PANEL_W, PANEL_H, 22,
-                "§bQuestbook Title", ChroniclesThemePalette.PANEL, ChroniclesThemePalette.HEADER,
+                ChroniclesUIKit.str("phoenix_chronicles.screen.questbook_title.questbook_title"),
+                ChroniclesThemePalette.PANEL, ChroniclesThemePalette.HEADER,
                 ACCENT, ChroniclesThemePalette.TEXT);
 
         int fx = panelLeft + MARGIN;
         int currentY = panelTop + 28;
 
-        g.drawString(font, "§8Name", fx, currentY, ChroniclesThemePalette.TEXT_FAINT);
+        g.drawString(font, ChroniclesUIKit.str("phoenix_chronicles.screen.questbook_title.name"), fx, currentY,
+                ChroniclesThemePalette.TEXT_FAINT);
 
         currentY += 12 + COMPONENT_H + SECTION_GAP;
 
-        g.drawString(font, "§8Icon", fx, currentY, ChroniclesThemePalette.TEXT_FAINT);
+        g.drawString(font, ChroniclesUIKit.str("phoenix_chronicles.screen.questbook_title.icon"), fx, currentY,
+                ChroniclesThemePalette.TEXT_FAINT);
 
         int iconY = currentY + 12;
         g.fill(fx, iconY, fx + COMPONENT_H, iconY + COMPONENT_H, 0xFF0B0B0F);

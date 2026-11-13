@@ -32,7 +32,7 @@ public final class BackgroundPictureRenderer {
 
             ResourceLocation loc;
             try {
-                loc = CustomTextureCache.resolve(ResourceLocation.parse(pic.texture));
+                loc = CustomTextureCache.resolve(new ResourceLocation(pic.texture));
             } catch (Exception ignored) {
                 continue;
             }

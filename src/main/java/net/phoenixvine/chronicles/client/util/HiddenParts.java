@@ -27,15 +27,7 @@ public final class HiddenParts {
         return task.hidesTarget() && !taskDone(node, task);
     }
 
-    public static boolean taskAmountHidden(QuestNode node, QuestTask task) {
-        return task.hidesAmount() && !taskDone(node, task);
-    }
-
     public static boolean rewardTargetHidden(QuestNode node, QuestReward reward) {
         return reward.hidesTarget() && !questCompleted(node);
-    }
-
-    public static boolean rewardAmountHidden(QuestNode node, QuestReward reward) {
-        return reward.hidesAmount() && !questCompleted(node);
     }
 }

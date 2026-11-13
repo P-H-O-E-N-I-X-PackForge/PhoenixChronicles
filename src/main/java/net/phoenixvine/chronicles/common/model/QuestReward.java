@@ -22,6 +22,7 @@ import net.phoenixvine.chronicles.common.item.ChronicleLootCrateItem;
 import net.phoenixvine.chronicles.common.registry.PhoenixRewardRegistry;
 import net.phoenixvine.chronicles.common.registry.QuestEngineConfig;
 import net.phoenixvine.chronicles.common.registry.RewardTableRegistry;
+import net.phoenixvine.chronicles.common.util.ChroniclesLang;
 import net.phoenixvine.chronicles.integration.ae2.AE2Compat;
 
 import java.util.ArrayList;
@@ -214,7 +215,8 @@ public abstract class QuestReward {
 
         @Override
         public Component getSummary() {
-            if (item == null || item == Items.AIR) return Component.literal(count + "x Unknown Item");
+            if (item == null || item == Items.AIR)
+                return ChroniclesLang.tr("phoenix_chronicles.quest_reward.x_unknown_item", count);
             return Component.literal(count + "x ").append(item.getDescription());
         }
 
@@ -300,7 +302,7 @@ public abstract class QuestReward {
         @Override
         public Component getSummary() {
             if (fluid == null || fluid == net.minecraft.world.level.material.Fluids.EMPTY)
-                return Component.literal(amountMb + " mB Unknown Fluid");
+                return ChroniclesLang.tr("phoenix_chronicles.quest_reward.mb_unknown_fluid", amountMb);
             return Component.literal(amountMb + " mB ").append(fluid.getFluidType().getDescription());
         }
 
@@ -324,11 +326,10 @@ public abstract class QuestReward {
             }
 
             if (remaining > 0) {
-                player.sendSystemMessage(Component.literal("§eCould not deliver " + remaining + " mB of ")
-                        .append(fluid.getFluidType().getDescription())
-                        .append(Component
-                                .literal("§e - link a wireless terminal to an AE2 network to receive fluid rewards.")));
-                player.sendSystemMessage(Component.literal("§7(Only whole buckets can be delivered without AE2.)"));
+                player.sendSystemMessage(ChroniclesLang.tr("phoenix_chronicles.quest_reward.could_not_deliver_mb_of",
+                        remaining, fluid.getFluidType().getDescription()));
+                player.sendSystemMessage(
+                        ChroniclesLang.tr("phoenix_chronicles.quest_reward.only_whole_buckets_can_be"));
             }
         }
 
@@ -375,7 +376,7 @@ public abstract class QuestReward {
 
         @Override
         public Component getSummary() {
-            return Component.literal(levels + " XP level" + (levels != 1 ? "s" : ""));
+            return ChroniclesLang.tr("phoenix_chronicles.quest_reward.xp_level", levels, (levels != 1 ? "s" : ""));
         }
 
         @Override
@@ -588,7 +589,8 @@ public abstract class QuestReward {
 
         @Override
         public Component getSummary() {
-            return Component.literal("Loot: " + (lootTableId != null ? lootTableId.getPath() : "unknown"));
+            return ChroniclesLang.tr("phoenix_chronicles.quest_reward.loot",
+                    (lootTableId != null ? lootTableId.getPath() : "unknown"));
         }
 
         @Override
@@ -649,7 +651,7 @@ public abstract class QuestReward {
 
         @Override
         public Component getSummary() {
-            return Component.literal("Script: " + eventId);
+            return ChroniclesLang.tr("phoenix_chronicles.quest_reward.script", eventId);
         }
 
         @Override
@@ -702,7 +704,7 @@ public abstract class QuestReward {
         @Override
         public Component getSummary() {
             PhoenixRewardRegistry.Entry entry = PhoenixRewardRegistry.get(typeId);
-            if (entry == null) return Component.literal("External: " + typeId);
+            if (entry == null) return ChroniclesLang.tr("phoenix_chronicles.quest_reward.external", typeId);
             if (entry.summary() != null) {
                 try {
                     return Component.literal(entry.summary().apply(data.copy()));
@@ -760,7 +762,8 @@ public abstract class QuestReward {
         @Override
         public Component getSummary() {
             RewardTable table = RewardTableRegistry.get(tableId);
-            return table != null ? table.getSummary() : Component.literal("Table: " + tableId + " (not loaded)");
+            return table != null ? table.getSummary() :
+                    ChroniclesLang.tr("phoenix_chronicles.quest_reward.table_not_loaded", tableId);
         }
 
         @Override
@@ -833,8 +836,8 @@ public abstract class QuestReward {
             String pickPart = pickCount > 0 && pickCount < innerEntries.size() ?
                     pickCount + "/" + innerEntries.size() + " weighted random" :
                     innerEntries.size() + " reward" + (innerEntries.size() == 1 ? "" : "s");
-            return Component.literal(
-                    "§6Loot crate" + (crateTitle.isEmpty() ? "" : ": §d" + crateTitle) + " §8(" + pickPart + ")");
+            return ChroniclesLang.tr("phoenix_chronicles.quest_reward.loot_crate",
+                    (crateTitle.isEmpty() ? "" : ": §d" + crateTitle), pickPart);
         }
 
         @Override
@@ -917,7 +920,7 @@ public abstract class QuestReward {
 
         @Override
         public Component getSummary() {
-            return Component.literal("Conflux: " + (flagMode ? flag : nodeId.toString()));
+            return ChroniclesLang.tr("phoenix_chronicles.quest_reward.conflux", (flagMode ? flag : nodeId.toString()));
         }
 
         @Override
@@ -970,7 +973,8 @@ public abstract class QuestReward {
 
         @Override
         public Component getSummary() {
-            return Component.literal("Opens: " + (screenId != null ? screenId : "unknown"));
+            return ChroniclesLang.tr("phoenix_chronicles.quest_reward.opens",
+                    (screenId != null ? screenId : "unknown"));
         }
 
         @Override
@@ -1029,9 +1033,9 @@ public abstract class QuestReward {
         @Override
         public Component getSummary() {
             return switch (mode) {
-                case LOOTBOX -> Component.literal("§d? Mystery reward");
-                case ALL -> Component.literal("§d★ All of these (" + options.size() + ")");
-                default -> Component.literal("§d? Choose 1 of " + options.size());
+                case LOOTBOX -> ChroniclesLang.tr("phoenix_chronicles.quest_reward.mystery_reward");
+                case ALL -> ChroniclesLang.tr("phoenix_chronicles.quest_reward.all_of_these", options.size());
+                default -> ChroniclesLang.tr("phoenix_chronicles.quest_reward.choose_1_of", options.size());
             };
         }
 

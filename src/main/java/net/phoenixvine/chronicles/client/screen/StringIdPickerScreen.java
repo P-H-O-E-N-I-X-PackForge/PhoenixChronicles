@@ -102,7 +102,8 @@ public class StringIdPickerScreen extends Screen {
         int footerY = panelTop + PANEL_H - FOOTER_H;
         g.fill(panelLeft, footerY, panelLeft + PANEL_W, footerY + 1, ChroniclesThemePalette.BORDER);
         g.fill(panelLeft, footerY, panelLeft + PANEL_W, panelTop + PANEL_H, ChroniclesThemePalette.PANEL_DARK);
-        g.drawString(font, "§8" + displayIds.size() + " - Esc to cancel", panelLeft + 4, footerY + 4,
+        g.drawString(font, ChroniclesUIKit.str("phoenix_chronicles.ui.esc_to_cancel", displayIds.size()), panelLeft + 4,
+                footerY + 4,
                 ChroniclesThemePalette.TEXT_FAINT);
 
         super.render(g, mx, my, partial);

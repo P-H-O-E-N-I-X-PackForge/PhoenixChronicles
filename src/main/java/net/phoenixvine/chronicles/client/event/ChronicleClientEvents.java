@@ -88,7 +88,8 @@ public class ChronicleClientEvents {
         net.minecraft.resources.ResourceLocation id = net.minecraft.resources.ResourceLocation.tryParse(raw);
         QuestNode target = id != null ? QuestTreeRegistry.getQuest(id) : null;
         if (target == null) {
-            source.sendFailure(Component.literal("No quest with id " + raw));
+            source.sendFailure(
+                    Component.translatable("phoenix_chronicles.screen.chronicle_client_events.no_quest_with_id", raw));
             return 0;
         }
         Minecraft.getInstance().tell(() -> {
