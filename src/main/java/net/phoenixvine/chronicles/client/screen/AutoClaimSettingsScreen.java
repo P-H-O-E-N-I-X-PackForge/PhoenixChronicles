@@ -74,8 +74,8 @@ public class AutoClaimSettingsScreen extends Screen {
                 })
                 .bounds(panelX + 6, y, PANEL_W - 12, 16)
                 .tooltip(Tooltip.create(Component.translatable(
-                        "Claim rewards for you as quests complete.\n" +
-                                "Turning it on also claims quests you already finished that it covers.")))
+                        "phoenix_chronicles.screen.auto_claim_tooltip_1" +
+                                "phoenix_chronicles.screen.auto_claim_tooltip_2")))
                 .build());
 
         y += ROW_H + 14;
