@@ -37,7 +37,7 @@ public final class CategoryRegistry {
     private static final List<String> categoryOrder = new ArrayList<>();
     private static final List<String> standaloneOrder = new ArrayList<>();
     private static final List<String> topLevelOrder = new ArrayList<>();
-    
+
     private static final Map<String, List<String>> itemOrder = new HashMap<>();
     private static final String CATEGORY_TOKEN_PREFIX = "C:";
     private static final String CHAPTER_TOKEN_PREFIX = "S:";
@@ -744,7 +744,7 @@ public final class CategoryRegistry {
                 ListTag l = root.getList("topLevelOrder", Tag.TAG_STRING);
                 for (int i = 0; i < l.size(); i++) topLevelOrder.add(l.getString(i));
             }
-            if (root.contains("childOrder")) { 
+            if (root.contains("childOrder")) {
                 ListTag l = root.getList("childOrder", Tag.TAG_COMPOUND);
                 for (int i = 0; i < l.size(); i++) {
                     CompoundTag entry = l.getCompound(i);

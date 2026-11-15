@@ -21,7 +21,7 @@ public final class ConfluxCompat {
     public static boolean isUnlocked(Player player, ResourceLocation nodeId) {
         if (!isAvailable()) return false;
         if (player instanceof ServerPlayer sp) return ConfluxBridge.isUnlocked(sp, nodeId);
-        
+
         return player != null && player.level().isClientSide() && ConfluxBridge.clientIsUnlocked(nodeId);
     }
 

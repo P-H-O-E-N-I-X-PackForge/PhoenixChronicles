@@ -7,11 +7,11 @@ import net.phoenixvine.wiki.api.gate.SuiteGates;
 public final class ChroniclesGates {
 
     public static final String CLAIM_REWARDS = "chronicles:claim_rewards";
-    
+
     public static final String SUBMIT_TASKS = "chronicles:submit_tasks";
-    
+
     public static final String EMERGENCY_ITEMS = "chronicles:emergency_items";
-    
+
     public static final String AUTO_CLAIM = "chronicles:auto_claim";
 
     private ChroniclesGates() {}

@@ -38,7 +38,7 @@ import java.util.function.Function;
 public class SidebarPanel {
 
     static final int SIDEBAR_CAT_ROW_H = 18;
-    
+
     static final int SIDEBAR_FOLDER_INDENT = 6;
     private static final int SIDEBAR_FOLDER_ROW_H = 14;
     public static final int SIDEBAR_COLLAPSE_TOGGLE_H = 12;
@@ -301,7 +301,6 @@ public class SidebarPanel {
                            @NotNull List<String> cats, @NotNull Set<String> hasParent,
                            @NotNull Map<String, List<String>> childrenOf, @NotNull Function<String, String> friendly,
                            @NotNull Function<String, int[]> progressLookup) {
-
         if (category.hasCondition() && !folderHasVisibleChapters(category.id(), cats, hasParent, 0)) return y;
 
         boolean collapsedFolder = CategoryRegistry.isCollapsed(category.id());
@@ -414,7 +413,7 @@ public class SidebarPanel {
         int h = target.height();
         if (target.isFolder()) {
             if (target.depth() == 0) {
-                
+
                 if (!source.isFolder()) return rel < h * 0.3f ? DropZone.BEFORE : DropZone.INTO;
                 if (!CategoryRegistry.canNest(source.id(), target.id())) {
                     return rel < h / 2 ? DropZone.BEFORE : DropZone.AFTER;
@@ -432,7 +431,7 @@ public class SidebarPanel {
             if (rel > h * 0.75f && !openWithContents) return DropZone.AFTER;
             return DropZone.INTO;
         }
-        
+
         return rel < h / 2 ? DropZone.BEFORE : DropZone.AFTER;
     }
 
@@ -509,7 +508,7 @@ public class SidebarPanel {
                                 source.label(), CategoryRegistry.pathLabel(dest)));
                     }
                 } else if (!container.isEmpty()) {
-                    
+
                     String targetToken = itemTokenOf(target);
                     String before = zone == DropZone.BEFORE ? targetToken :
                             tokenAfter(CategoryRegistry.folderItems(container), targetToken);
@@ -542,7 +541,7 @@ public class SidebarPanel {
                             friendly.apply(chap), CategoryRegistry.pathLabel(dest)));
                 }
             } else if (target != null && !container.isEmpty()) {
-                
+
                 String targetToken = itemTokenOf(target);
                 String before = zone == DropZone.BEFORE ? targetToken :
                         tokenAfter(CategoryRegistry.folderItems(container), targetToken);
