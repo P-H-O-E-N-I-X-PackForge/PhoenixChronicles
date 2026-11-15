@@ -27,16 +27,10 @@ import java.nio.file.Path;
 import java.util.*;
 import java.util.stream.Stream;
 
-/**
- * Pastes the copied category tree, optionally with its chapters and quests. Copied chapters get new ids, copied quests
- * get new ids and task ids, and links between copied quests (parent, prerequisites, links, chapter/category
- * prerequisites) point at the copies. Links to anything outside the copy are left pointing at the original.
- */
 public final class CategoryContentCopier {
 
     private CategoryContentCopier() {}
 
-    /** @param newRootId id of the pasted root category, or null when nothing was pasted */
     public record Result(@Nullable String newRootId, int chapters, int quests, @NotNull List<String> warnings) {}
 
     public static @NotNull Result paste(@Nullable String destParent, @Nullable String rootCondition,
@@ -46,7 +40,6 @@ public final class CategoryContentCopier {
 
         List<String> sourceChapters = copyContent ? CategoryRegistry.clipboardChapters() : List.of();
 
-        // 1. new chapter ids
         Set<String> usedChapters = usedChapterIds();
         Map<String, String> chapterMap = new LinkedHashMap<>();
         for (String ch : sourceChapters) {
@@ -57,7 +50,6 @@ public final class CategoryContentCopier {
             chapterMap.put(base, id);
         }
 
-        // 2. the quests to copy, with new ids (quest ids are global, so they must not collide with anything)
         Set<String> usedQuestIds = usedQuestIds();
         Map<String, String> questMap = new LinkedHashMap<>();
         Map<String, QuestNode> questSources = new LinkedHashMap<>();
@@ -76,13 +68,11 @@ public final class CategoryContentCopier {
             questSources.put(oldId, node);
         }
 
-        // 3. the categories (this also tells us the new category ids)
         Map<String, String> categoryMap = new HashMap<>();
         String newRoot = CategoryRegistry.pasteCategory(destParent, rootCondition, find, replace,
                 copyContent ? chapterMap : null, categoryMap);
         if (newRoot == null) return new Result(null, 0, 0, warnings);
 
-        // 4. chapter settings, folders and empty-chapter entries
         Path base = Minecraft.getInstance().gameDirectory.toPath().resolve("config").resolve("phoenix_chronicles");
         Set<String> chaptersWithQuests = new HashSet<>();
         for (QuestNode node : questSources.values())
@@ -107,7 +97,6 @@ public final class CategoryContentCopier {
         if (!chapterMap.isEmpty()) ChapterConfig.save();
         appendStubChapters(stubsToAdd);
 
-        // 5. quests
         int written = 0;
         for (Map.Entry<String, QuestNode> e : questSources.entrySet()) {
             String oldId = e.getKey();
@@ -138,7 +127,6 @@ public final class CategoryContentCopier {
             }
         }
 
-        // 6. load the new quests (all of them at once so links between them resolve)
         if (written > 0) {
             QuestFileWatcher.suppressNextReload();
             QuestFileLoader.loadAdditiveFromDisk(base);
@@ -178,7 +166,6 @@ public final class CategoryContentCopier {
         } catch (IOException ignored) {}
     }
 
-    /** Every chapter id already in use: on quests, on disk, as empty chapters, or in a category. */
     private static Set<String> usedChapterIds() {
         Set<String> used = new HashSet<>();
         for (QuestNode n : QuestTreeRegistry.getAllQuests().values())
@@ -201,7 +188,6 @@ public final class CategoryContentCopier {
         return used;
     }
 
-    /** Every quest id already in use, loaded or just sitting in a file. */
     private static Set<String> usedQuestIds() {
         Set<String> used = new HashSet<>();
         for (QuestNode n : QuestTreeRegistry.getAllQuests().values())

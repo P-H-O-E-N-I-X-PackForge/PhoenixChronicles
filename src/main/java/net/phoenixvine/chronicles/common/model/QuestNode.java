@@ -367,10 +367,6 @@ public class QuestNode {
         return withLineBreaks(description);
     }
 
-    /**
-     * Imported and hand-written descriptions often carry a typed backslash-n instead of a real newline (the FTB
-     * importer writes them that way). Shown as is, they print the two characters; turn them into line breaks.
-     */
     private static Component withLineBreaks(Component text) {
         if (text == null) return Component.empty();
         String s = text.getString();

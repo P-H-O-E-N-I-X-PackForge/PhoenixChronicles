@@ -15,11 +15,6 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.function.Consumer;
 
-/**
- * Asks how to paste the copied category tree: an optional condition for the pasted root, an optional find/replace
- * applied to the conditions (enable_if) of the pasted subcategories and quests, so a copy can be pointed at a
- * different flag, and whether to copy the chapters and quests inside too.
- */
 public class PasteCategoryScreen extends Screen {
 
     private static final int PANEL_W = 240;
@@ -41,7 +36,6 @@ public class PasteCategoryScreen extends Screen {
     private EditBox rootBox, findBox, replaceBox;
     private int panelLeft, panelTop;
 
-    /** @param destCategoryId category to paste inside, or null for the top level */
     public PasteCategoryScreen(Screen parent, @Nullable String destCategoryId,
                                Consumer<CategoryContentCopier.Result> onDone) {
         super(Component.translatable("phoenix_chronicles.screen.paste_category.paste_category"));

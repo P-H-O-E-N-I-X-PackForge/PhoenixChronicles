@@ -154,7 +154,6 @@ public class TaskRewardEditorScreen extends Screen {
 
     private final UndoRedoManager undoRedo = new UndoRedoManager(msg -> {});
 
-    /** The tasks and rewards as they were when the screen opened, to tell whether Escape would lose changes. */
     private String openedState = "";
 
     EditBox rewardEventDataBox;
@@ -1107,12 +1106,10 @@ public class TaskRewardEditorScreen extends Screen {
         return sb.toString();
     }
 
-    /** Whether closing now would lose something: a changed list, or a task or reward being edited. */
     private boolean hasUnsavedWork() {
         return editingTaskIndex >= 0 || editingRewardIndex >= 0 || !stateSnapshot().equals(openedState);
     }
 
-    /** Escape asks before throwing changes away; the Done button is what saves. */
     @Override
     public void onClose() {
         if (minecraft != null && hasUnsavedWork()) {

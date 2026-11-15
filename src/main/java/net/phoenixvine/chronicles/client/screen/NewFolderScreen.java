@@ -35,7 +35,6 @@ public class NewFolderScreen extends Screen {
         this(parent, null, "", null, onCreated);
     }
 
-    /** Creates a new category nested inside {@code newParentId}. */
     public NewFolderScreen(Screen parent, String newParentId, Consumer<String> onCreated) {
         this(parent, null, "", newParentId, onCreated);
     }
