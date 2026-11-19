@@ -22,6 +22,7 @@ public class SetIconScreen extends Screen {
     private final ChronicleOverviewScreen parent;
     private final QuestNode node;
     private int panelLeft, panelTop, panelH;
+    private boolean closeOnNextTick;
 
     public SetIconScreen(ChronicleOverviewScreen parent, QuestNode node) {
         super(Component.translatable("phoenix_chronicles.screen.set_icon.title"));
@@ -42,7 +43,7 @@ public class SetIconScreen extends Screen {
         addRenderableWidget(Button.builder(Component.translatable("phoenix_chronicles.screen.set_icon.item"), b -> {
             minecraft.setScreen(new ItemPickerScreen(this, stack -> {
                 applyIcon(stack.getItem(), "", "", "Icon → " + stack.getHoverName().getString());
-                close();
+                closeOnceThePickerIsGone();
             }));
         }).bounds(fx, y, fw, BTN_H).build());
         y += BTN_H + GAP;
@@ -51,7 +52,7 @@ public class SetIconScreen extends Screen {
             minecraft.setScreen(new FluidPickerScreen(this, fluidId -> {
                 ResourceLocation rl = ResourceLocation.tryParse(fluidId);
                 applyIcon(null, "", fluidId, "Icon → " + (rl != null ? rl.getPath() : fluidId) + " (fluid)");
-                close();
+                closeOnceThePickerIsGone();
             }));
         }).bounds(fx, y, fw, BTN_H).build());
         y += BTN_H + GAP;
@@ -59,7 +60,7 @@ public class SetIconScreen extends Screen {
         addRenderableWidget(Button.builder(Component.translatable("phoenix_chronicles.screen.set_icon.texture"), b -> {
             minecraft.setScreen(new TextureBrowserScreen(this, rl -> {
                 applyIcon(null, rl, "", "Icon texture → " + rl);
-                close();
+                closeOnceThePickerIsGone();
             }));
         }).bounds(fx, y, fw, BTN_H).build());
         y += BTN_H + GAP;
@@ -99,6 +100,16 @@ public class SetIconScreen extends Screen {
 
     private void close() {
         if (minecraft != null) minecraft.setScreen(parent);
+    }
+
+    private void closeOnceThePickerIsGone() {
+        closeOnNextTick = true;
+    }
+
+    @Override
+    public void tick() {
+        super.tick();
+        if (closeOnNextTick) close();
     }
 
     @Override
