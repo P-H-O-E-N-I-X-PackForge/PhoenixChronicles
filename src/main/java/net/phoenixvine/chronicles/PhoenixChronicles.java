@@ -54,6 +54,9 @@ public class PhoenixChronicles {
 
         if (GTCEuCompat.isAvailable()) {
             GTCEuCompat.init(modEventBus);
+        } else if (GTCEuCompat.isUnsupportedPresent()) {
+            LOGGER.warn("[Phoenix Chronicles] A GTCEu build is installed that does not match the supported GTM 7/8 " +
+                    "internals (fork or unknown snapshot). GregTech features of Chronicles are disabled.");
         }
     }
 

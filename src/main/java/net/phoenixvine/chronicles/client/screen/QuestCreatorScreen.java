@@ -1789,6 +1789,35 @@ public class QuestCreatorScreen extends Screen {
         try {
             ResourceLocation questId = ResourceLocation.fromNamespaceAndPath("phoenix_chronicles", id);
 
+            // The id is derived from the title, so two quests with the same name used to share an id and the
+            // new one silently overwrote the old one (file, registry entry and lang keys). Never overwrite.
+            boolean creatingOrRenaming = editingNode == null || !editingNode.getId().equals(questId);
+            if (creatingOrRenaming) {
+                QuestNode clash = QuestTreeRegistry.getQuest(questId);
+                if (clash != null && clash != editingNode) {
+                    if (editingNode == null && !idManuallySet) {
+                        String base = id;
+                        int n = 2;
+                        while (QuestTreeRegistry.getQuest(
+                                ResourceLocation.fromNamespaceAndPath("phoenix_chronicles", base + "_" + n)) != null) {
+                            n++;
+                        }
+                        id = base + "_" + n;
+                        questId = ResourceLocation.fromNamespaceAndPath("phoenix_chronicles", id);
+                        cachedId = id;
+                        if (idBox != null) {
+                            suppressIdResponder = true;
+                            idBox.setValue(id);
+                            suppressIdResponder = false;
+                        }
+                    } else {
+                        statusMsg = "ID '" + id + "' is already used by another quest - choose a different ID";
+                        statusIsErr = true;
+                        return;
+                    }
+                }
+            }
+
             ResourceLocation parentLoc = cachedPrerequisites.isEmpty() ? null : cachedPrerequisites.get(0).getId();
             boolean idChanged = editingNode != null && !editingNode.getId().equals(questId);
 

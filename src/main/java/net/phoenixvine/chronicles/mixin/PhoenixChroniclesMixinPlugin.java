@@ -1,6 +1,6 @@
 package net.phoenixvine.chronicles.mixin;
 
-import net.minecraftforge.fml.loading.LoadingModList;
+import net.phoenixvine.chronicles.integration.gtceu.GTCEuCompat;
 
 import org.objectweb.asm.tree.ClassNode;
 import org.spongepowered.asm.mixin.extensibility.IMixinConfigPlugin;
@@ -16,12 +16,9 @@ public class PhoenixChroniclesMixinPlugin implements IMixinConfigPlugin {
     private static final String RECIPE_FINISHED_MIXIN = "net.phoenixvine.chronicles.mixin.GTRecipeFinishedMixin";
     private static final String RECIPE_FINISHED_MIXIN_GTM8 = "net.phoenixvine.chronicles.mixin.GTRecipeFinishedMixinGtm8";
 
+    /** GT API line (7 / 8), or -1 when GT is absent or its internals don't match what the mixins target. */
     private static int gtceuApi() {
-        var file = LoadingModList.get().getModFileById("gtceu");
-        if (file == null) return -1;
-        var marker = file.getFile().findResource("com", "gregtechceu", "gtceu", "api", "multiblock",
-                "MultiblockWorldSavedData.class");
-        return marker != null && java.nio.file.Files.exists(marker) ? 8 : 7;
+        return GTCEuCompat.apiLine();
     }
 
     @Override

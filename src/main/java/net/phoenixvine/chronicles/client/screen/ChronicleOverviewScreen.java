@@ -1369,6 +1369,12 @@ public class ChronicleOverviewScreen extends Screen
             }
         }
 
+        // Bulk-ops bar must be drawn BEFORE every context menu: all of them draw at z=400 with depth
+        // test off, so whichever is drawn last wins and the bar was painting over right-click menus.
+        if (isDevMode && editorState.multiSelection.size() >= 2) {
+            bulkOpsPanel.render(g, mx, my, cl);
+        }
+
         if (!renderingAsBackdrop && nodeCtxMenu.isVisible(this)) nodeCtxMenu.render(this, g, mx, my, cl, cr);
         if (!renderingAsBackdrop && pictureCtxMenu.isVisible(this)) pictureCtxMenu.render(this, g, mx, my, cl, cr);
 
@@ -1403,10 +1409,6 @@ public class ChronicleOverviewScreen extends Screen
 
         for (TogglePanel p : List.of(validationPanel, statsPanel)) {
             if (p.isVisible(this)) pendingDeferredDraws.add(() -> p.render(this, g, mx, my, cl, cr));
-        }
-
-        if (isDevMode && editorState.multiSelection.size() >= 2) {
-            bulkOpsPanel.render(g, mx, my, cl);
         }
 
         if (openTimeMs > 0) {

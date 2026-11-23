@@ -599,18 +599,14 @@ public class QuestFileSaver {
         Path base = Minecraft.getInstance().gameDirectory.toPath()
                 .resolve("config").resolve("phoenix_chronicles");
 
-        java.util.regex.Matcher m = java.util.regex.Pattern.compile("id:\\s*\"([^\"]+)\"").matcher(src);
-        String srcPath = m.find() ? m.group(1) : "pasted_quest";
+        CompoundTag tag = parseCopySource(src);
+        String srcPath = tag.contains("id") && !tag.getString("id").isEmpty() ? tag.getString("id") : "pasted_quest";
 
-        java.util.regex.Matcher chapM = java.util.regex.Pattern.compile("chapter:\\s*\"([^\"]+)\"").matcher(src);
-        boolean hasChapterField = chapM.find();
-        java.util.regex.Matcher legacyCatM = hasChapterField ? null :
-                java.util.regex.Pattern.compile("category:\\s*\"([^\"]+)\"").matcher(src);
-        boolean hasLegacyCategoryField = legacyCatM != null && legacyCatM.find();
         String chapter = (targetChapter != null && !targetChapter.isBlank()) ?
                 targetChapter.trim().toUpperCase(java.util.Locale.ROOT) :
-                (hasChapterField ? chapM.group(1).toUpperCase(java.util.Locale.ROOT) :
-                        (hasLegacyCategoryField ? legacyCatM.group(1).toUpperCase(java.util.Locale.ROOT) : "MAIN"));
+                (tag.contains("chapter") ? tag.getString("chapter").toUpperCase(java.util.Locale.ROOT) :
+                        (tag.contains("category") ? tag.getString("category").toUpperCase(java.util.Locale.ROOT) :
+                                "MAIN"));
 
         Path chapterFolder = base.resolve("quests").resolve(chapter.toLowerCase(java.util.Locale.ROOT));
         Files.createDirectories(chapterFolder);
@@ -620,38 +616,47 @@ public class QuestFileSaver {
             newPath = srcPath + "_copy" + i;
         }
 
-        String content = src.replaceFirst("id:\\s*\"[^\"]*\"", "id: \"" + newPath + "\"");
-        if (hasChapterField) {
-            content = content.replaceFirst("chapter:\\s*\"[^\"]*\"", "chapter: \"" + chapter + "\"");
-        } else if (hasLegacyCategoryField) {
-            content = content.replaceFirst("category:\\s*\"[^\"]*\"", "chapter: \"" + chapter + "\"");
-        } else {
-
-            int last = content.lastIndexOf('}');
-            if (last >= 0)
-                content = content.substring(0, last) + "  chapter: \"" + chapter + "\"\n" + content.substring(last);
-        }
-
-        content = regenerateTaskIds(content);
-
-        content = offsetSnbtCoord(content, "positionX", 56);
-        content = offsetSnbtCoord(content, "positionY", 56);
+        tag.putString("chapter", chapter);
+        tag.remove("category");
+        finishCopy(tag, newPath, 56, null);
 
         Path destFile = chapterFolder.resolve(newPath + ".snbt");
-        Files.writeString(destFile, content, StandardCharsets.UTF_8);
+        Files.writeString(destFile, toPrettySnbt(tag), StandardCharsets.UTF_8);
 
         QuestFileLoader.loadOneFromDisk(destFile);
 
         return newPath;
     }
 
-    private static String offsetSnbtCoord(String snbt, String key, int offset) {
-        java.util.regex.Matcher m = java.util.regex.Pattern.compile(key + ":\\s*(-?\\d+)").matcher(snbt);
-        if (m.find()) {
-            int originalVal = Integer.parseInt(m.group(1));
-            return snbt.replaceFirst(key + ":\\s*-?\\d+", key + ": " + (originalVal + offset));
+    /**
+     * Parses quest SNBT with the same parser the loader uses. Copy/duplicate used to patch the raw text with
+     * regexes ({@code id:} / {@code positionX:}); the saver writes quoted keys ({@code "id": ...}) so those
+     * never matched, and copies kept the original id and position, which made the loader skip them or stack
+     * them exactly on top of the original.
+     */
+    private static CompoundTag parseCopySource(String snbt) throws IOException {
+        try {
+            return net.minecraft.nbt.TagParser.parseTag(snbt);
+        } catch (Exception e) {
+            throw new IOException("Quest file is not valid SNBT: " + e.getMessage(), e);
         }
-        return snbt;
+    }
+
+    /** Gives a copied quest its new id, fresh task ids, and a position offset from the original. */
+    private static void finishCopy(CompoundTag tag, String newId, int offset, QuestNode source) {
+        tag.putString("id", newId);
+        QuestCopyTransform.regenerateAllTaskIds(tag);
+
+        boolean hasX = tag.contains("positionX");
+        boolean hasY = tag.contains("positionY");
+        if (hasX) tag.putInt("positionX", tag.getInt("positionX") + offset);
+        if (hasY) tag.putInt("positionY", tag.getInt("positionY") + offset);
+        if (!hasX && !hasY && source != null) {
+            // No stored position (auto-laid-out quest): without this the copy would sit exactly on the original.
+            tag.putInt("positionX", source.getCustomX() + offset);
+            tag.putInt("positionY", source.getCustomY() + offset);
+            tag.putBoolean("position_is_center", true);
+        }
     }
 
     public static Path getQuestMarkdownPath(QuestNode node) {
@@ -682,7 +687,7 @@ public class QuestFileSaver {
             throw new FileNotFoundException("Source file not found on disk");
         }
 
-        String content = Files.readString(srcFile, StandardCharsets.UTF_8);
+        CompoundTag tag = parseCopySource(Files.readString(srcFile, StandardCharsets.UTF_8));
 
         String srcPath = source.getId().getPath();
         String newPath = srcPath + "_copy";
@@ -690,42 +695,14 @@ public class QuestFileSaver {
             newPath = srcPath + "_copy" + i;
         }
 
-        content = content.replaceFirst("id:\\s*\"[^\"]*\"", "id: \"" + newPath + "\"");
-
-        content = regenerateTaskIds(content);
-
-        content = offsetSnbtCoord(content, "positionX", 48);
-        content = offsetSnbtCoord(content, "positionY", 48);
+        finishCopy(tag, newPath, 48, source);
 
         Path destFile = srcFile.resolveSibling(newPath + ".snbt");
-        Files.writeString(destFile, content, StandardCharsets.UTF_8);
+        Files.writeString(destFile, toPrettySnbt(tag), StandardCharsets.UTF_8);
 
         QuestFileLoader.loadOneFromDisk(destFile);
 
         return newPath;
-    }
-
-    private static String regenerateTaskIds(String content) {
-        java.util.regex.Pattern pattern = java.util.regex.Pattern.compile(
-                "task_id:\\s*\"([^\"]*)\"");
-        java.util.regex.Matcher matcher = pattern.matcher(content);
-        StringBuilder result = new StringBuilder();
-        while (matcher.find()) {
-            String original = matcher.group(1);
-            String namespace = "phoenix_chronicles";
-            String path = original;
-            int colon = original.indexOf(':');
-            if (colon >= 0) {
-                namespace = original.substring(0, colon);
-                path = original.substring(colon + 1);
-            }
-            String newId = namespace + ":" + path + "_copy_" +
-                    java.util.UUID.randomUUID().toString().replace("-", "").substring(0, 8);
-            matcher.appendReplacement(result,
-                    java.util.regex.Matcher.quoteReplacement("task_id: \"" + newId + "\""));
-        }
-        matcher.appendTail(result);
-        return result.toString();
     }
 
     public static boolean doesQuestFileExist(QuestNode node) {

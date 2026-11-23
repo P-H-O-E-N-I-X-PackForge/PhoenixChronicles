@@ -48,11 +48,20 @@ public class QuestTextInputScreen extends Screen {
             "phoenix_chronicles.screen.text_input.md_tip.page_break"
     };
 
-    private static final String[] MD2_LABELS = { "1.", "[x]", ">", "`c`", "```", "Tbl", "!", ":::" };
+    private static final String[] MD2_LABELS = { "1.", "[x]", ">", "`c`", "```", "Tbl", "!", ":::", "Img" };
     private static final String[] MD2_INSERTS = {
             "1. ", "- [ ] ", "> ", "`code`", "\n```\n\ncode\n```\n",
-            "\n| A | B |\n|---|---|\n| a | b |\n", ":::warning Title\n\n:::\n", ":::spoiler Title\n\n:::\n"
+            "\n| A | B |\n|---|---|\n| a | b |\n", ":::warning Title\n\n:::\n", ":::spoiler Title\n\n:::\n",
+            ""
     };
+
+    /** Index of the "Img" button in the MD2 row; it opens the texture picker instead of inserting fixed text. */
+    private static final int MD2_IMAGE_IDX = 8;
+
+    /** Defaults written into a freshly inserted image tag so authors can see what to tweak. */
+    private static final int IMG_DEFAULT_W = 128;
+    private static final int IMG_DEFAULT_H = 128;
+    private static final int IMG_DEFAULT_ROT = 0;
     private static final String[] MD2_TIPS = {
             "phoenix_chronicles.screen.text_input.md2_tip.numbered_list",
             "phoenix_chronicles.screen.text_input.md2_tip.checklist",
@@ -61,7 +70,8 @@ public class QuestTextInputScreen extends Screen {
             "phoenix_chronicles.screen.text_input.md2_tip.code_block",
             "phoenix_chronicles.screen.text_input.md2_tip.table",
             "phoenix_chronicles.screen.text_input.md2_tip.warning",
-            "phoenix_chronicles.screen.text_input.md2_tip.spoiler"
+            "phoenix_chronicles.screen.text_input.md2_tip.spoiler",
+            "phoenix_chronicles.screen.text_input.md2_tip.image"
     };
 
     private final Screen parent;
@@ -200,7 +210,10 @@ public class QuestTextInputScreen extends Screen {
             g.fill(bx, rowY, bx + bw, rowY + 12, hov ? C_BTN_HOV : C_BTN);
             if (hov) {
                 g.fill(bx, rowY, bx + bw, rowY + 1, C_ACCENT);
-                g.renderTooltip(font, Component.translatable(MD2_TIPS[i]), mx, my);
+                Component tip = i == MD2_IMAGE_IDX
+                        ? Component.translatableWithFallback(MD2_TIPS[i], "Insert image (opens picker)")
+                        : Component.translatable(MD2_TIPS[i]);
+                g.renderTooltip(font, tip, mx, my);
             }
             g.drawCenteredString(font, MD2_LABELS[i], bx + bw / 2, rowY + 2, hov ? 0xFFFFFFFF : 0xFFAAAAAA);
         }
@@ -310,6 +323,10 @@ public class QuestTextInputScreen extends Screen {
             int bx = md2ButtonX(i);
             int bw = md2ButtonW(i);
             if (mx >= bx && mx < bx + bw && my >= md2RowY && my < md2RowY + 12) {
+                if (i == MD2_IMAGE_IDX) {
+                    openImagePicker();
+                    return true;
+                }
                 setInitialFocus(inputBox);
                 inputBox.forceInsert(MD2_INSERTS[i]);
                 return true;
@@ -322,6 +339,18 @@ public class QuestTextInputScreen extends Screen {
         }
 
         return false;
+    }
+
+    private void openImagePicker() {
+        Minecraft.getInstance().setScreen(new TextureBrowserScreen(this, rl -> {
+            // Runs before the picker hands control back, so the text area still holds
+            // the author's cursor position and the tag lands where they were typing.
+            inputBox.forceInsert(buildImageTag(rl));
+        }));
+    }
+
+    static String buildImageTag(String textureId) {
+        return "[img:" + textureId + "," + IMG_DEFAULT_W + "," + IMG_DEFAULT_H + "," + IMG_DEFAULT_ROT + "]";
     }
 
     @Override

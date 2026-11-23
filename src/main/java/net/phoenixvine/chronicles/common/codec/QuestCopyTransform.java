@@ -75,6 +75,17 @@ public final class QuestCopyTransform {
         tag.put(key, out);
     }
 
+    /** Fresh task ids for every task in a quest tag, including variant tasks. */
+    public static void regenerateAllTaskIds(CompoundTag tag) {
+        regenerateTaskIds(tag.getList("tasks", Tag.TAG_COMPOUND));
+        if (tag.contains("variants")) {
+            ListTag variants = tag.getList("variants", Tag.TAG_COMPOUND);
+            for (int i = 0; i < variants.size(); i++) {
+                regenerateTaskIds(variants.getCompound(i).getList("tasks", Tag.TAG_COMPOUND));
+            }
+        }
+    }
+
     private static void regenerateTaskIds(ListTag tasks) {
         for (int i = 0; i < tasks.size(); i++) {
             CompoundTag t = tasks.getCompound(i);
