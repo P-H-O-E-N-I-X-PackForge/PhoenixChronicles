@@ -91,7 +91,11 @@ public final class PhoenixTaskRegistry {
         }
 
         public boolean isAvailable() {
-            return requiredModId == null || net.neoforged.fml.ModList.get().isLoaded(requiredModId);
+            if (requiredModId == null) return true;
+            if (net.phoenixvine.chronicles.integration.gtceu.GTCEuCompat.GTCEU_MOD_ID.equals(requiredModId)) {
+                return net.phoenixvine.chronicles.integration.gtceu.GTCEuCompat.isAvailable();
+            }
+            return net.neoforged.fml.ModList.get().isLoaded(requiredModId);
         }
     }
 

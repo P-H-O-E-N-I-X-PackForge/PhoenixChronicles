@@ -48,8 +48,10 @@ public class EnergyStorageTask extends QuestTask {
         IEnergyStorage feCap = level.getCapability(Capabilities.EnergyStorage.BLOCK, pos, null);
         if (feCap != null) fe = feCap.getEnergyStored();
 
-        IEnergyContainer euCap = GTCapabilityHelper.getEnergyContainer(level, pos, null);
-        if (euCap != null) eu = euCap.getEnergyStored();
+        if (net.phoenixvine.chronicles.integration.gtceu.GTCEuCompat.isAvailable()) {
+            IEnergyContainer euCap = GTCapabilityHelper.getEnergyContainer(level, pos, null);
+            if (euCap != null) eu = euCap.getEnergyStored();
+        }
 
         if (fe > 0 || eu > 0) {
             blockCache.put(player.getUUID(), new long[] { fe, eu });
@@ -130,8 +132,11 @@ public class EnergyStorageTask extends QuestTask {
     private long energyStored(ItemStack stack) {
         IEnergyStorage storage = stack.getCapability(Capabilities.EnergyStorage.ITEM);
         long fe = storage == null ? 0 : storage.getEnergyStored();
-        IElectricItem electric = GTCapabilityHelper.getElectricItem(stack);
-        long eu = electric == null ? 0 : electric.getCharge();
+        long eu = 0;
+        if (net.phoenixvine.chronicles.integration.gtceu.GTCEuCompat.isAvailable()) {
+            IElectricItem electric = GTCapabilityHelper.getElectricItem(stack);
+            eu = electric == null ? 0 : electric.getCharge();
+        }
         return switch (energyType) {
             case FE -> fe;
             case EU -> eu;

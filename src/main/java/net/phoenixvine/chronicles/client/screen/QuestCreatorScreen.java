@@ -60,8 +60,8 @@ public class QuestCreatorScreen extends Screen {
     private enum Section {
 
         BASIC_INFO("Basic Info"),
-        POSITION_SIZE("Position & Size"),
         TASKS_REWARDS("Tasks & Rewards"),
+        POSITION_SIZE("Position & Size"),
         EMERGENCY("Emergency Items"),
         VARIANTS("Variants"),
         VISIBILITY_PREREQS("Visibility & Prerequisites"),
@@ -78,8 +78,8 @@ public class QuestCreatorScreen extends Screen {
     }
 
     private final Set<Section> collapsedSections = new HashSet<>(List.of(
-            Section.TASKS_REWARDS, Section.EMERGENCY, Section.VARIANTS, Section.REWARDS_REPEATS, Section.ADVANCED,
-            Section.RAW));
+            Section.EMERGENCY, Section.VARIANTS, Section.VISIBILITY_PREREQS, Section.REWARDS_REPEATS, Section.AUDIO,
+            Section.ADVANCED, Section.RAW));
 
     private record SectionHeaderRect(Section section, int y, int h) {}
 
@@ -331,8 +331,8 @@ public class QuestCreatorScreen extends Screen {
         int firstWidgetIndex = 0;
 
         y = buildSection(Section.BASIC_INFO, y, this::buildBasicInfo, this::basicInfoSummary);
-        y = buildSection(Section.POSITION_SIZE, y, this::buildPositionSize, this::positionSizeSummary);
         y = buildSection(Section.TASKS_REWARDS, y, this::buildTasksRewards, this::tasksRewardsSummary);
+        y = buildSection(Section.POSITION_SIZE, y, this::buildPositionSize, this::positionSizeSummary);
         y = buildSection(Section.EMERGENCY, y, this::buildEmergency, this::emergencySummary);
         y = buildSection(Section.VARIANTS, y, this::buildVariants, this::variantsSummary);
         y = buildSection(Section.VISIBILITY_PREREQS, y, this::buildVisibilityPrereqs, this::visibilityPrereqsSummary);
@@ -1791,6 +1791,35 @@ public class QuestCreatorScreen extends Screen {
 
         try {
             ResourceLocation questId = ResourceLocation.fromNamespaceAndPath("phoenix_chronicles", id);
+
+            // The id is derived from the title, so two quests with the same name used to share an id and the
+            // new one silently overwrote the old one (file, registry entry and lang keys). Never overwrite.
+            boolean creatingOrRenaming = editingNode == null || !editingNode.getId().equals(questId);
+            if (creatingOrRenaming) {
+                QuestNode clash = QuestTreeRegistry.getQuest(questId);
+                if (clash != null && clash != editingNode) {
+                    if (editingNode == null && !idManuallySet) {
+                        String base = id;
+                        int n = 2;
+                        while (QuestTreeRegistry.getQuest(
+                                ResourceLocation.fromNamespaceAndPath("phoenix_chronicles", base + "_" + n)) != null) {
+                            n++;
+                        }
+                        id = base + "_" + n;
+                        questId = ResourceLocation.fromNamespaceAndPath("phoenix_chronicles", id);
+                        cachedId = id;
+                        if (idBox != null) {
+                            suppressIdResponder = true;
+                            idBox.setValue(id);
+                            suppressIdResponder = false;
+                        }
+                    } else {
+                        statusMsg = "ID '" + id + "' is already used by another quest - choose a different ID";
+                        statusIsErr = true;
+                        return;
+                    }
+                }
+            }
 
             ResourceLocation parentLoc = cachedPrerequisites.isEmpty() ? null : cachedPrerequisites.get(0).getId();
             boolean idChanged = editingNode != null && !editingNode.getId().equals(questId);

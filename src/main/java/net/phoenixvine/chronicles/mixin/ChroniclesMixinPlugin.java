@@ -1,6 +1,6 @@
 package net.phoenixvine.chronicles.mixin;
 
-import net.neoforged.fml.loading.LoadingModList;
+import net.phoenixvine.chronicles.integration.gtceu.GTCEuCompat;
 
 import org.objectweb.asm.tree.ClassNode;
 import org.spongepowered.asm.mixin.extensibility.IMixinConfigPlugin;
@@ -21,7 +21,8 @@ public class ChroniclesMixinPlugin implements IMixinConfigPlugin {
 
     @Override
     public boolean shouldApplyMixin(String targetClassName, String mixinClassName) {
-        return LoadingModList.get().getModFileById("gtceu") != null;
+        // All mixins here target GTCEu; only apply them on the supported GT8 line.
+        return GTCEuCompat.isAvailable();
     }
 
     @Override
