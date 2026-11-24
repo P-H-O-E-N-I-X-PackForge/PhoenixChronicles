@@ -60,8 +60,8 @@ public class QuestCreatorScreen extends Screen {
     private enum Section {
 
         BASIC_INFO("Basic Info"),
-        POSITION_SIZE("Position & Size"),
         TASKS_REWARDS("Tasks & Rewards"),
+        POSITION_SIZE("Position & Size"),
         EMERGENCY("Emergency Items"),
         VARIANTS("Variants"),
         VISIBILITY_PREREQS("Visibility & Prerequisites"),
@@ -78,8 +78,8 @@ public class QuestCreatorScreen extends Screen {
     }
 
     private final Set<Section> collapsedSections = new HashSet<>(List.of(
-            Section.TASKS_REWARDS, Section.EMERGENCY, Section.VARIANTS, Section.REWARDS_REPEATS, Section.ADVANCED,
-            Section.RAW));
+            Section.EMERGENCY, Section.VARIANTS, Section.VISIBILITY_PREREQS, Section.REWARDS_REPEATS, Section.AUDIO,
+            Section.ADVANCED, Section.RAW));
 
     private record SectionHeaderRect(Section section, int y, int h) {}
 
@@ -331,8 +331,8 @@ public class QuestCreatorScreen extends Screen {
         int firstWidgetIndex = 0;
 
         y = buildSection(Section.BASIC_INFO, y, this::buildBasicInfo, this::basicInfoSummary);
-        y = buildSection(Section.POSITION_SIZE, y, this::buildPositionSize, this::positionSizeSummary);
         y = buildSection(Section.TASKS_REWARDS, y, this::buildTasksRewards, this::tasksRewardsSummary);
+        y = buildSection(Section.POSITION_SIZE, y, this::buildPositionSize, this::positionSizeSummary);
         y = buildSection(Section.EMERGENCY, y, this::buildEmergency, this::emergencySummary);
         y = buildSection(Section.VARIANTS, y, this::buildVariants, this::variantsSummary);
         y = buildSection(Section.VISIBILITY_PREREQS, y, this::buildVisibilityPrereqs, this::visibilityPrereqsSummary);

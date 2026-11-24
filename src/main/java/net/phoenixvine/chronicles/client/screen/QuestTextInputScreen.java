@@ -210,9 +210,9 @@ public class QuestTextInputScreen extends Screen {
             g.fill(bx, rowY, bx + bw, rowY + 12, hov ? C_BTN_HOV : C_BTN);
             if (hov) {
                 g.fill(bx, rowY, bx + bw, rowY + 1, C_ACCENT);
-                Component tip = i == MD2_IMAGE_IDX
-                        ? Component.translatableWithFallback(MD2_TIPS[i], "Insert image (opens picker)")
-                        : Component.translatable(MD2_TIPS[i]);
+                Component tip = i == MD2_IMAGE_IDX ?
+                        Component.translatableWithFallback(MD2_TIPS[i], "Insert image (opens picker)") :
+                        Component.translatable(MD2_TIPS[i]);
                 g.renderTooltip(font, tip, mx, my);
             }
             g.drawCenteredString(font, MD2_LABELS[i], bx + bw / 2, rowY + 2, hov ? 0xFFFFFFFF : 0xFFAAAAAA);

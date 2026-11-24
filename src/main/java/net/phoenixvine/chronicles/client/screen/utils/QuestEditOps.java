@@ -58,7 +58,7 @@ public class QuestEditOps {
             return;
         }
 
-        if (!src.contains("id:")) {
+        if (!QuestFileSaver.looksLikeQuestSnbt(src)) {
             ctx.setFeedback(
                     ChroniclesUIKit.str("phoenix_chronicles.screen.quest_edit_ops.clipboard_doesn_t_look_like"));
             return;

@@ -58,7 +58,9 @@ public class BulkOpsPanel {
 
     public void render(@NotNull GuiGraphics g, int mx, int my, int cl) {
         g.pose().pushPose();
-        g.pose().translate(0f, 0f, 400f);
+        // Deliberately BELOW the context menus (z=400). GUI render types still depth-test internally and text
+        // is drawn a hair above its base z, so at an equal z this bar's text showed through menu backgrounds.
+        g.pose().translate(0f, 0f, 300f);
         g.flush();
         RenderSystem.disableDepthTest();
 

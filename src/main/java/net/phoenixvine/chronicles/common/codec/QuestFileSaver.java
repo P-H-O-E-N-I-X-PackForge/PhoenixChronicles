@@ -621,6 +621,7 @@ public class QuestFileSaver {
         finishCopy(tag, newPath, 56, null);
 
         Path destFile = chapterFolder.resolve(newPath + ".snbt");
+        QuestFileWatcher.suppressNextReload();
         Files.writeString(destFile, toPrettySnbt(tag), StandardCharsets.UTF_8);
 
         QuestFileLoader.loadOneFromDisk(destFile);
@@ -639,6 +640,16 @@ public class QuestFileSaver {
             return net.minecraft.nbt.TagParser.parseTag(snbt);
         } catch (Exception e) {
             throw new IOException("Quest file is not valid SNBT: " + e.getMessage(), e);
+        }
+    }
+
+    /** True when the text parses as SNBT and carries a quest id (keys may be quoted, as the saver writes them). */
+    public static boolean looksLikeQuestSnbt(String src) {
+        if (src == null || src.isBlank()) return false;
+        try {
+            return net.minecraft.nbt.TagParser.parseTag(src).contains("id");
+        } catch (Exception e) {
+            return false;
         }
     }
 
@@ -698,6 +709,7 @@ public class QuestFileSaver {
         finishCopy(tag, newPath, 48, source);
 
         Path destFile = srcFile.resolveSibling(newPath + ".snbt");
+        QuestFileWatcher.suppressNextReload();
         Files.writeString(destFile, toPrettySnbt(tag), StandardCharsets.UTF_8);
 
         QuestFileLoader.loadOneFromDisk(destFile);
