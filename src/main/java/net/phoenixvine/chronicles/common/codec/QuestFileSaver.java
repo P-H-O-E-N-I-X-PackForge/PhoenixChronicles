@@ -521,6 +521,40 @@ public class QuestFileSaver {
             System.err.println(
                     "[Phoenix Chronicles] Failed to delete files for '" + node.getId() + "': " + e.getMessage());
         }
+        deleteStrayFilesForId(node);
+    }
+
+    /**
+     * Removes any other quest file that declares this quest's id. Older duplicate/paste builds wrote
+     * {@code <id>_copy.snbt} files that still carried the ORIGINAL id; deleting the quest only removed
+     * {@code <id>.snbt}, so the stray copy was loaded again on the next launch and the quest "came back".
+     */
+    private static void deleteStrayFilesForId(QuestNode node) {
+        String id = node.getId().getPath();
+        Path root = Minecraft.getInstance().gameDirectory.toPath()
+                .resolve("config").resolve("phoenix_chronicles").resolve("quests");
+        if (!Files.isDirectory(root)) return;
+        try (Stream<Path> walk = Files.walk(root)) {
+            for (Path p : walk.filter(Files::isRegularFile).filter(f -> f.toString().endsWith(".snbt")).toList()) {
+                String name = p.getFileName().toString();
+                String stem = name.substring(0, name.length() - 5);
+                if (stem.equals(id)) continue;
+                try {
+                    String text = Files.readString(p, StandardCharsets.UTF_8);
+                    if (!text.contains(id)) continue;
+                    CompoundTag tag = net.minecraft.nbt.TagParser.parseTag(text);
+                    if (id.equals(tag.getString("id").toLowerCase(Locale.ROOT))) {
+                        Files.deleteIfExists(p);
+                        Files.deleteIfExists(p.resolveSibling(stem + ".md"));
+                    }
+                } catch (Exception ignored) {
+                    // unreadable / not a quest file: leave it alone
+                }
+            }
+        } catch (IOException e) {
+            System.err.println("[Phoenix Chronicles] Failed to sweep stray files for '" + node.getId() + "': " +
+                    e.getMessage());
+        }
     }
 
     public static void updateNodePrerequisites(QuestNode node) {
