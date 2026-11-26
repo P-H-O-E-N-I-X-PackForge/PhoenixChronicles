@@ -169,8 +169,38 @@ public class QuestFileLoader {
         }
 
         wireAndRegister(records);
+        healMissingPrerequisites(records);
         System.out.println("[Phoenix Chronicles] Loaded " + records.size() + " quest(s) from disk (" +
                 QuestTreeRegistry.getRootChapters().size() + " root(s)).");
+    }
+
+    /**
+     * A quest whose prerequisite was deleted still named it in its file, with nothing in the editor to take it out
+     * again. After a full load every quest that exists is registered, so what is still missing is gone for good:
+     * drop those entries from the file.
+     */
+    private static void healMissingPrerequisites(List<QuestRecord> records) {
+        for (QuestRecord rec : records) {
+            boolean missing = false;
+            for (String pid : rec.prereqRequired().keySet()) {
+                if (QuestTreeRegistry.getQuest(ResourceLocation.fromNamespaceAndPath("phoenix_chronicles", pid)) ==
+                        null)
+                    missing = true;
+            }
+            for (String pid : rec.prereqForbidden()) {
+                if (QuestTreeRegistry.getQuest(ResourceLocation.fromNamespaceAndPath("phoenix_chronicles", pid)) ==
+                        null)
+                    missing = true;
+            }
+            if (!missing) continue;
+            QuestNode node = QuestTreeRegistry.getQuest(rec.id());
+            if (node == null) continue;
+            int dropped = QuestFileSaver.dropMissingPrerequisites(node);
+            if (dropped > 0) {
+                LOAD_ERRORS.add("Quest '" + rec.id().getPath() + "': removed " + dropped +
+                        " prerequisite(s) that pointed at deleted quests.");
+            }
+        }
     }
 
     private static boolean isFtbImportStagingFile(Path p) {

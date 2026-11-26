@@ -40,6 +40,9 @@ public class PhoenixChronicles {
         IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
 
         ChronicleItems.ITEMS.register(modEventBus);
+        net.minecraftforge.fml.ModLoadingContext.get().registerConfig(
+                net.minecraftforge.fml.config.ModConfig.Type.COMMON,
+                net.phoenixvine.chronicles.common.ChroniclesConfig.SPEC);
         modEventBus.addListener(this::commonSetup);
 
         if (FMLEnvironment.dist.isClient()) {

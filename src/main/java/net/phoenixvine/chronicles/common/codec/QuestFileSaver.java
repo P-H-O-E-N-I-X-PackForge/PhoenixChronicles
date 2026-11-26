@@ -562,6 +562,29 @@ public class QuestFileSaver {
         }
     }
 
+    /**
+     * Takes prerequisite entries out of a quest's file when they name a quest that no longer exists, so a quest whose
+     * prerequisite was deleted does not keep pointing at nothing. Returns how many entries were dropped.
+     */
+    public static int dropMissingPrerequisites(QuestNode node) {
+        int[] dropped = { 0 };
+        patchNodeTag(node, tag -> {
+            net.minecraft.nbt.ListTag list = tag.getList("prerequisites", Tag.TAG_COMPOUND);
+            net.minecraft.nbt.ListTag kept = new net.minecraft.nbt.ListTag();
+            for (int i = 0; i < list.size(); i++) {
+                CompoundTag entry = list.getCompound(i);
+                ResourceLocation pid = ResourceLocation.fromNamespaceAndPath("phoenix_chronicles",
+                        entry.getString("id"));
+                if (QuestTreeRegistry.getQuest(pid) == null) dropped[0]++;
+                else kept.add(entry);
+            }
+            if (dropped[0] == 0) return;
+            if (kept.isEmpty()) tag.remove("prerequisites");
+            else tag.put("prerequisites", kept);
+        });
+        return dropped[0];
+    }
+
     public static void updateNodePrerequisites(QuestNode node) {
         patchNodeTag(node, tag -> {
             net.minecraft.nbt.ListTag prereqList = new net.minecraft.nbt.ListTag();

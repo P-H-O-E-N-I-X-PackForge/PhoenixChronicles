@@ -1257,6 +1257,7 @@ public class ChronicleEvents {
         if (event.getEntity().level().isClientSide) return;
 
         if (event.getEntity() instanceof net.minecraft.server.level.ServerPlayer serverPlayer) {
+            giveBookOnFirstJoin(serverPlayer);
 
             QuestProgressTracker.beginLoginSync(serverPlayer.getUUID());
 
@@ -1276,6 +1277,23 @@ public class ChronicleEvents {
                     new net.phoenixvine.chronicles.network.packet.S2CSyncTeamKeyPacket(
                             TeamKeyResolver.resolve(serverPlayer).orElse("")));
         }
+    }
+
+    private static final String BOOK_GIVEN_KEY = "phoenix_chronicles_book_given";
+
+    /** Hands out the Chronicle book once per player, if the config asks for it. */
+    private static void giveBookOnFirstJoin(net.minecraft.server.level.ServerPlayer player) {
+        if (!net.phoenixvine.chronicles.common.ChroniclesConfig.GIVE_BOOK_ON_FIRST_JOIN.get()) return;
+        net.minecraft.nbt.CompoundTag persisted = player.getPersistentData()
+                .getCompound(net.minecraft.world.entity.player.Player.PERSISTED_NBT_TAG);
+        if (persisted.getBoolean(BOOK_GIVEN_KEY)) return;
+
+        persisted.putBoolean(BOOK_GIVEN_KEY, true);
+        player.getPersistentData().put(net.minecraft.world.entity.player.Player.PERSISTED_NBT_TAG, persisted);
+
+        net.minecraft.world.item.ItemStack book = new net.minecraft.world.item.ItemStack(
+                net.phoenixvine.chronicles.common.item.ChronicleItems.CHRONICLE_BOOK.get());
+        if (!player.getInventory().add(book)) player.drop(book, false);
     }
 
     private static void sendInitialPooledSync(net.minecraft.server.level.ServerPlayer player) {
