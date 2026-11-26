@@ -33,6 +33,8 @@ public class PhoenixChronicles {
     public PhoenixChronicles(IEventBus modEventBus, ModContainer container) {
         ChronicleItems.ITEMS.register(modEventBus);
         net.phoenixvine.chronicles.capability.QuestCapabilityProvider.ATTACHMENTS.register(modEventBus);
+        container.registerConfig(net.neoforged.fml.config.ModConfig.Type.COMMON,
+                net.phoenixvine.chronicles.common.ChroniclesConfig.SPEC);
         modEventBus.addListener(this::commonSetup);
         modEventBus.addListener(ChronicleNetwork::register);
 

@@ -697,6 +697,29 @@ public class QuestCreatorScreen extends Screen {
                     visibilityDropdownOpen = false;
                     Minecraft.getInstance().setScreen(new TaskRewardEditorScreen(this, resolveWorkingNode()));
                 }).bounds(cx, rowY, cw, FIELD_H).build());
+        int y2 = rowY + FIELD_H + ROW_GAP;
+
+        rowY = y2 + LABEL_H + LABEL_GAP;
+        labels.add(new LabelEntry(cx, y2,
+                ChroniclesUIKit.str("phoenix_chronicles.screen.quest_creator.task_completion_gate"), C_TEXT_FAINT));
+        boolean anyMode = cachedTaskMinCount > 0;
+        String gateLabel = anyMode ?
+                ChroniclesUIKit.str("phoenix_chronicles.screen.quest_creator.complete_any_task_s", cachedTaskMinCount) :
+                ChroniclesUIKit.str("phoenix_chronicles.screen.quest_creator.complete_all_tasks");
+        addRenderableWidget(Button.builder(ChroniclesUIKit.lit(gateLabel), b -> {
+            cachedTaskMinCount = cachedTaskMinCount == 0 ? 1 : 0;
+            rebuildWidgets();
+        }).bounds(cx, rowY, anyMode ? cw - 50 : cw, FIELD_H).build());
+        if (anyMode) {
+            addRenderableWidget(Button.builder(ChroniclesUIKit.lit("§f−"), b -> {
+                if (cachedTaskMinCount > 1) cachedTaskMinCount--;
+                rebuildWidgets();
+            }).bounds(cx + cw - 48, rowY, 22, FIELD_H).build());
+            addRenderableWidget(Button.builder(ChroniclesUIKit.lit("§f+"), b -> {
+                cachedTaskMinCount++;
+                rebuildWidgets();
+            }).bounds(cx + cw - 24, rowY, 22, FIELD_H).build());
+        }
         return rowY + FIELD_H;
     }
 
@@ -849,29 +872,6 @@ public class QuestCreatorScreen extends Screen {
                                 "chapter of a picked category) is complete. This adds to the quest's own\n" +
                                 "prerequisites; it doesn't replace them.")))
                 .build());
-        y = rowY + FIELD_H + ROW_GAP;
-
-        rowY = y + LABEL_H + LABEL_GAP;
-        labels.add(new LabelEntry(cx, y,
-                ChroniclesUIKit.str("phoenix_chronicles.screen.quest_creator.task_completion_gate"), C_TEXT_FAINT));
-        boolean anyMode = cachedTaskMinCount > 0;
-        String gateLabel = anyMode ?
-                ChroniclesUIKit.str("phoenix_chronicles.screen.quest_creator.complete_any_task_s", cachedTaskMinCount) :
-                ChroniclesUIKit.str("phoenix_chronicles.screen.quest_creator.complete_all_tasks");
-        addRenderableWidget(Button.builder(ChroniclesUIKit.lit(gateLabel), b -> {
-            cachedTaskMinCount = cachedTaskMinCount == 0 ? 1 : 0;
-            rebuildWidgets();
-        }).bounds(cx, rowY, anyMode ? cw - 50 : cw, FIELD_H).build());
-        if (anyMode) {
-            addRenderableWidget(Button.builder(ChroniclesUIKit.lit("§f−"), b -> {
-                if (cachedTaskMinCount > 1) cachedTaskMinCount--;
-                rebuildWidgets();
-            }).bounds(cx + cw - 48, rowY, 22, FIELD_H).build());
-            addRenderableWidget(Button.builder(ChroniclesUIKit.lit("§f+"), b -> {
-                cachedTaskMinCount++;
-                rebuildWidgets();
-            }).bounds(cx + cw - 24, rowY, 22, FIELD_H).build());
-        }
         y = rowY + FIELD_H + ROW_GAP;
 
         rowY = y + LABEL_H + LABEL_GAP;
